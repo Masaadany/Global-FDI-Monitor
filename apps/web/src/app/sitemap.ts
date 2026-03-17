@@ -9,6 +9,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/benchmarking','/scenario-planner','/corridor-intelligence',
     '/sectors',
     '/ar',
+    '/privacy',
+    '/terms',
+    '/settings',
+    '/sectors',
+    '/admin',
     '/pricing','/about','/contact','/register','/auth/login','/fic',
   ];
   return routes.map(route => ({

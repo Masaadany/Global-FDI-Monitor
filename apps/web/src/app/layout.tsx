@@ -91,6 +91,7 @@ function SiteNav() {
         <GlobalSearch/>
         <Link href="/pricing"     className="hidden md:block text-xs font-semibold text-slate-400 hover:text-slate-600 px-2 py-1.5 rounded-lg">Pricing</Link>
         <Link href="/auth/login"  className="hidden md:block text-xs font-semibold text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:border-blue-300 transition-colors">Sign In</Link>
+        <Link href="/settings"    className="hidden md:block text-xs font-semibold text-slate-400 hover:text-slate-600 px-2 py-1.5 rounded-lg">⚙</Link>
         <Link href="/register"    className="text-xs font-black text-white bg-[#0A2540] px-3 py-1.5 rounded-lg hover:bg-[#1D4ED8] transition-colors">Free Trial</Link>
         <MobileNav/>
       </div>

@@ -152,6 +152,11 @@ const ROUTES = {
       } catch(e){ log('auth',e.message); }
     }
     const token=signJWT({sub:userId,org:orgId,tier:'free_trial',email:d.email});
+    // Send welcome email
+    try {
+      const { sendEmail } = require('./email');
+      await sendEmail(d.email, 'welcome', d.full_name || d.email.split('@')[0], d.org_name || 'your organisation');
+    } catch {}
     ok(res,{
       user:{id:userId,email:d.email,full_name:d.full_name||''},
       org:{id:orgId,name:d.org_name||'',tier:'free_trial',trial_expired:false,fic_balance:5},
@@ -888,4 +893,27 @@ ROUTES['GET /api/v1/insights'] = async(req,res)=>{
     {id:'INS001',type:'MACRO_TREND',urgency:'HIGH',region:'MENA',title:'MENA FDI hits 5-year high at $88B',date:'2026-03-17',ref:'GFM-INS-20260317-0001',verified:true},
     {id:'INS002',type:'REGULATORY', urgency:'HIGH',region:'SAS', title:'India raises insurance FDI cap to 100%',date:'2026-03-15',ref:'GFM-INS-20260315-0002',verified:true},
   ],total:8});
+};
+
+// ── API DOCUMENTATION ─────────────────────────────────────────────────────
+ROUTES['GET /api/docs'] = async(req,res)=>{
+  const fs = require('fs'); const path = require('path');
+  const specPath = path.join(__dirname,'openapi.yaml');
+  if (fs.existsSync(specPath)) {
+    const spec = fs.readFileSync(specPath,'utf8');
+    res.writeHead(200,{'Content-Type':'text/yaml','Access-Control-Allow-Origin':'*'});
+    res.end(spec);
+  } else {
+    fail(res,'NOT_FOUND','OpenAPI spec not found',404);
+  }
+};
+
+ROUTES['GET /api/v1/openapi.json'] = async(req,res)=>{
+  const yaml = require('js-yaml');
+  const fs   = require('fs');
+  const path = require('path');
+  try {
+    const spec = yaml.load(fs.readFileSync(path.join(__dirname,'openapi.yaml'),'utf8'));
+    ok(res, spec);
+  } catch { fail(res,'NOT_FOUND','Spec unavailable'); }
 };

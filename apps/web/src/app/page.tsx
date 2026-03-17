@@ -152,7 +152,7 @@ export default function HomePage() {
           <div className="font-black text-white text-sm mb-2">Global FDI Monitor</div>
           <p className="mb-4">World&apos;s first fully integrated global investment intelligence platform.</p>
           <div className="flex flex-wrap justify-center gap-6 mb-4 text-xs">
-            {[['Pricing','/pricing'],['GFR','/gfr'],['Signals','/signals'],['About','/about'],['Contact','/contact'],['Register','/register']].map(([l,h])=>(
+            {[['Pricing','/pricing'],['GFR','/gfr'],['Signals','/signals'],['About','/about'],['Contact','/contact'],['Register','/register'],['Privacy','/privacy'],['Terms','/terms'],['Settings','/settings']].map(([l,h])=>(
               <Link key={l} href={h} className="hover:text-white transition-colors">{l}</Link>
             ))}
           </div>
