@@ -1,97 +1,163 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { getUser, getOrg, clearAuth, fetchWithAuth } from '@/lib/shared';
-import { useRouter } from 'next/navigation';
-const TABS=['Account','Notifications','Security','Billing'] as const;
+import { getUser, getOrg, fetchWithAuth } from '@/lib/shared';
+
+const API = process.env.NEXT_PUBLIC_API_URL || '';
+
 export default function SettingsPage() {
-  const router=useRouter();
-  const [tab,setTab]=useState<typeof TABS[number]>('Account');
-  const [user,setUser]=useState<any>(null);
-  const [org,setOrg]=useState<any>(null);
-  const [saved,setSaved]=useState(false);
-  const [notifs,setNotifs]=useState({platinum:true,gold:true,gfr:true,newsletter:true,fic_low:true,pipeline:false});
-  useEffect(()=>{
-    setUser(getUser());setOrg(getOrg());
-    fetchWithAuth('/api/v1/auth/me').then(r=>r.json()).then(d=>{if(d.success){setUser(d.data.user);setOrg(d.data.org);}}).catch(()=>{});
-  },[]);
-  function logout(){clearAuth();router.push('/');}
-  async function saveNotifs(){
-    try{await fetchWithAuth('/api/v1/notifications/preferences',{method:'PUT',body:JSON.stringify(notifs)});}catch{}
-    setSaved(true);setTimeout(()=>setSaved(false),2000);
+  const [tab, setTab]   = useState<'profile'|'notifications'|'security'|'api'>('profile');
+  const [saved, setSaved] = useState(false);
+  const user = getUser();
+  const org  = getOrg();
+
+  const [prefs, setPrefs] = useState({
+    emailSignals:   true,
+    emailReports:   true,
+    emailFicLow:    true,
+    browserSignals: false,
+    weeklyDigest:   true,
+    minGrade:       'GOLD',
+  });
+
+  async function saveNotifPrefs() {
+    try {
+      await fetchWithAuth(`${API}/api/v1/notifications/preferences`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prefs),
+      });
+    } catch {}
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
-  return(
+
+  return (
     <div className="min-h-screen bg-surface">
       <section className="gfm-hero text-white px-6 py-10">
-        <div className="max-w-3xl mx-auto relative z-10"><h1 className="text-3xl font-extrabold">Settings</h1></div>
-      </section>
-      <div className="max-w-3xl mx-auto px-6 py-6">
-        <div className="flex gap-1 mb-6 bg-white border border-slate-200 rounded-xl p-1">
-          {TABS.map(t=><button key={t} onClick={()=>setTab(t)} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab===t?'bg-primary text-white':'text-slate-500 hover:text-deep'}`}>{t}</button>)}
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Account</div>
+          <h1 className="text-3xl font-extrabold">Settings</h1>
         </div>
-        {tab==='Account'&&(
-          <div className="gfm-card p-6 space-y-4">
-            <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
-              <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white text-xl font-extrabold">{user?.full_name?.[0]||'U'}</div>
-              <div><div className="font-extrabold text-deep text-lg">{user?.full_name||'Loading…'}</div><div className="text-sm text-slate-400">{user?.email||''}</div><div className="text-xs text-slate-400 mt-0.5">{org?.name} · {org?.tier?.toUpperCase()}</div></div>
+      </section>
+
+      <div className="bg-white border-b border-slate-200 px-6 py-0">
+        <div className="max-w-3xl mx-auto flex gap-0">
+          {[['profile','👤 Profile'],['notifications','🔔 Notifications'],['security','🔐 Security'],['api','🔑 API Access']].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t as any)}
+              className={`px-5 py-3.5 text-sm font-semibold border-b-2 transition-all ${tab===t?'border-primary text-primary':'border-transparent text-slate-500 hover:text-deep'}`}>{l}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-3xl mx-auto px-6 py-6 space-y-5">
+        {tab === 'profile' && (
+          <>
+            <div className="gfm-card p-6">
+              <div className="font-bold text-deep text-sm mb-4">Account Information</div>
+              <div className="space-y-4">
+                {[
+                  ['Email', user?.email || 'user@example.com', 'email'],
+                  ['Full Name', user?.full_name || 'User', 'text'],
+                  ['Organisation', org?.name || 'Organisation', 'text'],
+                ].map(([label, val, type]) => (
+                  <div key={String(label)}>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-1.5">{label}</label>
+                    <input type={String(type)} defaultValue={String(val)}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary transition-all"/>
+                  </div>
+                ))}
+                <button className="gfm-btn-primary px-6 py-2.5 rounded-xl text-sm">Save Profile</button>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[['Full Name',user?.full_name],['Email',user?.email],['Organisation',org?.name],['Plan',org?.tier?.toUpperCase()]].map(([l,v])=>(
-                <div key={String(l)}>
-                  <div className="text-xs font-bold text-slate-400 mb-1">{l}</div>
-                  <div className="text-sm text-deep font-medium">{v||'—'}</div>
+            <div className="gfm-card p-5">
+              <div className="font-bold text-deep text-sm mb-3">Subscription</div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-extrabold text-primary">{org?.tier === 'free_trial' ? 'Free Trial' : 'Professional'}</div>
+                  <div className="text-xs text-slate-400 mt-0.5">FIC Balance: <strong className="text-amber-600">{org?.fic_balance ?? 5}</strong></div>
+                </div>
+                <a href="/subscription" className="gfm-btn-outline text-sm px-5 py-2">Manage →</a>
+              </div>
+            </div>
+          </>
+        )}
+
+        {tab === 'notifications' && (
+          <div className="gfm-card p-6">
+            <div className="font-bold text-deep text-sm mb-4">Alert Preferences</div>
+            <div className="space-y-4">
+              {[
+                {k:'emailSignals',   l:'Email: PLATINUM/GOLD signals', d:'Get emailed when top signals are detected'},
+                {k:'emailReports',   l:'Email: Report ready', d:'Notified when your generated reports are ready'},
+                {k:'emailFicLow',    l:'Email: Low FIC balance', d:'Alert when FIC balance drops below 3'},
+                {k:'browserSignals', l:'Browser: PLATINUM push', d:'Desktop notification for PLATINUM signals'},
+                {k:'weeklyDigest',   l:'Email: Weekly digest', d:'Free weekly intelligence digest'},
+              ].map(({k,l,d})=>(
+                <div key={k} className="flex items-start justify-between gap-4 pb-3 border-b border-slate-50">
+                  <div>
+                    <div className="text-sm font-semibold text-deep">{l}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{d}</div>
+                  </div>
+                  <button onClick={()=>setPrefs(p=>({...p,[k]:!p[k as keyof typeof p]}))}
+                    className={`flex-shrink-0 w-11 h-6 rounded-full relative transition-all ${prefs[k as keyof typeof prefs]?'bg-primary':'bg-slate-200'}`}
+                    role="switch" aria-checked={!!prefs[k as keyof typeof prefs]}>
+                    <div className={`w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-all ${prefs[k as keyof typeof prefs]?'left-5':'left-0.5'}`}/>
+                  </button>
                 </div>
               ))}
-            </div>
-            {org?.tier==='free_trial'&&(
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
-                <div><div className="font-bold text-amber-800 text-sm">Free Trial Active</div><div className="text-xs text-amber-600">{org?.fic_balance} FIC remaining · Expires {org?.trial_end?.slice(0,10)}</div></div>
-                <a href="/subscription" className="gfm-btn-primary text-xs py-2 px-4">Upgrade</a>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-1.5">Minimum Grade for Notifications</label>
+                <select value={prefs.minGrade} onChange={e=>setPrefs(p=>({...p,minGrade:e.target.value}))}
+                  className="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-primary w-full">
+                  {['PLATINUM','GOLD','SILVER','BRONZE'].map(g=><option key={g}>{g}</option>)}
+                </select>
               </div>
-            )}
-            <button onClick={logout} className="text-xs text-red-500 hover:underline font-semibold">Sign out of this device</button>
-          </div>
-        )}
-        {tab==='Notifications'&&(
-          <div className="gfm-card p-6 space-y-4">
-            {[['platinum','PLATINUM signal alerts',true],['gold','GOLD signal alerts',true],['gfr','GFR ranking updates',true],['newsletter','Weekly intelligence digest',true],['fic_low','Low FIC balance warning',true],['pipeline','Pipeline stage changes',false]].map(([k,l,def])=>(
-              <div key={String(k)} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
-                <div><div className="text-sm font-semibold text-deep">{l}</div></div>
-                <button onClick={()=>setNotifs(n=>({...n,[String(k)]:!n[String(k) as keyof typeof n]}))}
-                  className={`w-12 h-6 rounded-full relative transition-all ${notifs[String(k) as keyof typeof notifs]?'bg-primary':'bg-slate-200'}`}>
-                  <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${notifs[String(k) as keyof typeof notifs]?'left-6':'left-0.5'}`}/>
-                </button>
-              </div>
-            ))}
-            <button onClick={saveNotifs} className={`gfm-btn-primary py-3 w-full rounded-xl ${saved?'bg-emerald-600':''}`}>{saved?'✓ Saved':'Save Preferences'}</button>
-          </div>
-        )}
-        {tab==='Security'&&(
-          <div className="gfm-card p-6 space-y-4">
-            <div className="font-bold text-deep mb-2">Password</div>
-            <input type="password" placeholder="Current password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
-            <input type="password" placeholder="New password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
-            <input type="password" placeholder="Confirm new password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
-            <button className="gfm-btn-primary py-3 w-full rounded-xl">Update Password</button>
-            <div className="pt-2 border-t border-slate-100">
-              <div className="font-bold text-deep mb-2 text-sm">Active Sessions</div>
-              <div className="gfm-card p-3 bg-surface flex justify-between items-center">
-                <div className="text-xs text-slate-600">Current browser · {new Date().toLocaleDateString()}</div>
-                <span className="text-xs font-bold text-emerald-600">Active</span>
-              </div>
+              <button onClick={saveNotifPrefs} className="gfm-btn-primary px-6 py-2.5 rounded-xl text-sm">
+                {saved ? '✓ Saved!' : 'Save Preferences'}
+              </button>
             </div>
           </div>
         )}
-        {tab==='Billing'&&(
-          <div className="gfm-card p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <div><div className="font-bold text-deep">Current Plan</div><div className="text-sm text-slate-400 capitalize">{org?.tier?.replace('_',' ')||'Free Trial'}</div></div>
-              <a href="/subscription" className="gfm-btn-primary text-xs py-2 px-4">Manage Plan</a>
+
+        {tab === 'security' && (
+          <div className="space-y-4">
+            <div className="gfm-card p-6">
+              <div className="font-bold text-deep text-sm mb-4">Change Password</div>
+              <div className="space-y-3">
+                {['Current password','New password','Confirm new password'].map(l=>(
+                  <div key={l}>
+                    <label className="text-xs font-bold text-slate-400 block mb-1.5">{l}</label>
+                    <input type="password" placeholder="••••••••"
+                      className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary"/>
+                  </div>
+                ))}
+                <button className="gfm-btn-primary px-6 py-2.5 rounded-xl text-sm mt-1">Update Password</button>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <div><div className="font-bold text-deep">FIC Balance</div><div className="text-sm text-slate-400">Forecasta Intelligence Credits</div></div>
-              <div className="text-2xl font-extrabold text-primary font-mono">{org?.fic_balance??5}</div>
+            <div className="gfm-card p-5">
+              <div className="font-bold text-deep text-sm mb-3">Session</div>
+              <button onClick={()=>{localStorage.clear();window.location.href='/auth/login';}}
+                className="gfm-btn-outline text-sm px-5 py-2 text-red-600 border-red-200 hover:bg-red-50">
+                Sign Out All Devices
+              </button>
             </div>
-            <a href="/fic" className="gfm-btn-outline w-full text-center py-3 rounded-xl block">Buy FIC Credits</a>
+          </div>
+        )}
+
+        {tab === 'api' && (
+          <div className="gfm-card p-6">
+            <div className="font-bold text-deep text-sm mb-1">API Access</div>
+            <p className="text-xs text-slate-400 mb-5">Enterprise plans include direct API access with your organisation JWT.</p>
+            <div className="bg-slate-900 rounded-xl p-4 font-mono text-xs text-green-400 mb-4">
+              <div className="text-slate-500 mb-2"># Example: Fetch GFR Rankings</div>
+              <div>curl https://api.fdimonitor.org/api/v1/gfr \</div>
+              <div className="text-blue-400">  -H &quot;Authorization: Bearer YOUR_TOKEN&quot;</div>
+            </div>
+            <a href="https://api.fdimonitor.org/api/v1/openapi.json" target="_blank"
+              className="gfm-btn-outline text-sm px-5 py-2 inline-block">View OpenAPI Spec →</a>
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+              API access requires Enterprise plan. <a href="/subscription" className="font-bold underline">Upgrade →</a>
+            </div>
           </div>
         )}
       </div>

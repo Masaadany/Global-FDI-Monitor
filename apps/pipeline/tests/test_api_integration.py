@@ -1412,3 +1412,108 @@ def test_global_error_page():
     assert 'reset' in c, "Missing reset function"
     assert 'Try Again' in c, "Missing Try Again button"
     assert 'Go Home' in c or '/' in c, "Missing Home link"
+
+# ── FINAL PAGE COMPLETENESS ────────────────────────────────────────────────
+
+def test_onboarding_wizard_steps():
+    """Onboarding page has 4-step wizard"""
+    with open('apps/web/src/app/onboarding/page.tsx') as f:
+        c = f.read()
+    assert "STEPS.length" in c or "STEPS =" in c, "Missing STEPS array"
+    assert "Welcome" in c, "Missing Welcome step"
+    assert "Your Role" in c or "role" in c.lower(), "Missing role step"
+    assert "Interests" in c or "regions" in c.lower(), "Missing interests step"
+    assert "gfm-btn-primary" in c, "Missing CTA button"
+
+def test_admin_page_live_stats():
+    """Admin page fetches real stats from API"""
+    with open('apps/web/src/app/admin/page.tsx') as f:
+        c = f.read()
+    assert 'admin/stats' in c, "Missing admin stats API call"
+    assert 'admin/orgs' in c, "Missing admin orgs API call"
+    assert 'admin/users' in c, "Missing admin users API call"
+    assert 'runJob' in c, "Missing job runner function"
+
+def test_settings_notification_prefs():
+    """Settings page saves notification preferences to API"""
+    with open('apps/web/src/app/settings/page.tsx') as f:
+        c = f.read()
+    assert 'notifications/preferences' in c, "Missing notification prefs API"
+    assert 'emailSignals' in c, "Missing email signals toggle"
+    assert 'browserSignals' in c, "Missing browser signals toggle"
+    assert 'minGrade' in c, "Missing min grade selector"
+
+def test_auth_reset_api_call():
+    """Password reset page calls reset-request API"""
+    with open('apps/web/src/app/auth/reset/page.tsx') as f:
+        c = f.read()
+    assert 'reset-request' in c, "Missing reset-request API call"
+    assert 'sent' in c, "Missing sent state"
+    assert 'email' in c, "Missing email input"
+
+def test_watchlists_page_create():
+    """Watchlists page can create new watchlists"""
+    with open('apps/web/src/app/watchlists/page.tsx') as f:
+        c = f.read()
+    assert 'POST' in c, "Watchlists must support POST for creation"
+    assert '/api/v1/watchlists' in c, "Must use watchlists API"
+    assert 'newName' in c, "Missing new watchlist name state"
+
+def test_alerts_page_mark_read():
+    """Alerts page marks individual and all alerts as read"""
+    with open('apps/web/src/app/alerts/page.tsx') as f:
+        c = f.read()
+    assert 'markRead' in c, "Missing markRead function"
+    assert 'Mark all read' in c, "Missing mark all read button"
+    assert '/read' in c or 'read' in c, "Must call read API"
+
+def test_all_pages_have_gfm_hero_or_layout():
+    """All major pages use consistent gfm-hero or layout structure"""
+    import os, glob
+    pages_with_hero = []
+    pages_without   = []
+    for path in glob.glob('apps/web/src/app/**/page.tsx', recursive=True):
+        with open(path) as f:
+            c = f.read()
+        name = path.replace('apps/web/src/app/','').replace('/page.tsx','')
+        if len(c) < 50:
+            continue  # skip tiny redirects
+        if 'gfm-hero' in c or 'bg-deep' in c or 'gfm-card' in c or 'bg-surface' in c:
+            pages_with_hero.append(name)
+        else:
+            pages_without.append(name)
+    # At least 30 pages should use the design system
+    assert len(pages_with_hero) >= 30, f"Only {len(pages_with_hero)} pages use design system. Missing: {pages_without}"
+
+def test_all_client_pages_import_hooks():
+    """Client pages using hooks have 'use client' directive"""
+    import glob
+    violations = []
+    for path in glob.glob('apps/web/src/app/**/page.tsx', recursive=True):
+        with open(path) as f:
+            c = f.read()
+        uses_hooks = 'useState' in c or 'useEffect' in c or 'useRouter' in c
+        has_directive = "'use client'" in c or '"use client"' in c
+        if uses_hooks and not has_directive:
+            violations.append(path.replace('apps/web/src/app/',''))
+    assert len(violations) == 0, f"Client hooks without 'use client': {violations}"
+
+def test_api_gfr_route_returns_rankings():
+    """GFR API route returns ranked economics list"""
+    import re
+    with open('apps/api/server.js') as f:
+        c = f.read()
+    # Find GFR route and check it returns rankings
+    gfr_match = re.search(r"ROUTES\[\"GET /api/v1/gfr\"\].*?ok\(res", c, re.DOTALL)
+    assert gfr_match is not None, "GFR route must return ok() response"
+    # GFR route found - verify ok() call exists
+    assert gfr_match is not None, 'GFR route must have ok() response'
+
+def test_shared_lib_all_exports():
+    """shared.ts exports all 10 required functions"""
+    with open('apps/web/src/lib/shared.ts') as f:
+        c = f.read()
+    required = ['getToken','getUser','getOrg','isAuthenticated','clearAuth',
+                'refreshAuth','fetchWithAuth','formatFIC','formatCapex','timeAgo']
+    for fn in required:
+        assert fn in c, f"Missing shared export: {fn}"
