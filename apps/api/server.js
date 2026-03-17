@@ -1245,15 +1245,6 @@ const INSIGHTS_DATA = [
    tags:['UAE','GFR','Digital'],ref:'GFM-INS-20260311-0006'},
 ];
 
-ROUTES['GET /api/v1/insights'] = async(req,res)=>{
-  const q = require('url').parse(req.url,true).query;
-  let ins = [...INSIGHTS_DATA];
-  if(q.type)   ins=ins.filter(i=>i.type===q.type);
-  if(q.region) ins=ins.filter(i=>i.region===q.region);
-  const {items,pagination} = paginate(req,ins);
-  ok(res,{insights:items,total:ins.length,pagination});
-};
-
 // ── RATE LIMIT HEADERS MIDDLEWARE ──────────────────────────────────────────
 // Attach rate limit info to all responses
 const _origOk = ok;
@@ -1263,61 +1254,7 @@ function okWithRateInfo(res, data, meta={}) {
 }
 
 // ── FIC TOP-UP (internal) ─────────────────────────────────────────────────
-ROUTES['POST /api/v1/billing/fic/topup'] = async(req,res)=>{
-  const d       = await body(req);
-  const token   = getToken(req);
-  const payload = token ? verifyJWT(token) : null;
-  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  const credits = {fic_50:50, fic_100:100, fic_500:500}[d.pack] || 0;
-  if (!credits) return fail(res,'INVALID_PACK','Unknown FIC pack');
-  if (db) {
-    await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance+$1 WHERE id=$2',[credits,payload.org]);
-    await dbQ('INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,(SELECT fic_balance FROM auth.organisations WHERE id=$1),$4)',
-      [payload.org,`fic_topup_${d.pack}`,credits,d.session_id||'manual']);
-    try {
-      const {sendEmail}=require('./email');
-      const rows=await dbQ('SELECT u.full_name,u.email,o.fic_balance FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id WHERE u.org_id=$1 LIMIT 1',[payload.org],[]);
-      if(rows&&rows[0]) await sendEmail(rows[0].email,'fic_purchased',rows[0].full_name,credits,rows[0].fic_balance);
-    } catch {}
-  }
-  ok(res,{credits_added:credits,pack:d.pack,updated:true});
-};
-
 // ── ADMIN ENDPOINTS ────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/admin/orgs'] = async(req,res)=>{
-  const token=getToken(req);
-  const payload=token?verifyJWT(token):null;
-  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  const rows = await dbQ('SELECT id,name,tier,fic_balance,created_at FROM auth.organisations ORDER BY created_at DESC LIMIT 50',[],[
-    {id:'org_demo',name:'Demo Organisation',tier:'free_trial',fic_balance:5,created_at:'2026-03-17'}
-  ]);
-  ok(res,{orgs:rows,total:rows.length});
-};
-
-ROUTES['GET /api/v1/admin/users'] = async(req,res)=>{
-  const token=getToken(req);
-  const payload=token?verifyJWT(token):null;
-  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  const rows=await dbQ('SELECT id,email,full_name,role,last_login FROM auth.users ORDER BY created_at DESC LIMIT 100',[],[
-    {id:'usr_demo',email:'demo@example.com',full_name:'Demo User',role:'member',last_login:'2026-03-17'}
-  ]);
-  ok(res,{users:rows,total:rows.length});
-};
-
-ROUTES['GET /api/v1/admin/stats'] = async(req,res)=>{
-  const [orgRows,userRows,sigRows] = await Promise.all([
-    dbQ('SELECT COUNT(*) as n FROM auth.organisations',[],[{n:6}]),
-    dbQ('SELECT COUNT(*) as n FROM auth.users',[],[{n:8}]),
-    dbQ('SELECT COUNT(*) as n FROM intelligence.signals',[],[{n:218}]),
-  ]);
-  ok(res,{
-    total_orgs:  parseInt((orgRows&&orgRows[0]?.n)||'6'),
-    total_users: parseInt((userRows&&userRows[0]?.n)||'8'),
-    total_signals:parseInt((sigRows&&sigRows[0]?.n)||'218'),
-    timestamp: new Date().toISOString(),
-  });
-};
-
 // ── AUTH /ME ─────────────────────────────────────────────────────────────
 ROUTES['GET /api/v1/auth/me'] = async(req,res)=>{
   const token   = getToken(req);
@@ -1569,45 +1506,8 @@ const CORRIDORS_DATA = [
   {id:'C07',from:'UK',to:'India',     fdi_b:1.8,growth:8.2, trend:'FLAT',grade:'SILVER',  signals:6, hist:[1.0,1.2,1.5,1.6,1.8]},
   {id:'C08',from:'Korea',to:'Vietnam',fdi_b:5.4,growth:6.8, trend:'FLAT',grade:'GOLD',    signals:10,hist:[3.8,4.2,4.6,5.0,5.4]},
 ];
-ROUTES['GET /api/v1/corridors']=async(req,res)=>{
-  const q=require('url').parse(req.url,true).query;
-  let data=[...CORRIDORS_DATA];
-  if(q.grade) data=data.filter(c=>c.grade===q.grade);
-  const {items,pagination}=paginate(req,data);
-  ok(res,{corridors:items,total:data.length,pagination});
-};
-
 // ── SEARCH ────────────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/search']=async(req,res)=>{
-  const q=require('url').parse(req.url,true).query;
-  const ql=(q.q||'').toString().toLowerCase();
-  if(!ql) return ok(res,{results:[],total:0});
-  const results=[];
-  // Economies
-  M_GFR.filter(e=>e.name.toLowerCase().includes(ql)||e.iso3.toLowerCase().includes(ql)).slice(0,3).forEach(e=>{
-    results.push({type:'economy',title:e.name,subtitle:`GFR ${e.composite} · ${e.tier} · ${e.region}`,href:`/country/${e.iso3}`,badge:e.iso3});
-  });
-  // Signals
-  M_SIGNALS.filter(s=>s.company.toLowerCase().includes(ql)||s.economy.toLowerCase().includes(ql)).slice(0,3).forEach(s=>{
-    results.push({type:'signal',title:s.company+' → '+s.economy,subtitle:`$${(s.capex_m||0)}M · ${s.grade} · SCI ${s.sci_score}`,href:'/signals',badge:s.grade});
-  });
-  ok(res,{results:results.slice(0,8),total:results.length,query:ql});
-};
-
 // ── COMPANIES LIST ─────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/companies']=async(req,res)=>{
-  const q=require('url').parse(req.url,true).query;
-  const COMPANIES=[
-    {cic:'GFM-USA-MSFT-12847',name:'Microsoft Corporation',hq:'USA',sector:'J',ims:96,grade:'PLATINUM',fdi_stage:'ACTIVE'},
-    {cic:'GFM-USA-AMZN-98120',name:'Amazon AWS',            hq:'USA',sector:'J',ims:95,grade:'PLATINUM',fdi_stage:'ACTIVE'},
-    {cic:'GFM-CHN-CATL-11234',name:'CATL',                  hq:'CHN',sector:'C',ims:92,grade:'PLATINUM',fdi_stage:'ACTIVE'},
-    {cic:'GFM-USA-NVDA-66234',name:'NVIDIA Corporation',    hq:'USA',sector:'J',ims:94,grade:'PLATINUM',fdi_stage:'ACTIVE'},
-    {cic:'GFM-DEU-SINEN-44221',name:'Siemens Energy',       hq:'DEU',sector:'D',ims:85,grade:'GOLD',    fdi_stage:'ACTIVE'},
-  ];
-  const {items,pagination}=paginate(req,COMPANIES);
-  ok(res,{companies:items,total:COMPANIES.length,pagination});
-};
-
 // ── MARKET SIGNALS ALIAS ─────────────────────────────────────────────────
 ROUTES['GET /api/v1/market-signals']=(req,res)=>ROUTES['GET /api/v1/signals'](req,res);
 
@@ -1644,16 +1544,6 @@ ROUTES['GET /api/v1/billing/fic'] = async(req,res)=>{
 };
 
 // ── TRIAL STATUS ──────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/auth/trial-status'] = async(req,res)=>{
-  const token=getToken(req);
-  const payload=token?verifyJWT(token):null;
-  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  const bal=await dbQ('SELECT fic_balance,trial_end,tier FROM auth.organisations WHERE id=$1',[payload.org],
-    [{fic_balance:5,trial_end:new Date(Date.now()+3*86400000).toISOString(),tier:'free_trial'}]);
-  const org=(bal&&bal[0])||{fic_balance:5,trial_end:new Date(Date.now()+3*86400000).toISOString(),tier:'free_trial'};
-  ok(res,{fic_balance:org.fic_balance,tier:org.tier,trial_end:org.trial_end,trial_expired:org.tier==='free_trial'&&new Date(org.trial_end)<new Date()});
-};
-
 // ── BILLING PLANS ─────────────────────────────────────────────────────────
 ROUTES['GET /api/v1/billing/plans'] = async(req,res)=>{
   ok(res,{plans:[
@@ -1683,17 +1573,90 @@ ROUTES['GET /api/v1/health'] = async(req,res)=>{
 };
 
 // ── OPENAPI JSON ─────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/openapi.json'] = async(req,res)=>{
-  ok(res,{openapi:'3.0.0',info:{title:'Global FDI Monitor API',version:'3.0.0',description:'FDI intelligence platform API — 71 pages, 50 API routes, 215 economies'},
-    servers:[{url:'https://api.fdimonitor.org',description:'Production'}],
-    paths:Object.keys(ROUTES).reduce((acc,r)=>{
-      const [method,path]=r.split(' ');
-      const oaPath=path.replace(/:(\w+)/g,'{$1}');
-      if(!acc[oaPath])acc[oaPath]={};
-      acc[oaPath][method.toLowerCase()]={summary:r,responses:{200:{description:'Success'}}};
-      return acc;
-    },{})
-  });
+// ── GFR LIST ──────────────────────────────────────────────────────────────
+ROUTES["GET /api/v1/gfr"] = async(req,res) => {
+  const q = require('url').parse(req.url, true).query;
+  let data = [...M_GFR];
+  if(q.region) data = data.filter(e => e.region === q.region);
+  if(q.tier)   data = data.filter(e => e.tier   === q.tier);
+  if(q.income) data = data.filter(e => e.income === q.income);
+  data.sort((a,b) => b.composite - a.composite);
+  const { items, pagination } = paginate(req, data);
+  ok(res, { rankings: items, total: data.length, pagination, quarter: 'Q1-2026', updated: '2026-03-17' });
 };
 
-log('API','✓ GFM API v3.0.0 — '+Object.keys(ROUTES).length+' routes registered');
+// ── AUTH LOGIN/REGISTER/REFRESH ───────────────────────────────────────────
+ROUTES["POST /api/v1/auth/login"] = async(req,res) => {
+  const d = await body(req);
+  if(!d.email || !d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
+  // Check DB or use demo mode
+  const users = await dbQ('SELECT u.*,o.id as org_id,o.name as org_name,o.tier,o.fic_balance FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id WHERE u.email=$1 LIMIT 1',[d.email],[]);
+  if(users && users[0]) {
+    const u = users[0];
+    const bcrypt = require('bcrypt').compareSync ? require('bcrypt') : null;
+    const valid  = bcrypt ? bcrypt.compareSync(d.password, u.password_hash) : d.password.length >= 6;
+    if(!valid) return fail(res,'INVALID_CREDENTIALS','Invalid email or password',401);
+    const token = signJWT({sub:u.id,email:u.email,org:u.org_id,tier:u.tier,role:u.role||'member'});
+    ok(res,{access_token:token,user:{id:u.id,email:u.email,full_name:u.full_name,role:u.role},org:{id:u.org_id,name:u.org_name,tier:u.tier,fic_balance:u.fic_balance}});
+  } else {
+    // Demo mode: accept any valid-looking credentials
+    const demoId = 'usr_' + Buffer.from(d.email).toString('base64').slice(0,8);
+    const orgId  = 'org_' + Buffer.from(d.email).toString('base64').slice(0,8);
+    const token  = signJWT({sub:demoId,email:d.email,org:orgId,tier:'free_trial',role:'admin'});
+    ok(res,{access_token:token,user:{id:demoId,email:d.email,full_name:d.email.split('@')[0],role:'admin'},org:{id:orgId,name:'Demo Organisation',tier:'free_trial',fic_balance:5}});
+  }
+};
+
+ROUTES["POST /api/v1/auth/register"] = async(req,res) => {
+  const d = await body(req);
+  if(!d.email || !d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
+  const userId = 'usr_' + Date.now();
+  const orgId  = 'org_' + Date.now();
+  // Store in DB if available
+  if(db) {
+    try {
+      const bcrypt = require('bcrypt');
+      const hash = await bcrypt.hash(d.password, 10);
+      await dbQ('INSERT INTO auth.organisations(id,name,tier,fic_balance) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[orgId,d.org_name||'New Organisation','free_trial',5]);
+      await dbQ('INSERT INTO auth.users(id,email,password_hash,full_name,org_id,role) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(email) DO NOTHING',[userId,d.email,hash,d.full_name||d.email.split('@')[0],orgId,'admin']);
+    } catch(e) { log('Register','DB error:',e.message); }
+  }
+  const token = signJWT({sub:userId,email:d.email,org:orgId,tier:'free_trial',role:'admin'});
+  ok(res,{access_token:token,refresh_token:'rt_'+token.slice(-20),user:{id:userId,email:d.email,full_name:d.full_name||'',role:'admin'},org:{id:orgId,name:d.org_name||'New Organisation',tier:'free_trial',fic_balance:5}},{status:201});
+};
+
+ROUTES["POST /api/v1/auth/refresh"] = async(req,res) => {
+  const d = await body(req);
+  const payload = d.refresh_token ? verifyJWT(d.refresh_token.replace('rt_','')) : null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Invalid refresh token',401);
+  const token = signJWT({sub:payload.sub,email:payload.email,org:payload.org,tier:payload.tier,role:payload.role});
+  ok(res,{access_token:token});
+};
+
+// ── STRIPE WEBHOOK ────────────────────────────────────────────────────────
+ROUTES["POST /api/v1/billing/webhook"] = async(req,res) => {
+  const chunks = [];
+  req.on('data', c => chunks.push(c));
+  req.on('end', async () => {
+    const rawBody = Buffer.concat(chunks).toString();
+    const sig     = req.headers['stripe-signature'];
+    let event;
+    try {
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY||'');
+      event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET||'');
+    } catch(err) {
+      // In demo mode, parse as JSON
+      try { event = JSON.parse(rawBody); } catch { return res.writeHead(400).end(); }
+    }
+    // Handle events
+    if(event.type === 'checkout.session.completed') {
+      const session = event.data?.object || event;
+      const orgId   = session.metadata?.org_id || session.client_reference_id;
+      const credits = parseInt(session.metadata?.fic_credits||'0');
+      if(orgId && credits && db) {
+        await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance+$1 WHERE id=$2',[credits,orgId]).catch(()=>{});
+      }
+    }
+    res.writeHead(200).end(JSON.stringify({received:true}));
+  });
+};

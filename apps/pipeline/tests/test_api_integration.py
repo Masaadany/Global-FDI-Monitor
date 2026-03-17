@@ -900,3 +900,82 @@ def test_static_params_30_economies():
     isos = re.findall(r"'([A-Z]{3})'", c)
     unique_isos = set(isos)
     assert len(unique_isos) >= 25, f"Expected 25+ ISOs in generateStaticParams, got {len(unique_isos)}"
+
+# ── LIBRARY COMPLETENESS TESTS ────────────────────────────────────────────
+
+def test_export_lib_functions():
+    """Export library has all 7 required functions"""
+    with open('apps/web/src/lib/export.ts') as f:
+        c = f.read()
+    required = ['exportCSV','exportJSON','exportPrintHTML','exportGFR','exportSignals','exportPipeline','exportCountryProfile']
+    for fn in required:
+        assert f'export function {fn}' in c, f"Missing export function: {fn}"
+
+def test_i18n_40_languages():
+    """i18n library has 40 language entries"""
+    with open('apps/web/src/lib/i18n.ts') as f:
+        c = f.read()
+    import re
+    locales = re.findall(r"code:'[a-z]{2}'", c)
+    assert len(locales) == 40, f"Expected 40 locales, found {len(locales)}"
+    # Verify active ones
+    assert "code:'en'" in c and "active:true" in c, "English must be active"
+    assert "code:'ar'" in c, "Arabic must be present"
+
+def test_i18n_rtl_languages():
+    """i18n has RTL languages marked correctly"""
+    with open('apps/web/src/lib/i18n.ts') as f:
+        c = f.read()
+    # Arabic, Urdu, Persian, Hebrew should be RTL
+    rtl_langs = ["code:'ar'", "code:'ur'", "code:'fa'", "code:'he'"]
+    for lang in rtl_langs:
+        assert lang in c, f"Missing RTL language: {lang}"
+    assert "dir:'rtl'" in c, "RTL direction not set"
+
+def test_filter_presets_defaults():
+    """Filter presets have 5 example presets"""
+    with open('apps/web/src/lib/filterPresets.ts') as f:
+        c = f.read()
+    assert 'PRESET_EXAMPLES' in c, "Missing PRESET_EXAMPLES"
+    import re
+    presets = re.findall(r"name:'[^']+',", c)
+    assert len(presets) >= 5, f"Expected 5+ presets, got {len(presets)}"
+
+def test_seo_utilities_complete():
+    """SEO utility generates required metadata fields"""
+    with open('apps/web/src/lib/seo.ts') as f:
+        c = f.read()
+    required = ['generateMetadata','openGraph','twitter','canonical','PAGE_META']
+    for item in required:
+        assert item in c, f"Missing SEO element: {item}"
+
+def test_email_templates_complete():
+    """Email service has all required templates"""
+    with open('apps/api/email.js') as f:
+        c = f.read()
+    templates = ['welcome','password_reset','fic_purchased','report_ready','fic_low']
+    for t in templates:
+        assert t in c, f"Missing email template: {t}"
+
+def test_auth_routes_complete():
+    """Auth API has login, register, refresh, reset, me"""
+    with open('apps/api/server.js') as f:
+        c = f.read()
+    required_auth = [
+        'POST /api/v1/auth/login',
+        'POST /api/v1/auth/register',
+        'POST /api/v1/auth/refresh',
+        'POST /api/v1/auth/reset-request',
+        'GET /api/v1/auth/me',
+        'GET /api/v1/auth/trial-status',
+    ]
+    for route in required_auth:
+        assert route in c, f"Missing auth route: {route}"
+
+def test_db_migration_all_schemas():
+    """DB migration creates all required schemas"""
+    with open('DEPLOYMENT/migrate.js') as f:
+        c = f.read()
+    schemas = ['auth', 'intelligence', 'pipeline', 'notifications', 'billing']
+    for schema in schemas:
+        assert f'SCHEMA IF NOT EXISTS {schema}' in c or f"'{schema}'" in c, f"Missing schema: {schema}"

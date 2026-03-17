@@ -271,3 +271,96 @@ async function migrate() {
 }
 
 migrate().catch(e => { console.error(e); process.exit(1); });
+
+// ── ADDITIONAL TABLES ─────────────────────────────────────────────────────
+const EXTRA_TABLES = [
+  `CREATE SCHEMA IF NOT EXISTS pipeline`,
+  `CREATE SCHEMA IF NOT EXISTS notifications`,
+  `CREATE SCHEMA IF NOT EXISTS billing`,
+
+  `CREATE TABLE IF NOT EXISTS pipeline.deals (
+    id          TEXT PRIMARY KEY,
+    org_id      TEXT NOT NULL,
+    company     TEXT NOT NULL,
+    hq          TEXT,
+    iso3        TEXT,
+    sector      TEXT,
+    capex_m     NUMERIC,
+    stage       TEXT DEFAULT 'PROSPECTING',
+    probability SMALLINT DEFAULT 20,
+    contact     TEXT,
+    days        SMALLINT DEFAULT 0,
+    notes       TEXT,
+    grade       TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS pipeline.watchlists (
+    id          TEXT PRIMARY KEY,
+    org_id      TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    economies   TEXT[],
+    sectors     TEXT[],
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS notifications.alerts (
+    id          TEXT PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    org_id      TEXT NOT NULL,
+    type        TEXT NOT NULL,
+    priority    TEXT DEFAULT 'MEDIUM',
+    title       TEXT NOT NULL,
+    body        TEXT,
+    read        BOOLEAN DEFAULT false,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS billing.fic_transactions (
+    id          BIGSERIAL PRIMARY KEY,
+    org_id      TEXT NOT NULL,
+    action      TEXT NOT NULL,
+    amount      NUMERIC NOT NULL,
+    balance     NUMERIC,
+    ref_id      TEXT,
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+  )`,
+
+  `CREATE TABLE IF NOT EXISTS intelligence.gfr_scores (
+    iso3        TEXT NOT NULL,
+    quarter     TEXT NOT NULL,
+    composite   NUMERIC(5,2),
+    macro       NUMERIC(5,2),
+    policy      NUMERIC(5,2),
+    digital     NUMERIC(5,2),
+    human       NUMERIC(5,2),
+    infra       NUMERIC(5,2),
+    sustain     NUMERIC(5,2),
+    tier        TEXT,
+    updated_at  TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (iso3, quarter)
+  )`,
+
+  `CREATE INDEX IF NOT EXISTS idx_pipeline_deals_org ON pipeline.deals(org_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_watchlists_org ON pipeline.watchlists(org_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_alerts_org_read ON notifications.alerts(org_id, read)`,
+  `CREATE INDEX IF NOT EXISTS idx_fic_org ON billing.fic_transactions(org_id, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_gfr_composite ON intelligence.gfr_scores(composite DESC)`,
+];
+
+async function runExtra() {
+  const { Pool } = require('pg');
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  for (const sql of EXTRA_TABLES) {
+    try {
+      await pool.query(sql);
+      console.log('  ✓', sql.substring(0, 60).replace(/\s+/g,' '));
+    } catch(e) {
+      if (!e.message?.includes('already exists')) console.warn('  ⚠', e.message);
+    }
+  }
+  await pool.end();
+  console.log('✅ Additional tables ready');
+}
+
+runExtra().catch(e => console.error('Migration error:', e.message));

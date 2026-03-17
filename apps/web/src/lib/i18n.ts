@@ -1,135 +1,70 @@
 /**
- * GFM i18n System — 40 languages
- * EN active full, AR active partial, others ready
+ * GFM Internationalisation — 40 languages
+ * Active: English, Arabic
+ * Coming: 38 more
  */
 
-export const SUPPORTED_LOCALES = [
-  // Tier 1: Full translation
-  {code:'en', name:'English',       dir:'ltr', active:true,  tier:1},
-  {code:'ar', name:'عربي',         dir:'rtl', active:true,  tier:1},
-  // Tier 2: Partial translation (key pages)
-  {code:'fr', name:'Français',      dir:'ltr', active:false, tier:2},
-  {code:'de', name:'Deutsch',       dir:'ltr', active:false, tier:2},
-  {code:'es', name:'Español',       dir:'ltr', active:false, tier:2},
-  {code:'pt', name:'Português',     dir:'ltr', active:false, tier:2},
-  {code:'ru', name:'Русский',       dir:'ltr', active:false, tier:2},
-  {code:'zh', name:'中文',          dir:'ltr', active:false, tier:2},
-  {code:'ja', name:'日本語',        dir:'ltr', active:false, tier:2},
-  {code:'ko', name:'한국어',        dir:'ltr', active:false, tier:2},
-  // Tier 3: Framework ready
-  {code:'hi', name:'हिन्दी',      dir:'ltr', active:false, tier:3},
-  {code:'id', name:'Indonesia',     dir:'ltr', active:false, tier:3},
-  {code:'ms', name:'Melayu',        dir:'ltr', active:false, tier:3},
-  {code:'th', name:'ไทย',          dir:'ltr', active:false, tier:3},
-  {code:'vi', name:'Tiếng Việt',   dir:'ltr', active:false, tier:3},
-  {code:'tr', name:'Türkçe',        dir:'ltr', active:false, tier:3},
-  {code:'pl', name:'Polski',        dir:'ltr', active:false, tier:3},
-  {code:'uk', name:'Українська',    dir:'ltr', active:false, tier:3},
-  {code:'nl', name:'Nederlands',    dir:'ltr', active:false, tier:3},
-  {code:'it', name:'Italiano',      dir:'ltr', active:false, tier:3},
-  {code:'sv', name:'Svenska',       dir:'ltr', active:false, tier:3},
-  {code:'no', name:'Norsk',         dir:'ltr', active:false, tier:3},
-  {code:'da', name:'Dansk',         dir:'ltr', active:false, tier:3},
-  {code:'fi', name:'Suomi',         dir:'ltr', active:false, tier:3},
-  {code:'ro', name:'Română',        dir:'ltr', active:false, tier:3},
-  {code:'cs', name:'Čeština',       dir:'ltr', active:false, tier:3},
-  {code:'hu', name:'Magyar',        dir:'ltr', active:false, tier:3},
-  {code:'el', name:'Ελληνικά',     dir:'ltr', active:false, tier:3},
-  {code:'he', name:'עברית',        dir:'rtl', active:false, tier:3},
-  {code:'fa', name:'فارسی',        dir:'rtl', active:false, tier:3},
-  {code:'ur', name:'اردو',          dir:'rtl', active:false, tier:3},
-  {code:'bn', name:'বাংলা',        dir:'ltr', active:false, tier:3},
-  {code:'sw', name:'Kiswahili',     dir:'ltr', active:false, tier:3},
-  {code:'am', name:'አማርኛ',        dir:'ltr', active:false, tier:3},
-  {code:'yo', name:'Yorùbá',        dir:'ltr', active:false, tier:3},
-  {code:'ha', name:'Hausa',         dir:'ltr', active:false, tier:3},
-  {code:'tl', name:'Filipino',      dir:'ltr', active:false, tier:3},
-  {code:'uk', name:'Українська',    dir:'ltr', active:false, tier:3},
-  {code:'sr', name:'Српски',        dir:'ltr', active:false, tier:3},
-  {code:'bg', name:'Български',     dir:'ltr', active:false, tier:3},
+export interface Locale {
+  code: string;
+  name: string;
+  nativeName: string;
+  dir: 'ltr' | 'rtl';
+  active: boolean;
+  flag: string;
+}
+
+export const SUPPORTED_LOCALES: Locale[] = [
+  { code:'en', name:'English',    nativeName:'English',   dir:'ltr', active:true,  flag:'🇬🇧' },
+  { code:'ar', name:'Arabic',     nativeName:'العربية',   dir:'rtl', active:true,  flag:'🇦🇪' },
+  { code:'fr', name:'French',     nativeName:'Français',  dir:'ltr', active:false, flag:'🇫🇷' },
+  { code:'es', name:'Spanish',    nativeName:'Español',   dir:'ltr', active:false, flag:'🇪🇸' },
+  { code:'zh', name:'Chinese',    nativeName:'中文',      dir:'ltr', active:false, flag:'🇨🇳' },
+  { code:'de', name:'German',     nativeName:'Deutsch',   dir:'ltr', active:false, flag:'🇩🇪' },
+  { code:'ja', name:'Japanese',   nativeName:'日本語',    dir:'ltr', active:false, flag:'🇯🇵' },
+  { code:'ko', name:'Korean',     nativeName:'한국어',    dir:'ltr', active:false, flag:'🇰🇷' },
+  { code:'pt', name:'Portuguese', nativeName:'Português', dir:'ltr', active:false, flag:'🇧🇷' },
+  { code:'ru', name:'Russian',    nativeName:'Русский',   dir:'ltr', active:false, flag:'🇷🇺' },
+  { code:'it', name:'Italian',    nativeName:'Italiano',  dir:'ltr', active:false, flag:'🇮🇹' },
+  { code:'nl', name:'Dutch',      nativeName:'Nederlands',dir:'ltr', active:false, flag:'🇳🇱' },
+  { code:'pl', name:'Polish',     nativeName:'Polski',    dir:'ltr', active:false, flag:'🇵🇱' },
+  { code:'tr', name:'Turkish',    nativeName:'Türkçe',    dir:'ltr', active:false, flag:'🇹🇷' },
+  { code:'hi', name:'Hindi',      nativeName:'हिन्दी',   dir:'ltr', active:false, flag:'🇮🇳' },
+  { code:'id', name:'Indonesian', nativeName:'Bahasa',    dir:'ltr', active:false, flag:'🇮🇩' },
+  { code:'vi', name:'Vietnamese', nativeName:'Tiếng Việt',dir:'ltr', active:false, flag:'🇻🇳' },
+  { code:'th', name:'Thai',       nativeName:'ภาษาไทย',  dir:'ltr', active:false, flag:'🇹🇭' },
+  { code:'ms', name:'Malay',      nativeName:'Bahasa Melayu',dir:'ltr',active:false,flag:'🇲🇾'},
+  { code:'sw', name:'Swahili',    nativeName:'Kiswahili', dir:'ltr', active:false, flag:'🇰🇪' },
+  { code:'bn', name:'Bengali',    nativeName:'বাংলা',    dir:'ltr', active:false, flag:'🇧🇩' },
+  { code:'ur', name:'Urdu',       nativeName:'اردو',      dir:'rtl', active:false, flag:'🇵🇰' },
+  { code:'fa', name:'Persian',    nativeName:'فارسی',     dir:'rtl', active:false, flag:'🇮🇷' },
+  { code:'ha', name:'Hausa',      nativeName:'Hausa',     dir:'ltr', active:false, flag:'🇳🇬' },
+  { code:'yo', name:'Yoruba',     nativeName:'Yorùbá',    dir:'ltr', active:false, flag:'🇳🇬' },
+  { code:'am', name:'Amharic',    nativeName:'አማርኛ',    dir:'ltr', active:false, flag:'🇪🇹' },
+  { code:'zu', name:'Zulu',       nativeName:'isiZulu',   dir:'ltr', active:false, flag:'🇿🇦' },
+  { code:'sv', name:'Swedish',    nativeName:'Svenska',   dir:'ltr', active:false, flag:'🇸🇪' },
+  { code:'da', name:'Danish',     nativeName:'Dansk',     dir:'ltr', active:false, flag:'🇩🇰' },
+  { code:'no', name:'Norwegian',  nativeName:'Norsk',     dir:'ltr', active:false, flag:'🇳🇴' },
+  { code:'fi', name:'Finnish',    nativeName:'Suomi',     dir:'ltr', active:false, flag:'🇫🇮' },
+  { code:'he', name:'Hebrew',     nativeName:'עברית',     dir:'rtl', active:false, flag:'🇮🇱' },
+  { code:'ro', name:'Romanian',   nativeName:'Română',    dir:'ltr', active:false, flag:'🇷🇴' },
+  { code:'hu', name:'Hungarian',  nativeName:'Magyar',    dir:'ltr', active:false, flag:'🇭🇺' },
+  { code:'cs', name:'Czech',      nativeName:'Čeština',   dir:'ltr', active:false, flag:'🇨🇿' },
+  { code:'uk', name:'Ukrainian',  nativeName:'Українська',dir:'ltr', active:false, flag:'🇺🇦' },
+  { code:'el', name:'Greek',      nativeName:'Ελληνικά',  dir:'ltr', active:false, flag:'🇬🇷' },
+  { code:'bg', name:'Bulgarian',  nativeName:'Български', dir:'ltr', active:false, flag:'🇧🇬' },
+  { code:'ca', name:'Catalan',    nativeName:'Català',    dir:'ltr', active:false, flag:'🏳️' },
+  { code:'tl', name:'Filipino',   nativeName:'Filipino',  dir:'ltr', active:false, flag:'🇵🇭' },
 ];
 
-// Core translations — EN + AR (full), others stub ready
-export const TRANSLATIONS: Record<string, Record<string,string>> = {
-  en: {
-    'nav.dashboard':   'Dashboard',
-    'nav.signals':     'Signals',
-    'nav.gfr':         'GFR Rankings',
-    'nav.analytics':   'Analytics',
-    'nav.reports':     'Reports',
-    'nav.pricing':     'Pricing',
-    'nav.free_trial':  'Free Trial',
-    'nav.sign_in':     'Sign In',
-    'hero.title':      "World's First Fully Integrated Global FDI Intelligence Platform",
-    'hero.subtitle':   'Live signals, GFR rankings, AI reports across 215 economies',
-    'hero.cta':        'Start Free Trial — No Card',
-    'hero.sub_cta':    '3 days free · 5 FIC credits · No credit card required',
-    'stats.economies': 'Economies Tracked',
-    'stats.agents':    'AI Agents Active',
-    'stats.sources':   'Data Sources',
-    'stats.speed':     'Signal Update Speed',
-    'tier.frontier':   'FRONTIER',
-    'tier.high':       'HIGH',
-    'tier.medium':     'MEDIUM',
-    'tier.emerging':   'EMERGING',
-    'tier.developing': 'DEVELOPING',
-    'grade.platinum':  'PLATINUM',
-    'grade.gold':      'GOLD',
-    'grade.silver':    'SILVER',
-    'grade.bronze':    'BRONZE',
-    'fic.buy':         'Buy FIC Credits',
-    'fic.balance':     'FIC Balance',
-    'report.generate': 'Generate Report',
-    'signal.live':     'Live',
-    'footer.privacy':  'Privacy Policy',
-    'footer.terms':    'Terms of Service',
-    'footer.contact':  'Contact Us',
-  },
-  ar: {
-    'nav.dashboard':   'لوحة التحكم',
-    'nav.signals':     'الإشارات',
-    'nav.gfr':         'تصنيفات GFR',
-    'nav.analytics':   'التحليلات',
-    'nav.reports':     'التقارير',
-    'nav.pricing':     'الأسعار',
-    'nav.free_trial':  'ابدأ مجاناً',
-    'nav.sign_in':     'تسجيل الدخول',
-    'hero.title':      'أول منصة استخباراتية متكاملة للاستثمار الأجنبي المباشر في العالم',
-    'hero.subtitle':   'إشارات فورية، تصنيفات GFR، تقارير بالذكاء الاصطناعي عبر 215 اقتصاداً',
-    'hero.cta':        'ابدأ التجربة المجانية — بدون بطاقة',
-    'hero.sub_cta':    '3 أيام مجانية · 5 رصيد FIC · لا يلزم بطاقة ائتمان',
-    'stats.economies': 'اقتصاد مُتتبَّع',
-    'stats.agents':    'وكيل ذكاء اصطناعي',
-    'stats.sources':   'مصدر بيانات موثوق',
-    'stats.speed':     'سرعة تحديث الإشارات',
-    'tier.frontier':   'الحدودية',
-    'tier.high':       'مرتفعة',
-    'tier.medium':     'متوسطة',
-    'tier.emerging':   'ناشئة',
-    'tier.developing': 'نامية',
-    'grade.platinum':  'بلاتيني',
-    'grade.gold':      'ذهبي',
-    'grade.silver':    'فضي',
-    'grade.bronze':    'برونزي',
-    'fic.buy':         'شراء رصيد FIC',
-    'fic.balance':     'رصيد FIC',
-    'report.generate': 'إنشاء تقرير',
-    'signal.live':     'مباشر',
-    'footer.privacy':  'سياسة الخصوصية',
-    'footer.terms':    'شروط الخدمة',
-    'footer.contact':  'تواصل معنا',
-  },
+export function getLocale(code: string): Locale {
+  return SUPPORTED_LOCALES.find(l => l.code === code) || SUPPORTED_LOCALES[0];
+}
+
+export function getActiveLocales(): Locale[] {
+  return SUPPORTED_LOCALES.filter(l => l.active);
+}
+
+export const LOCALE_PATHS: Record<string, string> = {
+  en: '/',
+  ar: '/ar',
 };
-
-export type Locale = typeof SUPPORTED_LOCALES[number]['code'];
-
-export function t(key: string, locale: string = 'en'): string {
-  return TRANSLATIONS[locale]?.[key] || TRANSLATIONS.en[key] || key;
-}
-
-export function getLocaleDir(code: string): 'ltr' | 'rtl' {
-  return SUPPORTED_LOCALES.find(l=>l.code===code)?.dir as 'ltr'|'rtl' || 'ltr';
-}
-
-export const ACTIVE_LOCALES = SUPPORTED_LOCALES.filter(l=>l.active).map(l=>l.code);
-export const RTL_LOCALES     = SUPPORTED_LOCALES.filter(l=>l.dir==='rtl').map(l=>l.code);
