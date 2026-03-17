@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   {href:'/corridor-intelligence',icon:'🔗',label:'Corridors'},
   {href:'/publications',       icon:'📰',  label:'Publications'},
   {href:'/pricing',            icon:'💳',  label:'Pricing'},
+  {href:'/subscription',        icon:'⭐',  label:'Subscription Plans'},
   {href:'/fic',                icon:'⭐',  label:'FIC Credits'},
   {href:'/about',              icon:'ℹ️',  label:'About'},
   {href:'/contact',            icon:'✉️',  label:'Contact'},

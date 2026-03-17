@@ -1,56 +1,100 @@
 import Link from 'next/link';
-
-export const metadata = {
-  title: 'About — Global FDI Monitor',
-  description:'Global FDI Monitor methodology, data sources, team, and mission.',
-};
+export const metadata = { title: 'About Global FDI Monitor — Vision, Mission, Methodology', description: 'About Global FDI Monitor — our vision, mission, philosophy, and data methodology.' };
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-surface">
       {/* Hero */}
-      <section className="bg-[#0A2540] text-white px-6 py-20">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">About GFM</div>
-          <h1 className="text-4xl font-black mb-5">We make FDI intelligence accessible to every IPA</h1>
-          <p className="text-blue-200 text-lg leading-relaxed">
-            Global FDI Monitor is the world's first fully integrated FDI intelligence platform —
-            combining real-time signals, AI-powered analytics, and rigorous methodology to give
-            investment promotion agencies a decisive edge.
+      <section className="gfm-hero text-white px-6 py-20">
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-4">About Us</div>
+          <h1 className="text-4xl md:text-5xl font-extrabold mb-5 leading-tight">Global FDI Monitor</h1>
+          <p className="text-xl text-white/70 leading-relaxed">
+            The world&apos;s most comprehensive investment intelligence platform, empowering governments, IPAs, and corporations with real-time data and predictive insights.
           </p>
         </div>
       </section>
 
-      {/* Mission */}
-      <section className="py-16 px-6 bg-slate-50">
+      {/* About section */}
+      <section className="py-14 px-6 bg-white">
         <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-10 items-center">
-            <div>
-              <h2 className="text-3xl font-black text-[#0A2540] mb-4">Our Mission</h2>
-              <p className="text-slate-500 leading-relaxed mb-4">
-                FDI intelligence has historically been inaccessible — locked behind $300K+ Bloomberg subscriptions
-                or fragmented across dozens of sources. We built GFM to change that.
-              </p>
-              <p className="text-slate-500 leading-relaxed mb-4">
-                Our platform aggregates 14 authoritative sources, applies AI signal detection, and packages
-                intelligence into actionable tools that any IPA, government ministry, or investor can use —
-                starting at $899/month.
-              </p>
-              <p className="text-slate-500 leading-relaxed">
-                Every data point carries full provenance. Every AI claim passes logical verification.
-                Every output carries a traceable reference code.
-              </p>
+          <div className="text-sm text-slate-600 leading-relaxed text-center max-w-3xl mx-auto">
+            <p className="mb-4">
+              <strong className="text-deep">GLOBAL FDI MONITOR</strong> is the world&apos;s most comprehensive investment intelligence platform. We combine 20+ years of historical investment data, real-time signals from 300+ trusted sources, and advanced analytics to deliver actionable intelligence that was once available only to the world&apos;s largest institutions.
+            </p>
+            <p>We believe investment decisions should be guided by evidence, not intuition.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Vision / Mission / Philosophy — cards */}
+      <section className="py-14 px-6 bg-surface">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+          {[
+            {
+              title:'Our Vision',
+              icon:'🌍',
+              text:'To become the world\'s most trusted source of investment intelligence, setting the global standard for evidence-based investment decisions that drive sustainable economic growth worldwide.'
+            },
+            {
+              title:'Our Mission',
+              icon:'🎯',
+              text:'To democratize access to world-class investment intelligence, enabling organizations of all sizes to make informed decisions with confidence, speed, and precision.'
+            },
+            {
+              title:'Our Philosophy',
+              icon:'💡',
+              text:'We believe investment decisions should be guided by evidence, not intuition. In a world of increasing complexity, access to accurate, timely, and comprehensive investment intelligence is a necessity.'
+            },
+          ].map(v=>(
+            <div key={v.title} className="gfm-card p-7">
+              <div className="text-4xl mb-4">{v.icon}</div>
+              <h2 className="text-xl font-extrabold text-deep mb-3">{v.title}</h2>
+              <p className="text-slate-500 text-sm leading-relaxed">{v.text}</p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+          ))}
+        </div>
+      </section>
+
+      {/* Methodology */}
+      <section className="py-14 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <div className="text-xs font-bold text-primary uppercase tracking-widest mb-2">Data Integrity</div>
+            <h2 className="text-3xl font-extrabold text-deep mb-3">Our Methodology</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 items-start">
+            <div>
+              <p className="text-slate-600 leading-relaxed mb-5">
+                We integrate data from trusted sources including World Bank, IMF, UNCTAD, and OECD, applying rigorous validation protocols at every stage. Our proprietary verification system ensures factual accuracy of all generated content.
+              </p>
+              <p className="text-slate-600 leading-relaxed mb-5">
+                Our <strong className="text-deep">Waterfall Enrichment</strong> architecture queries multiple sources until the most complete and reliable data is found. Every data point passes Z3 logical constraint verification before acceptance.
+              </p>
+              <div className="gfm-card p-5 bg-surface border-l-4 border-primary">
+                <div className="font-bold text-sm text-deep mb-3">Every data point includes:</div>
+                <ul className="space-y-2">
+                  {['🔗 Source hyperlink to original publication','📅 Timestamp of retrieval','🔐 SHA-256 hash for tamper detection','📝 Reference code for audit trail','✓ Z3 logical verification result'].map(item=>(
+                    <li key={item} className="text-xs text-slate-600">{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Authoritative Data Sources</div>
               {[
-                {n:'215',l:'Economies Tracked',c:'text-blue-600'},
-                {n:'50',  l:'AI Agents Active',c:'text-emerald-600'},
-                {n:'14',  l:'Data Sources',    c:'text-amber-600'},
-                {n:'2s',  l:'Update Speed',    c:'text-violet-600'},
-              ].map(s=>(
-                <div key={s.l} className="bg-white rounded-2xl border border-slate-100 p-6 text-center">
-                  <div className={`text-4xl font-black ${s.c}`}>{s.n}</div>
-                  <div className="text-slate-500 text-sm mt-1">{s.l}</div>
+                {tier:'T1',sources:['IMF World Economic Outlook','World Bank WDI','UNCTAD WIR','OECD FDI Statistics'],color:'bg-emerald-50 border-emerald-200 text-emerald-700'},
+                {tier:'T1',sources:['IEA Energy Investment','ILO Statistics','Yale EPI'],color:'bg-emerald-50 border-emerald-200 text-emerald-700'},
+                {tier:'T2',sources:['Transparency International CPI','Freedom House','Heritage Foundation EFI'],color:'bg-blue-50 border-blue-200 text-blue-700'},
+                {tier:'T6',sources:['GDELT Signal Detection Engine','GFM Proprietary Intelligence'],color:'bg-violet-50 border-violet-200 text-violet-700'},
+              ].map((g,i)=>(
+                <div key={i} className={`border rounded-xl p-3 ${g.color.split(' ').slice(1).join(' ')}`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${g.color}`}>{g.tier}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {g.sources.map(s=><span key={s} className="text-xs font-medium">{s}</span>)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -59,68 +103,30 @@ export default function AboutPage() {
       </section>
 
       {/* GFR Methodology */}
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-[#0A2540] mb-3">GFR Methodology</h2>
-          <p className="text-slate-500 mb-8 leading-relaxed">
-            The Global Future Readiness Ranking (GFR) is a composite index scoring 215 economies
-            across 6 weighted dimensions using 40+ underlying indicators. Quarterly updates.
-          </p>
+      <section className="py-14 px-6 bg-surface">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="text-xs font-bold text-primary uppercase tracking-widest mb-2">Ranking System</div>
+            <h2 className="text-3xl font-extrabold text-deep mb-2">GFR Composite Formula</h2>
+            <div className="text-sm font-mono text-primary bg-primary-light inline-block px-4 py-2 rounded-lg mt-2">
+              GFR = Macro×0.20 + Policy×0.18 + Digital×0.15 + Human×0.15 + Infra×0.15 + Sustain×0.17
+            </div>
+          </div>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              {dim:'Macro Foundations',    wt:'20%',ind:8,  desc:'GDP growth, inflation, current account balance, sovereign ratings, debt sustainability.',  icon:'📊'},
-              {dim:'Policy & Institutional',wt:'18%',ind:7,  desc:'Ease of doing business, rule of law, corruption perceptions, regulatory quality.',       icon:'⚖️'},
-              {dim:'Digital Foundations',  wt:'15%',ind:6,  desc:'Internet penetration, 5G coverage, digital government index, AI readiness.',              icon:'💻'},
-              {dim:'Human Capital',        wt:'15%',ind:7,  desc:'Tertiary enrolment, PISA scores, ILO skills index, labour productivity, language capacity.',icon:'🎓'},
-              {dim:'Infrastructure',       wt:'15%',ind:6,  desc:'LPI score, airport connectivity, port efficiency, energy reliability, construction index.',  icon:'🏗️'},
-              {dim:'Sustainability',       wt:'17%',ind:6,  desc:'EPI score, renewable energy share, carbon pricing, climate resilience, ESG policy.',       icon:'🌱'},
+              {dim:'Economic Resilience (20%)',     icon:'📊',desc:'GDP growth, sovereign ratings, fiscal sustainability, trade openness.'},
+              {dim:'Policy & Institutional (18%)',  icon:'⚖️',desc:'Rule of law, ease of doing business, FDI policy, corruption control.'},
+              {dim:'Digital Foundations (15%)',     icon:'💻',desc:'Internet penetration, 5G, AI readiness, digital government index.'},
+              {dim:'Human Capital (15%)',            icon:'🎓',desc:'Tertiary enrolment, PISA scores, labour productivity, skills index.'},
+              {dim:'Infrastructure (15%)',           icon:'🏗️',desc:'LPI logistics, airport connectivity, port efficiency, energy reliability.'},
+              {dim:'Sustainability (17%)',           icon:'🌱',desc:'Yale EPI score, renewable energy share, climate resilience, ESG policy.'},
             ].map(d=>(
-              <div key={d.dim} className="bg-slate-50 rounded-2xl p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-2xl">{d.icon}</span>
-                  <div>
-                    <div className="font-black text-[#0A2540]">{d.dim}</div>
-                    <div className="flex gap-3 text-xs text-slate-400">
-                      <span className="font-bold text-blue-600">{d.wt} weight</span>
-                      <span>{d.ind} indicators</span>
-                    </div>
-                  </div>
+              <div key={d.dim} className="gfm-card p-5 flex gap-4">
+                <div className="sector-icon flex-shrink-0">{d.icon}</div>
+                <div>
+                  <div className="font-bold text-sm text-deep mb-1">{d.dim}</div>
+                  <p className="text-xs text-slate-500 leading-relaxed">{d.desc}</p>
                 </div>
-                <p className="text-xs text-slate-500 leading-relaxed">{d.desc}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200 text-sm text-blue-700">
-            <strong>Composite Formula:</strong> GFR = (Macro×0.20) + (Policy×0.18) + (Digital×0.15) + (Human×0.15) + (Infra×0.15) + (Sustain×0.17)
-          </div>
-        </div>
-      </section>
-
-      {/* Data sources */}
-      <section className="py-16 px-6 bg-slate-50">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-black text-[#0A2540] mb-3">Data Integrity</h2>
-          <p className="text-slate-500 mb-8 leading-relaxed">
-            Every data point in GFM carries full provenance: source name, URL, retrieval timestamp,
-            SHA-256 verification hash, and a unique GFM reference code. AI outputs pass through our
-            Z3 logical verification layer before delivery.
-          </p>
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              {icon:'🏛️',title:'Tier 1 International Organisations',sources:['IMF WEO','World Bank WDI','UNCTAD WIR','OECD FDI Statistics','IEA Energy Investment','ILO STAT']},
-              {icon:'📰',title:'Intelligence & News Sources',     sources:['GDELT GKG (real-time)','Reuters','Financial Times','Bloomberg (signals only)']},
-              {icon:'📊',title:'NGO & Research',                 sources:['Transparency International CPI','Freedom House','Heritage Foundation EFI','Yale EPI']},
-            ].map(g=>(
-              <div key={g.title} className="bg-white rounded-2xl border border-slate-100 p-5">
-                <div className="text-2xl mb-2">{g.icon}</div>
-                <div className="font-black text-[#0A2540] text-sm mb-3">{g.title}</div>
-                <ul className="space-y-1">
-                  {g.sources.map(s=>(
-                    <li key={s} className="text-xs text-slate-500 flex items-center gap-1.5">
-                      <span className="text-emerald-500">✓</span>{s}
-                    </li>
-                  ))}
-                </ul>
               </div>
             ))}
           </div>
@@ -128,13 +134,13 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 px-6 bg-[#0A2540] text-white text-center">
-        <div className="max-w-xl mx-auto">
-          <h2 className="text-3xl font-black mb-4">Start with a free trial</h2>
-          <p className="text-blue-200 mb-8">3 days free. 5 FIC credits. No credit card required.</p>
+      <section className="py-14 px-6" style={{background:'var(--gradient-primary)'}}>
+        <div className="max-w-3xl mx-auto text-center text-white">
+          <h2 className="text-3xl font-extrabold mb-4">Join the Platform</h2>
+          <p className="text-white/70 mb-8">Start with a free 3-day trial. No credit card required.</p>
           <div className="flex gap-4 justify-center">
-            <Link href="/register" className="bg-[#1D4ED8] text-white font-black px-7 py-3.5 rounded-xl hover:bg-blue-500 transition-colors">Start Free Trial</Link>
-            <Link href="/contact"  className="border border-blue-400 text-blue-200 font-semibold px-7 py-3.5 rounded-xl hover:bg-white/5 transition-colors">Talk to Sales</Link>
+            <Link href="/register" className="gfm-btn-primary text-base px-8 py-3.5 rounded-lg bg-white text-primary">Start Free Trial</Link>
+            <Link href="/contact" className="gfm-btn-outline text-base px-8 py-3.5 rounded-lg" style={{color:'white',borderColor:'rgba(255,255,255,.4)'}}>Contact Us</Link>
           </div>
         </div>
       </section>
