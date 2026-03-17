@@ -14,6 +14,23 @@ export default function SettingsPage() {
   const [email,   setEmail]   = useState('');
 
   useEffect(()=>{
+    // Fetch latest user data from API
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gfm_token') : null;
+    if (token) {
+      fetch(`${API}/api/v1/auth/me`,{headers:{Authorization:`Bearer ${token}`}})
+        .then(r=>r.json())
+        .then(d=>{
+          if(d.success&&d.data){
+            setUser(d.data.user);
+            setOrg(d.data.org);
+            setName(d.data.user?.full_name||'');
+            setEmail(d.data.user?.email||'');
+          }
+        }).catch(()=>{});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  useEffect(()=>{ // keep original local storage fallback
     if (typeof window === 'undefined') return;
     const u = localStorage.getItem('gfm_user');
     const o = localStorage.getItem('gfm_org');

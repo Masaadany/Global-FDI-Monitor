@@ -1220,3 +1220,36 @@ ROUTES['GET /api/v1/companies/:cic'] = async(req,res,p)=>{
   const signals = M_SIGNALS.filter(s=>s.company===co.name);
   ok(res,{...co,signals,signal_count:signals.length});
 };
+
+// ── INSIGHTS ──────────────────────────────────────────────────────────────
+const INSIGHTS_DATA = [
+  {id:'INS-001',type:'MACRO_TREND',urgency:'HIGH',region:'MENA',date:'2026-03-17',verified:true,fic:null,
+   title:'MENA FDI hits 5-year high at $88B',
+   summary:'FDI inflows to MENA reached $88B in 2025, highest since 2020.',
+   tags:['UAE','Saudi Arabia','Technology','Energy'],ref:'GFM-INS-20260317-0001'},
+  {id:'INS-002',type:'REGULATORY',urgency:'HIGH',region:'SAS',date:'2026-03-15',verified:true,fic:null,
+   title:'India raises insurance FDI cap to 100%',
+   summary:'India raises the FDI cap in insurance to 100% under automatic route.',
+   tags:['India','Finance','Regulatory'],ref:'GFM-INS-20260315-0002'},
+  {id:'INS-003',type:'SECTOR_SIGNAL',urgency:'MEDIUM',region:'MENA',date:'2026-03-14',verified:true,fic:5,
+   title:'Data centre FDI to MENA: $28B projected by 2028',
+   summary:'GFM projects $28B in data centre FDI to MENA by 2028.',
+   tags:['UAE','ICT','Data Centres'],ref:'GFM-INS-20260314-0003'},
+  {id:'INS-004',type:'GEOPOLITICAL',urgency:'MEDIUM',region:'EAP',date:'2026-03-13',verified:true,fic:null,
+   title:'ASEAN supply chain reconfiguration accelerates',
+   summary:'Vietnam, Indonesia and Malaysia receiving accelerating supply chain FDI.',
+   tags:['Vietnam','Indonesia','Manufacturing'],ref:'GFM-INS-20260313-0004'},
+  {id:'INS-005',type:'GFR_UPDATE',urgency:'MEDIUM',region:'MENA',date:'2026-03-11',verified:true,fic:null,
+   title:'UAE records largest quarterly GFR gain',
+   summary:'UAE achieves +4.2 GFR points in Q1 2026, largest gain in 8-year history.',
+   tags:['UAE','GFR','Digital'],ref:'GFM-INS-20260311-0006'},
+];
+
+ROUTES['GET /api/v1/insights'] = async(req,res)=>{
+  const q = require('url').parse(req.url,true).query;
+  let ins = [...INSIGHTS_DATA];
+  if(q.type)   ins=ins.filter(i=>i.type===q.type);
+  if(q.region) ins=ins.filter(i=>i.region===q.region);
+  const {items,pagination} = paginate(req,ins);
+  ok(res,{insights:items,total:ins.length,pagination});
+};
