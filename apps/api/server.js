@@ -1090,3 +1090,91 @@ ROUTES['PATCH /api/v1/pipeline/deals/:id'] = async(req,res,p)=>{
   }
   ok(res, {id:p.id, stage:d.stage, updated:true});
 };
+
+// ── CONTACT FORM SUBMISSION ────────────────────────────────────────────────
+ROUTES['POST /api/v1/contact'] = async(req,res)=>{
+  const d = await body(req);
+  if (!d.email || !d.message) return fail(res,'VALIDATION_ERROR','Email and message required');
+  log('Contact', `${d.type||'general'} from ${d.email}: ${d.message.slice(0,60)}`);
+  try {
+    const {sendEmail} = require('./email');
+    // Notify internal team
+    await sendEmail('contact@fdimonitor.org','generic_contact',d);
+    // Send confirmation to user
+    await sendEmail(d.email,'contact_confirmation',d.name||'');
+  } catch {}
+  ok(res,{received:true,message:'Thank you — we will respond within 4 business hours.'});
+};
+
+// ── NEWSLETTER SUBSCRIBE ────────────────────────────────────────────────────
+const NEWSLETTER_LIST = new Set();
+ROUTES['POST /api/v1/newsletter/subscribe'] = async(req,res)=>{
+  const d = await body(req);
+  if (!d.email) return fail(res,'VALIDATION_ERROR','Email required');
+  NEWSLETTER_LIST.add(d.email);
+  if (db) await dbQ('INSERT INTO auth.newsletter_subscribers(email) VALUES($1) ON CONFLICT DO NOTHING',[d.email]).catch(()=>{});
+  ok(res,{subscribed:true,email:d.email});
+};
+
+// ── SEARCH ──────────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/search'] = async(req,res)=>{
+  const q = require('url').parse(req.url,true).query;
+  const query = (q.q||'').toString().toLowerCase().trim();
+  if (!query || query.length < 2) return ok(res,{results:[],total:0,query});
+  
+  const results = [];
+  
+  // Search economies
+  const ecos = await dbQ('SELECT iso3,name,region FROM intelligence.economies WHERE LOWER(name) LIKE $1 OR iso3 LIKE $2 LIMIT 5',
+    [`%${query}%`,query.toUpperCase()+'%'],
+    [{iso3:'ARE',name:'United Arab Emirates',region:'MENA'},{iso3:'SAU',name:'Saudi Arabia',region:'MENA'}]
+      .filter(e=>e.name.toLowerCase().includes(query)||e.iso3.toLowerCase().includes(query))
+  );
+  ecos.forEach(e=>results.push({type:'economy',icon:'🌍',label:e.name,sublabel:`${e.iso3} · ${e.region}`,url:`/gfr?iso3=${e.iso3}`}));
+  
+  // Search signals
+  const sigs = await dbQ('SELECT id,company,economy FROM intelligence.signals WHERE LOWER(company) LIKE $1 LIMIT 3',
+    [`%${query}%`],
+    M_SIGNALS.filter(s=>s.company.toLowerCase().includes(query)).slice(0,3)
+  );
+  sigs.forEach(s=>results.push({type:'signal',icon:'📡',label:s.company,sublabel:`→ ${s.economy}`,url:`/signals`}));
+  
+  // Static page results
+  const PAGES = [
+    {k:'gfr',l:'GFR Rankings',url:'/gfr',icon:'🏆'},
+    {k:'signal',l:'Signal Monitor',url:'/signals',icon:'📡'},
+    {k:'report',l:'Custom Reports',url:'/reports',icon:'📋'},
+    {k:'forecast',l:'FDI Forecast',url:'/forecast',icon:'🔮'},
+    {k:'pipeline',l:'Investment Pipeline',url:'/investment-pipeline',icon:'💼'},
+    {k:'benchmark',l:'Benchmarking',url:'/benchmarking',icon:'📐'},
+    {k:'sector',l:'Sector Intelligence',url:'/sectors',icon:'🏭'},
+    {k:'corridor',l:'Corridor Intelligence',url:'/corridor-intelligence',icon:'🔗'},
+    {k:'pricing',l:'Pricing',url:'/pricing',icon:'💳'},
+    {k:'mission',l:'Mission Planning',url:'/pmp',icon:'🎯'},
+  ];
+  PAGES.filter(p=>p.k.includes(query)||p.l.toLowerCase().includes(query))
+       .slice(0,3)
+       .forEach(p=>results.push({type:'page',icon:p.icon,label:p.l,sublabel:'Platform page',url:p.url}));
+  
+  ok(res,{results:results.slice(0,10),total:results.length,query});
+};
+
+// ── TRIAL STATUS ─────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/auth/trial-status'] = async(req,res)=>{
+  const token   = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  
+  const rows = await dbQ('SELECT tier,trial_start,trial_end,fic_balance FROM auth.organisations WHERE id=$1',[payload.org],[]);
+  if (rows && rows[0]) {
+    const r = rows[0];
+    const now = new Date();
+    const expired = r.tier === 'free_trial' && new Date(r.trial_end) < now;
+    const daysLeft = r.tier === 'free_trial' 
+      ? Math.max(0, Math.ceil((new Date(r.trial_end).getTime() - now.getTime()) / 86400000))
+      : null;
+    ok(res, {tier:r.tier, trial_expired:expired, days_left:daysLeft, fic_balance:r.fic_balance});
+  } else {
+    ok(res, {tier:payload.tier||'free_trial', trial_expired:false, days_left:3, fic_balance:5});
+  }
+};

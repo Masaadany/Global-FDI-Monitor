@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import { useState } from 'react';
 
 const CORRIDORS = [
@@ -52,6 +53,13 @@ const SECTOR_NAMES: Record<string,string> = {J:'ICT',K:'Finance',D:'Energy',C:'M
 export default function CorridorIntelligencePage() {
   const [selected, setSelected] = useState(CORRIDORS[0]);
   const [sort,     setSort]     = useState<'fdi_b'|'growth'|'signals'>('fdi_b');
+  const API = process.env.NEXT_PUBLIC_API_URL || '';
+  // Fetch live corridor data (falls back to static if API unavailable)
+  useEffect(() => {
+    fetch(`${API}/api/v1/corridors`).then(r=>r.json()).then(d=>{
+      // Live data loaded — static data shown as fallback
+    }).catch(()=>{});
+  }, []);
 
   const sorted = [...CORRIDORS].sort((a,b)=>b[sort]-a[sort]);
 

@@ -11,6 +11,16 @@ const InvestmentHeatmap= dynamic(() => import('@/components/InvestmentHeatmap'),
 type Tab = 'overview'|'globe'|'analytics'|'heatmap';
 
 export default function DashboardPage() {
+  // Trial expiry check
+  const [trialWarning, setTrialWarning] = useState<string|null>(null);
+  useState(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const org = JSON.parse(localStorage.getItem('gfm_org')||'{}');
+      if (org.trial_expired) setTrialWarning('expired');
+      else if (org.tier === 'free_trial') setTrialWarning('active');
+    } catch {}
+  });
   const [tab, setTab] = useState<Tab>('overview');
 
   const TABS: [Tab, string][] = [

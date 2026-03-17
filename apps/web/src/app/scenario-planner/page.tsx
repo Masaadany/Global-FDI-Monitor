@@ -44,6 +44,9 @@ export default function ScenarioPlannerPage() {
   const [active,    setActive]    = useState('S1');
   const [economy,   setEconomy]   = useState('UAE');
   const [custom,    setCustom]    = useState({gdp:3.4,fdi:31.5,oil:80});
+  const [customEconomy, setCustomEconomy] = useState('UAE');
+
+  const ECON_LIST = ['UAE','Saudi Arabia','India','Egypt','Vietnam','Indonesia','Germany','Singapore','Nigeria','Morocco','Brazil','Turkey','Kenya','South Africa','Vietnam'];
 
   const sc  = BASE_SCENARIOS.find(s=>s.id===active)!;
   const sKey = SCENARIO_KEY[sc.tag];
@@ -138,7 +141,12 @@ export default function ScenarioPlannerPage() {
               <div className="font-bold text-sm text-[#0A2540] mb-4">Custom Assumptions</div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy focus</label>
+                  <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 mb-3"
+                  value={customEconomy} onChange={e=>setCustomEconomy(e.target.value)}>
+                  {ECON_LIST.map(e=><option key={e}>{e}</option>)}
+                </select>
+                <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy focus</label>
                   <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
                     value={economy} onChange={e=>setEconomy(e.target.value)}>
                     {['UAE','Saudi Arabia','India','Egypt','Vietnam','Indonesia','Germany','Singapore'].map(e=>(

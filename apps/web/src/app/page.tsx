@@ -146,13 +146,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Newsletter */}
+      <section className="py-10 px-6 bg-blue-900 border-t border-blue-800">
+        <div className="max-w-xl mx-auto text-center">
+          <div className="text-sm font-black text-white mb-1">Weekly FDI Intelligence Digest</div>
+          <p className="text-blue-300 text-xs mb-4">Free weekly newsletter. Top signals, GFR updates, market insights.</p>
+          <div className="flex gap-2 max-w-sm mx-auto">
+            <input type="email" placeholder="your@organisation.com"
+              className="flex-1 bg-blue-800 border border-blue-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-blue-500 focus:outline-none focus:border-blue-400"/>
+            <button className="bg-[#1D4ED8] text-white font-black px-5 py-2.5 rounded-xl hover:bg-blue-500 transition-colors text-sm flex-shrink-0">
+              Subscribe
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="bg-[#060f1a] text-blue-400 py-10 px-6 text-center text-xs">
         <div className="max-w-6xl mx-auto">
           <div className="font-black text-white text-sm mb-2">Global FDI Monitor</div>
           <p className="mb-4">World&apos;s first fully integrated global investment intelligence platform.</p>
           <div className="flex flex-wrap justify-center gap-6 mb-4 text-xs">
-            {[['Pricing','/pricing'],['GFR','/gfr'],['Signals','/signals'],['About','/about'],['Contact','/contact'],['Register','/register'],['Privacy','/privacy'],['Terms','/terms'],['Settings','/settings']].map(([l,h])=>(
+            {[['Pricing','/pricing'],['GFR','/gfr'],['Signals','/signals'],['Analytics','/analytics'],['Reports','/reports'],['About','/about'],['Contact','/contact'],['Demo','/demo'],['Status','/health'],['Register','/register'],['Privacy','/privacy'],['Terms','/terms']].map(([l,h])=>(
               <Link key={l} href={h} className="hover:text-white transition-colors">{l}</Link>
             ))}
           </div>

@@ -38,10 +38,28 @@ export default function GlobalSearch() {
   const [query,  setQuery]  = useState('');
   const [cursor, setCursor] = useState(0);
   const router   = useRouter();
+  const API      = process.env.NEXT_PUBLIC_API_URL || '';
+  const [apiResults, setApiResults] = useState<any[]>([]);
+  const API_SEARCH = true;
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Live API search (debounced)
+  useEffect(() => {
+    if (query.length < 2) { setApiResults([]); return; }
+    const id = setTimeout(() => {
+      fetch(`${API}/api/v1/search?q=${encodeURIComponent(query)}`)
+        .then(r=>r.json())
+        .then(d=>{ if(d.success) setApiResults(d.data?.results||[]); })
+        .catch(()=>{});
+    }, 300);
+    return () => clearTimeout(id);
+  }, [query, API]);
+
   const filtered = query.length < 1 ? ROUTES.slice(0, 8) :
-    ROUTES.filter(r => r.label.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+    [
+      ...apiResults.map(r => ({path:r.url,label:r.label,icon:r.icon,type:r.type})),
+      ...ROUTES.filter(r => r.label.toLowerCase().includes(query.toLowerCase())),
+    ].filter((r,i,a) => a.findIndex(x=>x.path===r.path)===i).slice(0,10);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

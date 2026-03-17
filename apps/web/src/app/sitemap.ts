@@ -9,6 +9,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/benchmarking','/scenario-planner','/corridor-intelligence',
     '/sectors',
     '/ar',
+    '/dashboard/success',
+    '/fic/success',
     '/demo',
     '/health',
     '/onboarding',
