@@ -2,11 +2,56 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-    "envName":     { "value": "prod" },
-    "location":    { "value": "uaenorth" },
-    "apiImage":    { "value": "melsaadany/gfm-api:latest" },
-    "dbPassword":  { "value": "YOUR_DB_PASSWORD_HERE" },
-    "jwtSecret":   { "value": "YOUR_JWT_SECRET_HERE" },
-    "stripeKey":   { "value": "YOUR_STRIPE_KEY_HERE" }
+    "location": {
+      "value": "uaenorth"
+    },
+    "environmentName": {
+      "value": "fdi-monitor-prod"
+    },
+    "apiImageName": {
+      "value": "melsaadany/gfm-api:latest"
+    },
+    "agentsImageName": {
+      "value": "melsaadany/gfm-agents:latest"
+    },
+    "databaseName": {
+      "value": "gfm"
+    },
+    "databaseUser": {
+      "value": "fdiuser"
+    },
+    "databasePassword": {
+      "value": ""
+    },
+    "jwtSecret": {
+      "value": ""
+    },
+    "stripeSecretKey": {
+      "value": ""
+    },
+    "stripeWebhookSecret": {
+      "value": ""
+    },
+    "anthropicApiKey": {
+      "value": ""
+    },
+    "resendApiKey": {
+      "value": ""
+    },
+    "previewPassword": {
+      "value": "GFM2026PREVIEW"
+    },
+    "apiMinReplicas": {
+      "value": 1
+    },
+    "apiMaxReplicas": {
+      "value": 5
+    },
+    "agentsMinReplicas": {
+      "value": 0
+    },
+    "agentsMaxReplicas": {
+      "value": 3
+    }
   }
 }

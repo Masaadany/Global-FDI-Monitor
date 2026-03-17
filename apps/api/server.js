@@ -1509,7 +1509,6 @@ const CORRIDORS_DATA = [
 // ── SEARCH ────────────────────────────────────────────────────────────────
 // ── COMPANIES LIST ─────────────────────────────────────────────────────────
 // ── MARKET SIGNALS ALIAS ─────────────────────────────────────────────────
-ROUTES['GET /api/v1/market-signals']=(req,res)=>ROUTES['GET /api/v1/signals'](req,res);
 
 // ── REPORTS LIST ───────────────────────────────────────────────────────────
 const REPORTS_STORE: any[] = [];
