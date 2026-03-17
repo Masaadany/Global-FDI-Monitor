@@ -1,26 +1,34 @@
-import Link from 'next/link';
-export const metadata = { title: 'Terms of Service — Global FDI Monitor' };
-const SECTIONS = [
-  {t:'1. Acceptance',c:'By accessing Global FDI Monitor, you agree to these Terms and our Privacy Policy. These form a binding agreement between you and Forecasta Ltd.'},
-  {t:'2. Platform Licence',c:'Forecasta grants a non-exclusive, non-transferable, revocable licence to use the Platform per your subscription tier. You may not: share credentials, resell outputs without consent, reverse-engineer models, or use automated scraping.'},
-  {t:'3. Subscription Tiers',c:'Free Trial: 3 days, 5 FIC, no card. Professional: monthly or annual, 4,800 FIC/year, 3 seats. Enterprise: annual, custom FIC, 10+ seats. Seat limits apply per organisation.'},
-  {t:'4. FIC Credits',c:'Forecasta Intelligence Credits are non-refundable once consumed, valid 12 months from allocation, and non-transferable between organisations. Annual plan FIC allocated at subscription start. Top-ups available any time.'},
-  {t:'5. Payment & Billing',c:'All payments via Stripe. Subscriptions auto-renew unless cancelled 7 days before renewal. Annual plans: full refund within 14 days if fewer than 3 reports generated. Monthly: no refund after 7 days. FIC top-ups: non-refundable.'},
-  {t:'6. Data Disclaimer',c:'All intelligence, signals, GFR rankings, forecasts, and reports are for informational purposes only. Nothing constitutes financial, investment, legal, or tax advice. Always independently verify before making investment decisions.'},
-  {t:'7. Intellectual Property',c:'All Platform content — GFR methodology, signal models, scoring algorithms, reports, and branding — is the intellectual property of Forecasta Ltd. Outputs may be used for internal business purposes only.'},
-  {t:'8. Prohibited Use',c:'You may not use the Platform to process sanctioned entities, facilitate financial crime, create competing products, or circumvent security measures. Breach results in immediate account suspension without refund.'},
-  {t:'9. Uptime SLA',c:'Enterprise: 99.9% monthly uptime, compensation 10× downtime percentage. Professional: best-effort, typically >99.5%. Free Trial: no guarantee.'},
-  {t:'10. Liability',c:'Forecasta\'s total liability is limited to fees paid in the 12 months preceding the claim. We are not liable for indirect damages, investment decisions, or third-party data errors.'},
-  {t:'11. Governing Law',c:'These Terms are governed by the laws of the UAE (Dubai International Financial Centre). Disputes subject to exclusive jurisdiction of the DIFC Courts.'},
-];
+import type { Metadata } from 'next';
+export const metadata: Metadata = { title: 'Terms of Service | GFM', description: 'Terms governing access to the Global FDI Monitor platform.' };
+
 export default function TermsPage() {
-  return(
+  return (
     <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-12"><div className="max-w-3xl mx-auto relative z-10"><h1 className="text-4xl font-extrabold mb-2">Terms of Service</h1><p className="text-blue-300 text-sm">Last updated: March 2026 · Effective: March 1, 2026</p></div></section>
-      <div className="max-w-3xl mx-auto px-6 py-12 space-y-8">
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm text-amber-700"><strong>Key points:</strong> Free trial is 3 days with 5 FIC. FIC non-refundable once used. Platform intelligence is not financial advice. Governed by DIFC Courts, Dubai.</div>
-        {SECTIONS.map(s=><div key={s.t}><h2 className="text-lg font-extrabold text-deep mb-2">{s.t}</h2><p className="text-slate-600 leading-relaxed text-sm">{s.c}</p></div>)}
-        <div className="pt-6 border-t border-slate-100 flex gap-6"><Link href="/privacy" className="text-primary font-bold hover:underline text-sm">Privacy Policy →</Link><Link href="/contact" className="text-primary font-bold hover:underline text-sm">Contact us →</Link></div>
+      <section className="gfm-hero text-white px-6 py-12">
+        <div className="max-w-3xl mx-auto relative z-10">
+          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Legal</div>
+          <h1 className="text-4xl font-extrabold">Terms of Service</h1>
+          <p className="text-white/60 mt-2">Effective: 1 January 2026 · Version 3.0</p>
+        </div>
+      </section>
+      <div className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+        {[
+          ['1. Acceptance', 'By accessing or using the Global FDI Monitor platform ("GFM"), you agree to be bound by these Terms of Service. If you do not agree, you may not use the platform. These Terms apply to all users, including Free Trial, Professional, and Enterprise subscribers.'],
+          ['2. Platform Access', 'Access is granted via subscription. Free Trial accounts receive 5 FIC (Forecasta Intelligence Credits) and expire after 3 days. Subscription plans are billed monthly or annually as selected. You are responsible for maintaining the security of your account credentials.'],
+          ['3. FIC Credits', 'FIC credits are consumed when generating intelligence reports, unlocking signals, or executing analysis. Credits are non-refundable once consumed. Top-up packages are available at the rates listed on our pricing page. Unused credits roll over for Professional subscribers.'],
+          ['4. Data Usage', 'GFM intelligence data is licensed for your internal business use only. Redistribution, resale, or republication of platform data, reports, or signals without written consent from Forecasta Ltd is strictly prohibited. You may export data for personal internal analysis.'],
+          ['5. Intellectual Property', 'All GFR scores, proprietary factors (IRES, IMS, SCI, FZII, PAI, GCI), methodology, and platform design are the exclusive intellectual property of Forecasta Ltd. The GFM brand, logo, and product names are registered trademarks.'],
+          ['6. Limitations', 'GFM provides intelligence, analysis, and data for informational purposes. Nothing on the platform constitutes investment advice, legal advice, or a recommendation to buy, sell, or hold any investment. Users are solely responsible for their investment decisions.'],
+          ['7. Liability', 'Forecasta Ltd is not liable for any loss, damage, or consequential harm arising from use of platform data. Our maximum liability in any case is limited to the subscription fees paid in the preceding 3 months.'],
+          ['8. Termination', 'We may suspend or terminate access for breach of these Terms, non-payment, or misuse of the platform. Subscribers may cancel at any time; cancellation takes effect at the end of the current billing period.'],
+          ['9. Governing Law', 'These Terms are governed by the laws of the United Arab Emirates (DIFC jurisdiction). Disputes shall be subject to DIFC Courts arbitration.'],
+          ['10. Contact', 'Forecasta Ltd · DIFC, Dubai, UAE · legal@fdimonitor.org · +971 50 286 7070'],
+        ].map(([title, body]) => (
+          <div key={String(title)} className="gfm-card p-6">
+            <h2 className="font-extrabold text-deep text-lg mb-2">{title}</h2>
+            <p className="text-slate-600 text-sm leading-relaxed">{body}</p>
+          </div>
+        ))}
       </div>
     </div>
   );

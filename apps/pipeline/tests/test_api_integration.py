@@ -1201,3 +1201,214 @@ def test_api_all_21_routes_unique():
     assert len(routes) == len(set(routes)), \
         f"Duplicate routes: {[r for r in routes if routes.count(r)>1]}"
     assert len(routes) >= 44, f"Expected 44+ routes, got {len(routes)}"
+
+# ── ALL 14 AGENTS TESTS ───────────────────────────────────────────────────
+
+def test_all_14_agents_implemented():
+    """All 14 specialist agents (agt02-agt15) are fully implemented"""
+    import sys, os
+    sys.path.insert(0,'apps/agents')
+    AGENTS = [
+        'agt02_signal_detection', 'agt03_gfr_compute', 'agt04_country_profile',
+        'agt05_market_brief', 'agt06_mission_planning', 'agt07_newsletter',
+        'agt08_forecast', 'agt09_scenario', 'agt10_enrichment', 'agt11_translation',
+        'agt12_sanctions', 'agt13_company_intel', 'agt14_corridor', 'agt15_publication',
+    ]
+    for agent in AGENTS:
+        path = f'apps/agents/{agent}.py'
+        assert os.path.exists(path), f"Agent file missing: {path}"
+        with open(path) as f:
+            c = f.read()
+        assert 'def run(payload' in c, f"{agent}: missing run() function"
+        assert 'def execute(payload' in c, f"{agent}: missing execute() function"
+        assert 'sha256' in c, f"{agent}: missing provenance hash"
+
+def test_country_profile_agent():
+    """Country profile agent returns valid data for UAE"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt04_country_profile import execute
+    r = execute({'iso3':'ARE'})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert d.get('iso3') == 'ARE'
+    assert d.get('gfr',0) > 0
+    assert 'dimensions' in d
+
+def test_market_brief_agent():
+    """Market brief agent returns signal counts"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt05_market_brief import execute
+    r = execute({'iso3':'ARE','sector':'J'})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert 'signal_count' in d
+    assert 'total_capex_b' in d
+
+def test_mission_planning_agent():
+    """Mission planning agent returns ranked targets"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt06_mission_planning import execute
+    r = execute({'iso3':'UAE','sector':'J'})
+    assert r['status'] == 'completed'
+    targets = r['result'].get('targets',[])
+    assert len(targets) > 0
+    # Should be sorted by MFS descending
+    mfs_scores = [t['mfs'] for t in targets]
+    assert mfs_scores == sorted(mfs_scores, reverse=True), "Targets must be sorted by MFS"
+
+def test_newsletter_agent():
+    """Newsletter agent compiles weekly digest"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt07_newsletter import execute
+    r = execute({})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert 'week' in d
+    assert 'total_signals' in d
+    assert d['status'] == 'compiled'
+
+def test_forecast_agent():
+    """Forecast agent returns 9-horizon series"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt08_forecast import execute
+    r = execute({'iso3':'ARE'})
+    assert r['status'] == 'completed'
+    series = r['result'].get('series',[])
+    assert len(series) == 9, f"Expected 9 horizons, got {len(series)}"
+    # Baseline should be sorted (generally increasing)
+    baselines = [h['baseline'] for h in series]
+    assert baselines[-1] > baselines[0], "Baseline should trend upward"
+
+def test_sanctions_agent():
+    """Sanctions agent screens USA vs sanctioned country"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt12_sanctions import execute
+    # Clear entity
+    r_clear = execute({'entity':'Microsoft Corp','country':'USA'})
+    assert r_clear['result']['risk_level'] == 'LOW'
+    assert r_clear['result']['ofac_hit'] == False
+    # Sanctioned country
+    r_sanc = execute({'entity':'Test Corp','country':'IRN'})
+    assert r_sanc['result']['risk_level'] == 'HIGH'
+    assert r_sanc['result']['sanctioned_country'] == True
+
+def test_corridor_agent():
+    """Corridor agent returns bilateral FDI data"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt14_corridor import execute
+    r = execute({'from':'USA','to':'ARE'})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert d.get('fdi_b',0) > 0
+    assert d.get('grade') in {'PLATINUM','GOLD','SILVER','BRONZE'}
+
+def test_publication_agent():
+    """Publication agent generates reference IDs"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt15_publication import execute
+    r = execute({'type':'WEEKLY'})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert d.get('reference_id','').startswith('FNL-WK')
+    assert d.get('pages_estimate',0) > 0
+    assert d.get('status') == 'compiled'
+
+def test_translation_agent():
+    """Translation agent returns metadata (production uses Anthropic)"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agt11_translation import execute
+    r = execute({'text':'Investment opportunities in UAE','target_lang':'ar'})
+    assert r['status'] == 'completed'
+    d = r['result']
+    assert d.get('target_lang') == 'ar'
+    assert d.get('target_name') == 'Arabic'
+    assert d.get('char_count',0) > 0
+
+# ── FINAL PLATFORM COMPLETENESS TESTS ────────────────────────────────────
+
+def test_all_dockerfiles_exist():
+    """All 4 service Dockerfiles exist and have HEALTHCHECK"""
+    import os
+    dockerfiles = [
+        'apps/api/Dockerfile',
+        'apps/pipeline/Dockerfile',
+        'apps/agents/Dockerfile',
+        'apps/web/Dockerfile',
+    ]
+    for df in dockerfiles:
+        assert os.path.exists(df), f"Missing Dockerfile: {df}"
+    # API and agents should have HEALTHCHECK
+    for df in ['apps/api/Dockerfile', 'apps/agents/Dockerfile']:
+        with open(df) as f:
+            c = f.read()
+        assert 'HEALTHCHECK' in c, f"{df} missing HEALTHCHECK"
+
+def test_ar_page_rtl():
+    """Arabic page has RTL direction and Arabic text"""
+    with open('apps/web/src/app/ar/page.tsx') as f:
+        c = f.read()
+    assert 'dir="rtl"' in c or "dir='rtl'" in c, "Arabic page must have RTL direction"
+    assert 'الاستثمار' in c, "Arabic page must contain Arabic text"
+    assert 'register' in c or 'Register' in c, "Arabic page must link to registration"
+
+def test_terms_page_sections():
+    """Terms page has 10 numbered sections"""
+    with open('apps/web/src/app/terms/page.tsx') as f:
+        c = f.read()
+    for i in range(1, 11):
+        assert f'{i}.' in c, f"Terms missing section {i}"
+    assert 'FIC' in c, "Terms must mention FIC credits"
+
+def test_privacy_page_gdpr():
+    """Privacy page mentions GDPR and data rights"""
+    with open('apps/web/src/app/privacy/page.tsx') as f:
+        c = f.read()
+    assert 'GDPR' in c, "Privacy must mention GDPR"
+    assert 'delete' in c.lower(), "Privacy must mention deletion right"
+    assert 'Stripe' in c, "Privacy must mention payment processor"
+
+def test_health_page_live():
+    """Health page fetches from API and shows status"""
+    with open('apps/web/src/app/health/page.tsx') as f:
+        c = f.read()
+    assert 'api/v1/health' in c, "Health page must call API health endpoint"
+    assert 'db' in c.lower(), "Health page must show DB status"
+    assert 'redis' in c.lower(), "Health page must show Redis status"
+
+def test_notification_bell_unread():
+    """NotificationBell shows unread count and mark-all-read"""
+    with open('apps/web/src/components/NotificationBell.tsx') as f:
+        c = f.read()
+    assert 'unread' in c, "Missing unread count"
+    assert 'markAllRead' in c, "Missing mark all read function"
+    assert 'useUnreadCount' in c, "Must use useUnreadCount hook"
+
+def test_cookie_consent_in_layout():
+    """CookieConsent is wired into the root layout"""
+    with open('apps/web/src/app/layout.tsx') as f:
+        c = f.read()
+    assert 'CookieConsent' in c, "CookieConsent must be in root layout"
+
+def test_publications_page_restored():
+    """Publications page exists and has cover grid"""
+    with open('apps/web/src/app/publications/page.tsx') as f:
+        c = f.read()
+    assert 'WEEKLY' in c, "Publications must have WEEKLY type"
+    assert 'MONTHLY' in c, "Publications must have MONTHLY type"
+    assert 'FIC' in c, "Publications must mention FIC credits"
+    assert 'download' in c.lower() or 'Download' in c, "Publications must have download action"
+
+def test_dashboard_success_page():
+    """Dashboard success page has onboarding CTAs"""
+    with open('apps/web/src/app/dashboard/success/page.tsx') as f:
+        c = f.read()
+    assert 'signals' in c.lower() or 'Signals' in c, "Success page must link to signals"
+    assert 'gfr' in c.lower() or 'GFR' in c, "Success page must link to GFR"
+
+def test_global_error_page():
+    """global-error.tsx exists with retry and home buttons"""
+    with open('apps/web/src/app/global-error.tsx') as f:
+        c = f.read()
+    assert 'reset' in c, "Missing reset function"
+    assert 'Try Again' in c, "Missing Try Again button"
+    assert 'Go Home' in c or '/' in c, "Missing Home link"

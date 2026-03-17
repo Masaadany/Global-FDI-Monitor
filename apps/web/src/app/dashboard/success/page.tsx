@@ -3,20 +3,13 @@ export default function DashboardSuccessPage() {
   return (
     <div className="min-h-screen bg-surface flex items-center justify-center px-4">
       <div className="gfm-card p-10 max-w-md w-full text-center">
-        <div className="text-6xl mb-5">🎉</div>
-        <h1 className="text-3xl font-extrabold text-deep mb-2">Welcome to GFM Pro</h1>
-        <p className="text-slate-500 mb-6">Your Professional subscription is active. You now have access to all 215 economies, PLATINUM signals, and 4,800 FIC credits per year.</p>
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          {[['4,800','FIC Credits'],['215','Economies'],['3','Seats']].map(([v,l])=>(
-            <div key={l} className="bg-surface rounded-xl border border-slate-200 p-3 text-center">
-              <div className="text-xl font-extrabold text-primary font-mono">{v}</div>
-              <div className="text-xs text-slate-400">{l}</div>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-3 justify-center">
-          <Link href="/dashboard"  className="gfm-btn-primary px-6 py-3">Go to Dashboard</Link>
-          <Link href="/onboarding" className="gfm-btn-outline px-6 py-3">Platform Tour</Link>
+        <div className="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5">✅</div>
+        <h1 className="font-extrabold text-2xl text-deep mb-2">You&apos;re all set!</h1>
+        <p className="text-slate-500 text-sm mb-6">Your account is active. You have <strong className="text-primary">5 FIC</strong> to start exploring premium intelligence.</p>
+        <div className="space-y-3">
+          <Link href="/signals"   className="block gfm-btn-primary py-3 rounded-xl">Explore Live Signals →</Link>
+          <Link href="/gfr"       className="block gfm-btn-outline py-3 rounded-xl">View GFR Rankings →</Link>
+          <Link href="/dashboard" className="block text-sm text-slate-400 hover:text-primary py-2">Go to Dashboard</Link>
         </div>
       </div>
     </div>

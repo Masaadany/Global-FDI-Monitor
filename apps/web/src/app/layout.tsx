@@ -6,6 +6,7 @@ import { CookieConsent }     from '@/components/CookieConsent';
 import { ToastProvider }     from '@/components/Toast';
 import GlobalSearch          from '@/components/GlobalSearch';
 import MobileNav             from '@/components/MobileNav';
+import JsonLd               from '@/components/JsonLd';
 import LiveTicker            from '@/components/LiveTicker';
 import NotificationBell      from '@/components/NotificationBell';
 import LanguageSelector      from '@/components/LanguageSelector';

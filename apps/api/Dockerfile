@@ -1,31 +1,13 @@
-# GFM API — Node.js 20 Alpine
-FROM node:20-alpine AS base
+FROM node:20-alpine
 WORKDIR /app
-RUN apk add --no-cache tini
-
-# Dependencies
-FROM base AS deps
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Production image
-FROM base AS runner
-ENV NODE_ENV=production
-ENV PORT=3001
-
-# Copy deps + source
-COPY --from=deps /app/node_modules ./node_modules
+RUN apk add --no-cache python3 make g++
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
 COPY . .
-
-# Non-root user
-RUN addgroup -S gfm && adduser -S gfm -G gfm
-RUN chown -R gfm:gfm /app
-USER gfm
-
+RUN addgroup -S gfm && adduser -S gfmapi -G gfm
+USER gfmapi
 EXPOSE 3001
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-  CMD wget -qO- http://localhost:3001/api/v1/health || exit 1
-
-ENTRYPOINT ["/sbin/tini", "--"]
+ENV NODE_ENV=production PORT=3001
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/api/v1/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"
 CMD ["node", "server.js"]
