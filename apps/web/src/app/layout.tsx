@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { PreviewGate } from '@/components/PreviewGate';
 
 import Link from 'next/link';
 import './globals.css';
@@ -15,8 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <SiteNav />
-        {children}
+        <PreviewGate>
+          <SiteNav />
+          {children}
+        </PreviewGate>
       </body>
     </html>
   );
@@ -52,6 +55,10 @@ function SiteNav() {
           Live
         </div>
         <Link href="/pricing"
+              className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] transition-colors">Pricing</Link>
+            <Link href="/about"
+              className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] transition-colors">About</Link>
+            <Link href="/contact"
           className="border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-1.5 rounded-md hover:border-blue-300 hover:text-blue-700 transition-all">
           Free Trial
         </Link>
