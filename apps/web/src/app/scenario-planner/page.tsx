@@ -1,4 +1,5 @@
 'use client';
+import { exportCSV } from '@/lib/export';
 
 function CustomScenarioChart({gdp,oil,fdi_base}: {gdp:number;oil:number;fdi_base:number}) {
   const years = [2024,2025,2026,2027,2028,2029,2030];

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 

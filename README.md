@@ -239,7 +239,7 @@ Composite = `macro×0.20 + policy×0.18 + digital×0.15 + human×0.15 + infra×0
 ## Tests
 
 ```bash
-# Run all 42 tests
+# Run all 68 tests
 python3 -m pytest apps/pipeline/tests/ -v
 
 # Individual suites

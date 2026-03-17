@@ -34,9 +34,22 @@ export default function AdminPage() {
     fetch(`${API}/api/v1/health`).then(r=>r.json()).then(d=>setHealth(d?.data||d)).catch(()=>{});
   }, []);
 
+  const AGENT_API = process.env.NEXT_PUBLIC_AGENT_API || API.replace('/api/v1','').replace('3001','8080');
+  
   async function triggerJob(job: string) {
     setRunning(r=>({...r,[job]:true}));
-    try { await fetch(`${API}/api/v1/internal/${job}`,{method:'POST'}); } catch {}
+    try {
+      // Try super agent HTTP endpoint first
+      const agentRes = await fetch(`${AGENT_API}/route`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({query:`Execute ${job}`,context:{job}}),
+      });
+      if (!agentRes.ok) throw new Error('Agent API unavailable');
+    } catch {
+      // Fallback to API internal endpoint
+      try { await fetch(`${API}/api/v1/internal/${job}`,{method:'POST'}); } catch {}
+    }
     setTimeout(()=>setRunning(r=>({...r,[job]:false})),3000);
   }
 

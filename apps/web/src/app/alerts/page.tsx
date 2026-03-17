@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
+import { fetchWithAuth } from '@/lib/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
@@ -73,8 +74,9 @@ export default function AlertsPage() {
     });
   }, [liveSignals]);
 
-  function markRead(id: string) {
+  async function markRead(id: string) {
     setAlerts(prev => prev.map(a => a.id === id ? {...a, read:true} : a));
+    try { await fetchWithAuth(`/api/v1/alerts/${id}/read`,{method:'POST'}); } catch {}
   }
   function markAllRead() {
     setAlerts(prev => prev.map(a => ({...a, read:true})));

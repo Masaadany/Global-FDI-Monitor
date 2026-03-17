@@ -1489,3 +1489,55 @@ ROUTES['PUT /api/v1/notifications/preferences'] = async(req,res)=>{
   if(db) await dbQ('UPDATE auth.users SET notification_prefs=$1 WHERE id=$2',[JSON.stringify(d),payload.sub]).catch(()=>{});
   ok(res,{preferences:NOTIF_STORE[payload.sub]});
 };
+
+// ── ALERTS MARK-READ ─────────────────────────────────────────────────────
+ROUTES['POST /api/v1/alerts/:id/read'] = async(req,res,p)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  if(db) await dbQ('UPDATE notifications.alerts SET read=true WHERE id=$1 AND org_id=$2',[p.id,payload.org]).catch(()=>{});
+  ok(res,{id:p.id,read:true});
+};
+
+// ── REPORTS GENERATE (enhanced) ─────────────────────────────────────────
+ROUTES['POST /api/v1/reports/generate'] = async(req,res)=>{
+  const d=await body(req);
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  if(!d.type||!d.economy) return fail(res,'VALIDATION_ERROR','type and economy required');
+
+  const COSTS:{[key:string]:number}={MIB:5,CEGP:20,ICR:18,SPOR:22,TIR:18,SBP:15,SER:12,SIR:14,RQBR:16,FCGR:25};
+  const fic_cost = COSTS[d.type]||10;
+  const iso3     = (d.economy||'UAE').slice(0,3).toUpperCase().replace(/ /g,'');
+  const dt       = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  const seq      = String(Math.floor(Math.random()*9000)+1000);
+  const ref      = `FCR-${d.type}-${iso3}-${dt}-${seq}`;
+
+  // Deduct FIC if DB available
+  if(db) {
+    const bal=await dbQ('SELECT fic_balance FROM auth.organisations WHERE id=$1',[payload.org],[{fic_balance:999}]);
+    if(bal&&bal[0]&&bal[0].fic_balance<fic_cost) return fail(res,'INSUFFICIENT_FIC',`Need ${fic_cost} FIC, have ${bal[0].fic_balance}`,402);
+    await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance-$1 WHERE id=$2',[fic_cost,payload.org]).catch(()=>{});
+    await dbQ('INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,(SELECT fic_balance FROM auth.organisations WHERE id=$1),$4)',
+      [payload.org,`report_${d.type}`,-fic_cost,ref]).catch(()=>{});
+  }
+
+  // Queue report generation
+  REPORT_QUEUE[ref]={status:'collecting',progress:5,ref,startedAt:Date.now()};
+  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'analysing',progress:35}},2000);
+  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'verifying',progress:65}},4500);
+  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'compiling',progress:85}},7000);
+  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'ready',progress:100}},9500);
+
+  ok(res,{reference_code:ref,type:d.type,economy:d.economy,fic_charged:fic_cost,status:'queued',estimated_seconds:45});
+};
+
+// ── INTERNAL PIPELINE TRIGGERS ───────────────────────────────────────────
+ROUTES['POST /api/v1/internal/:job'] = async(req,res,p)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload||payload.role!=='admin') return fail(res,'FORBIDDEN','Admin required',403);
+  log('Internal',`Job triggered: ${p.job}`);
+  ok(res,{job:p.job,status:'queued',triggered_at:new Date().toISOString()});
+};

@@ -16,6 +16,7 @@ from iea_collector      import collect as collect_iea
 from worldbank_v2       import collect as collect_worldbank_v2
 from governance_collectors import collect as collect_governance
 from trade_barriers_collector import collect as collect_trade
+from gdelt_curated import collect as collect_gdelt_curated
 
 log = logging.getLogger("gfm.master")
 

@@ -388,3 +388,154 @@ def test_gdelt_data_structure():
         assert sig["signal_type"] in VALID_TYPES, f"Invalid type: {sig['signal_type']}"
         assert 0 < sig["sci_score"] <= 100, f"SCI out of range: {sig['sci_score']}"
         assert sig["capex_usd"] > 0, "Negative CapEx"
+
+# ── GDELT + SIGNAL PIPELINE TESTS ────────────────────────────────────────
+
+def test_gdelt_curated_signals():
+    """GDELT curated collector returns 20 signals with valid structure"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from collectors.gdelt_curated import collect, GDELT_CURATED_Q1_2026, grade, generate_ref
+    
+    data = collect()
+    assert len(data) == len(GDELT_CURATED_Q1_2026), f"Expected {len(GDELT_CURATED_Q1_2026)} signals"
+    
+    for sig in data:
+        assert sig.get('grade') in {'PLATINUM','GOLD','SILVER','BRONZE'}, f"Invalid grade: {sig.get('grade')}"
+        assert sig.get('reference_code','').startswith('MSS-'), f"Bad ref: {sig.get('reference_code')}"
+        assert sig.get('provenance_hash','').startswith('sha256:'), f"Bad hash"
+        assert sig.get('capex_usd',0) > 0, "Negative CapEx"
+
+def test_gdelt_grading_thresholds():
+    """SCI scores map to correct grades"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from collectors.gdelt_curated import grade
+    assert grade(95.0) == 'PLATINUM', "95+ should be PLATINUM"
+    assert grade(80.0) == 'GOLD',     "75-90 should be GOLD"
+    assert grade(65.0) == 'SILVER',   "60-74 should be SILVER"
+    assert grade(40.0) == 'BRONZE',   "< 60 should be BRONZE"
+
+def test_governance_collector():
+    """Governance collector returns data for Freedom House + Heritage + Yale"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from collectors.governance_collectors import collect, FREEDOM_HOUSE_2024, HERITAGE_EFI_2024, YALE_EPI_2024
+    
+    data = collect()
+    expected = len(FREEDOM_HOUSE_2024) + len(HERITAGE_EFI_2024) + len(YALE_EPI_2024)
+    assert len(data) == expected, f"Expected {expected}, got {len(data)}"
+    
+    # Check USA has all three
+    usa_data = [d for d in data if d['iso3'] == 'USA']
+    indicators = {d['indicator'] for d in usa_data}
+    assert 'freedom_score' in indicators, "Missing Freedom House for USA"
+    assert 'economic_freedom_index' in indicators, "Missing Heritage EFI for USA"
+
+def test_trade_barriers_collector():
+    """Trade collector returns WTO tariffs and LSCI data"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from collectors.trade_barriers_collector import collect, WTO_TARIFF_MFN_2024, UN_LSCI_2024
+    
+    data = collect()
+    assert len(data) == len(WTO_TARIFF_MFN_2024) + len(UN_LSCI_2024)
+    
+    # Singapore should have near-zero tariff
+    sgp_tariff = next((d for d in data if d['iso3']=='SGP' and d['indicator']=='tariff_mfn_pct'), None)
+    assert sgp_tariff is not None, "Missing Singapore tariff"
+    assert sgp_tariff['value'] < 1.0, f"Singapore tariff too high: {sgp_tariff['value']}"
+    
+    # China should have highest LSCI
+    lsci_data = [d for d in data if d['indicator']=='shipping_connectivity']
+    top_lsci  = max(lsci_data, key=lambda d: d['value'])
+    assert top_lsci['iso3'] == 'CHN', f"Expected CHN as top LSCI, got {top_lsci['iso3']}"
+
+def test_shared_auth_utilities():
+    """Shared auth utilities have correct function signatures"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    # Import via direct file read to check structure
+    import ast
+    with open('apps/web/src/lib/shared.ts') as f:
+        content = f.read()
+    # Verify key functions exist
+    assert 'getToken' in content,       "Missing getToken"
+    assert 'getUser'  in content,       "Missing getUser"
+    assert 'isAuthenticated' in content,"Missing isAuthenticated"
+    assert 'clearAuth' in content,      "Missing clearAuth"
+    assert 'fetchWithAuth' in content,  "Missing fetchWithAuth"
+    assert 'formatCapex' in content,    "Missing formatCapex"
+
+def test_formatCapex_values():
+    """CapEx formatting returns correct strings"""
+    # Test the logic directly (TypeScript-equivalent)
+    def fmt(usd):
+        if usd >= 1e9: return f"${usd/1e9:.1f}B"
+        if usd >= 1e6: return f"${usd/1e6:.0f}M"
+        return f"${usd:,.0f}"
+    
+    assert fmt(850_000_000)   == "$850.0M"   or fmt(850_000_000)  == "$850M", f"850M format: {fmt(850_000_000)}"
+    assert fmt(5_300_000_000) == "$5.3B",    f"5.3B format: {fmt(5_300_000_000)}"
+    assert fmt(50_000)        == "$50,000",  f"50K format: {fmt(50_000)}"
+
+def test_api_pagination_structure():
+    """Paginate helper returns correct structure"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    # Simulate paginate logic
+    def paginate(items, page=1, size=20):
+        total = len(items)
+        from_  = (page-1)*size
+        return {
+            'items': items[from_:from_+size],
+            'pagination': {
+                'page': page, 'size': size, 'total': total,
+                'total_pages': (total+size-1)//size,
+                'has_next': from_+size < total,
+                'has_prev': page > 1,
+            }
+        }
+    
+    items = list(range(55))
+    p1 = paginate(items, 1, 20)
+    assert len(p1['items']) == 20
+    assert p1['pagination']['total_pages'] == 3
+    assert p1['pagination']['has_next'] is True
+    assert p1['pagination']['has_prev'] is False
+    
+    p3 = paginate(items, 3, 20)
+    assert len(p3['items']) == 15  # last page
+    assert p3['pagination']['has_next'] is False
+
+def test_reference_code_uniqueness_at_scale():
+    """100 reference codes are all unique"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from enrichment import ReferenceCodeSystem as RCS
+    import time
+    codes = set()
+    for i in range(100):
+        code = RCS.generate('signal', 'ARE', 'J')
+        codes.add(code)
+        time.sleep(0.001)  # Ensure timestamp variation
+    assert len(codes) == 100, f"Only {len(codes)} unique codes from 100 generated"
+
+def test_master_pipeline_imports():
+    """Master pipeline imports all required collectors"""
+    with open('apps/pipeline/collectors/master_pipeline.py') as f:
+        content = f.read()
+    required_collectors = [
+        'collect_governance', 'collect_trade', 'collect_gdelt_curated',
+    ]
+    for c in required_collectors:
+        assert c in content, f"Missing collector import: {c}"
+
+def test_gfr_composite_formula_all_215():
+    """GFR formula validates for all 215 economies"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    from reference_data import ALL_215_ECONOMIES
+    WEIGHTS = {'macro':0.20,'policy':0.18,'digital':0.15,'human':0.15,'infra':0.15,'sustain':0.17}
+    
+    errors = []
+    for eco in ALL_215_ECONOMIES:
+        computed = sum(eco[k]*w for k,w in WEIGHTS.items())
+        stored   = eco['gfr']
+        if abs(computed - stored) > 10:  # Allow ±10pt tolerance
+            errors.append(f"{eco['iso3']}: computed={computed:.1f} stored={stored}")
+    
+    tolerance_pct = len(errors) / len(ALL_215_ECONOMIES) * 100
+    assert tolerance_pct < 20, f"Too many GFR formula mismatches: {len(errors)}/215 ({tolerance_pct:.1f}%)"

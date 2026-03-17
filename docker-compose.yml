@@ -1,47 +1,41 @@
-# GFM Local Development
+# GFM Full Stack — Local Development
 # Usage: docker compose up -d
+# With pipeline: docker compose --profile pipeline up
+# With agents:   docker compose --profile agents up
+
 version: "3.9"
 
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB:       gfm
-      POSTGRES_USER:     gfm_app
+      POSTGRES_DB: gfm
+      POSTGRES_USER: gfm_app
       POSTGRES_PASSWORD: gfm_local_dev
-    ports:
-      - "5432:5432"
+    ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL","pg_isready -U gfm_app -d gfm"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+      interval: 5s; timeout: 5s; retries: 10
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    ports: ["6379:6379"]
     command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD","redis-cli","ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 5s; timeout: 3s; retries: 10
 
   api:
-    build:
-      context: ./apps/api
-      dockerfile: Dockerfile
-    ports:
-      - "3001:3001"
+    build: { context: ./apps/api, dockerfile: Dockerfile }
+    ports: ["3001:3001"]
     environment:
-      NODE_ENV:      development
-      PORT:          3001
-      DATABASE_URL:  postgresql://gfm_app:gfm_local_dev@db:5432/gfm
-      REDIS_URL:     redis://redis:6379
-      JWT_SECRET:    gfm-local-dev-secret-change-in-prod
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: gfm-local-dev-secret-change-in-prod
     depends_on:
       db:    { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -52,28 +46,36 @@ services:
   web:
     image: node:20-alpine
     working_dir: /app
-    ports:
-      - "3000:3000"
+    ports: ["3000:3000"]
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_AGENT_API: http://localhost:8080
     command: sh -c "npm ci && npm run dev"
     volumes:
       - ./apps/web:/app
       - /app/node_modules
       - /app/.next
-    depends_on:
-      - api
+    depends_on: [api]
 
-  pipeline:
-    build:
-      context: ./apps/pipeline
-      dockerfile: Dockerfile
+  agents:
+    build: { context: ./apps/agents, dockerfile: Dockerfile }
+    ports: ["8080:8080"]
     environment:
-      DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
+      AGENT_SERVER_MODE: "true"
+      AGENT_PORT: "8080"
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     depends_on:
       db: { condition: service_healthy }
+    profiles: ["agents"]
+
+  pipeline:
+    build: { context: ./apps/pipeline, dockerfile: Dockerfile }
+    environment:
+      DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
     command: python collectors/master_pipeline.py
-    profiles: ["pipeline"]  # run with: docker compose --profile pipeline up
+    depends_on:
+      db: { condition: service_healthy }
+    profiles: ["pipeline"]
 
   migrate:
     image: node:20-alpine
@@ -82,11 +84,11 @@ services:
       DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
     command: node DEPLOYMENT/migrate.js
     volumes:
-      - ./DEPLOYMENT:/app/DEPLOYMENT
-      - ./apps/api:/app/apps/api
+      - ./:/app
+      - /app/apps/web/node_modules
     depends_on:
       db: { condition: service_healthy }
-    profiles: ["migrate"]  # run with: docker compose --profile migrate up
+    profiles: ["migrate"]
 
 volumes:
   pgdata:
