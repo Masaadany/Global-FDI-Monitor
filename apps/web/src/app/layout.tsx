@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import GlobalSearch from '@/components/GlobalSearch';
 import MobileNav from '@/components/MobileNav';
 import Link from 'next/link';
+import LiveTicker from '@/components/LiveTicker';
+import { CookieConsent } from '@/components/CookieConsent';
 import './globals.css';
 import { PreviewGate } from '@/components/PreviewGate';
 

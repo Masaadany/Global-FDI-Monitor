@@ -35,6 +35,18 @@ const STATUS_STYLES: Record<string,string> = {
   GROWING:'bg-blue-100 text-blue-700 border-blue-200',
   EMERGING:'bg-amber-100 text-amber-700 border-amber-200',
 };
+
+const HISTORICAL_FDI: Record<string, number[]> = {
+  C01: [2.1,2.4,2.8,3.1,3.4,3.8,4.2],  // UAE-India 2019-2025
+  C02: [1.4,1.8,2.2,2.8,3.2,3.5,3.8],  // USA-UAE
+  C03: [2.8,3.2,4.1,4.8,5.4,6.1,6.8],  // China-Indonesia
+  C04: [1.2,1.5,1.8,2.1,2.6,3.0,3.4],  // Germany-India
+  C05: [0.4,0.6,0.9,1.2,1.8,2.2,2.8],  // Saudi-Egypt
+  C06: [1.8,2.1,2.4,2.8,3.2,3.6,4.2],  // Japan-Vietnam
+  C07: [0.8,0.9,1.0,1.2,1.4,1.6,1.8],  // UK-India
+  C08: [2.4,2.8,3.2,3.8,4.2,4.8,5.4],  // Korea-Vietnam
+};
+const HIST_YEARS = ['2019','2020','2021','2022','2023','2024','2025'];
 const SECTOR_NAMES: Record<string,string> = {J:'ICT',K:'Finance',D:'Energy',C:'Mfg',B:'Mining',L:'Real Estate',H:'Logistics',F:'Construction'};
 
 export default function CorridorIntelligencePage() {
@@ -130,6 +142,36 @@ export default function CorridorIntelligencePage() {
                 </div>
               </div>
 
+
+              {/* Historical FDI trend */}
+              {HISTORICAL_FDI[selected.id] && (
+                <div className="bg-white rounded-xl border border-slate-100 p-5 mb-4">
+                  <div className="font-bold text-sm text-[#0A2540] mb-3">FDI Inflows History ($B)</div>
+                  <svg viewBox="0 0 280 60" className="w-full">
+                    {(() => {
+                      const vals = HISTORICAL_FDI[selected.id];
+                      const maxV = Math.max(...vals) * 1.1;
+                      const pts  = vals.map((v,i) => ({
+                        x: 20 + i*(240/(vals.length-1)),
+                        y: 50 - (v/maxV)*40
+                      }));
+                      const path = pts.map((p,i) => `${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+                      return (
+                        <>
+                          <path d={path} fill="none" stroke="#3b82f6" strokeWidth="2"/>
+                          <path d={path + ` L${pts[pts.length-1].x},55 L20,55 Z`} fill="#3b82f620"/>
+                          {pts.map((p,i) => (
+                            <g key={i}>
+                              <circle cx={p.x} cy={p.y} r={3} fill="#3b82f6"/>
+                              <text x={p.x} y={57} fontSize="7" textAnchor="middle" fill="#94a3b8">{HIST_YEARS[i]}</text>
+                            </g>
+                          ))}
+                        </>
+                      );
+                    })()}
+                  </svg>
+                </div>
+              )}
               <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
                 <div className="text-xs font-bold text-emerald-700 mb-2">Latest Signal</div>
                 <div className="flex items-center justify-between">

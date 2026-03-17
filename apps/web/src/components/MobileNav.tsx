@@ -23,6 +23,8 @@ const NAV_ITEMS = [
   {href:'/fic',                icon:'⭐',  label:'FIC Credits'},
   {href:'/about',              icon:'ℹ️',  label:'About'},
   {href:'/contact',            icon:'✉️',  label:'Contact'},
+  {href:'/demo',               icon:'🎯',  label:'Live Demo'},
+  {href:'/health',             icon:'💚',  label:'System Status'},
 ];
 
 export default function MobileNav() {

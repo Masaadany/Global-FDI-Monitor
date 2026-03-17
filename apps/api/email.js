@@ -74,6 +74,29 @@ const TEMPLATES = {
 </div>`,
   }),
 
+  password_reset: (token) => ({
+    subject: 'Reset your Global FDI Monitor password',
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f8fafc">
+  <div style="background:#0A2540;padding:24px;text-align:center">
+    <h1 style="color:white;margin:0;font-size:22px">Password Reset</h1>
+    <p style="color:#94a3b8;margin:8px 0 0">Global FDI Monitor</p>
+  </div>
+  <div style="padding:32px">
+    <h2 style="color:#0A2540">Reset your password</h2>
+    <p style="color:#475569">Click the button below to reset your password. This link expires in 30 minutes.</p>
+    <div style="text-align:center;margin:28px 0">
+      <a href="https://fdimonitor.org/auth/reset?token=${token}"
+         style="background:#1D4ED8;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block">
+        Reset Password →
+      </a>
+    </div>
+    <p style="color:#94a3b8;font-size:13px">If you didn't request this, you can ignore this email. Your password won't change.</p>
+    <p style="color:#94a3b8;font-size:12px;font-family:monospace">Token (manual): ${token.slice(0,16)}…</p>
+  </div>
+</div>`,
+  }),
+
   fic_low: (balance, orgName) => ({
     subject: `FIC Balance Low — ${balance} credits remaining`,
     html: `
@@ -115,3 +138,103 @@ async function sendEmail(to, template, ...args) {
 }
 
 module.exports = { sendEmail, TEMPLATES };
+
+// Additional email templates
+Object.assign(TEMPLATES, {
+  password_reset: (token) => ({
+    subject: 'Reset Your GFM Password',
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#0A2540;padding:20px;text-align:center">
+    <h1 style="color:white;margin:0;font-size:20px">Global FDI Monitor</h1>
+  </div>
+  <div style="padding:28px">
+    <h2 style="color:#0A2540">Password Reset Request</h2>
+    <p style="color:#475569">Click the button below to reset your password. This link expires in 30 minutes.</p>
+    <div style="text-align:center;margin:24px 0">
+      <a href="https://fdimonitor.org/auth/reset?token=${token}" 
+         style="background:#1D4ED8;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold">
+        Reset Password →
+      </a>
+    </div>
+    <p style="color:#94a3b8;font-size:12px">If you didn't request this, ignore this email. Your password won't change.</p>
+    <p style="color:#94a3b8;font-size:12px">Link: https://fdimonitor.org/auth/reset?token=${token}</p>
+  </div>
+</div>`,
+  }),
+
+  signal_weekly: (count, platinum, topSignal) => ({
+    subject: `GFM Week ${new Date().toISOString().slice(0,10)} — ${count} new signals, ${platinum} PLATINUM`,
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#0A2540;padding:20px">
+    <h1 style="color:white;margin:0">📡 Weekly Signal Summary</h1>
+    <p style="color:#94a3b8;margin:4px 0 0">Global FDI Monitor · ${new Date().toLocaleDateString()}</p>
+  </div>
+  <div style="padding:24px">
+    <div style="display:flex;gap:16px;margin-bottom:20px">
+      <div style="flex:1;background:#f8fafc;border-radius:8px;padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#0A2540">${count}</div>
+        <div style="font-size:12px;color:#64748b">New Signals</div>
+      </div>
+      <div style="flex:1;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:16px;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#d97706">${platinum}</div>
+        <div style="font-size:12px;color:#64748b">Platinum</div>
+      </div>
+    </div>
+    ${topSignal ? `
+    <div style="background:#f1f5f9;border-radius:8px;padding:16px;margin-bottom:20px">
+      <div style="font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:8px">TOP SIGNAL THIS WEEK</div>
+      <div style="font-weight:700;color:#0A2540">${topSignal.company} → ${topSignal.economy}</div>
+      <div style="color:#3b82f6;font-size:18px;font-weight:900">${topSignal.value}</div>
+    </div>` : ''}
+    <a href="https://fdimonitor.org/signals" style="background:#0A2540;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block">
+      View All Signals →
+    </a>
+  </div>
+</div>`,
+  }),
+
+  trial_expiring: (name, daysLeft, ficBalance) => ({
+    subject: `Your GFM Trial Expires in ${daysLeft} Day${daysLeft>1?'s':''}`,
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#f59e0b;padding:20px">
+    <h1 style="color:white;margin:0">⏰ Trial Ending Soon</h1>
+  </div>
+  <div style="padding:24px">
+    <p>Hi ${name}, your GFM free trial expires in <strong>${daysLeft} day${daysLeft>1?'s':''}</strong>.</p>
+    <p>You have <strong>${ficBalance} FIC credits</strong> remaining.</p>
+    <p>Upgrade to Professional ($899/month) to keep access to:</p>
+    <ul style="color:#475569">
+      <li>All PLATINUM + GOLD signals</li>
+      <li>4,800 FIC credits/year</li>
+      <li>Custom reports + mission planning</li>
+      <li>GFR deep-dives for all 215 economies</li>
+    </ul>
+    <a href="https://fdimonitor.org/pricing" style="background:#1D4ED8;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:8px">
+      Upgrade Now →
+    </a>
+    <p style="color:#94a3b8;font-size:12px;margin-top:16px">Questions? Reply to this email or contact sales@fdimonitor.org</p>
+  </div>
+</div>`,
+  }),
+
+  fic_purchased: (name, credits, newBalance) => ({
+    subject: `⭐ ${credits} FIC Credits Added — Balance: ${newBalance}`,
+    html: `
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+  <div style="background:#0A2540;padding:20px">
+    <h1 style="color:white;margin:0">⭐ FIC Credits Added</h1>
+  </div>
+  <div style="padding:24px;text-align:center">
+    <div style="font-size:64px;margin-bottom:8px">⭐</div>
+    <h2 style="color:#0A2540">+${credits} FIC credits added, ${name}!</h2>
+    <p style="color:#64748b">New balance: <strong style="font-size:24px;color:#0A2540">${newBalance} FIC</strong></p>
+    <a href="https://fdimonitor.org/reports" style="background:#1D4ED8;color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:16px">
+      Generate a Report →
+    </a>
+  </div>
+</div>`,
+  }),
+});

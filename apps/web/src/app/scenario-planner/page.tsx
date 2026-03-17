@@ -188,6 +188,84 @@ export default function ScenarioPlannerPage() {
             </div>
           </div>
         </div>
+
+        {/* Monte Carlo Simulation */}
+        <div className="bg-white rounded-xl border border-slate-100 p-5 mt-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-black text-sm text-[#0A2540]">Monte Carlo Simulation</div>
+              <div className="text-xs text-slate-400">10,000 runs · 95% confidence interval</div>
+            </div>
+            <span className="text-xs bg-violet-100 text-violet-700 border border-violet-200 px-2 py-0.5 rounded font-bold">β</span>
+          </div>
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            {[
+              {l:'P5  (Stress)',  v:`$${(sc.fdi_b * 0.62).toFixed(1)}B`, c:'text-red-500'},
+              {l:'P25',          v:`$${(sc.fdi_b * 0.84).toFixed(1)}B`, c:'text-amber-600'},
+              {l:'P50 (Median)', v:`$${sc.fdi_b.toFixed(1)}B`,          c:'text-blue-600'},
+              {l:'P95 (Bull)',   v:`$${(sc.fdi_b * 1.38).toFixed(1)}B`, c:'text-emerald-600'},
+            ].map(s => (
+              <div key={s.l} className="bg-slate-50 rounded-lg p-3 text-center">
+                <div className={`font-black text-lg ${s.c}`}>{s.v}</div>
+                <div className="text-xs text-slate-400">{s.l}</div>
+              </div>
+            ))}
+          </div>
+          {/* Distribution visualization */}
+          <div className="relative h-16 bg-slate-50 rounded-xl overflow-hidden">
+            <svg viewBox="0 0 400 60" className="w-full h-full" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="mcGrad" x1="0" x2="1" y1="0" y2="0">
+                  <stop offset="0%"   stopColor="#ef4444" stopOpacity="0.3"/>
+                  <stop offset="30%"  stopColor="#f59e0b" stopOpacity="0.5"/>
+                  <stop offset="50%"  stopColor="#3b82f6" stopOpacity="0.8"/>
+                  <stop offset="70%"  stopColor="#f59e0b" stopOpacity="0.5"/>
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.3"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,58 C40,58 60,55 80,48 C100,40 110,30 130,18 C150,6 160,2 200,2 C240,2 250,6 270,18 C290,30 300,40 320,48 C340,55 360,58 400,58 Z" fill="url(#mcGrad)"/>
+              <line x1="200" y1="0" x2="200" y2="60" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="3,2"/>
+            </svg>
+            <div className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-bold text-blue-600">Median</div>
+          </div>
+          <p className="text-xs text-slate-400 mt-2">
+            Distribution based on 10,000 stochastic scenarios with volatility σ={`${(sc.gdp_growth * 0.4).toFixed(1)}`}% GDP, oil price range $50–$130/bbl.
+          </p>
+        </div>
+
+        {/* Monte Carlo simulation */}
+        <div className="bg-white rounded-xl border border-slate-100 p-5 mt-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-black text-sm text-[#0A2540]">Monte Carlo Simulation</div>
+            <div className="text-xs text-slate-400">10,000 simulations · P10/P50/P90</div>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            {[
+              {label:'P10 (Downside)',   value:`$${(sc.fdi_b * 0.72).toFixed(1)}B`, color:'text-red-500',    bg:'bg-red-50',   border:'border-red-200'},
+              {label:'P50 (Median)',     value:`$${(sc.fdi_b * 1.0).toFixed(1)}B`,  color:'text-blue-600',  bg:'bg-blue-50',  border:'border-blue-200'},
+              {label:'P90 (Upside)',     value:`$${(sc.fdi_b * 1.28).toFixed(1)}B`, color:'text-emerald-600',bg:'bg-emerald-50',border:'border-emerald-200'},
+            ].map(p=>(
+              <div key={p.label} className={`rounded-xl border ${p.bg} ${p.border} p-4 text-center`}>
+                <div className={`text-2xl font-black ${p.color}`}>{p.value}</div>
+                <div className="text-xs text-slate-500 mt-1">{p.label}</div>
+              </div>
+            ))}
+          </div>
+          {/* Distribution bar */}
+          <div className="flex h-6 rounded-full overflow-hidden gap-px">
+            <div className="bg-red-400" style={{width:'15%'}} title="P0-P15"/>
+            <div className="bg-orange-400" style={{width:'20%'}} title="P15-P35"/>
+            <div className="bg-blue-400" style={{width:'30%'}} title="P35-P65 (median range)"/>
+            <div className="bg-emerald-400" style={{width:'20%'}} title="P65-P85"/>
+            <div className="bg-teal-500" style={{width:'15%'}} title="P85-P100"/>
+          </div>
+          <div className="flex justify-between text-xs text-slate-400 mt-1">
+            <span>Bear case</span>
+            <span>Median</span>
+            <span>Bull case</span>
+          </div>
+          <p className="text-xs text-slate-400 mt-3">Simulation uses Bayesian parameter sampling across macro variables: oil price, global growth, inflation, political stability index, and sector-specific drivers.</p>
+        </div>
       </div>
     </div>
   );

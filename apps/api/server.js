@@ -225,9 +225,8 @@ const ROUTES = {
     if(q.iso3||q.economy) signals=signals.filter(s=>s.iso3===(q.iso3||q.economy)||s.economy===(q.economy||q.iso3));
     if(q.sector)  signals=signals.filter(s=>s.sector===q.sector);
     if(q.type)    signals=signals.filter(s=>s.signal_type===q.type);
-    const from=parseInt(q.from as string||'0');
-    const size=parseInt(q.size as string||'20');
-    ok(res,{signals:signals.slice(from,from+size),total:signals.length,from,size},{
+    const {items:pagedSignals,pagination} = paginate(req, signals);
+    ok(res,{signals:pagedSignals,total:signals.length,pagination},{
       platinum:signals.filter(s=>s.grade==='PLATINUM').length,
       gold:signals.filter(s=>s.grade==='GOLD').length,
       silver:signals.filter(s=>s.grade==='SILVER').length,
@@ -242,7 +241,8 @@ const ROUTES = {
       const rows=await dbQ(`SELECT * FROM intelligence.gfr_scores WHERE quarter=$1 ORDER BY rank`,[quarter],M_GFR);
       return rows&&rows.length>0?rows:M_GFR;
     });
-    ok(res,{rankings:data||M_GFR,total:data?data.length:215,quarter,updated:'2026-03-17'});
+    const {items:pagedRankings,pagination:gfrPage} = paginate(req, data||M_GFR);
+    ok(res,{rankings:pagedRankings,total:(data||M_GFR).length,quarter,updated:'2026-03-17',pagination:gfrPage});
   },
 
   'GET /api/v1/gfr/:iso3': async(req,res,p)=>{
@@ -263,7 +263,8 @@ const ROUTES = {
     let list=[...(data||M_ECON)];
     if(q.region) list=list.filter(e=>e.region===q.region);
     if(q.income) list=list.filter(e=>e.income_group===q.income||e.income===q.income);
-    ok(res,{economies:list,total:list.length},{source:db?'database':'demo'});
+    const {items:pagedEco,pagination:ecoPag} = paginate(req, list);
+    ok(res,{economies:pagedEco,total:list.length,pagination:ecoPag},{source:db?'database':'demo'});
   },
 
   'GET /api/v1/economies/:iso3': async(req,res,p)=>{
@@ -916,4 +917,176 @@ ROUTES['GET /api/v1/openapi.json'] = async(req,res)=>{
     const spec = yaml.load(fs.readFileSync(path.join(__dirname,'openapi.yaml'),'utf8'));
     ok(res, spec);
   } catch { fail(res,'NOT_FOUND','Spec unavailable'); }
+};
+
+// ── AUTH RESET ─────────────────────────────────────────────────────────────
+const RESET_TOKENS = new Map(); // token -> {email, expires}
+
+ROUTES['POST /api/v1/auth/reset-request'] = async(req,res)=>{
+  const d = await body(req);
+  if (!d.email) return fail(res,'VALIDATION_ERROR','Email required');
+  const token   = require('crypto').randomBytes(32).toString('hex');
+  const expires = Date.now() + 30 * 60 * 1000; // 30 min
+  RESET_TOKENS.set(token, {email:d.email, expires});
+  // Send email
+  try {
+    const {sendEmail} = require('./email');
+    await sendEmail(d.email, 'password_reset', token);
+  } catch {}
+  ok(res, {message:'Reset link sent if email exists'});
+};
+
+ROUTES['POST /api/v1/auth/reset-confirm'] = async(req,res)=>{
+  const d = await body(req);
+  const entry = RESET_TOKENS.get(d.token);
+  if (!entry || entry.expires < Date.now()) return fail(res,'INVALID_TOKEN','Token expired or invalid',400);
+  if (!d.password || d.password.length < 8) return fail(res,'VALIDATION_ERROR','Password min 8 chars');
+  const salt = require('crypto').randomBytes(16).toString('hex');
+  const hash = require('crypto').createHmac('sha256',salt).update(d.password).digest('hex');
+  if (db) await dbQ('UPDATE auth.users SET password=$1 WHERE email=$2',[`${salt}:${hash}`,entry.email]);
+  RESET_TOKENS.delete(d.token);
+  ok(res, {message:'Password updated successfully'});
+};
+
+// ── AZURE APPLICATION INSIGHTS ─────────────────────────────────────────────
+// Enabled when APPLICATIONINSIGHTS_CONNECTION_STRING env var is set
+(function setupInsights() {
+  const connStr = process.env.APPLICATIONINSIGHTS_CONNECTION_STRING;
+  if (!connStr) { log('Insights','Not configured (set APPLICATIONINSIGHTS_CONNECTION_STRING)'); return; }
+  try {
+    const appInsights = require('applicationinsights');
+    appInsights.setup(connStr)
+      .setAutoDependencyCorrelation(true)
+      .setAutoCollectRequests(true)
+      .setAutoCollectPerformance(true)
+      .setAutoCollectExceptions(true)
+      .setUseDiskRetryCaching(true)
+      .start();
+    log('Insights', '✓ Azure Application Insights enabled');
+  } catch(e) {
+    log('Insights', `Not available: ${e.message}`);
+  }
+})();
+
+// ── CUSTOM TELEMETRY HELPERS ───────────────────────────────────────────────
+function trackEvent(name, props = {}) {
+  try {
+    const ai = require('applicationinsights').defaultClient;
+    if (ai) ai.trackEvent({ name, properties: { ...props, service: 'gfm-api', version: '3.0.0' } });
+  } catch {}
+}
+
+function trackMetric(name, value) {
+  try {
+    const ai = require('applicationinsights').defaultClient;
+    if (ai) ai.trackMetric({ name, value });
+  } catch {}
+}
+
+// Track API requests
+const _origServer = server;
+
+// ── PAGINATION HELPERS ────────────────────────────────────────────────────
+function paginate(items, page = 1, perPage = 20) {
+  const total  = items.length;
+  const pages  = Math.ceil(total / perPage);
+  const offset = (page - 1) * perPage;
+  return {
+    items:    items.slice(offset, offset + perPage),
+    meta: {
+      page, per_page: perPage, total, pages,
+      has_next: page < pages,
+      has_prev: page > 1,
+      next_cursor: page < pages ? Buffer.from(String(offset + perPage)).toString('base64') : null,
+      prev_cursor: page > 1    ? Buffer.from(String(offset - perPage)).toString('base64') : null,
+    }
+  };
+}
+
+// ── FIC TOP-UP (add credits to org) ──────────────────────────────────────
+ROUTES['POST /api/v1/billing/fic/topup'] = async(req,res)=>{
+  const token   = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d       = await body(req);
+  const credits = parseInt(d.credits||0);
+  if (!credits || credits < 1) return fail(res,'VALIDATION_ERROR','credits must be > 0');
+
+  if (db) {
+    await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance+$1 WHERE id=$2',[credits,payload.org]);
+    await dbQ('INSERT INTO billing.fic_transactions(org_id,action,amount,balance) SELECT $1,$2,$3,fic_balance FROM auth.organisations WHERE id=$1',
+      [payload.org,`topup_${d.pack||'manual'}`,credits]);
+  }
+  ok(res,{credits_added:credits,message:`${credits} FIC added to your account`});
+};
+
+// ── USER MANAGEMENT (admin) ───────────────────────────────────────────────
+ROUTES['GET /api/v1/admin/orgs'] = async(req,res)=>{
+  const rows = await dbQ(`
+    SELECT o.id,o.name,o.tier,o.fic_balance,o.created_at,
+           COUNT(u.id) as user_count
+    FROM auth.organisations o
+    LEFT JOIN auth.users u ON u.org_id=o.id
+    GROUP BY o.id ORDER BY o.created_at DESC LIMIT 100
+  `,[],[]);
+  ok(res,{orgs:rows||[],total:rows?.length||0});
+};
+
+ROUTES['GET /api/v1/admin/users'] = async(req,res)=>{
+  const rows = await dbQ(`
+    SELECT u.id,u.email,u.full_name,u.role,u.last_login,u.created_at,
+           o.name as org_name,o.tier
+    FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id
+    ORDER BY u.created_at DESC LIMIT 100
+  `,[],[]);
+  ok(res,{users:rows||[],total:rows?.length||0});
+};
+
+ROUTES['GET /api/v1/admin/stats'] = async(req,res)=>{
+  const [orgs,users,sigs] = await Promise.all([
+    dbQ('SELECT COUNT(*) as c FROM auth.organisations',[],[{c:6}]),
+    dbQ('SELECT COUNT(*) as c FROM auth.users',[],[{c:12}]),
+    dbQ('SELECT COUNT(*) as c FROM intelligence.signals',[],[{c:218}]),
+  ]);
+  ok(res,{
+    total_orgs:  parseInt(orgs?.[0]?.c||6),
+    total_users: parseInt(users?.[0]?.c||12),
+    total_signals:parseInt(sigs?.[0]?.c||218),
+    uptime_sec:  process.uptime().toFixed(0),
+    version:     '3.0.0',
+  });
+};
+
+// ── PAGINATION MIDDLEWARE HELPER ────────────────────────────────────────────
+function paginate(req, items) {
+  const q    = require('url').parse(req.url, true).query;
+  const page = Math.max(1, parseInt(q.page || '1'));
+  const size = Math.min(100, Math.max(1, parseInt(q.size || q.limit || '20')));
+  const from = (page - 1) * size;
+  return {
+    items:       items.slice(from, from + size),
+    pagination: {
+      page,
+      size,
+      total:       items.length,
+      total_pages: Math.ceil(items.length / size),
+      has_next:    from + size < items.length,
+      has_prev:    page > 1,
+      next_page:   from + size < items.length ? page + 1 : null,
+      prev_page:   page > 1 ? page - 1 : null,
+    }
+  };
+}
+
+ROUTES['PATCH /api/v1/pipeline/deals/:id'] = async(req,res,p)=>{
+  const d    = await body(req);
+  const token= getToken(req);
+  const pl   = token ? verifyJWT(token) : null;
+  if (db && pl && d.stage) {
+    await dbQ(
+      'UPDATE pipeline.deals SET stage=$1, days_in_stage=0 WHERE id=$2 AND org_id=$3',
+      [d.stage, p.id, pl.org]
+    );
+  }
+  ok(res, {id:p.id, stage:d.stage, updated:true});
 };

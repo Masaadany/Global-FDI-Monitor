@@ -80,7 +80,7 @@ function LoginForm() {
               <Link href="/register" className="text-blue-600 font-bold hover:underline">Start free trial</Link>
             </p>
             <p className="text-slate-300 text-xs">
-              <a href="#" className="hover:text-slate-500 transition-colors">Forgot password?</a>
+              <Link href="/auth/reset" className="hover:text-slate-500 transition-colors">Forgot password?</Link>
             </p>
           </div>
         </div>

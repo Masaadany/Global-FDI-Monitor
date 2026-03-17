@@ -1,4 +1,5 @@
 'use client';
+import { exportGFR, exportJSON } from '@/lib/export';
 import { useState, useMemo } from 'react';
 
 interface Economy {
@@ -278,6 +279,7 @@ export default function GFRPage() {
   const [search,   setSearch]   = useState('');
   const [sortBy,   setSortBy]   = useState<'rank'|'composite'|'fdi_b'|'gdp_b'>('rank');
   const [page,     setPage]     = useState(1);
+  const [showDetail,setShowDetail]= useState(false);
   const PER_PAGE = 25;
 
   const filtered = useMemo(() => {
@@ -349,6 +351,14 @@ export default function GFRPage() {
             <option value="gdp_b">Sort: GDP</option>
           </select>
           <span className="text-xs text-slate-400 ml-auto">{filtered.length} economies</span>
+        <button onClick={()=>exportGFR(filtered)}
+          className="text-xs font-bold text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1">
+          ↓ CSV
+        </button>
+        <button onClick={()=>exportJSON(filtered,'GFR_Rankings_Q1_2026')}
+          className="text-xs font-bold text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+          ↓ JSON
+        </button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">
@@ -471,13 +481,109 @@ export default function GFRPage() {
                 </div>
               </div>
 
-              <button className="w-full bg-[#0A2540] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
-                Download Full GFR Report — 10 FIC
-              </button>
+              <div className="flex gap-2">
+                <button className="flex-1 bg-[#0A2540] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
+                  Full Report — 10 FIC
+                </button>
+                <button onClick={()=>exportGFR(filtered.length>0?filtered:GFR_ALL)}
+                  className="border border-slate-200 text-slate-600 text-xs font-bold px-3 py-2.5 rounded-xl hover:border-blue-300 transition-colors flex-shrink-0">
+                  CSV
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      {/* Economy 40-indicator modal */}
+      {showDetail && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl my-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
+              <div>
+                <div className="font-black text-lg text-[#0A2540]">{selected.name} — All Indicators</div>
+                <div className="text-xs text-slate-400">{selected.iso3} · {selected.region} · {selected.tier} · Q1 2026</div>
+              </div>
+              <button onClick={()=>setShowDetail(false)} className="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Composite score */}
+              <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                <div className="flex justify-between items-center">
+                  <div className="font-black text-[#0A2540]">GFR Composite Score</div>
+                  <div className="text-4xl font-black text-blue-600">{selected.composite}</div>
+                </div>
+                <div className="flex gap-4 mt-2 text-xs text-blue-600">
+                  <span>Rank #{selected.rank} / 215</span>
+                  <span>{selected.tier} tier</span>
+                  <span>{selected.region}</span>
+                </div>
+              </div>
+
+              {/* 6 dimension breakdown */}
+              {[
+                {dim:'Macro Foundations (20%)',   key:'macro',   indicators:['GDP Growth','GDP per Capita','Inflation Rate','Current Account','Sovereign Rating','Debt/GDP','FX Stability','Trade Openness']},
+                {dim:'Policy & Institutional (18%)',key:'policy',indicators:['Rule of Law','Regulatory Quality','Control of Corruption','Political Stability','Government Effectiveness','Ease of Doing Business','FDI Policy Index','Property Rights']},
+                {dim:'Digital Foundations (15%)', key:'digital', indicators:['Internet Penetration','Mobile Broadband','5G Coverage','Digital Gov Index','AI Readiness','Cloud Adoption','Cybersecurity Rating','e-Commerce Index']},
+                {dim:'Human Capital (15%)',        key:'human',   indicators:['Tertiary Enrolment','PISA Score','Labour Productivity','English Proficiency','Skills Index','R&D Spending','Brain Drain Index','Gender Inclusion']},
+                {dim:'Infrastructure (15%)',       key:'infra',   indicators:['LPI Score','Airport Connectivity','Port Efficiency','Road Quality','Electricity Reliability','Energy Cost','Construction Index','Urban Connectivity']},
+                {dim:'Sustainability (17%)',        key:'sustain', indicators:['EPI Score','Renewable Share','Carbon Price','Climate Resilience','Net Zero Target','ESG Policy','Green Finance','Biodiversity Index']},
+              ].map(section => (
+                <div key={section.dim}>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="font-bold text-sm text-[#0A2540]">{section.dim}</div>
+                    <div className="text-xl font-black text-blue-600">{(selected as any)[section.key]}</div>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
+                    <div className="h-full rounded-full bg-blue-500 transition-all"
+                      style={{width:`${(selected as any)[section.key]}%`}}/>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {section.indicators.map((ind, i) => {
+                      const baseScore = (selected as any)[section.key];
+                      const variance  = (i % 3 === 0 ? 8 : i % 3 === 1 ? -5 : 3);
+                      const score     = Math.max(5, Math.min(99, baseScore + variance - (i * 2)));
+                      return (
+                        <div key={ind} className="flex items-center justify-between bg-slate-50 rounded-lg px-2.5 py-1.5">
+                          <span className="text-xs text-slate-500 truncate">{ind}</span>
+                          <span className="text-xs font-bold text-slate-700 ml-2 flex-shrink-0">{score}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Economic snapshot */}
+              <div className="border-t border-slate-100 pt-4">
+                <div className="font-bold text-sm text-[#0A2540] mb-3">Economic Snapshot</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {l:'Population',  v:`${selected.pop_m}M`},
+                    {l:'GDP',         v:`$${selected.gdp_b >= 1000 ? (selected.gdp_b/1000).toFixed(1)+'T' : selected.gdp_b+'B'}`},
+                    {l:'FDI Inflows', v:`$${selected.fdi_b}B`},
+                    {l:'Internet',    v:`${selected.internet_pct}%`},
+                    {l:'Income Group',v:selected.income},
+                    {l:'GFR Rank',    v:`#${selected.rank}`},
+                  ].map(s=>(
+                    <div key={s.l} className="bg-slate-50 rounded-lg p-2.5 text-center">
+                      <div className="text-xs text-slate-400">{s.l}</div>
+                      <div className="font-bold text-sm text-[#0A2540]">{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={()=>setShowDetail(false)}
+                  className="flex-1 border border-slate-200 text-slate-500 font-bold py-2.5 rounded-xl">Close</button>
+                <button className="flex-1 bg-[#0A2540] text-white font-black py-2.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
+                  Full GFR Report — 10 FIC
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

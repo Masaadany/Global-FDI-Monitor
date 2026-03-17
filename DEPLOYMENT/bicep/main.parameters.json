@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "envName":     { "value": "prod" },
+    "location":    { "value": "uaenorth" },
+    "apiImage":    { "value": "melsaadany/gfm-api:latest" },
+    "dbPassword":  { "value": "YOUR_DB_PASSWORD_HERE" },
+    "jwtSecret":   { "value": "YOUR_JWT_SECRET_HERE" },
+    "stripeKey":   { "value": "YOUR_STRIPE_KEY_HERE" }
+  }
+}

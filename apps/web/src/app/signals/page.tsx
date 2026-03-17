@@ -1,4 +1,6 @@
 'use client';
+import { exportSignals } from '@/lib/export';
+import { getPresets, savePreset, deletePreset, BUILTIN_PRESETS } from '@/lib/filterPresets';
 import { useState, useEffect } from 'react';
 import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
 
@@ -28,6 +30,13 @@ const STATIC_SIGNALS = [
 const SIGNAL_TYPES = ['','Greenfield','Expansion','M&A','JV','Platform','Committed'];
 const STATUSES     = ['','CONFIRMED','ANNOUNCED','RUMOURED','COMPLETED'];
 
+
+const PRESETS = [
+  {name:'MENA Tech',  grade:'PLATINUM',sector:'J',economy:'',status:''},
+  {name:'Energy',     grade:'',        sector:'D',economy:'',status:'CONFIRMED'},
+  {name:'Committed',  grade:'',        sector:'', economy:'',status:'COMMITTED'},
+  {name:'Vietnam',    grade:'',        sector:'', economy:'Vietnam',status:''},
+];
 export default function SignalsPage() {
   const [grade,   setGrade]   = useState('');
   const [sector,  setSector]  = useState('');
@@ -36,6 +45,9 @@ export default function SignalsPage() {
   const [search,  setSearch]  = useState('');
   const [selected,setSelected]= useState<typeof STATIC_SIGNALS[0]|null>(null);
   const [showLive,setShowLive]= useState(false);
+  const [presets,  setPresets]  = useState(() => typeof window !== 'undefined' ? getPresets() : []);
+  const [showSave, setShowSave] = useState(false);
+  const [presetName,setPresetName]=useState('');
 
   const { signals: liveSignals, connected, totalSeen } = useRealTimeSignals(15);
 
@@ -84,6 +96,16 @@ export default function SignalsPage() {
             );
           })}
         </div>
+        
+        {/* Saved presets */}
+        <div className="flex gap-1 border-l border-slate-200 pl-2 ml-1">
+          {PRESETS.map(p=>(
+            <button key={p.name} onClick={()=>{setGrade(p.grade);setSector(p.sector);setSearch(p.economy);setStatus(p.status);}}
+              className="px-2.5 py-1 rounded-full text-xs text-slate-400 border border-dashed border-slate-200 hover:border-blue-300 hover:text-blue-600 transition-colors whitespace-nowrap">
+              {p.name}
+            </button>
+          ))}
+        </div>
         <input placeholder="Search…" value={search} onChange={e=>setSearch(e.target.value)}
           className="border border-slate-200 rounded-lg text-xs px-3 py-1.5 w-32 focus:outline-none focus:border-blue-400"/>
         <select value={type}   onChange={e=>setType(e.target.value)}
@@ -99,7 +121,28 @@ export default function SignalsPage() {
           <span className={`w-1.5 h-1.5 rounded-full ${connected?'bg-emerald-400 animate-pulse':'bg-slate-400'}`}/>
           {showLive?`LIVE (${liveSignals.length})`:'Live Feed'}
         </button>
-        <span className="text-xs text-slate-400 ml-auto">{filtered.length} signals</span>
+        <div className="flex items-center gap-2 ml-auto">
+          {/* Built-in presets */}
+          {BUILTIN_PRESETS.slice(0,3).map(p=>(
+            <button key={p.name} onClick={()=>{setGrade(p.grade);setSector(p.sector);setType(p.type);setStatus(p.status);setSearch(p.search);}}
+              className="text-xs font-semibold border border-slate-200 text-slate-400 px-2.5 py-1.5 rounded-lg hover:border-blue-300 hover:text-blue-600 transition-colors hidden lg:block">
+              {p.name}
+            </button>
+          ))}
+          <button onClick={()=>exportSignals(filtered)}
+            className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-blue-300 transition-colors">
+            CSV
+          </button>
+          <button onClick={()=>setShowSave(v=>!v)}
+            className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-blue-300 transition-colors">
+            ⭐ Save
+          </button>
+          <span className="text-xs text-slate-400">{filtered.length}</span>
+        </div>
+        <button onClick={()=>exportSignals(filtered)}
+          className="text-xs font-bold text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+          ↓ CSV
+        </button>
       </div>
 
       <div className="flex gap-0" style={{height:'calc(100vh - 7rem)'}}>
