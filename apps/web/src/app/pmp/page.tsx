@@ -300,6 +300,9 @@ export default function PMPPage() {
                              :ds==='ready'?'✓ Download Dossier'
                              :'AI Dossier — 18 FIC'}
                           </button>
+                          <a href={`/country/${co.iso3||co.hq.slice(0,3)}`} className="gfm-btn-outline text-xs py-1.5 px-3">
+                            Country Profile
+                          </a>
                           <button onClick={()=>toggleSelect(co.cic)}
                             className={`gfm-btn-outline text-xs py-1.5 px-4 ${isSel?'bg-primary text-white border-primary':''}`}>
                             {isSel?'✓ Selected':'Select for Report'}

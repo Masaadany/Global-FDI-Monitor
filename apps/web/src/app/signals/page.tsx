@@ -202,6 +202,7 @@ export default function SignalsPage() {
                             <button className="gfm-btn-outline text-xs py-1.5 px-3">+ Pipeline</button>
                             <button className="gfm-btn-outline text-xs py-1.5 px-3">+ Watchlist</button>
                             <Link href={`/company-profiles`} className="gfm-btn-outline text-xs py-1.5 px-3">Company →</Link>
+                            <Link href={`/country/${s.iso3}`} className="gfm-btn-outline text-xs py-1.5 px-3">Country →</Link>
                           </div>
                         </div>
                       )}

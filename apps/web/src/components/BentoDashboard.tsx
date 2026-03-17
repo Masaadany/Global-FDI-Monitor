@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
 import Link from 'next/link';
 
+import { getOrg } from '@/lib/shared';
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 
 const TRUST_BADGES = [
@@ -21,6 +22,7 @@ interface KPI { label:string; value:string; sub:string; trend?:string; href:stri
 export default function BentoDashboard() {
   const [kpis, setKpis]   = useState<KPI[]>([]);
   const [loading, setLoad] = useState(true);
+  const org = getOrg();
   const { signals, connected, totalSeen } = useRealTimeSignals(8);
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export default function BentoDashboard() {
           {label:'Data Sources',    value:'14',                   sub:'T1/T2 verified',                 href:'/about',     color:'#10b981'},
           {label:'AI Agents',       value:'50',                   sub:'Concurrent analysis',            href:'/admin',     color:'#f97316'},
           {label:'GFR Update',      value:'Q1 2026',              sub:'Latest quarter',                 href:'/gfr',       color:'#3b82f6'},
+          {label:'FIC Balance',     value:String(org?.fic_balance??5),sub:'Intelligence credits',            href:'/fic',       color:'#D97706'},
         ]);
       } catch {}
       setLoad(false);

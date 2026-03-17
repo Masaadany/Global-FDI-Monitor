@@ -763,3 +763,86 @@ def test_full_platform_page_count():
     import os
     count = sum(1 for root,dirs,files in os.walk('apps/web/src/app') for f in files if f == 'page.tsx')
     assert count >= 37, f"Expected 37+ page files, found {count}"
+
+# ── API COVERAGE TESTS ───────────────────────────────────────────────────
+
+def test_all_required_api_routes_exist():
+    """All critical API routes are defined"""
+    with open('apps/api/server.js') as f:
+        content = f.read()
+    required_routes = [
+        'GET /api/v1/signals',
+        'GET /api/v1/gfr',
+        'GET /api/v1/gfr/:iso3',
+        'GET /api/v1/forecast',
+        'GET /api/v1/corridors',
+        'GET /api/v1/companies',
+        'GET /api/v1/search',
+        'GET /api/v1/publications',
+        'POST /api/v1/scenarios',
+        'POST /api/v1/reports/generate',
+        'GET /api/v1/reports/:ref/status',
+        'GET /api/v1/auth/me',
+        'POST /api/v1/auth/login',
+        'POST /api/v1/auth/register',
+        'GET /api/v1/billing/fic',
+        'POST /api/v1/billing/checkout',
+        'GET /api/v1/admin/stats',
+        'GET /api/v1/health',
+    ]
+    for route in required_routes:
+        assert route in content, f"Missing API route: {route}"
+
+def test_api_route_count_minimum():
+    """API has at least 45 routes"""
+    import re
+    with open('apps/api/server.js') as f:
+        content = f.read()
+    routes = re.findall(r"^ROUTES\[", content, re.MULTILINE)
+    assert len(routes) >= 45, f"Expected 45+ routes, got {len(routes)}"
+
+def test_country_profiles_static_params():
+    """Country profile page has generateStaticParams with 30 economies"""
+    with open('apps/web/src/app/country/[iso3]/page.tsx') as f:
+        content = f.read()
+    required_isos = ['ARE', 'SAU', 'IND', 'SGP', 'VNM', 'DEU', 'GBR', 'USA', 'CHN', 'NGA']
+    for iso in required_isos:
+        assert f"'{iso}'" in content, f"Missing static param: {iso}"
+
+def test_investment_pipeline_stages_kanban():
+    """Investment pipeline has all kanban stages"""
+    with open('apps/web/src/app/investment-pipeline/page.tsx') as f:
+        content = f.read()
+    stages = ['PROSPECTING', 'ENGAGED', 'NEGOTIATING', 'COMMITTED', 'CLOSED_WON']
+    for stage in stages:
+        assert stage in content, f"Missing kanban stage: {stage}"
+
+def test_gfr_page_methodology():
+    """GFR page has methodology section"""
+    with open('apps/web/src/app/gfr/page.tsx') as f:
+        content = f.read()
+    assert 'Methodology' in content, "GFR page missing methodology section"
+    assert 'IRES' in content, "Missing IRES proprietary factor"
+    assert 'IMS'  in content, "Missing IMS proprietary factor"
+    assert 'FZII' in content, "Missing FZII proprietary factor"
+
+def test_signals_page_filters():
+    """Signals page has all fDi Markets-style filters"""
+    with open('apps/web/src/app/signals/page.tsx') as f:
+        content = f.read()
+    required = ['PLATINUM', 'GOLD', 'SILVER', 'filter', 'grade', 'country', 'sector']
+    for item in required:
+        assert item in content, f"Missing filter element: {item}"
+
+def test_homepage_platform_numbers():
+    """Homepage shows correct platform statistics"""
+    with open('apps/web/src/app/page.tsx') as f:
+        content = f.read()
+    assert '215' in content, "Homepage missing 215 countries"
+    assert '1,400+' in content, "Homepage missing free zones count"
+
+def test_component_count_minimum():
+    """Platform has at least 14 components"""
+    import os
+    count = len([f for f in os.listdir('apps/web/src/components') if f.endswith('.tsx')])
+    assert count >= 14, f"Expected 14+ components, found {count}"

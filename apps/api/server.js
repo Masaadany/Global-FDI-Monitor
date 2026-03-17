@@ -1610,3 +1610,55 @@ ROUTES['GET /api/v1/companies']=async(req,res)=>{
 
 // ── MARKET SIGNALS ALIAS ─────────────────────────────────────────────────
 ROUTES['GET /api/v1/market-signals']=(req,res)=>ROUTES['GET /api/v1/signals'](req,res);
+
+// ── REPORTS LIST ───────────────────────────────────────────────────────────
+const REPORTS_STORE: any[] = [];
+ROUTES['GET /api/v1/reports'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const orgReports = REPORTS_STORE.filter(r=>r.org_id===payload.org);
+  ok(res,{reports:orgReports,total:orgReports.length});
+};
+
+// ── SCENARIOS STORE ───────────────────────────────────────────────────────
+ROUTES['GET /api/v1/scenarios'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{scenarios:[
+    {id:'SCN001',title:'MENA Green Hydrogen',economy:'MENA',created_at:new Date().toISOString(),status:'COMPLETE'},
+    {id:'SCN002',title:'ASEAN Supply Chain',economy:'ASEAN',created_at:new Date().toISOString(),status:'COMPLETE'},
+  ],total:2});
+};
+
+// ── FIC BILLING STATUS ────────────────────────────────────────────────────
+ROUTES['GET /api/v1/billing/fic'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const bal=await dbQ('SELECT fic_balance FROM auth.organisations WHERE id=$1',[payload.org],[{fic_balance:5}]);
+  ok(res,{fic_balance:(bal&&bal[0]?.fic_balance)||5,history:[
+    {action:'fic_initial',amount:5,created_at:new Date().toISOString()}
+  ]});
+};
+
+// ── TRIAL STATUS ──────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/auth/trial-status'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const bal=await dbQ('SELECT fic_balance,trial_end,tier FROM auth.organisations WHERE id=$1',[payload.org],
+    [{fic_balance:5,trial_end:new Date(Date.now()+3*86400000).toISOString(),tier:'free_trial'}]);
+  const org=(bal&&bal[0])||{fic_balance:5,trial_end:new Date(Date.now()+3*86400000).toISOString(),tier:'free_trial'};
+  ok(res,{fic_balance:org.fic_balance,tier:org.tier,trial_end:org.trial_end,trial_expired:org.tier==='free_trial'&&new Date(org.trial_end)<new Date()});
+};
+
+// ── BILLING PLANS ─────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/billing/plans'] = async(req,res)=>{
+  ok(res,{plans:[
+    {id:'free_trial',name:'Free Trial',price:0,fic_yr:5,seats:1,features:['3 days','5 FIC','1 economy']},
+    {id:'professional',name:'Professional',price:899,fic_yr:4800,seats:3,features:['All 215 economies','All sectors','10 report types']},
+    {id:'enterprise',name:'Enterprise',price:null,fic_yr:null,seats:null,features:['Custom everything','White-label','API access']},
+  ]});
+};

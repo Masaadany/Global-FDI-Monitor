@@ -153,7 +153,7 @@ export default function RegisterPage() {
                 </div>
                 {error && <p className="text-red-500 text-xs bg-red-50 px-3 py-2 rounded-lg font-semibold">{error}</p>}
                 <button type="button" onClick={nextStep}
-                  className="w-full bg-[#0A2540] text-white font-black py-3.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
+                  className="w-full gfm-btn-primary rounded-xl py-3.5 rounded-xl hover:bg-primary-dark transition-colors">
                   Continue →
                 </button>
               </>
@@ -197,7 +197,7 @@ export default function RegisterPage() {
                     ← Back
                   </button>
                   <button type="submit" disabled={loading}
-                    className={`flex-1 font-black py-3 rounded-xl transition-colors ${loading?'bg-slate-300 text-slate-500':'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'}`}>
+                    className={`flex-1 font-black py-3 rounded-xl transition-colors ${loading?'bg-slate-300 text-slate-500':'bg-[#0A2540] text-white hover:bg-primary-dark'}`}>
                     {loading?<span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Creating…</span>:'Start Trial'}
                   </button>
                 </div>

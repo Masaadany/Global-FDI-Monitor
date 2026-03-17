@@ -35,6 +35,16 @@ export default function GlobalSearch() {
   const router    = useRouter();
 
   useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault(); inputRef.current?.focus(); setOpen(true);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
     function handler(e: MouseEvent) {
       if (!panelRef.current?.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node)) {
         setOpen(false);

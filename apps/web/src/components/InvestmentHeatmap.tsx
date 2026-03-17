@@ -1,142 +1,116 @@
 'use client';
 import { useState } from 'react';
 
-type MetricKey = 'fdi_b'|'gfr'|'signals'|'gdp_b';
-
-const HEATMAP_DATA = [
-  // [iso3, name, region, fdi_b, gfr, signals, gdp_b]
-  ['USA','United States','NAM',285,84.5,28,27360],['CHN','China','EAP',163,61.8,22,17795],
-  ['SGP','Singapore','EAP',141,88.5,15,501],['IRL','Ireland','ECA',94,76.5,6,529],
-  ['NLD','Netherlands','ECA',92,80.5,7,1081],['IND','India','SAS',71,62.3,18,3730],
-  ['BRA','Brazil','LAC',65,54.2,10,2130],['AUS','Australia','EAP',59,82.1,7,1688],
-  ['DEU','Germany','ECA',35,78.1,8,4430],['ARE','UAE','MENA',30,80.0,12,504],
-  ['JPN','Japan','EAP',30,79.3,6,4213],['GBR','UK','ECA',52,78.5,11,3079],
-  ['SAU','Saudi Arabia','MENA',28,68.1,9,1069],['FRA','France','ECA',28,76.2,7,2924],
-  ['KOR','S.Korea','EAP',18,77.8,5,1710],['VNM','Vietnam','EAP',18,58.2,9,430],
-  ['CAN','Canada','NAM',48,83.1,6,2140],['MEX','Mexico','LAC',36,54.0,7,1328],
-  ['IDN','Indonesia','EAP',22,57.1,8,1371],['THA','Thailand','EAP',9,63.1,5,545],
-  ['MYS','Malaysia','EAP',14,66.4,6,430],['TUR','Turkey','ECA',12,52.0,5,1108],
-  ['POL','Poland','ECA',20,62.0,4,750],['ESP','Spain','ECA',27,70.0,5,1580],
-  ['ZAF','S.Africa','SSA',5,51.3,4,373],['NGA','Nigeria','SSA',4,42.1,3,477],
-  ['KEN','Kenya','SSA',1,51.3,2,118],['EGY','Egypt','MENA',9,52.4,4,395],
-  ['QAT','Qatar','MENA',5,71.2,5,236],['CHE','Switzerland','ECA',26,87.5,5,884],
+const REGIONS = [
+  {id:'EAP',  name:'East Asia & Pacific',     total:546,yoy:12.4,top:'CHN $163B',color:'#0A66C2'},
+  {id:'NAM',  name:'North America',           total:333,yoy:8.2, top:'USA $285B',color:'#059669'},
+  {id:'ECA',  name:'Europe & Central Asia',   total:312,yoy:5.6, top:'IRL $94B', color:'#7C3AED'},
+  {id:'LAC',  name:'Latin America & Carib.',  total:142,yoy:7.8, top:'BRA $65B', color:'#F97316'},
+  {id:'MENA', name:'Middle East & N. Africa', total:88, yoy:14.2,top:'ARE $31B', color:'#D97706'},
+  {id:'SAS',  name:'South Asia',              total:74, yoy:11.8,top:'IND $71B', color:'#06B6D4'},
+  {id:'SSA',  name:'Sub-Saharan Africa',      total:28, yoy:6.4, top:'NGA $4B',  color:'#EF4444'},
 ];
 
-const METRIC_CONFIG: Record<MetricKey,{label:string,min:number,max:number,unit:string,fmt:(v:number)=>string}> = {
-  fdi_b:   {label:'FDI Inflows',   min:0,   max:300, unit:'$B', fmt:v=>`$${v}B`},
-  gfr:     {label:'GFR Score',     min:20,  max:90,  unit:'pts',fmt:v=>`${v}`},
-  signals: {label:'Active Signals',min:0,   max:30,  unit:'',   fmt:v=>`${v}`},
-  gdp_b:   {label:'GDP',           min:0,   max:30000,unit:'$B',fmt:v=>v>=1000?`$${(v/1000).toFixed(1)}T`:`$${v}B`},
-};
+const SECTOR_HEAT = [
+  {s:'Technology',EAP:92,NAM:88,ECA:72,MENA:74,SAS:58,LAC:44,SSA:28},
+  {s:'Energy',    EAP:68,NAM:74,ECA:76,MENA:92,SAS:64,LAC:72,SSA:54},
+  {s:'Finance',   EAP:82,NAM:94,ECA:84,MENA:70,SAS:56,LAC:62,SSA:36},
+  {s:'Mfg',       EAP:88,NAM:62,ECA:74,MENA:52,SAS:72,LAC:68,SSA:44},
+  {s:'Mining',    EAP:48,NAM:68,ECA:54,MENA:44,SAS:38,LAC:82,SSA:88},
+  {s:'Logistics', EAP:76,NAM:72,ECA:68,MENA:84,SAS:58,LAC:54,SSA:38},
+];
 
-const REGION_ORDER = ['MENA','SAS','EAP','ECA','NAM','LAC','SSA'];
-const REGION_LABELS: Record<string,string> = {
-  MENA:'Middle East & N.Africa',SAS:'South Asia',EAP:'East Asia & Pacific',
-  ECA:'Europe & C.Asia',NAM:'North America',LAC:'Latin America',SSA:'Sub-Saharan Africa',
-};
-
-function heatColor(value: number, min: number, max: number): string {
-  const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
-  if (t < 0.2)  return '#1e3a5f';
-  if (t < 0.4)  return '#1d4ed8';
-  if (t < 0.6)  return '#0891b2';
-  if (t < 0.75) return '#059669';
-  if (t < 0.9)  return '#d97706';
-  return '#dc2626';
+function HeatCell({val}:{val:number}) {
+  const opacity = val / 100;
+  return (
+    <td className="p-0">
+      <div className="w-full h-10 flex items-center justify-center text-xs font-bold transition-all hover:scale-105 cursor-default"
+        style={{background:`rgba(10,102,194,${opacity})`, color: val > 60 ? 'white' : val > 40 ? '#0A2540' : '#64748B'}}>
+        {val}
+      </div>
+    </td>
+  );
 }
 
 export default function InvestmentHeatmap() {
-  const [metric, setMetric] = useState<MetricKey>('fdi_b');
-  const [region, setRegion] = useState('');
-  const [tooltip, setTooltip] = useState<any>(null);
-
-  const cfg = METRIC_CONFIG[metric];
-  const metricIdx = {fdi_b:3,gfr:4,signals:5,gdp_b:6}[metric];
-
-  const filtered = HEATMAP_DATA.filter(d => !region || d[2] === region);
-  const grouped  = REGION_ORDER.reduce<Record<string,typeof HEATMAP_DATA>>((acc, r) => {
-    acc[r] = filtered.filter(d => d[2] === r);
-    return acc;
-  }, {});
-
-  const maxVal = Math.max(...filtered.map(d => d[metricIdx] as number));
+  const [view, setView] = useState<'regional'|'sector'>('regional');
+  const total = REGIONS.reduce((s,r)=>s+r.total,0);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3 px-5 py-3 border-b border-slate-100">
-        <div className="font-black text-sm text-[#0A2540]">Investment Heatmap</div>
+    <div className="gfm-card overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+        <div>
+          <div className="font-extrabold text-sm text-deep">FDI Investment Heatmap</div>
+          <div className="text-xs text-slate-400 mt-0.5">2025 · ${total}B global total · 7 regions × 6 sectors</div>
+        </div>
         <div className="flex gap-1">
-          {(Object.keys(METRIC_CONFIG) as MetricKey[]).map(m=>(
-            <button key={m} onClick={()=>setMetric(m)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                metric===m?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'
-              }`}>{METRIC_CONFIG[m].label}</button>
+          {[['regional','By Region'],['sector','Sector × Region']].map(([v,l])=>(
+            <button key={v} onClick={()=>setView(v as any)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${view===v?'bg-primary text-white':'border border-slate-200 text-slate-500 hover:border-primary'}`}>{l}</button>
           ))}
         </div>
-        <select className="ml-auto text-xs border border-slate-200 rounded-lg px-2 py-1.5"
-          value={region} onChange={e=>setRegion(e.target.value)}>
-          <option value="">All Regions</option>
-          {REGION_ORDER.map(r=><option key={r} value={r}>{r}</option>)}
-        </select>
       </div>
 
-      <div className="p-4 space-y-3">
-        {REGION_ORDER.filter(r => !region || r === region).map(r => {
-          const economies = grouped[r];
-          if (!economies?.length) return null;
-          return (
-            <div key={r}>
-              <div className="text-xs font-bold text-slate-400 mb-1.5">{REGION_LABELS[r]}</div>
-              <div className="flex flex-wrap gap-1.5">
-                {economies
-                  .sort((a,b) => (b[metricIdx] as number) - (a[metricIdx] as number))
-                  .map(eco => {
-                    const val   = eco[metricIdx] as number;
-                    const bgCol = heatColor(val, cfg.min, Math.max(cfg.max, maxVal * 0.3));
-                    return (
-                      <div key={eco[0]}
-                        onMouseEnter={() => setTooltip({iso3:eco[0],name:eco[1],val,region:r})}
-                        onMouseLeave={() => setTooltip(null)}
-                        className="relative rounded-lg cursor-default transition-transform hover:scale-105"
-                        style={{
-                          background:  bgCol,
-                          width:       Math.max(48, Math.min(100, (val/maxVal)*80 + 40)),
-                          height:      48,
-                          display:     'flex',
-                          flexDirection:'column',
-                          alignItems:  'center',
-                          justifyContent:'center',
-                          padding:     '4px',
-                        }}>
-                        <div className="text-white text-xs font-black leading-none">{eco[0]}</div>
-                        <div className="text-white/80 text-xs leading-none mt-0.5">{cfg.fmt(val)}</div>
+      {view==='regional' && (
+        <div className="p-5">
+          <div className="space-y-2.5">
+            {REGIONS.map(r=>{
+              const pct = (r.total/total)*100;
+              return (
+                <div key={r.id} className="flex items-center gap-3">
+                  <div className="text-xs font-bold text-slate-500 w-8 flex-shrink-0">{r.id}</div>
+                  <div className="flex-1">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-semibold text-deep">{r.name}</span>
+                      <span className="text-slate-400">{r.top}</span>
+                    </div>
+                    <div className="h-7 bg-slate-100 rounded-lg overflow-hidden relative">
+                      <div className="h-full rounded-lg flex items-center pl-3 transition-all"
+                        style={{width:`${Math.max(10,pct)}%`, background:r.color}}>
+                        <span className="text-xs font-extrabold text-white whitespace-nowrap">${r.total}B</span>
                       </div>
-                    );
-                  })}
-              </div>
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <div className={`text-xs font-bold ${r.yoy>10?'text-emerald-600':'text-slate-500'}`}>+{r.yoy}%</div>
+                    <div className="text-xs text-slate-300">{pct.toFixed(0)}%</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex gap-4 mt-5 pt-4 border-t border-slate-100">
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <div className="w-12 h-3 rounded" style={{background:'linear-gradient(to right, rgba(10,102,194,0.1), rgba(10,102,194,0.9))'}}/>
+              Low → High FDI
             </div>
-          );
-        })}
-      </div>
-
-      {/* Color scale */}
-      <div className="px-5 pb-3">
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <span>Low</span>
-          <div className="flex-1 h-2 rounded-full"
-            style={{background:'linear-gradient(to right, #1e3a5f, #1d4ed8, #0891b2, #059669, #d97706, #dc2626)'}}/>
-          <span>High</span>
-          <span className="ml-2 font-bold text-slate-600">{cfg.label}</span>
+            <span className="text-xs text-slate-400 ml-auto">Source: UNCTAD WIR 2025</span>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Tooltip */}
-      {tooltip && (
-        <div className="fixed bg-[#0A2540] text-white text-xs rounded-lg px-3 py-2 pointer-events-none z-50 shadow-lg"
-          style={{bottom:20,right:20}}>
-          <div className="font-black">{tooltip.name} ({tooltip.iso3})</div>
-          <div className="text-blue-200">{tooltip.region}</div>
-          <div className="text-white font-black mt-0.5">{cfg.label}: {cfg.fmt(tooltip.val)}</div>
+      {view==='sector' && (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-100">
+                <th className="text-left px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wide">Sector</th>
+                {REGIONS.map(r=><th key={r.id} className="px-2 py-2 text-xs font-bold text-slate-400 text-center">{r.id}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {SECTOR_HEAT.map(row=>(
+                <tr key={row.s} className="border-b border-slate-50">
+                  <td className="px-4 py-1 text-xs font-semibold text-deep">{row.s}</td>
+                  {REGIONS.map(r=><HeatCell key={r.id} val={(row as any)[r.id]||0}/>)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="flex items-center gap-2 px-4 py-3 border-t border-slate-100">
+            <div className="w-24 h-3 rounded" style={{background:'linear-gradient(to right, rgba(10,102,194,0.08), rgba(10,102,194,1))'}}/>
+            <span className="text-xs text-slate-400">Low investment intensity → High</span>
+          </div>
         </div>
       )}
     </div>

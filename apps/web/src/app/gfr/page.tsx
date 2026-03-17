@@ -221,7 +221,7 @@ export default function GFRPage() {
                       </div>
                     </td>
                     <td>
-                      <div className="font-semibold text-deep text-xs">{e.name}</div>
+                      <a href={`/country/${e.iso3}`} onClick={ev=>ev.stopPropagation()} className="font-semibold text-deep text-xs group-hover:text-primary hover:underline">{e.name}</a>
                       <div className="text-slate-400 text-xs font-mono">{e.iso3}</div>
                     </td>
                     <td className="text-slate-500">{e.region}</td>
