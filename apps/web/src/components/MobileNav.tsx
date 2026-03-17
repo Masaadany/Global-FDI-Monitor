@@ -2,80 +2,124 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-const NAV_ITEMS = [
-  {href:'/dashboard',          icon:'🗂',  label:'Dashboard'},
-  {href:'/signals',            icon:'📡',  label:'Signals'},
-  {href:'/gfr',                icon:'🏆',  label:'GFR Rankings'},
-  {href:'/analytics',          icon:'📊',  label:'Analytics'},
-  {href:'/reports',            icon:'📋',  label:'Reports'},
-  {href:'/pmp',                icon:'🎯',  label:'Mission'},
-  {href:'/forecast',           icon:'🔮',  label:'Forecast'},
-  {href:'/investment-pipeline',icon:'💼',  label:'Pipeline'},
-  {href:'/company-profiles',   icon:'🏢',  label:'Companies'},
-  {href:'/market-insights',    icon:'💡',  label:'Insights'},
-  {href:'/watchlists',         icon:'👁',  label:'Watchlists'},
-  {href:'/alerts',             icon:'🔔',  label:'Alerts'},
-  {href:'/benchmarking',       icon:'📐',  label:'Benchmark'},
-  {href:'/scenario-planner',   icon:'🧩',  label:'Scenarios'},
-  {href:'/corridor-intelligence',icon:'🔗',label:'Corridors'},
-  {href:'/publications',       icon:'📰',  label:'Publications'},
-  {href:'/pricing',            icon:'💳',  label:'Pricing'},
-  {href:'/subscription',        icon:'⭐',  label:'Subscription Plans'},
-  {href:'/fic',                icon:'⭐',  label:'FIC Credits'},
-  {href:'/about',              icon:'ℹ️',  label:'About'},
-  {href:'/contact',            icon:'✉️',  label:'Contact'},
-  {href:'/demo',               icon:'🎯',  label:'Live Demo'},
-  {href:'/health',             icon:'💚',  label:'System Status'},
+const NAV_SECTIONS = [
+  {
+    label: 'Intelligence',
+    items: [
+      {href:'/dashboard',           icon:'🗂',  label:'Dashboard'},
+      {href:'/signals',             icon:'📡',  label:'Market Signals'},
+      {href:'/analytics',           icon:'📊',  label:'Analytics'},
+      {href:'/market-insights',     icon:'💡',  label:'Resources & Insights'},
+    ]
+  },
+  {
+    label: 'Rankings & Data',
+    items: [
+      {href:'/gfr',                 icon:'🏆',  label:'GFR Rankings'},
+      {href:'/country/ARE',         icon:'🌍',  label:'Country Profiles'},
+      {href:'/company-profiles',    icon:'🏢',  label:'Company Profiles'},
+      {href:'/sectors',             icon:'🏭',  label:'Sector Intelligence'},
+      {href:'/corridor-intelligence',icon:'🛤', label:'Corridor Intelligence'},
+    ]
+  },
+  {
+    label: 'Analysis Tools',
+    items: [
+      {href:'/forecast',            icon:'🔮',  label:'Forecast & Outlook'},
+      {href:'/scenario-planner',    icon:'🎲',  label:'Scenario Planner'},
+      {href:'/benchmarking',        icon:'📐',  label:'Benchmarking'},
+      {href:'/pmp',                 icon:'🎯',  label:'Mission Planning'},
+    ]
+  },
+  {
+    label: 'Platform',
+    items: [
+      {href:'/reports',             icon:'📋',  label:'Custom Reports'},
+      {href:'/investment-pipeline', icon:'➕',  label:'Investment Pipeline'},
+      {href:'/watchlists',          icon:'👁',  label:'Watchlists'},
+      {href:'/alerts',              icon:'🔔',  label:'Alerts'},
+      {href:'/publications',        icon:'📰',  label:'Publications'},
+    ]
+  },
+  {
+    label: 'Account',
+    items: [
+      {href:'/fic',                 icon:'⭐',  label:'FIC Credits'},
+      {href:'/subscription',        icon:'💳',  label:'Subscription Plans'},
+      {href:'/settings',            icon:'⚙️',  label:'Settings'},
+      {href:'/demo',                icon:'▶️',  label:'Live Demo'},
+    ]
+  },
+  {
+    label: 'Company',
+    items: [
+      {href:'/about',               icon:'ℹ️',  label:'About Us'},
+      {href:'/pricing',             icon:'💰',  label:'Pricing'},
+      {href:'/contact',             icon:'✉️',  label:'Contact'},
+      {href:'/ar',                  icon:'🌐',  label:'العربية'},
+    ]
+  },
 ];
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <>
-      {/* Hamburger */}
+    <div className="lg:hidden">
       <button onClick={() => setOpen(true)}
-        className="md:hidden flex flex-col gap-1 p-2"
+        className="flex flex-col gap-1 p-2 rounded-lg hover:bg-slate-100 transition-colors"
         aria-label="Open menu">
-        <span className="w-5 h-0.5 bg-slate-400 rounded"/>
-        <span className="w-5 h-0.5 bg-slate-400 rounded"/>
-        <span className="w-5 h-0.5 bg-slate-400 rounded"/>
+        <span className="w-5 h-0.5 bg-slate-600 rounded"/>
+        <span className="w-5 h-0.5 bg-slate-600 rounded"/>
+        <span className="w-4 h-0.5 bg-slate-600 rounded"/>
       </button>
 
-      {/* Drawer */}
       {open && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)}/>
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)}/>
+          {/* Panel */}
+          <div className="relative ml-auto w-72 bg-white h-full overflow-y-auto shadow-2xl flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 bg-[#0A2540] rounded-lg flex items-center justify-center text-white text-xs font-black">G</div>
-                <span className="font-black text-[#0A2540]">GFM</span>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-sm"
+                  style={{background:'linear-gradient(135deg,#0A2540,#0A66C2)'}}>G</div>
+                <span className="font-extrabold text-deep text-sm">GFM Menu</span>
               </div>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-deep p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-lg">×</button>
             </div>
-            <div className="py-2">
-              {NAV_ITEMS.map(item => (
-                <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition-colors">
-                  <span className="text-xl w-8 text-center">{item.icon}</span>
-                  <span className="text-sm font-semibold text-slate-700">{item.label}</span>
-                </Link>
+
+            {/* Nav sections */}
+            <div className="flex-1 overflow-y-auto py-2">
+              {NAV_SECTIONS.map(section => (
+                <div key={section.label} className="mb-1">
+                  <div className="px-4 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest">{section.label}</div>
+                  {section.items.map(item => (
+                    <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors group">
+                      <span className="text-base w-5 text-center flex-shrink-0">{item.icon}</span>
+                      <span className="text-sm font-medium text-slate-600 group-hover:text-primary transition-colors">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
               ))}
             </div>
-            <div className="px-5 py-4 border-t border-slate-100 space-y-2">
+
+            {/* Footer */}
+            <div className="border-t border-slate-100 px-4 py-4 flex-shrink-0 space-y-2">
               <Link href="/register" onClick={() => setOpen(false)}
-                className="block w-full text-center bg-[#0A2540] text-white font-black py-3 rounded-xl hover:bg-[#1D4ED8] transition-colors">
+                className="block w-full text-center gfm-btn-primary py-2.5 rounded-xl text-sm">
                 Start Free Trial
               </Link>
               <Link href="/auth/login" onClick={() => setOpen(false)}
-                className="block w-full text-center border border-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl hover:border-blue-300 transition-colors">
+                className="block w-full text-center border border-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-sm hover:border-primary hover:text-primary transition-all">
                 Sign In
               </Link>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -7,6 +7,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {url:`${base}/demo`,lastModified:now,changeFrequency:'weekly',priority:0.9},
     {url:`${base}/about`,lastModified:now,changeFrequency:'weekly',priority:0.6},
     {url:`${base}/contact`,lastModified:now,changeFrequency:'weekly',priority:0.6},
+
+    {url:`${base}/country/ARE`,lastModified:now,changeFrequency:'weekly' as const,priority:0.8},
+    {url:`${base}/country/SAU`,lastModified:now,changeFrequency:'weekly' as const,priority:0.8},
+    {url:`${base}/country/IND`,lastModified:now,changeFrequency:'weekly' as const,priority:0.8},
+    {url:`${base}/country/SGP`,lastModified:now,changeFrequency:'weekly' as const,priority:0.8},
     {url:`${base}/subscription`,lastModified:now,changeFrequency:'weekly',priority:0.9},
     {url:`${base}/pricing`,lastModified:now,changeFrequency:'weekly',priority:0.9},
     {url:`${base}/register`,lastModified:now,changeFrequency:'weekly',priority:0.9},

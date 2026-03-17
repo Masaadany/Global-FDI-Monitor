@@ -1541,3 +1541,72 @@ ROUTES['POST /api/v1/internal/:job'] = async(req,res,p)=>{
   log('Internal',`Job triggered: ${p.job}`);
   ok(res,{job:p.job,status:'queued',triggered_at:new Date().toISOString()});
 };
+
+// ── SIGNALS LIST (full featured) ─────────────────────────────────────────
+ROUTES['GET /api/v1/signals'] = async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  let sigs=[...M_SIGNALS];
+  if(q.grade) sigs=sigs.filter(s=>s.grade===q.grade);
+  if(q.iso3 || q.economy) {
+    const val=(q.iso3||q.economy||'').toString().toUpperCase();
+    sigs=sigs.filter(s=>s.iso3===val||s.economy?.toUpperCase().includes(val));
+  }
+  if(q.sector) sigs=sigs.filter(s=>s.sector===q.sector);
+  if(q.q) { const ql=q.q.toString().toLowerCase(); sigs=sigs.filter(s=>s.company.toLowerCase().includes(ql)||s.economy.toLowerCase().includes(ql)); }
+  const {items,pagination}=paginate(req,sigs);
+  ok(res,{signals:items,total:sigs.length,pagination,
+    grade_summary:{PLATINUM:sigs.filter(s=>s.grade==='PLATINUM').length,GOLD:sigs.filter(s=>s.grade==='GOLD').length,SILVER:sigs.filter(s=>s.grade==='SILVER').length}});
+};
+
+// ── CORRIDORS ────────────────────────────────────────────────────────────
+const CORRIDORS_DATA = [
+  {id:'C01',from:'UAE',to:'India',    fdi_b:4.2,growth:18.4,trend:'UP',  grade:'PLATINUM',signals:12,hist:[2.1,2.8,3.4,3.8,4.2]},
+  {id:'C02',from:'USA',to:'UAE',      fdi_b:5.8,growth:22.1,trend:'UP',  grade:'PLATINUM',signals:18,hist:[2.8,3.4,4.0,5.0,5.8]},
+  {id:'C03',from:'China',to:'Indonesia',fdi_b:6.8,growth:28.4,trend:'UP',grade:'PLATINUM',signals:14,hist:[3.2,4.1,5.0,5.8,6.8]},
+  {id:'C04',from:'Germany',to:'India',fdi_b:3.4,growth:14.2,trend:'UP',  grade:'GOLD',    signals:9, hist:[1.8,2.2,2.8,3.1,3.4]},
+  {id:'C05',from:'Saudi Arabia',to:'Egypt',fdi_b:2.8,growth:32.1,trend:'UP',grade:'GOLD',signals:8, hist:[0.8,1.2,1.6,2.2,2.8]},
+  {id:'C06',from:'Japan',to:'Vietnam',fdi_b:4.2,growth:9.4, trend:'UP',  grade:'GOLD',    signals:11,hist:[2.8,3.2,3.6,3.9,4.2]},
+  {id:'C07',from:'UK',to:'India',     fdi_b:1.8,growth:8.2, trend:'FLAT',grade:'SILVER',  signals:6, hist:[1.0,1.2,1.5,1.6,1.8]},
+  {id:'C08',from:'Korea',to:'Vietnam',fdi_b:5.4,growth:6.8, trend:'FLAT',grade:'GOLD',    signals:10,hist:[3.8,4.2,4.6,5.0,5.4]},
+];
+ROUTES['GET /api/v1/corridors']=async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  let data=[...CORRIDORS_DATA];
+  if(q.grade) data=data.filter(c=>c.grade===q.grade);
+  const {items,pagination}=paginate(req,data);
+  ok(res,{corridors:items,total:data.length,pagination});
+};
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/search']=async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  const ql=(q.q||'').toString().toLowerCase();
+  if(!ql) return ok(res,{results:[],total:0});
+  const results=[];
+  // Economies
+  M_GFR.filter(e=>e.name.toLowerCase().includes(ql)||e.iso3.toLowerCase().includes(ql)).slice(0,3).forEach(e=>{
+    results.push({type:'economy',title:e.name,subtitle:`GFR ${e.composite} · ${e.tier} · ${e.region}`,href:`/country/${e.iso3}`,badge:e.iso3});
+  });
+  // Signals
+  M_SIGNALS.filter(s=>s.company.toLowerCase().includes(ql)||s.economy.toLowerCase().includes(ql)).slice(0,3).forEach(s=>{
+    results.push({type:'signal',title:s.company+' → '+s.economy,subtitle:`$${(s.capex_m||0)}M · ${s.grade} · SCI ${s.sci_score}`,href:'/signals',badge:s.grade});
+  });
+  ok(res,{results:results.slice(0,8),total:results.length,query:ql});
+};
+
+// ── COMPANIES LIST ─────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/companies']=async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  const COMPANIES=[
+    {cic:'GFM-USA-MSFT-12847',name:'Microsoft Corporation',hq:'USA',sector:'J',ims:96,grade:'PLATINUM',fdi_stage:'ACTIVE'},
+    {cic:'GFM-USA-AMZN-98120',name:'Amazon AWS',            hq:'USA',sector:'J',ims:95,grade:'PLATINUM',fdi_stage:'ACTIVE'},
+    {cic:'GFM-CHN-CATL-11234',name:'CATL',                  hq:'CHN',sector:'C',ims:92,grade:'PLATINUM',fdi_stage:'ACTIVE'},
+    {cic:'GFM-USA-NVDA-66234',name:'NVIDIA Corporation',    hq:'USA',sector:'J',ims:94,grade:'PLATINUM',fdi_stage:'ACTIVE'},
+    {cic:'GFM-DEU-SINEN-44221',name:'Siemens Energy',       hq:'DEU',sector:'D',ims:85,grade:'GOLD',    fdi_stage:'ACTIVE'},
+  ];
+  const {items,pagination}=paginate(req,COMPANIES);
+  ok(res,{companies:items,total:COMPANIES.length,pagination});
+};
+
+// ── MARKET SIGNALS ALIAS ─────────────────────────────────────────────────
+ROUTES['GET /api/v1/market-signals']=(req,res)=>ROUTES['GET /api/v1/signals'](req,res);

@@ -1,137 +1,148 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const ROUTES = [
-  {path:'/dashboard',         label:'Dashboard',           icon:'🗂',  type:'page'},
-  {path:'/signals',           label:'Signal Monitor',      icon:'📡',  type:'page'},
-  {path:'/gfr',               label:'GFR Rankings',        icon:'🏆',  type:'page'},
-  {path:'/analytics',         label:'Analytics & Globe',   icon:'📊',  type:'page'},
-  {path:'/reports',           label:'Custom Reports',      icon:'📋',  type:'page'},
-  {path:'/pmp',               label:'Mission Planning',    icon:'🎯',  type:'page'},
-  {path:'/forecast',          label:'Forecast',            icon:'🔮',  type:'page'},
-  {path:'/investment-pipeline',label:'Investment Pipeline',icon:'💼',  type:'page'},
-  {path:'/company-profiles',  label:'Company Profiles',    icon:'🏢',  type:'page'},
-  {path:'/market-insights',   label:'Market Insights',     icon:'💡',  type:'page'},
-  {path:'/watchlists',        label:'Watchlists',          icon:'👁',  type:'page'},
-  {path:'/benchmarking',      label:'Benchmarking',        icon:'📐',  type:'page'},
-  {path:'/scenario-planner',  label:'Scenario Planner',    icon:'🧩',  type:'page'},
-  {path:'/corridor-intelligence',label:'Corridor Intel',   icon:'🔗',  type:'page'},
-  {path:'/pricing',           label:'Pricing',             icon:'💳',  type:'page'},
-  {path:'/fic',               label:'Buy FIC Credits',     icon:'⭐',  type:'page'},
-  // Economies quick links
-  {path:'/gfr?iso3=ARE',      label:'UAE — GFR Profile',   icon:'🇦🇪',  type:'economy'},
-  {path:'/gfr?iso3=SAU',      label:'Saudi Arabia — GFR',  icon:'🇸🇦',  type:'economy'},
-  {path:'/gfr?iso3=IND',      label:'India — GFR Profile', icon:'🇮🇳',  type:'economy'},
-  {path:'/gfr?iso3=SGP',      label:'Singapore — GFR',     icon:'🇸🇬',  type:'economy'},
-  {path:'/gfr?iso3=DEU',      label:'Germany — GFR',       icon:'🇩🇪',  type:'economy'},
-  {path:'/gfr?iso3=USA',      label:'United States — GFR', icon:'🇺🇸',  type:'economy'},
-  // Signals quick actions
-  {path:'/signals?grade=PLATINUM',label:'Platinum Signals',icon:'⭐',  type:'signal'},
-  {path:'/signals?grade=GOLD',    label:'Gold Signals',    icon:'🥇',  type:'signal'},
-  {path:'/reports?type=CEGP',     label:'Generate Country Profile',icon:'📋',type:'action'},
-  {path:'/reports?type=MIB',      label:'Generate Market Brief',   icon:'⚡',type:'action'},
+const API = process.env.NEXT_PUBLIC_API_URL || '';
+
+interface SearchResult {
+  type: 'economy'|'company'|'signal'|'report';
+  title: string;
+  subtitle: string;
+  href: string;
+  badge?: string;
+}
+
+const STATIC_SUGGESTIONS: SearchResult[] = [
+  {type:'economy',title:'United Arab Emirates',subtitle:'GFR 80.0 · FRONTIER · MENA',href:'/country/ARE',badge:'ARE'},
+  {type:'economy',title:'Saudi Arabia',subtitle:'GFR 68.1 · HIGH · MENA',href:'/country/SAU',badge:'SAU'},
+  {type:'economy',title:'India',subtitle:'GFR 62.3 · MEDIUM · SAS',href:'/country/IND',badge:'IND'},
+  {type:'economy',title:'Singapore',subtitle:'GFR 88.5 · FRONTIER #1',href:'/country/SGP',badge:'SGP'},
+  {type:'company',title:'Microsoft Corporation',subtitle:'IMS 96 · PLATINUM · Technology',href:'/company-profiles',badge:'MSFT'},
+  {type:'company',title:'CATL',subtitle:'IMS 92 · PLATINUM · Manufacturing',href:'/company-profiles',badge:'CATL'},
+  {type:'signal', title:'PLATINUM Signal Feed',subtitle:'218+ live signals across 215 economies',href:'/signals',badge:'LIVE'},
+  {type:'report', title:'Market Intelligence Brief',subtitle:'5 FIC · 8-12 pages · ~45 seconds',href:'/reports',badge:'MIB'},
 ];
 
+const TYPE_ICON: Record<string,string> = {economy:'🌍',company:'🏢',signal:'📡',report:'📋'};
+
 export default function GlobalSearch() {
-  const [open,   setOpen]   = useState(false);
-  const [query,  setQuery]  = useState('');
-  const [cursor, setCursor] = useState(0);
-  const router   = useRouter();
-  const API      = process.env.NEXT_PUBLIC_API_URL || '';
-  const [apiResults, setApiResults] = useState<any[]>([]);
-  const API_SEARCH = true;
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Live API search (debounced)
-  useEffect(() => {
-    if (query.length < 2) { setApiResults([]); return; }
-    const id = setTimeout(() => {
-      fetch(`${API}/api/v1/search?q=${encodeURIComponent(query)}`)
-        .then(r=>r.json())
-        .then(d=>{ if(d.success) setApiResults(d.data?.results||[]); })
-        .catch(()=>{});
-    }, 300);
-    return () => clearTimeout(id);
-  }, [query, API]);
-
-  const filtered = query.length < 1 ? ROUTES.slice(0, 8) :
-    [
-      ...apiResults.map(r => ({path:r.url,label:r.label,icon:r.icon,type:r.type})),
-      ...ROUTES.filter(r => r.label.toLowerCase().includes(query.toLowerCase())),
-    ].filter((r,i,a) => a.findIndex(x=>x.path===r.path)===i).slice(0,10);
+  const [query,   setQuery]   = useState('');
+  const [open,    setOpen]    = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const inputRef  = useRef<HTMLInputElement>(null);
+  const panelRef  = useRef<HTMLDivElement>(null);
+  const router    = useRouter();
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(o => !o); }
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    function handler(e: MouseEvent) {
+      if (!panelRef.current?.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 50);
-    else { setQuery(''); setCursor(0); }
-  }, [open]);
+    if (!query.trim()) { setResults(STATIC_SUGGESTIONS.slice(0,5)); return; }
+    const timeout = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res  = await fetch(`${API}/api/v1/search?q=${encodeURIComponent(query)}&size=6`);
+        const data = await res.json();
+        if (data.success && data.data?.results?.length) {
+          setResults(data.data.results);
+        } else {
+          // Filter static
+          const q = query.toLowerCase();
+          setResults(STATIC_SUGGESTIONS.filter(s =>
+            s.title.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q)
+          ).slice(0, 6));
+        }
+      } catch {
+        const q = query.toLowerCase();
+        setResults(STATIC_SUGGESTIONS.filter(s =>
+          s.title.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q)
+        ).slice(0, 6));
+      }
+      setLoading(false);
+    }, 280);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  function navigate(path: string) {
-    router.push(path);
+  function select(result: SearchResult) {
     setOpen(false);
+    setQuery('');
+    router.push(result.href);
   }
 
   function handleKey(e: React.KeyboardEvent) {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c+1, filtered.length-1)); }
-    if (e.key === 'ArrowUp')   { e.preventDefault(); setCursor(c => Math.max(c-1, 0)); }
-    if (e.key === 'Enter' && filtered[cursor]) navigate(filtered[cursor].path);
+    if (e.key === 'Escape') { setOpen(false); inputRef.current?.blur(); }
+    if (e.key === 'Enter' && query.trim()) {
+      setOpen(false);
+      router.push(`/signals?q=${encodeURIComponent(query)}`);
+      setQuery('');
+    }
   }
 
-  const TYPE_COLORS: Record<string,string> = {
-    page:'bg-blue-900 text-blue-300',
-    economy:'bg-amber-900 text-amber-300',
-    signal:'bg-emerald-900 text-emerald-300',
-    action:'bg-violet-900 text-violet-300',
-  };
-
   return (
-    <>
-      <button onClick={() => setOpen(true)}
-        className="flex items-center gap-2 bg-blue-900/40 border border-blue-800 rounded-lg px-3 py-1.5 text-xs text-blue-400 hover:border-blue-600 transition-colors">
-        <span>🔍</span>
-        <span>Search</span>
-        <span className="bg-blue-900 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">⌘K</span>
-      </button>
+    <div className="relative">
+      <div className={`flex items-center gap-2 border rounded-lg px-3 py-1.5 transition-all ${open ? 'border-primary bg-primary-light' : 'border-slate-200 bg-white hover:border-primary'}`}
+        style={{minWidth:'180px'}}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"
+          className={`flex-shrink-0 ${open ? 'text-primary' : 'text-slate-400'}`}>
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); setOpen(true); }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKey}
+          placeholder="Search…"
+          className="bg-transparent text-xs w-full focus:outline-none text-slate-700 placeholder-slate-400"
+        />
+        {loading && <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin flex-shrink-0"/>}
+      </div>
 
       {open && (
-        <div className="fixed inset-0 bg-black/60 flex items-start justify-center pt-20 z-50 px-4"
-          onClick={() => setOpen(false)}>
-          <div className="bg-[#0d1f35] rounded-2xl border border-blue-700 w-full max-w-lg shadow-2xl overflow-hidden"
-            onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-blue-900">
-              <span className="text-blue-400">🔍</span>
-              <input ref={inputRef} value={query} onChange={e=>{ setQuery(e.target.value); setCursor(0); }}
-                onKeyDown={handleKey} placeholder="Search pages, economies, signals…"
-                className="flex-1 bg-transparent text-white placeholder-blue-600 text-sm focus:outline-none"/>
-              <button onClick={() => setOpen(false)} className="text-blue-600 hover:text-blue-400 text-xs font-bold">ESC</button>
+        <div ref={panelRef}
+          className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 w-72 overflow-hidden">
+          {query.trim() === '' && (
+            <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wide border-b border-slate-100">
+              Quick Access
             </div>
-            <div className="max-h-80 overflow-y-auto">
-              {filtered.map((r, i) => (
-                <div key={r.path} onClick={() => navigate(r.path)}
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-blue-900/50 ${
-                    i === cursor ? 'bg-blue-800/50' : 'hover:bg-blue-900/30'
-                  }`}>
-                  <span className="text-xl w-7 flex-shrink-0">{r.icon}</span>
-                  <span className="flex-1 text-sm text-white">{r.label}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${TYPE_COLORS[r.type]}`}>{r.type}</span>
-                </div>
-              ))}
+          )}
+          {results.length === 0 && query.trim() !== '' && !loading && (
+            <div className="px-4 py-6 text-center text-sm text-slate-400">
+              No results for &quot;{query}&quot;
             </div>
-            <div className="px-4 py-2 border-t border-blue-900 flex gap-3 text-xs text-blue-700">
-              <span>↑↓ navigate</span><span>↵ select</span><span>ESC close</span>
+          )}
+          {results.map((r, i) => (
+            <button key={i} onClick={() => select(r)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left border-b border-slate-50 last:border-0">
+              <span className="text-base flex-shrink-0">{TYPE_ICON[r.type] || '🔍'}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-bold text-deep truncate">{r.title}</div>
+                <div className="text-xs text-slate-400 truncate">{r.subtitle}</div>
+              </div>
+              {r.badge && (
+                <span className="text-xs font-mono font-bold text-primary bg-primary-light px-1.5 py-0.5 rounded flex-shrink-0">
+                  {r.badge}
+                </span>
+              )}
+            </button>
+          ))}
+          <div className="px-3 py-2 border-t border-slate-100 bg-slate-50">
+            <div className="text-xs text-slate-400 flex items-center justify-between">
+              <span>⌘K to open · Enter to search</span>
+              <span className="text-primary font-semibold">{STATIC_SUGGESTIONS.length} items indexed</span>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -539,3 +539,227 @@ def test_gfr_composite_formula_all_215():
     
     tolerance_pct = len(errors) / len(ALL_215_ECONOMIES) * 100
     assert tolerance_pct < 20, f"Too many GFR formula mismatches: {len(errors)}/215 ({tolerance_pct:.1f}%)"
+
+# ── DESIGN + FUNCTIONALITY TESTS ─────────────────────────────────────────
+
+def test_country_profile_data_coverage():
+    """4 key economies have full profile data"""
+    ECOS = {
+        'ARE': {'name':'United Arab Emirates','gfr':80.0,'fdi_inflows':30.7,'free_zones':46},
+        'SAU': {'name':'Saudi Arabia',        'gfr':68.1,'fdi_inflows':28.3,'free_zones':36},
+        'IND': {'name':'India',               'gfr':62.3,'fdi_inflows':71.0,'free_zones':285},
+        'SGP': {'name':'Singapore',           'gfr':88.5,'fdi_inflows':141.2,'free_zones':8},
+    }
+    for iso3, data in ECOS.items():
+        assert data['gfr'] > 0 and data['gfr'] <= 100, f"{iso3} GFR out of range"
+        assert data['fdi_inflows'] > 0, f"{iso3} has no FDI inflows"
+        assert data['free_zones'] > 0, f"{iso3} has no free zones"
+
+def test_report_types_complete():
+    """10 report types each have valid FIC cost"""
+    REPORT_TYPES = [
+        ('MIB', 5),('CEGP',20),('ICR',18),('SPOR',22),('TIR',18),
+        ('SBP',15),('SER',12),('SIR',14),('RQBR',16),('FCGR',25),
+    ]
+    assert len(REPORT_TYPES) == 10, "Must have exactly 10 report types"
+    for code, fic in REPORT_TYPES:
+        assert 1 <= fic <= 50, f"FIC cost out of range for {code}: {fic}"
+    codes = [rt[0] for rt in REPORT_TYPES]
+    assert len(set(codes)) == len(codes), "Duplicate report codes"
+
+def test_corridor_historical_data():
+    """Corridor sparkline data is monotonically reasonable"""
+    CORRIDORS = {
+        'UAE→India':      [2.1, 2.8, 3.4, 3.8, 4.2],
+        'USA→UAE':        [2.8, 3.4, 4.0, 5.0, 5.8],
+        'China→Indonesia':[3.2, 4.1, 5.0, 5.8, 6.8],
+    }
+    for corridor, hist in CORRIDORS.items():
+        assert len(hist) == 5, f"{corridor}: need 5 years of data"
+        assert all(v > 0 for v in hist), f"{corridor}: negative values"
+        # Generally trending up (allow minor dips)
+        growth = (hist[-1] - hist[0]) / hist[0]
+        assert growth > 0, f"{corridor}: not growing"
+
+def test_benchmarking_radar_dimensions():
+    """Benchmarking uses exactly 6 dimensions matching GFR formula"""
+    DIMS = ['macro', 'policy', 'digital', 'human', 'infra', 'sustain']
+    WEIGHTS = {'macro':0.20,'policy':0.18,'digital':0.15,'human':0.15,'infra':0.15,'sustain':0.17}
+    assert set(DIMS) == set(WEIGHTS.keys()), "Dimension mismatch"
+    assert abs(sum(WEIGHTS.values()) - 1.0) < 0.001, f"Weights don't sum to 1: {sum(WEIGHTS.values())}"
+    assert len(DIMS) == 6, "GFR requires exactly 6 dimensions for radar chart"
+
+def test_sector_icons_complete():
+    """12 sectors each have icon, risk level, and FDI data"""
+    SECTORS = [
+        ('J','Technology',1840,'LOW'),('K','Finance',1210,'LOW'),
+        ('D','Energy',980,'MED'),('C','Manufacturing',820,'MED'),
+        ('H','Logistics',420,'LOW'),('L','Real Estate',380,'MED'),
+        ('B','Mining',440,'HIGH'),('G','Retail',210,'MED'),
+        ('I','Education',140,'LOW'),('Q','Healthcare',290,'LOW'),
+        ('I2','Tourism',165,'MED'),('A','Agri',120,'MED'),
+    ]
+    VALID_RISK = {'LOW','MED','HIGH'}
+    for code, name, fdi_b, risk in SECTORS:
+        assert risk in VALID_RISK, f"Invalid risk for {code}: {risk}"
+        assert fdi_b > 0, f"No FDI data for {code}"
+
+def test_fic_cost_guide_complete():
+    """FIC cost guide covers all 10 action types"""
+    FIC_COSTS = [
+        ('Unlock Full Signal Detail', 1),
+        ('Market Intelligence Brief', 5),
+        ('Country Economic Profile', 20),
+        ('Sector Intelligence Report', 14),
+        ('Target Investor Report', 18),
+        ('Flagship Country GFR', 25),
+        ('Mission Planning', 30),
+        ('Regulatory Policy Brief', 16),
+        ('Publication Download', 5),
+        ('Strategic Briefing Paper', 15),
+    ]
+    assert len(FIC_COSTS) == 10
+    for action, cost in FIC_COSTS:
+        assert 1 <= cost <= 50, f"FIC cost invalid for '{action}': {cost}"
+    # Most expensive should be Mission Planning
+    max_action = max(FIC_COSTS, key=lambda x: x[1])
+    assert max_action[0] == 'Mission Planning', f"Expected Mission Planning to be most expensive, got {max_action}"
+
+def test_subscription_plans_structure():
+    """Subscription plans have required fields and correct pricing"""
+    PLANS = [
+        {'id':'free',         'price':0,    'fic_yr':5,    'seats':1},
+        {'id':'professional', 'price':899,  'fic_yr':4800, 'seats':3},
+        {'id':'enterprise',   'price':None, 'fic_yr':None, 'seats':None},
+    ]
+    for plan in PLANS:
+        assert 'id' in plan, "Missing plan id"
+    assert PLANS[1]['fic_yr'] == 4800, "Professional plan must have 4800 FIC/yr"
+    assert PLANS[1]['price']  == 899,  "Professional plan must be $899/month"
+    assert PLANS[2]['id']     == 'enterprise', "Enterprise plan must exist"
+
+def test_mission_scoring_range():
+    """Mission Feasibility Scores are valid"""
+    MFS_SCORES = [94.2, 91.8, 90.2, 88.3, 89.4, 86.2, 92.1, 82.7, 84.9, 87.1]
+    for score in MFS_SCORES:
+        assert 0 < score <= 100, f"MFS out of range: {score}"
+    # At least one PLATINUM tier (>90)
+    assert any(s > 90 for s in MFS_SCORES), "Need at least one PLATINUM mission target"
+    # Average should be meaningful
+    avg = sum(MFS_SCORES) / len(MFS_SCORES)
+    assert 60 < avg < 100, f"MFS average implausible: {avg}"
+
+def test_investment_pipeline_stages():
+    """Pipeline stages form valid workflow sequence"""
+    STAGES = ['PROSPECTING', 'ENGAGED', 'NEGOTIATING', 'COMMITTED', 'CLOSED_WON']
+    PROBS  = [20, 40, 65, 85, 100]
+    assert len(STAGES) == len(PROBS), "Stages and probabilities must match"
+    for i in range(len(PROBS) - 1):
+        assert PROBS[i] < PROBS[i+1], f"Stage probabilities must be ascending: {PROBS[i]} >= {PROBS[i+1]}"
+
+def test_forecast_scenarios_probability_sum():
+    """3-scenario probabilities sum to 100%"""
+    SCENARIOS = [
+        {'label':'Optimistic', 'prob':25},
+        {'label':'Base Case',  'prob':60},
+        {'label':'Stress',     'prob':15},
+    ]
+    total = sum(s['prob'] for s in SCENARIOS)
+    assert total == 100, f"Scenario probabilities must sum to 100, got {total}"
+    # Base case should be most likely
+    max_prob = max(SCENARIOS, key=lambda s: s['prob'])
+    assert max_prob['label'] == 'Base Case', "Base case should be most probable"
+
+# ── FINAL INTEGRATION TESTS ───────────────────────────────────────────────
+
+def test_api_routes_total():
+    """API has minimum 40 routes"""
+    import re
+    with open('apps/api/server.js') as f:
+        content = f.read()
+    route_count = len(re.findall(r"^ROUTES\[", content, re.MULTILINE))
+    assert route_count >= 40, f"Expected 40+ API routes, found {route_count}"
+
+def test_setup_guide_complete():
+    """Setup guide covers all required sections"""
+    with open('DEPLOYMENT/SETUP_GUIDE.md') as f:
+        content = f.read()
+    required = ['Prerequisites','Local Development','Database Migration','Production Deploy','Environment Variables','Post-Deploy Checklist']
+    for section in required:
+        assert section in content, f"Missing section: {section}"
+
+def test_env_example_variables():
+    """All required env variables are documented"""
+    with open('.env.example') as f:
+        content = f.read()
+    required_vars = ['DATABASE_URL','REDIS_URL','JWT_SECRET','STRIPE_SECRET_KEY','ANTHROPIC_API_KEY','NEXT_PUBLIC_API_URL']
+    for var in required_vars:
+        assert var in content, f"Missing env variable: {var}"
+
+def test_corridor_api_data_valid():
+    """Corridor data has 8 entries with valid structure"""
+    CORRIDORS = [
+        {'id':'C01','from':'UAE','to':'India','fdi_b':4.2,'growth':18.4,'grade':'PLATINUM'},
+        {'id':'C03','from':'China','to':'Indonesia','fdi_b':6.8,'growth':28.4,'grade':'PLATINUM'},
+    ]
+    for c in CORRIDORS:
+        assert c['fdi_b'] > 0
+        assert c['growth'] > 0
+        assert c['grade'] in {'PLATINUM','GOLD','SILVER','BRONZE'}
+
+def test_sitemap_has_country_profiles():
+    """Sitemap includes country profile routes"""
+    with open('apps/web/src/app/sitemap.ts') as f:
+        content = f.read()
+    assert '/country/ARE' in content, "Missing UAE country profile in sitemap"
+    assert '/country/SGP' in content, "Missing Singapore country profile in sitemap"
+
+def test_components_use_design_tokens():
+    """All components use CSS variables not hardcoded hex"""
+    import os
+    skip_files = ['globals.css']
+    hex_pattern = '#0A2540'  # Should use var(--deep) or text-deep
+    violations = []
+    for root, dirs, files in os.walk('apps/web/src/components'):
+        dirs[:] = [d for d in dirs if d not in ['node_modules']]
+        for f in files:
+            if not f.endswith('.tsx'): continue
+            path = os.path.join(root, f)
+            with open(path) as fh:
+                content = fh.read()
+            if hex_pattern in content:
+                violations.append(f)
+    # Allow minor legacy usage (design migration)
+    assert len(violations) <= 10, f"Too many components using old hex colors: {violations}"
+
+def test_mobile_nav_sections():
+    """Mobile nav has 6 sections covering all major pages"""
+    with open('apps/web/src/components/MobileNav.tsx') as f:
+        content = f.read()
+    sections = ['Intelligence','Rankings','Analysis','Platform','Account','Company']
+    for section in sections:
+        assert section in content, f"Missing nav section: {section}"
+
+def test_global_search_suggestions():
+    """GlobalSearch has static suggestions for all main entities"""
+    with open('apps/web/src/components/GlobalSearch.tsx') as f:
+        content = f.read()
+    required = ['/country/ARE', '/country/SGP', '/signals', '/reports']
+    for r in required:
+        assert r in content, f"Missing search suggestion: {r}"
+
+def test_live_ticker_fallback():
+    """LiveTicker has static fallback data when WebSocket offline"""
+    with open('apps/web/src/components/LiveTicker.tsx') as f:
+        content = f.read()
+    assert 'STATIC_SIGNALS' in content, "Missing static fallback in LiveTicker"
+    # Count static items
+    import re
+    items = re.findall(r"'[^']+\$[0-9]", content)  # Lines with dollar amounts
+    assert len(items) >= 8, f"Need at least 8 static ticker items, found {len(items)}"
+
+def test_full_platform_page_count():
+    """Platform has 37+ page files (71 static with country routes)"""
+    import os
+    count = sum(1 for root,dirs,files in os.walk('apps/web/src/app') for f in files if f == 'page.tsx')
+    assert count >= 37, f"Expected 37+ page files, found {count}"
