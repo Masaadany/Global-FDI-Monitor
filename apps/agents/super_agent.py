@@ -548,3 +548,44 @@ if __name__ == "__main__":
         print(f"{'═'*60}\n")
 
     asyncio.run(main())
+
+# ══════════════════════════════════════════════════════════════════════════
+# COST-OPTIMIZED ARCHITECTURE — target $99-250/month
+# ══════════════════════════════════════════════════════════════════════════
+
+COST_ARCHITECTURE = {
+    "target_monthly_usd": 99,
+    "max_monthly_usd":    250,
+    "azure_containers": {
+        "api":       {"cpu":0.25, "mem":"0.5Gi", "min_replicas":1, "max_replicas":3,  "est_usd":15},
+        "agents":    {"cpu":0.25, "mem":"0.5Gi", "min_replicas":0, "max_replicas":2,  "est_usd":8},
+        "pipeline":  {"cpu":0.25, "mem":"0.5Gi", "min_replicas":0, "max_replicas":1,  "est_usd":5},
+    },
+    "azure_postgres":    {"sku":"B1ms", "storage_gb":32, "est_usd":18},
+    "azure_redis":       {"sku":"C0",   "est_usd":16},
+    "github_pages":      {"est_usd":0},    # Free
+    "anthropic_api":     {"model":"claude-haiku-3", "est_tokens_monthly":500000, "est_usd":15},
+    "total_est_usd":     77,
+    "notes": [
+        "Agents scale to 0 when idle (Container Apps consumption plan)",
+        "Claude Haiku for classification, Sonnet only for report generation",
+        "Redis caches all repeated queries (60s-24h TTL)",
+        "Static frontend on GitHub Pages = $0",
+        "Pipeline runs as batch jobs, not always-on servers",
+    ]
+}
+
+def print_cost_estimate():
+    print("\n═══ MINIMUM COST ARCHITECTURE ═══")
+    for service, cfg in COST_ARCHITECTURE.items():
+        if isinstance(cfg, dict) and "est_usd" in cfg:
+            print(f"  {service:<30} ~${cfg['est_usd']}/month")
+        elif isinstance(cfg, dict):
+            for sub, subcfg in cfg.items():
+                if isinstance(subcfg, dict) and "est_usd" in subcfg:
+                    print(f"  {service}.{sub:<26} ~${subcfg['est_usd']}/month")
+    print(f"\n  TOTAL ESTIMATED:               ~${COST_ARCHITECTURE['total_est_usd']}/month")
+    print(f"  TARGET:                        ${COST_ARCHITECTURE['target_monthly_usd']}-{COST_ARCHITECTURE['max_monthly_usd']}/month")
+    print(f"\n  Notes:")
+    for note in COST_ARCHITECTURE["notes"]:
+        print(f"    · {note}")
