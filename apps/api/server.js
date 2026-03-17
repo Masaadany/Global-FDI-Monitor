@@ -1662,3 +1662,38 @@ ROUTES['GET /api/v1/billing/plans'] = async(req,res)=>{
     {id:'enterprise',name:'Enterprise',price:null,fic_yr:null,seats:null,features:['Custom everything','White-label','API access']},
   ]});
 };
+
+// ── ECONOMIES LIST ────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/economies'] = async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  const eco_list=M_GFR.map(e=>({iso3:e.iso3,name:e.name,region:e.region,income:e.income,gfr:e.composite,tier:e.tier,fdi_b:e.fdi_b}));
+  const {items,pagination}=paginate(req,eco_list);
+  ok(res,{economies:items,total:eco_list.length,pagination});
+};
+
+// ── INTERNAL HEALTH CHECK ─────────────────────────────────────────────────
+ROUTES['GET /api/v1/health'] = async(req,res)=>{
+  const start = process.hrtime();
+  let db_ok=false, redis_ok=false;
+  try { if(db) { await dbQ('SELECT 1'); db_ok=true; } } catch {}
+  try { if(redis) { await redis.ping(); redis_ok=true; } } catch {}
+  const [s,ns]=process.hrtime(start);
+  const latency_ms=Math.round(s*1000+ns/1e6);
+  ok(res,{status:'ok',version:'3.0.0',db:db_ok,redis:redis_ok,ws:wss?.clients?.size||0,uptime_s:Math.floor(process.uptime()),latency_ms,signals_broadcast:M_SIGNALS.length,gfr_economies:M_GFR.length});
+};
+
+// ── OPENAPI JSON ─────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/openapi.json'] = async(req,res)=>{
+  ok(res,{openapi:'3.0.0',info:{title:'Global FDI Monitor API',version:'3.0.0',description:'FDI intelligence platform API — 71 pages, 50 API routes, 215 economies'},
+    servers:[{url:'https://api.fdimonitor.org',description:'Production'}],
+    paths:Object.keys(ROUTES).reduce((acc,r)=>{
+      const [method,path]=r.split(' ');
+      const oaPath=path.replace(/:(\w+)/g,'{$1}');
+      if(!acc[oaPath])acc[oaPath]={};
+      acc[oaPath][method.toLowerCase()]={summary:r,responses:{200:{description:'Success'}}};
+      return acc;
+    },{})
+  });
+};
+
+log('API','✓ GFM API v3.0.0 — '+Object.keys(ROUTES).length+' routes registered');
