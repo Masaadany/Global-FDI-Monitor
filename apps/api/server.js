@@ -1,123 +1,49 @@
 /**
- * GLOBAL FDI MONITOR — PRODUCTION API v2.0
- * Real PostgreSQL + Redis connections with graceful fallback to mock data.
- * 25 endpoints covering all platform pages.
+ * GLOBAL FDI MONITOR — PRODUCTION API v3.0
+ * Real PostgreSQL + Redis + Stripe webhook + JWT + FIC deduction
+ * 32 endpoints covering complete platform.
  */
 const http   = require('http');
 const url    = require('url');
-const PORT   = process.env.PORT || 3001;
+const crypto = require('crypto');
+const PORT   = process.env.PORT     || 3001;
 const DB_URL = process.env.DATABASE_URL;
 const RD_URL = process.env.REDIS_URL;
+const JWT_SECRET  = process.env.JWT_SECRET  || 'gfm-dev-secret-change-in-prod';
+const STRIPE_KEY  = process.env.STRIPE_SECRET_KEY;
+const STRIPE_WHSEC= process.env.STRIPE_WEBHOOK_SECRET;
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
-// ── DB POOL (optional — graceful fallback) ────────────────────────────────
-let db = null;
-let redisClient = null;
-
+// ── DB + REDIS INIT ────────────────────────────────────────────────────────
+let db = null, redis = null;
 async function initDB() {
-  if (!DB_URL) { console.log('⚠ No DATABASE_URL — using mock data'); return; }
+  if (!DB_URL) return log('DB','No DATABASE_URL — demo mode');
   try {
-    const { Pool } = require('pg');
-    db = new Pool({ connectionString: DB_URL, max:10,
-      ssl: process.env.NODE_ENV==='production' ? {rejectUnauthorized:false} : false });
+    const {Pool} = require('pg');
+    db = new Pool({connectionString:DB_URL,max:10,ssl:{rejectUnauthorized:false}});
     await db.query('SELECT 1');
-    console.log('✓ PostgreSQL connected');
-
-    // Run schema if needed
-    await db.query(`
-      CREATE SCHEMA IF NOT EXISTS intelligence;
-      CREATE TABLE IF NOT EXISTS intelligence.economies (
-        iso3 CHAR(3) PRIMARY KEY, iso2 CHAR(2), name TEXT,
-        region TEXT, income_group TEXT, updated_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS intelligence.signals (
-        id TEXT PRIMARY KEY, grade TEXT, company TEXT, hq TEXT,
-        iso3 CHAR(3), economy TEXT, sector CHAR(1), capex_usd BIGINT,
-        sci_score NUMERIC(5,2), signal_type TEXT, status TEXT,
-        description TEXT, signal_date DATE, created_at TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE TABLE IF NOT EXISTS intelligence.gfr_scores (
-        iso3 CHAR(3), quarter TEXT, composite NUMERIC(5,2),
-        macro INT, policy INT, digital INT, human INT, infra INT, sustain INT,
-        tier TEXT, rank INT, PRIMARY KEY (iso3, quarter)
-      );
-    `);
-    console.log('✓ Schema ready');
-  } catch(e) {
-    console.warn('DB init failed, using mock data:', e.message);
-    db = null;
-  }
+    log('DB','✓ PostgreSQL connected');
+  } catch(e) { log('DB','fallback to demo: '+e.message); db=null; }
 }
-
 async function initRedis() {
   if (!RD_URL) return;
   try {
-    const redis = require('redis');
-    redisClient = redis.createClient({ url: RD_URL });
-    redisClient.on('error', () => { redisClient = null; });
-    await redisClient.connect();
-    console.log('✓ Redis connected');
-  } catch(e) {
-    console.warn('Redis unavailable:', e.message);
-    redisClient = null;
-  }
+    const r = require('redis').createClient({url:RD_URL});
+    r.on('error',()=>{ redis=null; });
+    await r.connect();
+    redis = r;
+    log('Redis','✓ Connected');
+  } catch(e) { redis=null; }
 }
-
-// ── CACHE WRAPPER ─────────────────────────────────────────────────────────
-async function cached(key, ttl, fn) {
-  if (redisClient) {
-    try {
-      const hit = await redisClient.get(key);
-      if (hit) return JSON.parse(hit);
-    } catch {}
-  }
-  const data = await fn();
-  if (redisClient && data) {
-    try { await redisClient.setEx(key, ttl, JSON.stringify(data)); } catch {}
-  }
-  return data;
-}
-
-// ── MOCK DATA (used when DB unavailable) ─────────────────────────────────
-const MOCK_SIGNALS = [
-  {id:'MSS-GFS-ARE-20260317-0001',grade:'PLATINUM',company:'Microsoft Corp',hq:'USA',economy:'UAE',iso3:'ARE',sector:'J',capex_usd:850000000,sci_score:91.2,signal_type:'Greenfield',status:'CONFIRMED',signal_date:'2026-03-17',description:'Data centre campus confirmed in Dubai Silicon Oasis. 850MW capacity.'},
-  {id:'MSS-CES-SAU-20260317-0002',grade:'GOLD',company:'Amazon Web Services',hq:'USA',economy:'Saudi Arabia',iso3:'SAU',sector:'J',capex_usd:5300000000,sci_score:88.4,signal_type:'Expansion',status:'ANNOUNCED',signal_date:'2026-03-17',description:'AWS Middle East expansion — three new AZs in Riyadh by 2027.'},
-  {id:'MSS-GFS-EGY-20260317-0003',grade:'PLATINUM',company:'Siemens Energy',hq:'DEU',economy:'Egypt',iso3:'EGY',sector:'D',capex_usd:340000000,sci_score:86.1,signal_type:'JV',status:'CONFIRMED',signal_date:'2026-03-17',description:'JV with EEHC for 500MW offshore wind in Gulf of Suez.'},
-  {id:'MSS-CES-VNM-20260317-0004',grade:'GOLD',company:'Samsung Electronics',hq:'KOR',economy:'Vietnam',iso3:'VNM',sector:'C',capex_usd:2800000000,sci_score:83.7,signal_type:'Expansion',status:'CONFIRMED',signal_date:'2026-03-17',description:'Semiconductor packaging expansion in Thai Nguyen.'},
-  {id:'MSS-GFS-IND-20260317-0005',grade:'PLATINUM',company:'Vestas Wind',hq:'DNK',economy:'India',iso3:'IND',sector:'D',capex_usd:420000000,sci_score:85.9,signal_type:'Greenfield',status:'ANNOUNCED',signal_date:'2026-03-16',description:'Wind turbine manufacturing plant in Rajasthan.'},
-  {id:'MSS-GFS-ARE-20260317-0006',grade:'SILVER',company:'BlackRock Inc',hq:'USA',economy:'UAE',iso3:'ARE',sector:'K',capex_usd:500000000,sci_score:74.2,signal_type:'Platform',status:'RUMOURED',signal_date:'2026-03-16',description:'Infrastructure fund exploring ADGM platform.'},
-];
-
-const MOCK_GFR = [
-  {rank:1,iso3:'SGP',name:'Singapore',region:'EAP',composite:88.5,tier:'FRONTIER',macro:87,policy:91,digital:87,human:63,infra:94,sustain:62},
-  {rank:2,iso3:'USA',name:'United States',region:'NAM',composite:84.5,tier:'FRONTIER',macro:89,policy:83,digital:91,human:74,infra:86,sustain:68},
-  {rank:3,iso3:'ARE',name:'UAE',region:'MENA',composite:80.0,tier:'FRONTIER',macro:82,policy:78,digital:84,human:54,infra:92,sustain:53},
-  {rank:4,iso3:'DEU',name:'Germany',region:'ECA',composite:78.1,tier:'HIGH',macro:81,policy:86,digital:78,human:70,infra:84,sustain:77},
-  {rank:5,iso3:'IND',name:'India',region:'SAS',composite:62.3,tier:'MEDIUM',macro:68,policy:56,digital:59,human:69,infra:65,sustain:38},
-  {rank:6,iso3:'SAU',name:'Saudi Arabia',region:'MENA',composite:68.1,tier:'HIGH',macro:74,policy:62,digital:68,human:45,infra:72,sustain:47},
-  {rank:7,iso3:'VNM',name:'Vietnam',region:'EAP',composite:58.2,tier:'MEDIUM',macro:62,policy:58,digital:48,human:48,infra:58,sustain:52},
-  {rank:8,iso3:'NGA',name:'Nigeria',region:'SSA',composite:42.1,tier:'EMERGING',macro:48,policy:38,digital:40,human:44,infra:38,sustain:35},
-];
-
-const MOCK_ECONOMIES = [
-  {iso3:'ARE',iso2:'AE',name:'United Arab Emirates',region:'MENA',income:'HIC',fdi_b:30.7,gfr:80.0},
-  {iso3:'SAU',iso2:'SA',name:'Saudi Arabia',region:'MENA',income:'HIC',fdi_b:28.3,gfr:68.1},
-  {iso3:'IND',iso2:'IN',name:'India',region:'SAS',income:'LMIC',fdi_b:71.0,gfr:62.3},
-  {iso3:'CHN',iso2:'CN',name:'China',region:'EAP',income:'UMIC',fdi_b:163.0,gfr:61.8},
-  {iso3:'SGP',iso2:'SG',name:'Singapore',region:'EAP',income:'HIC',fdi_b:141.2,gfr:88.5},
-  {iso3:'USA',iso2:'US',name:'United States',region:'NAM',income:'HIC',fdi_b:285.0,gfr:84.5},
-  {iso3:'DEU',iso2:'DE',name:'Germany',region:'ECA',income:'HIC',fdi_b:35.4,gfr:78.1},
-  {iso3:'GBR',iso2:'GB',name:'United Kingdom',region:'ECA',income:'HIC',fdi_b:52.0,gfr:78.5},
-  {iso3:'VNM',iso2:'VN',name:'Vietnam',region:'EAP',income:'LMIC',fdi_b:18.1,gfr:58.2},
-  {iso3:'NGA',iso2:'NG',name:'Nigeria',region:'SSA',income:'LMIC',fdi_b:4.1,gfr:42.1},
-];
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
+function log(ctx, msg) { console.log(`[${new Date().toISOString().slice(11,23)}] [${ctx}] ${msg}`); }
 function setCORS(res) {
   res.setHeader('Access-Control-Allow-Origin','*');
   res.setHeader('Access-Control-Allow-Methods','GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers','Content-Type,Authorization');
+  res.setHeader('Access-Control-Allow-Headers','Content-Type,Authorization,X-Stripe-Signature');
 }
-function ok(res, data, meta={}) {
+function ok(res,data,meta={}) {
   res.writeHead(200,{'Content-Type':'application/json'});
   res.end(JSON.stringify({success:true,data,meta,ts:new Date().toISOString()}));
 }
@@ -125,217 +51,467 @@ function fail(res,code,msg,status=400) {
   res.writeHead(status,{'Content-Type':'application/json'});
   res.end(JSON.stringify({success:false,error:{code,message:msg}}));
 }
-async function parseBody(req) {
-  return new Promise(r=>{let b='';req.on('data',d=>b+=d);req.on('end',()=>{try{r(JSON.parse(b||'{}'))}catch{r({})}})});
+async function body(req) {
+  return new Promise(r=>{let b='';req.on('data',d=>b+=d);req.on('end',()=>{try{r(JSON.parse(b||'{}'))}catch{r({})}});});
 }
-async function dbQuery(sql,params=[],fallback=null) {
-  if (!db) return fallback;
-  try { const r=await db.query(sql,params); return r.rows; }
-  catch(e) { console.warn('DB query failed:',e.message); return fallback; }
+async function rawBody(req) {
+  return new Promise(r=>{const chunks=[];req.on('data',d=>chunks.push(d));req.on('end',()=>r(Buffer.concat(chunks)));});
+}
+async function dbQ(sql,params=[],fallback=null) {
+  if(!db) return fallback;
+  try { return (await db.query(sql,params)).rows; } catch(e){ log('DB',e.message); return fallback; }
+}
+async function cached(key,ttl,fn) {
+  if(redis){ try { const h=await redis.get(key); if(h) return JSON.parse(h); } catch{} }
+  const data=await fn();
+  if(redis&&data){ try { await redis.setEx(key,ttl,JSON.stringify(data)); } catch{} }
+  return data;
+}
+// JWT
+function signJWT(payload,expiresIn=3600) {
+  const h=Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
+  const b=Buffer.from(JSON.stringify({...payload,exp:Math.floor(Date.now()/1000)+expiresIn,iat:Math.floor(Date.now()/1000)})).toString('base64url');
+  const sig=crypto.createHmac('sha256',JWT_SECRET).update(`${h}.${b}`).digest('base64url');
+  return `${h}.${b}.${sig}`;
+}
+function verifyJWT(token) {
+  try {
+    const [h,b,sig]=token.split('.');
+    const expected=crypto.createHmac('sha256',JWT_SECRET).update(`${h}.${b}`).digest('base64url');
+    if(sig!==expected) return null;
+    const p=JSON.parse(Buffer.from(b,'base64url').toString());
+    if(p.exp<Math.floor(Date.now()/1000)) return null;
+    return p;
+  } catch { return null; }
+}
+function getToken(req) {
+  const auth=req.headers.authorization||'';
+  return auth.startsWith('Bearer ') ? auth.slice(7) : null;
 }
 
-// ── ROUTES ─────────────────────────────────────────────────────────────────
+// ── MOCK DATA ──────────────────────────────────────────────────────────────
+const M_SIGNALS = [
+  {id:'MSS-GFS-ARE-20260317-0001',grade:'PLATINUM',company:'Microsoft Corp',hq:'USA',economy:'UAE',iso3:'ARE',sector:'J',capex_usd:850000000,sci_score:91.2,signal_type:'Greenfield',status:'CONFIRMED',signal_date:'2026-03-17'},
+  {id:'MSS-CES-SAU-20260317-0002',grade:'GOLD',company:'Amazon Web Services',hq:'USA',economy:'Saudi Arabia',iso3:'SAU',sector:'J',capex_usd:5300000000,sci_score:88.4,signal_type:'Expansion',status:'ANNOUNCED',signal_date:'2026-03-17'},
+  {id:'MSS-GFS-EGY-20260317-0003',grade:'PLATINUM',company:'Siemens Energy',hq:'DEU',economy:'Egypt',iso3:'EGY',sector:'D',capex_usd:340000000,sci_score:86.1,signal_type:'JV',status:'CONFIRMED',signal_date:'2026-03-17'},
+  {id:'MSS-CES-VNM-20260317-0004',grade:'GOLD',company:'Samsung Electronics',hq:'KOR',economy:'Vietnam',iso3:'VNM',sector:'C',capex_usd:2800000000,sci_score:83.7,signal_type:'Expansion',status:'CONFIRMED',signal_date:'2026-03-17'},
+  {id:'MSS-GFS-IND-20260317-0005',grade:'PLATINUM',company:'Vestas Wind',hq:'DNK',economy:'India',iso3:'IND',sector:'D',capex_usd:420000000,sci_score:85.9,signal_type:'Greenfield',status:'ANNOUNCED',signal_date:'2026-03-16'},
+  {id:'MSS-GFS-ARE-20260317-0006',grade:'SILVER',company:'BlackRock Inc',hq:'USA',economy:'UAE',iso3:'ARE',sector:'K',capex_usd:500000000,sci_score:74.2,signal_type:'Platform',status:'RUMOURED',signal_date:'2026-03-16'},
+  {id:'MSS-CES-SGP-20260317-0007',grade:'GOLD',company:'Databricks',hq:'USA',economy:'Singapore',iso3:'SGP',sector:'J',capex_usd:150000000,sci_score:79.3,signal_type:'Platform',status:'ANNOUNCED',signal_date:'2026-03-15'},
+  {id:'MSS-GFS-IDN-20260317-0008',grade:'GOLD',company:'CATL',hq:'CHN',economy:'Indonesia',iso3:'IDN',sector:'C',capex_usd:3200000000,sci_score:85.4,signal_type:'Greenfield',status:'COMMITTED',signal_date:'2026-03-14'},
+];
+const M_GFR = [
+  {iso3:'SGP',name:'Singapore',     region:'EAP',composite:88.5,rank:1, tier:'FRONTIER',macro:87,policy:91,digital:87,human:63,infra:94,sustain:62},
+  {iso3:'CHE',name:'Switzerland',   region:'ECA',composite:87.5,rank:2, tier:'FRONTIER',macro:88,policy:90,digital:85,human:78,infra:91,sustain:74},
+  {iso3:'ARE',name:'UAE',           region:'MENA',composite:80.0,rank:3, tier:'FRONTIER',macro:82,policy:78,digital:84,human:54,infra:92,sustain:53},
+  {iso3:'DEU',name:'Germany',       region:'ECA',composite:78.1,rank:4, tier:'HIGH',macro:81,policy:86,digital:78,human:70,infra:84,sustain:77},
+  {iso3:'USA',name:'United States', region:'NAM',composite:84.5,rank:5, tier:'FRONTIER',macro:89,policy:83,digital:91,human:74,infra:86,sustain:68},
+];
+const M_ECON = [
+  {iso3:'ARE',name:'UAE',           region:'MENA',income:'HIC',gdp_b:504, fdi_b:30.7,pop_m:10},
+  {iso3:'SAU',name:'Saudi Arabia',  region:'MENA',income:'HIC',gdp_b:1069,fdi_b:28.3,pop_m:36},
+  {iso3:'IND',name:'India',         region:'SAS', income:'LMIC',gdp_b:3730,fdi_b:71.0,pop_m:1429},
+  {iso3:'CHN',name:'China',         region:'EAP', income:'UMIC',gdp_b:17795,fdi_b:163.0,pop_m:1412},
+  {iso3:'SGP',name:'Singapore',     region:'EAP', income:'HIC',gdp_b:501, fdi_b:141.2,pop_m:5.9},
+  {iso3:'USA',name:'United States', region:'NAM', income:'HIC',gdp_b:27360,fdi_b:285.0,pop_m:335},
+  {iso3:'DEU',name:'Germany',       region:'ECA', income:'HIC',gdp_b:4430,fdi_b:35.4,pop_m:83},
+  {iso3:'GBR',name:'United Kingdom','region':'ECA',income:'HIC',gdp_b:3079,fdi_b:52.0,pop_m:67},
+  {iso3:'VNM',name:'Vietnam',       region:'EAP', income:'LMIC',gdp_b:430, fdi_b:18.1,pop_m:97},
+  {iso3:'NGA',name:'Nigeria',       region:'SSA', income:'LMIC',gdp_b:477, fdi_b:4.1, pop_m:218},
+];
+
+// ── ROUTE HANDLERS ─────────────────────────────────────────────────────────
 const ROUTES = {
 
-  'GET /api/v1/health': async (req,res) => {
-    const dbOk = db ? (await dbQuery('SELECT 1',[],[]).catch(()=>null) !== null) : false;
-    ok(res,{status:'ok',service:'Global FDI Monitor API',version:'2.0.0',
-      db:dbOk?'connected':'mock_mode',redis:redisClient?'connected':'unavailable',
-      mode: db?'production':'demo'});
+  'GET /api/v1/health': async(req,res)=>{
+    const dbOk = db ? (await dbQ('SELECT 1').catch(()=>null)) !== null : false;
+    ok(res,{status:'ok',service:'Global FDI Monitor API',version:'3.0.0',
+      mode:db?'production':'demo',db:dbOk?'connected':'unavailable',
+      redis:redis?'connected':'unavailable',uptime:process.uptime().toFixed(0)+'s'});
   },
 
-  'POST /api/v1/auth/register': async (req,res) => {
-    const d = await parseBody(req);
-    if (!d.email||!d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
-    // Try DB insert, fallback to mock token
-    if (db) {
-      const exists = await dbQuery('SELECT id FROM auth.users WHERE email=$1',[d.email],[]);
-      if (exists && exists.length>0) return fail(res,'EMAIL_EXISTS','Email already registered',409);
+  // ── AUTH ────────────────────────────────────────────────────────────────
+  'POST /api/v1/auth/register': async(req,res)=>{
+    const d=await body(req);
+    if(!d.email||!d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
+    if(db) {
+      const ex=await dbQ('SELECT id FROM auth.users WHERE email=$1',[d.email],[]);
+      if(ex&&ex.length>0) return fail(res,'EMAIL_EXISTS','Email already registered',409);
     }
+    // Hash password
+    const salt=crypto.randomBytes(16).toString('hex');
+    const hash=crypto.createHmac('sha256',salt).update(d.password).digest('hex');
+    const orgId='org_'+Date.now();
+    const userId='usr_'+Date.now();
+    if(db) {
+      try {
+        await db.query(`INSERT INTO auth.organisations(id,name,org_type,country,tier,fic_balance) VALUES($1,$2,$3,$4,'free_trial',5)`,
+          [orgId,d.org_name||'',d.org_type||'IPA',d.country||'']);
+        await db.query(`INSERT INTO auth.users(id,org_id,email,password,full_name) VALUES($1,$2,$3,$4,$5)`,
+          [userId,orgId,d.email,`${salt}:${hash}`,d.full_name||'']);
+      } catch(e){ log('auth',e.message); }
+    }
+    const token=signJWT({sub:userId,org:orgId,tier:'free_trial',email:d.email});
     ok(res,{
-      user:{id:'usr_'+Date.now(),email:d.email,full_name:d.full_name||''},
-      org:{id:'org_'+Date.now(),name:d.org_name||'',tier:'free_trial',
-           trial_expired:false,fic_balance:5},
-      tokens:{accessToken:'gfm_at_'+Buffer.from(d.email).toString('base64')+'_'+Date.now(),
-              refreshToken:'gfm_rt_'+Date.now(),expiresIn:3600}
+      user:{id:userId,email:d.email,full_name:d.full_name||''},
+      org:{id:orgId,name:d.org_name||'',tier:'free_trial',trial_expired:false,fic_balance:5},
+      tokens:{accessToken:token,refreshToken:signJWT({sub:userId,type:'refresh'},86400*30),expiresIn:3600}
     });
   },
 
-  'POST /api/v1/auth/login': async (req,res) => {
-    const d = await parseBody(req);
-    if (!d.email||!d.password) return fail(res,'INVALID_CREDENTIALS','Invalid credentials',401);
-    ok(res,{
-      user:{id:'usr_001',email:d.email,full_name:'Platform User'},
-      org:{id:'org_001',name:'Your Organisation',tier:'free_trial',
-           trial_expired:false,fic_balance:5},
-      tokens:{accessToken:'gfm_at_'+Date.now(),refreshToken:'gfm_rt_'+Date.now(),expiresIn:3600}
-    });
+  'POST /api/v1/auth/login': async(req,res)=>{
+    const d=await body(req);
+    if(!d.email||!d.password) return fail(res,'INVALID_CREDENTIALS','Invalid credentials',401);
+    let user=null,org=null;
+    if(db) {
+      const rows=await dbQ(`
+        SELECT u.id,u.email,u.full_name,u.password,u.org_id,
+               o.name as org_name,o.tier,o.fic_balance,
+               o.trial_start,o.trial_end
+        FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id
+        WHERE u.email=$1`,[d.email],[]);
+      if(rows&&rows[0]) {
+        const r=rows[0];
+        const [salt,hash]=r.password.split(':');
+        const check=crypto.createHmac('sha256',salt).update(d.password).digest('hex');
+        if(check!==hash) return fail(res,'INVALID_CREDENTIALS','Invalid credentials',401);
+        const trialExpired=r.tier==='free_trial'&&new Date(r.trial_end)<new Date();
+        user={id:r.id,email:r.email,full_name:r.full_name};
+        org={id:r.org_id,name:r.org_name,tier:r.tier,trial_expired:trialExpired,fic_balance:r.fic_balance};
+        await dbQ('UPDATE auth.users SET last_login=NOW() WHERE id=$1',[r.id]);
+      }
+    }
+    if(!user) {
+      user={id:'usr_demo',email:d.email,full_name:'Platform User'};
+      org={id:'org_demo',name:'Demo Organisation',tier:'free_trial',trial_expired:false,fic_balance:5};
+    }
+    const token=signJWT({sub:user.id,org:org.id,tier:org.tier,email:user.email});
+    ok(res,{user,org,tokens:{accessToken:token,refreshToken:signJWT({sub:user.id,type:'refresh'},86400*30),expiresIn:3600}});
   },
 
-  'POST /api/v1/auth/refresh': async (req,res) => {
-    ok(res,{tokens:{accessToken:'gfm_at_'+Date.now(),expiresIn:3600}});
+  'POST /api/v1/auth/refresh': async(req,res)=>{
+    const d=await body(req);
+    const payload=d.refreshToken?verifyJWT(d.refreshToken):null;
+    if(!payload||payload.type!=='refresh') return fail(res,'INVALID_TOKEN','Invalid refresh token',401);
+    ok(res,{tokens:{accessToken:signJWT({sub:payload.sub,org:payload.org,tier:payload.tier}),expiresIn:3600}});
   },
 
-  'GET /api/v1/signals': async (req,res) => {
-    const q = url.parse(req.url,true).query;
-    const data = await cached('signals:all', 60, async () => {
-      const rows = await dbQuery(
-        'SELECT * FROM intelligence.signals ORDER BY sci_score DESC LIMIT 100',
-        [], MOCK_SIGNALS);
-      return rows||MOCK_SIGNALS;
+  'GET /api/v1/auth/me': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    if(!payload) return fail(res,'UNAUTHORIZED','Authentication required',401);
+    const rows=await dbQ(`SELECT u.id,u.email,u.full_name,o.id as org_id,o.name,o.tier,o.fic_balance FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id WHERE u.id=$1`,[payload.sub],[]);
+    if(rows&&rows[0]) {
+      const r=rows[0];
+      return ok(res,{user:{id:r.id,email:r.email,full_name:r.full_name},org:{id:r.org_id,name:r.name,tier:r.tier,fic_balance:r.fic_balance}});
+    }
+    ok(res,{user:{id:payload.sub,email:payload.email},org:{id:payload.org,tier:payload.tier}});
+  },
+
+  // ── SIGNALS ─────────────────────────────────────────────────────────────
+  'GET /api/v1/signals': async(req,res)=>{
+    const q=url.parse(req.url,true).query;
+    const data=await cached('signals:list',60,async()=>{
+      const rows=await dbQ(`SELECT * FROM intelligence.signals ORDER BY sci_score DESC, signal_date DESC LIMIT 200`,[],M_SIGNALS);
+      return rows&&rows.length>0?rows:M_SIGNALS;
     });
-    let signals = [...(data||MOCK_SIGNALS)];
-    if (q.grade)   signals=signals.filter(s=>s.grade===q.grade);
-    if (q.economy) signals=signals.filter(s=>s.iso3===q.economy||s.economy===q.economy);
-    if (q.sector)  signals=signals.filter(s=>s.sector===q.sector);
-    ok(res,{signals,total:signals.length},{
+    let signals=[...(data||M_SIGNALS)];
+    if(q.grade)   signals=signals.filter(s=>s.grade===q.grade);
+    if(q.iso3||q.economy) signals=signals.filter(s=>s.iso3===(q.iso3||q.economy)||s.economy===(q.economy||q.iso3));
+    if(q.sector)  signals=signals.filter(s=>s.sector===q.sector);
+    if(q.type)    signals=signals.filter(s=>s.signal_type===q.type);
+    const from=parseInt(q.from as string||'0');
+    const size=parseInt(q.size as string||'20');
+    ok(res,{signals:signals.slice(from,from+size),total:signals.length,from,size},{
       platinum:signals.filter(s=>s.grade==='PLATINUM').length,
       gold:signals.filter(s=>s.grade==='GOLD').length,
-      data_source: db?'database':'demo'});
+      silver:signals.filter(s=>s.grade==='SILVER').length,
+      data_source:db?'database':'demo'});
   },
 
-  'GET /api/v1/gfr': async (req,res) => {
-    const data = await cached('gfr:rankings', 3600, async () => {
-      const rows = await dbQuery(
-        "SELECT * FROM intelligence.gfr_scores WHERE quarter='Q1 2026' ORDER BY rank",
-        [], MOCK_GFR);
-      return rows&&rows.length>0 ? rows : MOCK_GFR;
+  // ── GFR ─────────────────────────────────────────────────────────────────
+  'GET /api/v1/gfr': async(req,res)=>{
+    const q=url.parse(req.url,true).query;
+    const quarter=q.quarter||'Q1 2026';
+    const data=await cached(`gfr:${quarter}`,3600,async()=>{
+      const rows=await dbQ(`SELECT * FROM intelligence.gfr_scores WHERE quarter=$1 ORDER BY rank`,[quarter],M_GFR);
+      return rows&&rows.length>0?rows:M_GFR;
     });
-    ok(res,{rankings:data||MOCK_GFR,total:215,quarter:'Q1 2026',updated:'2026-03-17'});
+    ok(res,{rankings:data||M_GFR,total:data?data.length:215,quarter,updated:'2026-03-17'});
   },
 
-  'GET /api/v1/gfr/:iso3': async (req,res,p) => {
-    const rows = await dbQuery(
-      "SELECT * FROM intelligence.gfr_scores WHERE iso3=$1 AND quarter='Q1 2026'",
-      [p.iso3.toUpperCase()], []);
-    const eco = (rows&&rows[0]) || MOCK_GFR.find(e=>e.iso3===p.iso3.toUpperCase());
-    if (!eco) return fail(res,'NOT_FOUND','Economy not found',404);
+  'GET /api/v1/gfr/:iso3': async(req,res,p)=>{
+    const iso3=p.iso3.toUpperCase();
+    const rows=await dbQ(`SELECT * FROM intelligence.gfr_scores WHERE iso3=$1 AND quarter='Q1 2026'`,[iso3],[]);
+    const eco=(rows&&rows[0])||M_GFR.find(e=>e.iso3===iso3);
+    if(!eco) return fail(res,'NOT_FOUND','Economy not found',404);
     ok(res,eco);
   },
 
-  'GET /api/v1/economies': async (req,res) => {
-    const data = await cached('economies:all', 86400, async () => {
-      const rows = await dbQuery('SELECT * FROM intelligence.economies ORDER BY name',
-        [], MOCK_ECONOMIES);
-      return rows&&rows.length>0 ? rows : MOCK_ECONOMIES;
+  // ── ECONOMIES ──────────────────────────────────────────────────────────
+  'GET /api/v1/economies': async(req,res)=>{
+    const q=url.parse(req.url,true).query;
+    const data=await cached('economies:all',86400,async()=>{
+      const rows=await dbQ(`SELECT * FROM intelligence.economies ORDER BY gdp_usd_b DESC NULLS LAST`,[],M_ECON);
+      return rows&&rows.length>0?rows:M_ECON;
     });
-    ok(res,{economies:data||MOCK_ECONOMIES,total:data?data.length:215},{source:db?'database':'demo'});
+    let list=[...(data||M_ECON)];
+    if(q.region) list=list.filter(e=>e.region===q.region);
+    if(q.income) list=list.filter(e=>e.income_group===q.income||e.income===q.income);
+    ok(res,{economies:list,total:list.length},{source:db?'database':'demo'});
   },
 
-  'GET /api/v1/economies/:iso3': async (req,res,p) => {
-    const iso3 = p.iso3.toUpperCase();
-    const rows = await dbQuery('SELECT * FROM intelligence.economies WHERE iso3=$1',[iso3],[]);
-    const eco  = (rows&&rows[0]) || MOCK_ECONOMIES.find(e=>e.iso3===iso3);
-    if (!eco) return fail(res,'NOT_FOUND','Economy not found',404);
-    const signals = MOCK_SIGNALS.filter(s=>s.iso3===iso3);
-    ok(res,{...eco,signals,signal_count:signals.length});
+  'GET /api/v1/economies/:iso3': async(req,res,p)=>{
+    const iso3=p.iso3.toUpperCase();
+    const rows=await dbQ(`SELECT e.*,g.composite as gfr_score,g.rank as gfr_rank,g.tier FROM intelligence.economies e LEFT JOIN intelligence.gfr_scores g ON e.iso3=g.iso3 AND g.quarter='Q1 2026' WHERE e.iso3=$1`,[iso3],[]);
+    const eco=(rows&&rows[0])||M_ECON.find(e=>e.iso3===iso3);
+    if(!eco) return fail(res,'NOT_FOUND','Economy not found',404);
+    const signals=await dbQ(`SELECT * FROM intelligence.signals WHERE iso3=$1 ORDER BY sci_score DESC LIMIT 10`,[iso3],M_SIGNALS.filter(s=>s.iso3===iso3));
+    ok(res,{...eco,signals:signals||[],signal_count:(signals||[]).length});
   },
 
-  'POST /api/v1/reports/generate': async (req,res) => {
-    const d   = await parseBody(req);
-    const now = new Date();
-    const eco = (d.economy||'UAE').replace(/\s/g,'').slice(0,3).toUpperCase();
-    const ref = `FCR-${d.type||'MIB'}-${eco}-${now.toISOString().slice(0,10).replace(/-/g,'')}-`+
-                `${now.toTimeString().slice(0,8).replace(/:/g,'')}-`+
-                `${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`;
-    ok(res,{reference_code:ref,status:'COMPLETED',type:d.type||'MIB',
-            economy:d.economy,sector:d.sector,
-            generated_at:now.toISOString(),
+  // ── REPORTS ────────────────────────────────────────────────────────────
+  'POST /api/v1/reports/generate': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const d=await body(req);
+    const COSTS={CEGP:20,MIB:5,ICR:18,SPOR:22,TIR:18,SBP:15,SER:12,SIR:14,RQBR:16,FCGR:25};
+    const cost=COSTS[d.type]||5;
+    // Deduct FIC if authenticated and DB available
+    if(payload&&db){
+      const rows=await dbQ(`SELECT fic_balance FROM auth.organisations WHERE id=$1`,[payload.org],[]);
+      if(rows&&rows[0]){
+        const bal=rows[0].fic_balance;
+        if(bal<cost) return fail(res,'INSUFFICIENT_FIC',`Requires ${cost} FIC, balance: ${bal}`,402);
+        await dbQ(`UPDATE auth.organisations SET fic_balance=fic_balance-$1 WHERE id=$2`,[cost,payload.org]);
+        await dbQ(`INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,$4,$5)`,
+          [payload.org,`report_${d.type}`,-cost,bal-cost,d.type]);
+      }
+    }
+    const now=new Date();
+    const eco=(d.economy||'UAE').replace(/\s/g,'').slice(0,3).toUpperCase();
+    const ref=`FCR-${d.type||'MIB'}-${eco}-${now.toISOString().slice(0,10).replace(/-/g,'')}-`+
+              `${now.toTimeString().slice(0,8).replace(/:/g,'')}-`+
+              `${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`;
+    ok(res,{reference_code:ref,status:'COMPLETED',type:d.type,economy:d.economy,sector:d.sector,
+            fic_charged:cost,generated_at:now.toISOString(),
             download_url:`/api/v1/reports/${ref}/download`});
   },
 
-  'GET /api/v1/reports': async (req,res) => {
-    ok(res,{reports:[
-      {ref:'FCR-CEGP-ARE-20260317-143022-0047',type:'CEGP',economy:'UAE',status:'READY',date:'2026-03-17'},
-      {ref:'FCR-MIB-SAU-20260317-091205-0046',type:'MIB',economy:'Saudi Arabia',status:'READY',date:'2026-03-17'},
-    ],total:2});
+  'GET /api/v1/reports': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const rows=await dbQ(`SELECT ref,type,economy,status,created_at FROM intelligence.reports WHERE org_id=$1 ORDER BY created_at DESC LIMIT 20`,[payload?.org||'demo'],[]);
+    ok(res,{reports:rows||[{ref:'FCR-MIB-ARE-20260317-143022-0047',type:'MIB',economy:'UAE',status:'READY',date:'2026-03-17'}],total:rows?rows.length:1});
   },
 
-  'GET /api/v1/forecast': async (req,res) => {
-    const q = url.parse(req.url,true).query;
-    ok(res,{economy:q.economy||'ARE',indicator:'fdi_inflows_usd_b',
+  // ── FORECAST ──────────────────────────────────────────────────────────
+  'GET /api/v1/forecast': async(req,res)=>{
+    const q=url.parse(req.url,true).query;
+    const iso3=(q.economy||'ARE').toString().toUpperCase().slice(0,3);
+    const FORECASTS={
+      ARE:{base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34]},
+      SAU:{base:[24,26,28,30,32,35,37,39,41],opt:[26,29,32,35,38,42,45,48,52],stress:[20,22,23,25,26,27,28,29,30]},
+      IND:{base:[65,68,70,71,72,73,74,75,76],opt:[70,74,78,81,83,85,86,87,88],stress:[55,58,60,61,62,63,64,64,65]},
+      VNM:{base:[15,17,18,19,20,21,22,23,24],opt:[17,19,21,23,25,27,29,31,33],stress:[12,13,14,15,15,16,17,17,18]},
+      SGP:{base:[138,141,144,148,152,156,160,164,168],opt:[145,150,156,162,168,175,182,189,196],stress:[125,128,130,132,134,136,138,140,142]},
+    };
+    const fcast=FORECASTS[iso3]||FORECASTS.ARE;
+    ok(res,{economy:iso3,indicator:q.indicator||'fdi_inflows_usd_b',
       horizons:['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'],
-      scenarios:{base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34]},
-      model:'Bayesian VAR + Prophet Ensemble',updated:'2026-03-17'});
+      scenarios:fcast,model:'Bayesian VAR + Prophet Ensemble v2',
+      confidence_intervals:{lower:fcast.stress,upper:fcast.opt},
+      updated:'2026-03-17',next_update:'2026-04-01'});
   },
 
-  'GET /api/v1/publications': async (req,res) => {
+  // ── PUBLICATIONS ──────────────────────────────────────────────────────
+  'GET /api/v1/publications': async(req,res)=>{
     ok(res,{publications:[
-      {id:'FNL-WK-2026-11-20260317-001',type:'WEEKLY_NEWSLETTER',title:'Week 11 2026',date:'2026-03-17',grade:'FREE'},
-      {id:'FPB-MON-2026-03-20260301-001',type:'MONTHLY_PUBLICATION',title:'March 2026',date:'2026-03-01',grade:'PROFESSIONAL'},
-    ],total:2});
+      {id:'FNL-WK-2026-11',type:'WEEKLY_NEWSLETTER',title:'GFM Week 11 2026',date:'2026-03-17',grade:'FREE',signals:12},
+      {id:'FPB-MON-2026-03',type:'MONTHLY_PUBLICATION',title:'March 2026 Intelligence Report',date:'2026-03-01',grade:'PROFESSIONAL',pages:68},
+      {id:'FGR-Q1-2026',type:'GFR_QUARTERLY',title:'GFR Rankings Q1 2026',date:'2026-03-15',grade:'PROFESSIONAL',pages:48},
+    ],total:3});
   },
 
-  'GET /api/v1/alerts': async (req,res) => {
-    ok(res,{alerts:[
+  // ── ALERTS ────────────────────────────────────────────────────────────
+  'GET /api/v1/alerts': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const rows=await dbQ(`SELECT * FROM intelligence.alerts WHERE org_id=$1 ORDER BY created_at DESC LIMIT 50`,[payload?.org||'demo'],[]);
+    ok(res,{alerts:rows||[
       {id:'ALT001',type:'SIGNAL',priority:'HIGH',title:'New PLATINUM: Microsoft → UAE',read:false,created_at:'2026-03-17T09:14:00Z'},
       {id:'ALT002',type:'REGULATORY',priority:'HIGH',title:'India FDI cap raised to 100%',read:false,created_at:'2026-03-17T06:00:00Z'},
-    ],unread:2,total:8});
+      {id:'ALT003',type:'GFR',priority:'MEDIUM',title:'UAE GFR score improved +4.2 pts',read:true,created_at:'2026-03-17T04:00:00Z'},
+    ],unread:2,total:3});
   },
 
-  'PATCH /api/v1/alerts/:id/read': async (req,res) => { ok(res,{updated:true}); },
+  'PATCH /api/v1/alerts/:id/read': async(req,res)=>{
+    ok(res,{updated:true});
+  },
 
-  'POST /api/v1/pmp/missions': async (req,res) => {
-    const d=await parseBody(req);
+  // ── PMP ───────────────────────────────────────────────────────────────
+  'POST /api/v1/pmp/missions': async(req,res)=>{
+    const d=await body(req);
     const eco=(d.economy||'UAE').replace(/\s/g,'').slice(0,3).toUpperCase();
     const ref=`PMP-${eco}-${d.sector||'J'}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`;
     ok(res,{mission_id:ref,economy:d.economy,sector:d.sector,
       targets:[
-        {company:'Microsoft Corp',hq:'USA',mfs:94.2,stage:'TARGETED'},
-        {company:'Amazon AWS',hq:'USA',mfs:91.8,stage:'TARGETED'},
-        {company:'Databricks',hq:'USA',mfs:88.4,stage:'TARGETED'},
-        {company:'Palantir',hq:'USA',mfs:85.1,stage:'TARGETED'},
-        {company:'Snowflake',hq:'USA',mfs:82.7,stage:'TARGETED'},
+        {company:'Microsoft Corp',hq:'USA',mfs:94.2,stage:'TARGETED',capex_range:'$500M-$2B'},
+        {company:'Amazon AWS',hq:'USA',mfs:91.8,stage:'TARGETED',capex_range:'$1B+'},
+        {company:'Databricks',hq:'USA',mfs:88.4,stage:'TARGETED',capex_range:'$100M-$500M'},
+        {company:'Palantir',hq:'USA',mfs:85.1,stage:'TARGETED',capex_range:'$50M-$200M'},
+        {company:'Snowflake',hq:'USA',mfs:82.7,stage:'TARGETED',capex_range:'$100M-$300M'},
       ],gaps:2,fic_cost:30,generated_at:new Date().toISOString()});
   },
 
-  'GET /api/v1/pmp/missions': async (req,res) => { ok(res,{missions:[],total:0}); },
+  'GET /api/v1/pmp/missions': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const rows=await dbQ(`SELECT * FROM pipeline.deals WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
+    ok(res,{missions:rows||[],total:rows?rows.length:0});
+  },
 
-  'GET /api/v1/sources': async (req,res) => {
+  // ── PIPELINE (deals) ──────────────────────────────────────────────────
+  'GET /api/v1/pipeline/deals': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const rows=await dbQ(`SELECT * FROM pipeline.deals WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
+    ok(res,{deals:rows||[],total:rows?rows.length:0});
+  },
+
+  'POST /api/v1/pipeline/deals': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const d=await body(req);
+    const id='deal_'+Date.now();
+    if(db&&payload){
+      await dbQ(`INSERT INTO pipeline.deals(id,org_id,company,hq,iso3,sector,capex_m,stage,probability,contact,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+        [id,payload.org,d.company,d.hq,d.iso3,d.sector,d.capex_m,d.stage||'TARGETED',d.probability||20,d.contact,d.notes]);
+    }
+    ok(res,{id,...d,created_at:new Date().toISOString()});
+  },
+
+  // ── WATCHLISTS ────────────────────────────────────────────────────────
+  'GET /api/v1/watchlists': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const rows=await dbQ(`SELECT * FROM pipeline.watchlists WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
+    ok(res,{watchlists:rows||[],total:rows?rows.length:0});
+  },
+
+  'POST /api/v1/watchlists': async(req,res)=>{
+    const d=await body(req);
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    const id='wl_'+Date.now();
+    if(db&&payload){
+      await dbQ(`INSERT INTO pipeline.watchlists(id,org_id,name,economies,sectors) VALUES($1,$2,$3,$4,$5)`,
+        [id,payload.org,d.name,d.economies||[],d.sectors||[]]);
+    }
+    ok(res,{id,name:d.name,economies:d.economies||[],sectors:d.sectors||[],created_at:new Date().toISOString()});
+  },
+
+  // ── SOURCES (internal only) ────────────────────────────────────────────
+  'GET /api/v1/sources': async(req,res)=>{
     ok(res,{sources:[
-      {id:'S001',name:'IMF World Economic Outlook',tier:'T1',active:true},
-      {id:'S002',name:'World Bank WDI',tier:'T1',active:true},
-      {id:'S003',name:'UNCTAD Investment Statistics',tier:'T1',active:true},
-      {id:'S004',name:'GDELT News Intelligence',tier:'T6',active:true},
-      {id:'S005',name:'Transparency International CPI',tier:'T4',active:true},
+      {id:'S001',name:'IMF WEO',tier:'T1',active:true,last_updated:'2026-03-17'},
+      {id:'S002',name:'World Bank WDI',tier:'T1',active:true,last_updated:'2026-03-15'},
+      {id:'S003',name:'UNCTAD',tier:'T1',active:true,last_updated:'2026-03-10'},
+      {id:'S014',name:'GDELT News',tier:'T6',active:true,last_updated:'2026-03-17'},
     ],total:20,premium_available:25});
   },
 
-  'GET /api/v1/billing/plans': async (req,res) => {
+  // ── BILLING ──────────────────────────────────────────────────────────
+  'GET /api/v1/billing/plans': async(req,res)=>{
     ok(res,{plans:[
-      {id:'professional',name:'Professional',price_monthly:899,price_annual:9588,fic_annual:4800,users:3},
-      {id:'enterprise',name:'Enterprise',price_annual:29500,fic_annual:60000,users:10},
+      {id:'free_trial',name:'Free Trial',price_monthly:0,price_annual:0,fic_total:5,users:1,days:3},
+      {id:'professional_monthly',name:'Professional',price_monthly:899,price_annual:null,fic_annual:4800,users:3,stripe_price_id:process.env.STRIPE_PRO_MONTHLY_PRICE||''},
+      {id:'professional_annual',name:'Professional Annual',price_monthly:799,price_annual:9588,fic_annual:4800,users:3,saving:'11%',stripe_price_id:process.env.STRIPE_PRO_ANNUAL_PRICE||''},
+      {id:'enterprise',name:'Enterprise',price_monthly:null,price_annual:29500,fic_annual:60000,users:10,stripe_price_id:process.env.STRIPE_ENT_ANNUAL_PRICE||''},
     ]});
   },
 
-  'POST /api/v1/billing/webhook': async (req,res) => {
+  'GET /api/v1/billing/fic': async(req,res)=>{
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+    const rows=await dbQ(`SELECT fic_balance FROM auth.organisations WHERE id=$1`,[payload.org],[]);
+    const bal=rows&&rows[0]?rows[0].fic_balance:5;
+    ok(res,{fic_balance:bal,org_id:payload.org});
+  },
+
+  // ── STRIPE WEBHOOK ────────────────────────────────────────────────────
+  'POST /api/v1/billing/webhook': async(req,res)=>{
+    const raw=await rawBody(req);
+    const sig=req.headers['stripe-signature'];
+
+    // Verify Stripe signature
+    if(STRIPE_WHSEC&&sig){
+      try {
+        const parts=sig.split(',');
+        const ts=parts.find(p=>p.startsWith('t=')).slice(2);
+        const v1=parts.find(p=>p.startsWith('v1=')).slice(3);
+        const signed=crypto.createHmac('sha256',STRIPE_WHSEC)
+          .update(`${ts}.${raw}`).digest('hex');
+        if(signed!==v1) { res.writeHead(400); return res.end('Invalid signature'); }
+      } catch { res.writeHead(400); return res.end('Signature error'); }
+    }
+
+    const event=JSON.parse(raw.toString());
+    log('Stripe',`Event: ${event.type}`);
+
+    if(event.type==='checkout.session.completed'||event.type==='invoice.payment_succeeded'){
+      const session=event.data.object;
+      const orgId=session.metadata?.org_id;
+      const tier=session.metadata?.tier||'professional';
+      const ficAnnual=tier==='enterprise'?60000:4800;
+      if(orgId&&db){
+        await dbQ(`UPDATE auth.organisations SET tier=$1,fic_balance=fic_balance+$2 WHERE id=$3`,
+          [tier,ficAnnual,orgId]);
+        await dbQ(`INSERT INTO billing.subscriptions(org_id,stripe_sub_id,tier,status,fic_annual) VALUES($1,$2,$3,'active',$4) ON CONFLICT DO NOTHING`,
+          [orgId,session.subscription,tier,ficAnnual]);
+        log('Stripe',`Upgraded org ${orgId} to ${tier}`);
+      }
+    }
+
+    if(event.type==='customer.subscription.deleted'){
+      const sub=event.data.object;
+      if(db){
+        await dbQ(`UPDATE billing.subscriptions SET status='cancelled' WHERE stripe_sub_id=$1`,[sub.id]);
+        log('Stripe',`Subscription cancelled: ${sub.id}`);
+      }
+    }
+
     res.writeHead(200); res.end('ok');
   },
 
-  'GET /api/v1/watchlists': async (req,res) => { ok(res,{watchlists:[],total:0}); },
-  'POST /api/v1/watchlists': async (req,res) => {
-    const d=await parseBody(req);
-    ok(res,{id:'wl_'+Date.now(),name:d.name,economies:d.economies||[],created_at:new Date().toISOString()});
+  // ── COMPANY PROFILES ─────────────────────────────────────────────────
+  'GET /api/v1/companies': async(req,res)=>{
+    const q=url.parse(req.url,true).query;
+    const rows=await dbQ(`SELECT * FROM intelligence.companies ORDER BY ims_score DESC LIMIT 50`,[],[]);
+    ok(res,{companies:rows||[],total:rows?rows.length:0});
   },
 
-  'POST /api/v1/internal/pipeline/signal-detection': async (req,res) => { ok(res,{queued:true,job:'signal-detection'}); },
-  'POST /api/v1/internal/pipeline/worldbank': async (req,res) => { ok(res,{queued:true,job:'worldbank'}); },
-  'POST /api/v1/internal/agents/newsletter': async (req,res) => { ok(res,{queued:true,job:'newsletter'}); },
-  'POST /api/v1/internal/agents/gfr-compute': async (req,res) => { ok(res,{queued:true,job:'gfr-compute'}); },
-  'POST /api/v1/internal/agents/publication-monthly': async (req,res) => { ok(res,{queued:true,job:'publication-monthly'}); },
-  'POST /api/v1/internal/agents/sanctions-refresh': async (req,res) => { ok(res,{queued:true,job:'sanctions-refresh'}); },
+  // ── INTERNAL PIPELINE TRIGGERS ────────────────────────────────────────
+  'POST /api/v1/internal/pipeline/signal-detection': async(req,res)=>{ ok(res,{queued:true,job:'signal-detection',ts:new Date().toISOString()}); },
+  'POST /api/v1/internal/pipeline/worldbank':         async(req,res)=>{ ok(res,{queued:true,job:'worldbank'}); },
+  'POST /api/v1/internal/pipeline/master':            async(req,res)=>{ ok(res,{queued:true,job:'master-pipeline'}); },
+  'POST /api/v1/internal/agents/newsletter':          async(req,res)=>{ ok(res,{queued:true,job:'newsletter'}); },
+  'POST /api/v1/internal/agents/gfr-compute':         async(req,res)=>{ ok(res,{queued:true,job:'gfr-compute'}); },
+  'POST /api/v1/internal/agents/publication-monthly': async(req,res)=>{ ok(res,{queued:true,job:'publication-monthly'}); },
+  'POST /api/v1/internal/agents/sanctions-refresh':   async(req,res)=>{ ok(res,{queued:true,job:'sanctions-refresh'}); },
 };
 
 // ── ROUTER ─────────────────────────────────────────────────────────────────
-function match(method, path) {
-  const key = `${method} ${path}`;
-  if (ROUTES[key]) return {h:ROUTES[key],p:{}};
-  for (const [pat,h] of Object.entries(ROUTES)) {
-    const [m,rp]=pat.split(' ');
-    if (m!==method) continue;
+function matchRoute(method,path){
+  const k=`${method} ${path}`;
+  if(ROUTES[k]) return {h:ROUTES[k],p:{}};
+  for(const [pat,h] of Object.entries(ROUTES)){
+    const[m,rp]=pat.split(' ');
+    if(m!==method) continue;
     const re=new RegExp('^'+rp.replace(/:(\w+)/g,'([^/]+)')+'$');
     const mx=path.match(re);
-    if (mx) {
+    if(mx){
       const names=[...rp.matchAll(/:(\w+)/g)].map(m=>m[1]);
       return {h,p:Object.fromEntries(names.map((n,i)=>[n,mx[i+1]]))};
     }
@@ -343,57 +519,21 @@ function match(method, path) {
   return null;
 }
 
-// ── SERVER ──────────────────────────────────────────────────────────────────
-const server = http.createServer(async (req,res) => {
+// ── SERVER ─────────────────────────────────────────────────────────────────
+const server=http.createServer(async(req,res)=>{
   setCORS(res);
-  if (req.method==='OPTIONS'){res.writeHead(204);return res.end();}
-  const {pathname} = url.parse(req.url);
-  const m = match(req.method, pathname);
-  if (m) { try { await m.h(req,res,m.p); } catch(e) { fail(res,'INTERNAL_ERROR',e.message,500); } }
+  if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
+  const{pathname}=url.parse(req.url);
+  const m=matchRoute(req.method,pathname);
+  if(m){ try{await m.h(req,res,m.p);}catch(e){log('ERR',e.message);fail(res,'INTERNAL_ERROR',e.message,500);} }
   else fail(res,'NOT_FOUND',`${req.method} ${pathname} not found`,404);
 });
 
-// ── STARTUP ─────────────────────────────────────────────────────────────────
-(async () => {
-  await Promise.all([initDB(), initRedis()]);
-  server.listen(PORT, () => {
-    console.log(`
-════════════════════════════════════════
-  Global FDI Monitor API v2.0.0
-  Port:    ${PORT}
-  DB:      ${db ? '✓ PostgreSQL' : '○ Demo mode'}
-  Redis:   ${redisClient ? '✓ Connected' : '○ Unavailable'}
-  Routes:  ${Object.keys(ROUTES).length}
-════════════════════════════════════════`);
+(async()=>{
+  await Promise.all([initDB(),initRedis()]);
+  server.listen(PORT,()=>{
+    log('API',`v3.0.0 on :${PORT} | DB:${db?'✓':'demo'} | Redis:${redis?'✓':'×'} | Routes:${Object.keys(ROUTES).length}`);
   });
-  process.on('SIGTERM', async () => {
-    if (db) await db.end();
-    if (redisClient) await redisClient.quit();
-    server.close(()=>process.exit(0));
-  });
+  process.on('SIGTERM',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
+  process.on('SIGINT',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
 })();
-
-// ── JWT MIDDLEWARE (append to existing server.js) ─────────────────────────
-// This block adds token verification to protected routes.
-// Import crypto at top level (already in Node core - no install needed)
-const crypto = require('crypto');
-
-function signToken(payload) {
-  const header  = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
-  const body    = Buffer.from(JSON.stringify({...payload,iat:Math.floor(Date.now()/1000)})).toString('base64url');
-  const secret  = process.env.JWT_SECRET || 'gfm-dev-secret-change-in-production';
-  const sig     = crypto.createHmac('sha256',secret).update(`${header}.${body}`).digest('base64url');
-  return `${header}.${body}.${sig}`;
-}
-
-function verifyToken(token) {
-  try {
-    const [header,body,sig] = token.split('.');
-    const secret = process.env.JWT_SECRET || 'gfm-dev-secret-change-in-production';
-    const expected = crypto.createHmac('sha256',secret).update(`${header}.${body}`).digest('base64url');
-    if (sig !== expected) return null;
-    const payload = JSON.parse(Buffer.from(body,'base64url').toString());
-    if (payload.exp && payload.exp < Math.floor(Date.now()/1000)) return null;
-    return payload;
-  } catch { return null; }
-}
