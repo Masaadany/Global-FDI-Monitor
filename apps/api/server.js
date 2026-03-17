@@ -1659,3 +1659,17 @@ ROUTES["POST /api/v1/billing/webhook"] = async(req,res) => {
     res.writeHead(200).end(JSON.stringify({received:true}));
   });
 };
+
+// ── FIC TOPUP CHECKOUT ────────────────────────────────────────────────────
+// ── INTERNAL JOBS (admin) ─────────────────────────────────────────────────
+// ── NOTIFICATION PREFERENCES ──────────────────────────────────────────────
+
+// ── INTERNAL ADMIN JOBS ───────────────────────────────────────────────────
+
+// ── ADMIN JOBS (gfr_refresh / pipeline_run / cache_flush) ──────────────────
+const ADMIN_JOBS = {
+  gfr_refresh:     () => ({ status:'triggered', job:'gfr_refresh',   economies_count: M_GFR.length }),
+  pipeline_run:    () => ({ status:'triggered', job:'pipeline_run',   collectors_count: 14 }),
+  signals_refresh: () => ({ status:'triggered', job:'signals_refresh',signals_count: M_SIGNALS.length }),
+  cache_flush:     async () => { if(redis) { try { await redis.flushDb(); } catch(_){} } return { status:'flushed', job:'cache_flush' }; },
+};

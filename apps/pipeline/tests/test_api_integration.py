@@ -1722,3 +1722,95 @@ def test_readme_complete():
     # Check version/stats
     assert '215' in c, "README must mention 215 economies"
     assert 'agent' in c.lower(), "README must mention agents"
+
+# ── ABSOLUTE FINAL 10 TESTS ───────────────────────────────────────────────
+
+def test_fic_page_complete():
+    """FIC page has topup packs, history, and cost guide"""
+    with open('apps/web/src/app/fic/page.tsx') as f:
+        c = f.read()
+    assert 'TOPUP_PACKS' in c, "Missing topup packs"
+    assert 'FIC_ACTIONS' in c, "Missing FIC cost guide"
+    assert 'history' in c.lower(), "Missing transaction history"
+    assert 'checkout' in c.lower(), "Missing checkout function"
+    assert 'billing/fic' in c, "Must fetch FIC balance from API"
+
+def test_homepage_testimonials():
+    """Homepage has social proof testimonials"""
+    with open('apps/web/src/app/page.tsx') as f:
+        c = f.read()
+    assert 'testimonial' in c.lower() or 'Sovereign Wealth' in c or 'quote' in c.lower(), "Homepage missing testimonials"
+
+def test_toast_component_complete():
+    """Toast component has all 4 types and ToastProvider"""
+    with open('apps/web/src/components/Toast.tsx') as f:
+        c = f.read()
+    for t in ['success','error','warning','info']:
+        assert t in c, f"Missing toast type: {t}"
+    assert 'ToastProvider' in c, "Missing ToastProvider"
+    assert 'useToast' in c, "Missing useToast hook"
+
+def test_shared_ts_types():
+    """shared.ts exports GFMUser and GFMOrg interfaces"""
+    with open('apps/web/src/lib/shared.ts') as f:
+        c = f.read()
+    assert 'interface GFMUser' in c, "Missing GFMUser interface"
+    assert 'interface GFMOrg'  in c, "Missing GFMOrg interface"
+    assert 'free_trial'        in c, "Missing tier types"
+    assert 'refreshAuth'       in c, "Missing token refresh"
+
+def test_api_topup_route():
+    """FIC topup endpoint exists"""
+    with open('apps/api/server.js') as f:
+        c = f.read()
+    assert 'billing/fic/topup' in c, "Missing FIC topup route"
+
+def test_api_internal_jobs():
+    """Internal jobs endpoint handles gfr_refresh, pipeline_run"""
+    with open('apps/api/server.js') as f:
+        c = f.read()
+    assert 'internal/' in c, "Missing internal jobs route"
+    assert 'gfr_refresh' in c, "Missing gfr_refresh in ADMIN_JOBS"
+    assert 'pipeline_run' in c, "Missing pipeline_run job"
+
+def test_notification_preferences_api():
+    """Notification preferences routes exist"""
+    with open("apps/api/server.js") as f:
+        c = f.read()
+    assert "notifications/preferences" in c
+
+def test_layout_has_toast_provider():
+    """Root layout wraps app with ToastProvider"""
+    with open('apps/web/src/app/layout.tsx') as f:
+        c = f.read()
+    assert 'ToastProvider' in c, "Root layout must have ToastProvider"
+
+def test_all_lib_exports_accessible():
+    """All 7 lib modules have named exports"""
+    import os
+    libs = {
+        'export.ts':          ['exportCSV', 'exportJSON', 'exportGFR'],
+        'shared.ts':          ['getToken', 'fetchWithAuth', 'formatFIC'],
+        'i18n.ts':            ['SUPPORTED_LOCALES', 'getLocale'],
+        'seo.ts':             ['generateMetadata', 'PAGE_META'],
+        'filterPresets.ts':   ['savePreset', 'loadPresets', 'FilterState'],
+        'useRealTimeSignals.ts': ['useRealTimeSignals'],
+        'useNotifications.ts':   ['useSignalNotifications', 'useUnreadCount'],
+    }
+    for filename, exports in libs.items():
+        path = f'apps/web/src/lib/{filename}'
+        with open(path) as f:
+            c = f.read()
+        for exp in exports:
+            assert exp in c, f"{filename} missing export: {exp}"
+
+def test_collectors_have_collect_functions():
+    """All 12 collector files have a collect() function"""
+    import glob
+    no_collect = []
+    for path in glob.glob('apps/pipeline/collectors/*.py'):
+        with open(path) as f:
+            c = f.read()
+        if 'def collect' not in c and '__init__' not in path:
+            no_collect.append(path.split('/')[-1])
+    assert len(no_collect) == 0, f"Collectors missing collect(): {no_collect}"

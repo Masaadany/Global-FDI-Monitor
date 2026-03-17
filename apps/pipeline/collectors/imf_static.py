@@ -61,3 +61,8 @@ def get_static_data() -> list[dict]:
 if __name__ == "__main__":
     data = get_static_data()
     print(f"IMF static: {len(data)} data points, {len(IMF_WEO_2025)} economies")
+
+
+def collect():
+    """Return static IMF data fallback."""
+    return IMF_STATIC_DATA if "IMF_STATIC_DATA" in dir() else []

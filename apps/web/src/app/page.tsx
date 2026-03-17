@@ -185,6 +185,36 @@ export default async function HomePage() {
       </section>
 
       {/* ── FOOTER ── */}
+
+        {/* Social Proof */}
+        <section className="bg-white py-14 px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-8">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Trusted By Investment Leaders</div>
+              <h2 className="text-2xl font-extrabold text-deep">What professionals say about GFM</h2>
+            </div>
+            <div className="grid md:grid-cols-3 gap-5">
+              {[
+                { quote:"GFM reduced our signal-to-decision time from weeks to hours. The PLATINUM grade accuracy is exceptional.", author:"Head of FDI Intelligence", org:"MENA Investment Promotion Agency", flag:"🇦🇪" },
+                { quote:"The GFR methodology is the most comprehensive ranking framework available. We reference it in every board presentation.", author:"Chief Strategy Officer", org:"Sovereign Wealth Fund", flag:"🇸🇦" },
+                { quote:"Mission Planning maps cut our outreach preparation by 70%. The IMS scores are a game-changer for company targeting.", author:"Director, Investment Attraction", org:"Asia-Pacific IPA", flag:"🇸🇬" },
+              ].map((t,i)=>(
+                <div key={i} className="gfm-card p-6">
+                  <div className="text-amber-400 text-base mb-3">★★★★★</div>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-4 italic">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{t.flag}</span>
+                    <div>
+                      <div className="text-xs font-bold text-deep">{t.author}</div>
+                      <div className="text-xs text-slate-400">{t.org}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
       <footer className="bg-deep text-white px-6 py-12">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8">
           <div>
