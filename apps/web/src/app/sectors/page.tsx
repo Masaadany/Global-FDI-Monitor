@@ -1,4 +1,5 @@
 'use client';
+import { exportCSV } from '@/lib/export';
 import { useState } from 'react';
 
 const SECTORS = [
@@ -58,6 +59,10 @@ export default function SectorsPage() {
       <div className="max-w-6xl mx-auto p-5">
         {/* Controls */}
         <div className="flex flex-wrap gap-2 mb-5">
+          <button onClick={()=>exportCSV(SECTORS.map(s=>({Code:s.code,Sector:s.name,'FDI Global $B':s.fdi_global_b,'Growth YoY%':s.growth,Signals:s.signal_count,Risk:s.risk})),'GFM_Sectors')}
+            className="ml-auto px-4 py-1.5 rounded-full text-xs font-bold border border-slate-200 text-slate-400 hover:border-blue-300">
+            Export CSV
+          </button>
           {([['fdi_global_b','FDI Volume'],['growth','Growth'],['signal_count','Signals']] as const).map(([k,l])=>(
             <button key={k} onClick={()=>setSortKey(k)}
               className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${sortKey===k?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{l}</button>

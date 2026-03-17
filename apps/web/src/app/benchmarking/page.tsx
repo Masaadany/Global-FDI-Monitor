@@ -1,4 +1,5 @@
 'use client';
+import { exportCSV } from '@/lib/export';
 import { useState } from 'react';
 
 const GFR_DATA: Record<string,{name:string,composite:number,tier:string,macro:number,policy:number,digital:number,human:number,infra:number,sustain:number,fdi_b:number,gdp_b:number}> = {

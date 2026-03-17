@@ -59,3 +59,42 @@ body {
 .grade-bronze {
   @apply bg-slate-100 text-slate-500 border border-slate-200;
 }
+
+/* ── PRINT STYLESHEET ─────────────────────────────────────────────────── */
+@media print {
+  nav, .sticky, .fixed, button, [data-no-print] {
+    display: none !important;
+  }
+  body {
+    font-size: 11pt;
+    color: #000;
+    background: white;
+  }
+  h1, h2, h3 { page-break-after: avoid; }
+  table { page-break-inside: avoid; }
+  .print-break { page-break-before: always; }
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+  a[href^="#"]::after { content: ""; }
+  .bg-\\[\\#0A2540\\], .bg-blue-600, .bg-emerald-600 {
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* ── CUSTOM SCROLLBAR ──────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* ── FOCUS STYLES ─────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #1D4ED8;
+  outline-offset: 2px;
+  border-radius: 4px;
+}

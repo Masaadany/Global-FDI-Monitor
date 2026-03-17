@@ -1,4 +1,5 @@
 'use client';
+import { exportCSV } from '@/lib/export';
 import { useState, useEffect } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
@@ -205,6 +206,12 @@ export default function ForecastPage() {
           </div>
         </div>
 
+        <div className="text-center mb-3">
+          <button onClick={()=>exportCSV(HORIZONS.map((h,i)=>({Horizon:h,Optimistic:data.opt[i],Baseline:data.base[i],Stress:data.stress[i]})),'GFM_Forecast_'+eco)}
+            className="text-xs font-bold border border-slate-200 text-slate-500 px-4 py-1.5 rounded-lg hover:border-blue-300 transition-colors">
+            Export Forecast CSV
+          </button>
+        </div>
         <p className="text-xs text-slate-400 text-center">Bayesian VAR + Meta Prophet Ensemble · IMF WEO base case · Updated March 2026 · Not financial advice</p>
       </div>
     </div>

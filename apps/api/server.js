@@ -1253,3 +1253,166 @@ ROUTES['GET /api/v1/insights'] = async(req,res)=>{
   const {items,pagination} = paginate(req,ins);
   ok(res,{insights:items,total:ins.length,pagination});
 };
+
+// ── RATE LIMIT HEADERS MIDDLEWARE ──────────────────────────────────────────
+// Attach rate limit info to all responses
+const _origOk = ok;
+function okWithRateInfo(res, data, meta={}) {
+  res.setHeader('X-RateLimit-Policy', 'token-bucket');
+  _origOk(res, data, meta);
+}
+
+// ── FIC TOP-UP (internal) ─────────────────────────────────────────────────
+ROUTES['POST /api/v1/billing/fic/topup'] = async(req,res)=>{
+  const d       = await body(req);
+  const token   = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const credits = {fic_50:50, fic_100:100, fic_500:500}[d.pack] || 0;
+  if (!credits) return fail(res,'INVALID_PACK','Unknown FIC pack');
+  if (db) {
+    await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance+$1 WHERE id=$2',[credits,payload.org]);
+    await dbQ('INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,(SELECT fic_balance FROM auth.organisations WHERE id=$1),$4)',
+      [payload.org,`fic_topup_${d.pack}`,credits,d.session_id||'manual']);
+    try {
+      const {sendEmail}=require('./email');
+      const rows=await dbQ('SELECT u.full_name,u.email,o.fic_balance FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id WHERE u.org_id=$1 LIMIT 1',[payload.org],[]);
+      if(rows&&rows[0]) await sendEmail(rows[0].email,'fic_purchased',rows[0].full_name,credits,rows[0].fic_balance);
+    } catch {}
+  }
+  ok(res,{credits_added:credits,pack:d.pack,updated:true});
+};
+
+// ── ADMIN ENDPOINTS ────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/admin/orgs'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const rows = await dbQ('SELECT id,name,tier,fic_balance,created_at FROM auth.organisations ORDER BY created_at DESC LIMIT 50',[],[
+    {id:'org_demo',name:'Demo Organisation',tier:'free_trial',fic_balance:5,created_at:'2026-03-17'}
+  ]);
+  ok(res,{orgs:rows,total:rows.length});
+};
+
+ROUTES['GET /api/v1/admin/users'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const rows=await dbQ('SELECT id,email,full_name,role,last_login FROM auth.users ORDER BY created_at DESC LIMIT 100',[],[
+    {id:'usr_demo',email:'demo@example.com',full_name:'Demo User',role:'member',last_login:'2026-03-17'}
+  ]);
+  ok(res,{users:rows,total:rows.length});
+};
+
+ROUTES['GET /api/v1/admin/stats'] = async(req,res)=>{
+  const [orgRows,userRows,sigRows] = await Promise.all([
+    dbQ('SELECT COUNT(*) as n FROM auth.organisations',[],[{n:6}]),
+    dbQ('SELECT COUNT(*) as n FROM auth.users',[],[{n:8}]),
+    dbQ('SELECT COUNT(*) as n FROM intelligence.signals',[],[{n:218}]),
+  ]);
+  ok(res,{
+    total_orgs:  parseInt((orgRows&&orgRows[0]?.n)||'6'),
+    total_users: parseInt((userRows&&userRows[0]?.n)||'8'),
+    total_signals:parseInt((sigRows&&sigRows[0]?.n)||'218'),
+    timestamp: new Date().toISOString(),
+  });
+};
+
+// ── AUTH /ME ─────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/auth/me'] = async(req,res)=>{
+  const token   = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const userData = await dbQ(
+    `SELECT u.id,u.email,u.full_name,u.role,o.id as org_id,o.name as org_name,
+     o.tier,o.fic_balance,o.trial_start,o.trial_end
+     FROM auth.users u JOIN auth.organisations o ON u.org_id=o.id
+     WHERE u.id=$1`,[payload.sub],
+    [{id:payload.sub,email:'user@example.com',full_name:'Demo User',role:'admin',
+      org_id:payload.org,org_name:'Demo Org',tier:payload.tier||'free_trial',
+      fic_balance:5,trial_start:new Date().toISOString(),
+      trial_end:new Date(Date.now()+3*86400000).toISOString()}]
+  );
+  if(!userData||!userData[0]) return fail(res,'NOT_FOUND','User not found',404);
+  const u=userData[0];
+  ok(res,{
+    user:{id:u.id,email:u.email,full_name:u.full_name,role:u.role},
+    org:{id:u.org_id,name:u.org_name,tier:u.tier,fic_balance:u.fic_balance,
+         trial_start:u.trial_start,trial_end:u.trial_end,
+         trial_expired:u.tier==='free_trial'&&new Date(u.trial_end)<new Date()},
+  });
+};
+
+// ── FORECAST ──────────────────────────────────────────────────────────────
+const FORECAST_DATA: Record<string,{base:number[];opt:number[];stress:number[]}> = {
+  ARE:{base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34]},
+  SAU:{base:[24,26,28,30,32,35,37,39,41],opt:[26,29,32,35,38,42,45,48,52],stress:[20,22,23,25,26,27,28,29,30]},
+  IND:{base:[65,68,70,71,72,73,74,75,76],opt:[70,74,78,81,83,85,86,87,88],stress:[55,58,60,61,62,63,64,64,65]},
+  VNM:{base:[15,17,18,19,20,21,22,23,24],opt:[17,19,21,23,25,27,29,31,33],stress:[12,13,14,15,15,16,17,17,18]},
+  SGP:{base:[138,141,144,148,152,156,160,164,168],opt:[145,150,156,162,168,175,182,189,196],stress:[125,128,130,132,134,136,138,140,142]},
+  NGA:{base:[3.8,4.1,4.4,4.8,5.2,5.8,6.4,7.0,7.8],opt:[4.2,4.8,5.4,6.1,6.8,7.8,8.8,9.8,11.0],stress:[3.2,3.4,3.6,3.8,4.0,4.2,4.4,4.6,4.8]},
+  EGY:{base:[8.8,9.4,10.0,10.8,11.4,12.2,13.2,14.2,15.2],opt:[9.4,10.2,11.2,12.2,13.2,14.5,16.0,17.5,19.2],stress:[7.8,8.2,8.6,9.0,9.4,9.8,10.2,10.6,11.0]},
+  IDN:{base:[20,21,22,23,24,26,28,30,32],opt:[22,24,26,28,30,33,36,40,44],stress:[17,18,19,20,21,22,23,24,25]},
+  DEU:{base:[33,34,35,36,37,38,40,42,44],opt:[36,38,40,42,44,48,52,56,60],stress:[28,29,30,31,32,33,34,35,36]},
+};
+const HORIZONS=['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'];
+
+ROUTES['GET /api/v1/forecast'] = async(req,res)=>{
+  const q = require('url').parse(req.url,true).query;
+  const eco = (q.economy||q.iso3||'ARE').toString().toUpperCase();
+  const data = FORECAST_DATA[eco]||FORECAST_DATA.ARE;
+  const series = HORIZONS.map((h,i)=>({horizon:h,baseline:data.base[i],optimistic:data.opt[i],stress:data.stress[i]}));
+  ok(res,{economy:eco,horizons:series,model:'Bayesian VAR + Prophet Ensemble',updated:'2026-03-17',
+    cagr:((data.base[8]/data.base[0])**(1/8)-1)*100});
+};
+
+// ── PIPELINE DEALS ────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/pipeline/deals'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const rows=await dbQ('SELECT * FROM pipeline.deals WHERE org_id=$1 ORDER BY created_at DESC',[payload.org],[
+    {id:'PIPE-001',company:'Microsoft Corp',iso3:'ARE',sector:'J',capex_m:850,stage:'NEGOTIATING',probability:75,days_in_stage:8,contact:'Sarah Chen',notes:'Data centre project confirmed'},
+    {id:'PIPE-002',company:'Amazon AWS',iso3:'SAU',sector:'J',capex_m:5300,stage:'COMMITTED',probability:95,days_in_stage:12,contact:'Ahmed Al-Rashid',notes:'MoU signed'},
+    {id:'PIPE-003',company:'Siemens Energy',iso3:'EGY',sector:'D',capex_m:340,stage:'ENGAGED',probability:60,days_in_stage:5,contact:'Maria Rodriguez',notes:'Site visit scheduled'},
+    {id:'PIPE-004',company:'CATL',iso3:'IDN',sector:'C',capex_m:3200,stage:'COMMITTED',probability:90,days_in_stage:20,contact:'James Park',notes:'Land secured'},
+    {id:'PIPE-005',company:'Vestas Wind',iso3:'IND',sector:'D',capex_m:420,stage:'PROSPECTING',probability:35,days_in_stage:3,contact:'Wei Zhang',notes:'Initial inquiry'},
+  ]);
+  const {items,pagination}=paginate(req,rows);
+  ok(res,{deals:items,total:rows.length,pagination});
+};
+
+// ── WATCHLISTS CRUD ───────────────────────────────────────────────────────
+const WL_STORE: Record<string,any[]> = {};
+ROUTES['GET /api/v1/watchlists'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const rows=await dbQ('SELECT * FROM pipeline.watchlists WHERE org_id=$1',[payload.org],
+    WL_STORE[payload.org]||[{id:'wl_default',name:'MENA Technology',economies:['ARE','SAU'],sectors:['J'],signals:8}]);
+  ok(res,{watchlists:rows||[],total:(rows||[]).length});
+};
+
+ROUTES['POST /api/v1/watchlists'] = async(req,res)=>{
+  const d=await body(req);
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=`wl_${Date.now()}`;
+  const wl={id,name:d.name,economies:d.economies||[],sectors:d.sectors||[],signals:0,created_at:new Date().toISOString()};
+  if(!WL_STORE[payload.org]) WL_STORE[payload.org]=[];
+  WL_STORE[payload.org].push(wl);
+  if(db) await dbQ('INSERT INTO pipeline.watchlists(id,org_id,name,economies,sectors) VALUES($1,$2,$3,$4,$5)',
+    [id,payload.org,d.name,d.economies||[],d.sectors||[]]).catch(()=>{});
+  ok(res,wl);
+};
+
+ROUTES['GET /api/v1/alerts'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{alerts:[
+    {id:'ALT001',type:'SIGNAL',priority:'HIGH',read:false,created_at:new Date().toISOString(),
+     title:'New PLATINUM Signal: Microsoft → UAE',body:'$850M data centre confirmed'},
+  ],total:1});
+};

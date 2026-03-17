@@ -1,94 +1,91 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
+import Link from 'next/link';
 
-const ACCESS_CODE = 'GFM2026PREVIEW';
-const STORAGE_KEY = 'preview_access';
+const PREVIEW_PASSWORD = process.env.NEXT_PUBLIC_PREVIEW_PASSWORD || 'GFM2026PREVIEW';
+const STORAGE_KEY      = 'gfm_preview_auth';
 
-export function PreviewGate({ children }: { children: React.ReactNode }) {
-  const [unlocked, setUnlocked] = useState(false);
-  const [code, setCode]         = useState('');
-  const [error, setError]       = useState(false);
-  const [checking, setChecking] = useState(true);
+export function PreviewGate({ children }: { children: ReactNode }) {
+  const [authed,  setAuthed]  = useState(false);
+  const [pwd,     setPwd]     = useState('');
+  const [error,   setError]   = useState('');
+  const [loading, setLoading] = useState(true);
+  const [shake,   setShake]   = useState(false);
 
   useEffect(() => {
-    // Check if already unlocked
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored === 'true') setUnlocked(true);
+    if (typeof window === 'undefined') return;
+    // Skip gate for: login, register, demo, health, pricing, about, privacy, terms, ar
+    const path = window.location.pathname;
+    const PUBLIC = ['/auth/','/register','/demo','/health','/pricing','/about','/privacy','/terms','/ar','/contact'];
+    if (PUBLIC.some(p => path.startsWith(p)) || path === '/') {
+      setAuthed(true); setLoading(false); return;
     }
-    setChecking(false);
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (stored === 'true') { setAuthed(true); }
+    setLoading(false);
   }, []);
 
-  function handleSubmit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (code === ACCESS_CODE) {
-      localStorage.setItem(STORAGE_KEY, 'true');
-      setUnlocked(true);
+    if (pwd.trim() === PREVIEW_PASSWORD) {
+      sessionStorage.setItem(STORAGE_KEY, 'true');
+      setAuthed(true); setError('');
     } else {
-      setError(true);
-      setCode('');
-      setTimeout(() => setError(false), 2000);
+      setError('Incorrect password. Contact sales@fdimonitor.org for access.');
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
+      setPwd('');
     }
   }
 
-  // Still checking localStorage — show nothing to avoid flash
-  if (checking) return null;
+  if (loading) return null;
+  if (authed)  return <>{children}</>;
 
-  // Unlocked — show the real site
-  if (unlocked) return <>{children}</>;
-
-  // Locked — show password gate
   return (
     <div className="min-h-screen bg-[#0A2540] flex items-center justify-center px-4">
-      <div className="w-full max-w-md text-center">
-
-        {/* Logo */}
-        <div className="mb-8">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center font-black text-[#0A2540] text-2xl mx-auto mb-4">G</div>
-          <h1 className="text-3xl font-black text-white">Global FDI Monitor</h1>
-          <p className="text-blue-300 mt-2 text-sm">World&apos;s First Fully Integrated Investment Intelligence Platform</p>
+      <div className={`w-full max-w-sm transition-all ${shake ? 'translate-x-2' : ''}`}
+        style={{transition:'transform 0.1s ease'}}>
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center font-black text-[#0A2540] text-3xl mx-auto mb-4 shadow-2xl">G</div>
+          <h1 className="text-2xl font-black text-white">Global FDI Monitor</h1>
+          <p className="text-blue-300 text-sm mt-1">Preview Access Required</p>
         </div>
-
-        {/* Gate card */}
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
-          <div className="text-lg font-bold text-[#0A2540] mb-1">Private Preview</div>
-          <p className="text-slate-400 text-sm mb-6">This platform is currently in private preview. Enter your access code to continue.</p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="bg-white rounded-2xl p-7 shadow-2xl">
+          <div className="text-center mb-5">
+            <div className="text-3xl mb-2">🔒</div>
+            <h2 className="font-black text-[#0A2540] text-lg">Preview Password</h2>
+            <p className="text-slate-400 text-xs mt-1">This platform is in private preview</p>
+          </div>
+          <form onSubmit={submit} className="space-y-4">
             <input
-              type="password"
-              placeholder="Enter access code"
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              autoFocus
-              className={`w-full border-2 rounded-xl px-4 py-3 text-center text-sm font-mono tracking-widest focus:outline-none transition-colors ${
-                error
-                  ? 'border-red-400 bg-red-50 text-red-600 placeholder-red-300'
-                  : 'border-slate-200 focus:border-[#1D4ED8]'
-              }`}
-            />
+              type="password" value={pwd} onChange={e=>setPwd(e.target.value)}
+              placeholder="Enter preview password" autoFocus
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-sm tracking-widest focus:outline-none focus:border-blue-400"/>
             {error && (
-              <p className="text-red-500 text-xs font-semibold">Incorrect access code. Please try again.</p>
+              <div className="bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-lg text-center font-semibold">
+                {error}
+              </div>
             )}
-            <button
-              type="submit"
-              className="w-full bg-[#0A2540] text-white font-black py-3 rounded-xl hover:bg-[#1D4ED8] transition-colors"
-            >
+            <button type="submit"
+              className="w-full bg-[#0A2540] text-white font-black py-3.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
               Access Platform
             </button>
           </form>
-
-          <p className="text-slate-300 text-xs mt-6">
-            Don&apos;t have an access code?{' '}
-            <a href="mailto:info@fdimonitor.org" className="text-blue-600 hover:underline font-semibold">
-              Request access
+          <div className="mt-5 pt-4 border-t border-slate-100 text-center space-y-2">
+            <div className="text-xs text-slate-400">Don't have access?</div>
+            <div className="flex gap-2">
+              <Link href="/demo"     className="flex-1 text-xs bg-slate-50 border border-slate-200 text-slate-600 font-bold py-2 rounded-xl hover:border-blue-300 transition-colors">
+                View Demo
+              </Link>
+              <Link href="/register" className="flex-1 text-xs bg-blue-600 text-white font-bold py-2 rounded-xl hover:bg-blue-500 transition-colors">
+                Free Trial
+              </Link>
+            </div>
+            <a href="mailto:sales@fdimonitor.org" className="block text-xs text-blue-600 hover:underline">
+              Contact sales@fdimonitor.org
             </a>
-          </p>
+          </div>
         </div>
-
-        <p className="text-blue-900 text-xs mt-6">
-          &copy; 2026 Global FDI Monitor. All rights reserved.
-        </p>
       </div>
     </div>
   );

@@ -1,292 +1,205 @@
 'use client';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
-// ── MINI CHART COMPONENTS ──────────────────────────────────────────────────
+const FDI_BY_REGION = [
+  {r:'EAP',v:486,color:'#06b6d4'},{r:'ECA',v:312,color:'#3b82f6'},
+  {r:'NAM',v:333,color:'#10b981'},{r:'SAS',v:74, color:'#8b5cf6'},
+  {r:'MENA',v:88, color:'#f59e0b'},{r:'LAC',v:142,color:'#f97316'},
+  {r:'SSA',v:28, color:'#ef4444'},
+];
 
-function SparkLine({ data, color = '#3b82f6', height = 40 }: {
-  data: number[]; color?: string; height?: number;
-}) {
-  const max   = Math.max(...data);
-  const min   = Math.min(...data);
-  const range = max - min || 1;
-  const w     = 100 / (data.length - 1);
+const SECTOR_TREND = [
+  {s:'ICT',  y2021:720,y2022:1120,y2023:1480,y2024:1640,y2025:1840,color:'#3b82f6'},
+  {s:'Energy',y2021:580,y2022:680, y2023:780, y2024:880, y2025:980, color:'#8b5cf6'},
+  {s:'Finance',y2021:820,y2022:900,y2023:980, y2024:1100,y2025:1210,color:'#10b981'},
+  {s:'Mfg',  y2021:640,y2022:690, y2023:740, y2024:790, y2025:820, color:'#f59e0b'},
+];
 
-  const points = data.map((v, i) => ({
-    x: i * w,
-    y: height - ((v - min) / range) * height,
-  }));
+const TOP_DESTINATIONS = [
+  {eco:'USA', v:285,color:'#10b981'},{eco:'SGP',v:141,color:'#3b82f6'},
+  {eco:'IRL', v:94, color:'#3b82f6'},{eco:'NLD',v:92, color:'#3b82f6'},
+  {eco:'IND', v:71, color:'#8b5cf6'},{eco:'BRA',v:65, color:'#f97316'},
+  {eco:'AUS', v:59, color:'#06b6d4'},{eco:'GBR',v:52, color:'#3b82f6'},
+  {eco:'ARE', v:30, color:'#f59e0b'},{eco:'JPN',v:30, color:'#06b6d4'},
+];
 
-  const path = points.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ');
-  const area = path + ` L${points[points.length-1].x},${height} L0,${height} Z`;
+const QUARTERLY_FDI = [
+  {q:'Q1\'24',v:410},{q:'Q2\'24',v:440},{q:'Q3\'24',v:468},{q:'Q4\'24',v:495},
+  {q:'Q1\'25',v:512},{q:'Q2\'25',v:480},{q:'Q3\'25',v:525},{q:'Q4\'25',v:548},
+  {q:'Q1\'26',v:565},
+];
 
-  return (
-    <svg viewBox={`0 0 100 ${height}`} className="w-full" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={`grad-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3"/>
-          <stop offset="100%" stopColor={color} stopOpacity="0"/>
-        </linearGradient>
-      </defs>
-      <path d={area} fill={`url(#grad-${color.replace('#','')})`}/>
-      <path d={path} fill="none" stroke={color} strokeWidth="2"/>
-      <circle cx={points[points.length-1].x} cy={points[points.length-1].y}
-        r="2.5" fill={color}/>
-    </svg>
-  );
-}
+type ChartType = 'regional'|'sector'|'destinations'|'quarterly'|'donut';
 
-function BarChart({ data, colors }: {
-  data: {label:string; value:number; color?:string}[];
-  colors?: string[];
-}) {
-  const max = Math.max(...data.map(d => d.value));
+function BarH({ data, maxV, color }: { data:{label:string;v:number}[]; maxV:number; color?:string }) {
   return (
     <div className="space-y-2">
-      {data.map((d, i) => (
-        <div key={d.label}>
-          <div className="flex justify-between text-xs mb-0.5">
-            <span className="text-slate-400 truncate">{d.label}</span>
-            <span className="text-white font-bold ml-2">{d.value}</span>
+      {data.map(d=>(
+        <div key={d.label} className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 w-10 flex-shrink-0 text-right">{d.label}</span>
+          <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700 flex items-center pl-2"
+              style={{width:`${Math.max(3,(d.v/maxV)*100)}%`,background:color||'#3b82f6'}}>
+            </div>
           </div>
-          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${(d.value/max)*100}%`,
-                background: d.color || colors?.[i] || '#3b82f6'
-              }}/>
-          </div>
+          <span className="text-xs font-bold text-slate-600 w-12 text-right">${d.v}B</span>
         </div>
       ))}
     </div>
   );
 }
 
-function RadarChart({ dimensions }: { dimensions: {label:string; value:number}[] }) {
-  const n     = dimensions.length;
-  const cx    = 50; const cy = 50; const r = 40;
-  const rings = [25,50,75,100];
-
-  function polar(angle: number, radius: number) {
-    const a = (angle - 90) * Math.PI / 180;
-    return { x: cx + radius * 0.4 * Math.cos(a), y: cy + radius * 0.4 * Math.sin(a) };
-  }
-
-  const axes = dimensions.map((_, i) => polar(i * 360 / n, 100));
-  const values = dimensions.map((d, i) => polar(i * 360 / n, d.value));
-  const valuePath = values.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ') + 'Z';
-
+function LineChart({ data }: { data:{q:string;v:number}[] }) {
+  const W=500, H=120, pad=30;
+  const maxV=Math.max(...data.map(d=>d.v));
+  const minV=Math.min(...data.map(d=>d.v))*0.9;
+  const pts=data.map((d,i)=>({
+    x:pad+i*(W-pad*2)/(data.length-1),
+    y:pad+(H-pad*2)*(1-(d.v-minV)/(maxV-minV)),
+    q:d.q, v:d.v,
+  }));
+  const path=pts.map((p,i)=>`${i===0?'M':'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area=`${path} L${pts[pts.length-1].x},${H-pad} L${pts[0].x},${H-pad} Z`;
   return (
-    <svg viewBox="0 0 100 100" className="w-full max-w-xs mx-auto">
-      {/* Rings */}
-      {rings.map(ring => {
-        const pts = dimensions.map((_,i) => polar(i*360/n, ring));
-        const path = pts.map((p,i) => `${i===0?'M':'L'}${p.x},${p.y}`).join(' ') + 'Z';
-        return <path key={ring} d={path} fill="none" stroke="#1e3a5f" strokeWidth="0.5"/>;
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      {[0.25,0.5,0.75,1].map(t=>{
+        const y=pad+(H-pad*2)*(1-t);
+        return <line key={t} x1={pad} y1={y} x2={W-pad} y2={y} stroke="#f1f5f9" strokeWidth="1"/>;
       })}
-      {/* Axes */}
-      {axes.map((p,i) => (
-        <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#1e3a5f" strokeWidth="0.5"/>
+      <path d={area} fill="#3b82f615"/>
+      <path d={path} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinejoin="round"/>
+      {pts.map((p,i)=>(
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r={3} fill="#3b82f6"/>
+          {i%2===0&&<text x={p.x} y={H-pad+12} fontSize="8" textAnchor="middle" fill="#94a3b8">{p.q}</text>}
+        </g>
       ))}
-      {/* Value area */}
-      <path d={valuePath} fill="#3b82f620" stroke="#3b82f6" strokeWidth="1"/>
-      {/* Dots */}
-      {values.map((p,i) => (
-        <circle key={i} cx={p.x} cy={p.y} r="1.5" fill="#3b82f6"/>
-      ))}
-      {/* Labels */}
-      {dimensions.map((d,i) => {
-        const p = polar(i*360/n, 115);
-        return (
-          <text key={i} x={p.x} y={p.y} fontSize="4.5" fill="#94a3b8"
-            textAnchor="middle" dominantBaseline="middle">
-            {d.label}
-          </text>
-        );
-      })}
     </svg>
   );
 }
 
-function DonutChart({ segments }: { segments: {label:string; value:number; color:string}[] }) {
-  const total = segments.reduce((s,d) => s+d.value, 0);
-  let offset  = 0;
-  const cx    = 50; const cy = 50;
-  const r     = 35; const innerR = 22;
-
-  const arcs = segments.map(seg => {
-    const pct   = seg.value / total;
-    const start = offset * 360;
-    const end   = (offset + pct) * 360;
-    offset     += pct;
-
-    const s = (angle: number) => ({
-      x: cx + r * Math.cos((angle - 90) * Math.PI / 180),
-      y: cy + r * Math.sin((angle - 90) * Math.PI / 180),
-    });
-    const si = (angle: number) => ({
-      x: cx + innerR * Math.cos((angle - 90) * Math.PI / 180),
-      y: cy + innerR * Math.sin((angle - 90) * Math.PI / 180),
-    });
-
-    const p1 = s(start); const p2 = s(end);
-    const i1 = si(end);  const i2 = si(start);
-    const large = pct > 0.5 ? 1 : 0;
-
-    return {
-      ...seg, pct,
-      path: `M${p1.x},${p1.y} A${r},${r} 0 ${large} 1 ${p2.x},${p2.y} L${i1.x},${i1.y} A${innerR},${innerR} 0 ${large} 0 ${i2.x},${i2.y} Z`
-    };
+function DonutChart({ data }: { data:{r:string;v:number;color:string}[] }) {
+  const total=data.reduce((s,d)=>s+d.v,0);
+  const cx=80,cy=80,r=65,inner=38;
+  let angle=-Math.PI/2;
+  const slices=data.map(d=>{
+    const sa=angle, ea=angle+(d.v/total)*2*Math.PI;
+    const x1=cx+r*Math.cos(sa),y1=cy+r*Math.sin(sa);
+    const x2=cx+r*Math.cos(ea),y2=cy+r*Math.sin(ea);
+    const ix1=cx+inner*Math.cos(sa),iy1=cy+inner*Math.sin(sa);
+    const ix2=cx+inner*Math.cos(ea),iy2=cy+inner*Math.sin(ea);
+    const large=ea-sa>Math.PI?1:0;
+    const path=`M${ix1.toFixed(1)},${iy1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large} 1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${inner},${inner} 0 ${large} 0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z`;
+    angle=ea;
+    return {...d,path};
   });
-
   return (
-    <svg viewBox="0 0 100 100" className="w-full max-w-xs mx-auto">
-      {arcs.map((arc, i) => (
-        <path key={i} d={arc.path} fill={arc.color} opacity="0.85"/>
-      ))}
-      <text x={cx} y={cy-3} fontSize="8" fill="white" textAnchor="middle" fontWeight="bold">
-        {total}
-      </text>
-      <text x={cx} y={cy+6} fontSize="4" fill="#94a3b8" textAnchor="middle">
-        signals
-      </text>
-    </svg>
+    <div className="flex items-center gap-5">
+      <svg viewBox="0 0 160 160" className="w-40 h-40 flex-shrink-0">
+        {slices.map(s=><path key={s.r} d={s.path} fill={s.color}/>)}
+        <text x={cx} y={cy-4} textAnchor="middle" fontSize="11" fontWeight="900" fill="#0A2540">${(total/1000).toFixed(1)}T</text>
+        <text x={cx} y={cy+8} textAnchor="middle" fontSize="8" fill="#94a3b8">Global FDI</text>
+      </svg>
+      <div className="space-y-1.5 flex-1">
+        {slices.map(s=>(
+          <div key={s.r} className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{background:s.color}}/>
+            <span className="text-xs text-slate-600 flex-1">{s.r}</span>
+            <span className="text-xs font-bold text-slate-600">${s.v}B</span>
+            <span className="text-xs text-slate-400 w-8 text-right">{((s.v/total)*100).toFixed(0)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
-
-// ── MAIN ANALYTICS DASHBOARD ──────────────────────────────────────────────
-
-const SIGNAL_TREND = [42,48,51,45,58,62,59,65,71,68,74,78,81,76,85,88,91,86,94,98];
-const FDI_BY_SECTOR = [
-  {label:'Technology (J)',   value:285, color:'#3b82f6'},
-  {label:'Finance (K)',      value:210, color:'#10b981'},
-  {label:'Energy (D)',       value:180, color:'#f59e0b'},
-  {label:'Manufacturing (C)',value:155, color:'#8b5cf6'},
-  {label:'Real Estate (L)',  value:120, color:'#f97316'},
-  {label:'Logistics (H)',    value:95,  color:'#06b6d4'},
-];
-const SIGNAL_DONUT = [
-  {label:'PLATINUM', value:24, color:'#f59e0b'},
-  {label:'GOLD',     value:58, color:'#10b981'},
-  {label:'SILVER',   value:89, color:'#3b82f6'},
-  {label:'BRONZE',   value:47, color:'#6b7280'},
-];
-const GFR_RADAR_ARE = [
-  {label:'Macro',    value:82},
-  {label:'Policy',   value:78},
-  {label:'Digital',  value:84},
-  {label:'Human',    value:54},
-  {label:'Infra',    value:92},
-  {label:'Sustain',  value:53},
-];
-const TOP_ECONOMIES = [
-  {label:'Singapore',     value:88, color:'#10b981'},
-  {label:'UAE',           value:80, color:'#3b82f6'},
-  {label:'Germany',       value:78, color:'#8b5cf6'},
-  {label:'Ireland',       value:76, color:'#f59e0b'},
-  {label:'Saudi Arabia',  value:68, color:'#f97316'},
-  {label:'India',         value:62, color:'#06b6d4'},
-];
 
 export default function AdvancedAnalytics() {
-  const [period, setPeriod] = useState<'7d'|'30d'|'90d'>('30d');
+  const [chart, setChart] = useState<ChartType>('regional');
 
-  const KPIs = [
-    { label:'Active Signals', value:'218', change:'+12%', up:true, trend:[40,45,42,50,55,58,62,65,70,68,74,78,81,85,88,91,94,98,102,108], color:'#3b82f6' },
-    { label:'Platinum Signals', value:'24', change:'+8%', up:true, trend:[8,9,8,10,11,10,12,11,13,12,14,13,15,14,16,15,17,16,18,24], color:'#f59e0b' },
-    { label:'Economies Tracked', value:'215', change:'100%', up:true, trend:[180,185,190,195,200,205,208,210,212,213,214,215,215,215,215,215,215,215,215,215], color:'#10b981' },
-    { label:'FDI Volume (Q1)', value:'$2.1T', change:'+6%', up:true, trend:[30,32,31,34,35,33,36,35,38,37,40,39,42,41,44,43,46,45,48,50], color:'#8b5cf6' },
+  const CHARTS: {k:ChartType;l:string}[] = [
+    {k:'regional',    l:'Regional FDI'},
+    {k:'sector',      l:'Sector Trends'},
+    {k:'destinations',l:'Top Destinations'},
+    {k:'quarterly',   l:'Quarterly Trend'},
+    {k:'donut',       l:'Regional Share'},
   ];
 
   return (
-    <div className="space-y-4">
-      {/* Period selector */}
-      <div className="flex items-center justify-between">
-        <h2 className="font-black text-[#0A2540] text-lg">Intelligence Analytics</h2>
-        <div className="flex gap-1 bg-slate-100 rounded-lg p-0.5">
-          {(['7d','30d','90d'] as const).map(p => (
-            <button key={p} onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                period===p ? 'bg-white shadow text-[#0A2540]' : 'text-slate-400 hover:text-slate-600'
-              }`}>{p}</button>
+    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+        <div className="font-black text-sm text-[#0A2540]">FDI Intelligence Charts — 2025</div>
+        <div className="flex gap-1 flex-wrap">
+          {CHARTS.map(({k,l})=>(
+            <button key={k} onClick={()=>setChart(k)}
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${chart===k?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200 hover:border-blue-300'}`}>
+              {l}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* KPI tiles */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {KPIs.map(kpi => (
-          <div key={kpi.label} className="bg-white rounded-xl border border-slate-100 p-4">
-            <div className="text-xs text-slate-400 mb-1">{kpi.label}</div>
-            <div className="text-2xl font-black text-[#0A2540] mb-1">{kpi.value}</div>
-            <div className="flex items-center gap-1 mb-2">
-              <span className={`text-xs font-bold ${kpi.up ? 'text-emerald-600' : 'text-red-500'}`}>
-                {kpi.change}
-              </span>
-              <span className="text-xs text-slate-400">vs last period</span>
+      <div className="p-5">
+        {chart==='regional' && (
+          <div>
+            <div className="text-xs text-slate-400 mb-3 font-semibold">FDI Inflows by Region 2025 ($B) — Total $1.46T</div>
+            <BarH data={FDI_BY_REGION.map(d=>({label:d.r,v:d.v}))} maxV={500}/>
+          </div>
+        )}
+
+        {chart==='sector' && (
+          <div>
+            <div className="text-xs text-slate-400 mb-3 font-semibold">FDI by Sector 2021–2025 ($B)</div>
+            <div className="space-y-4">
+              {SECTOR_TREND.map(s=>{
+                const vals=[s.y2021,s.y2022,s.y2023,s.y2024,s.y2025];
+                const maxV=Math.max(...vals);
+                return (
+                  <div key={s.s}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="font-bold text-slate-600">{s.s}</span>
+                      <span className="font-black" style={{color:s.color}}>${s.y2025}B (+{(((s.y2025-s.y2021)/s.y2021)*100).toFixed(0)}% 4yr)</span>
+                    </div>
+                    <div className="flex gap-1 h-4">
+                      {vals.map((v,i)=>(
+                        <div key={i} className="flex-1 rounded-sm" style={{background:`${s.color}${Math.round(40+i*15).toString(16).padStart(2,'0')}`}} title={`${2021+i}: $${v}B`}/>
+                      ))}
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-300 mt-0.5">
+                      {[2021,2022,2023,2024,2025].map(y=><span key={y}>{y}</span>)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <SparkLine data={kpi.trend} color={kpi.color} height={32}/>
           </div>
-        ))}
-      </div>
+        )}
 
-      {/* Charts row 1 */}
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Signal trend */}
-        <div className="md:col-span-2 bg-white rounded-xl border border-slate-100 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="font-black text-[#0A2540] text-sm">Signal Detection Trend</div>
-              <div className="text-xs text-slate-400">Daily signal count — last 20 days</div>
+        {chart==='destinations' && (
+          <div>
+            <div className="text-xs text-slate-400 mb-3 font-semibold">Top 10 FDI Destination Economies 2025 ($B)</div>
+            <BarH data={TOP_DESTINATIONS.map(d=>({label:d.eco,v:d.v}))} maxV={300}/>
+          </div>
+        )}
+
+        {chart==='quarterly' && (
+          <div>
+            <div className="text-xs text-slate-400 mb-3 font-semibold">Global FDI Quarterly Trend 2024–Q1 2026 ($B)</div>
+            <LineChart data={QUARTERLY_FDI}/>
+            <div className="flex justify-between text-xs text-slate-400 mt-2 px-8">
+              <span>Min: ${Math.min(...QUARTERLY_FDI.map(d=>d.v))}B</span>
+              <span>Latest: ${QUARTERLY_FDI[QUARTERLY_FDI.length-1].v}B</span>
+              <span>Max: ${Math.max(...QUARTERLY_FDI.map(d=>d.v))}B</span>
             </div>
-            <div className="text-2xl font-black text-blue-600">↑ 18%</div>
           </div>
-          <SparkLine data={SIGNAL_TREND} color="#3b82f6" height={80}/>
-          <div className="flex justify-between mt-2 text-xs text-slate-400">
-            <span>20 days ago</span><span>10 days ago</span><span>Today</span>
+        )}
+
+        {chart==='donut' && (
+          <div>
+            <div className="text-xs text-slate-400 mb-3 font-semibold">FDI Share by Region 2025</div>
+            <DonutChart data={FDI_BY_REGION}/>
           </div>
-        </div>
-
-        {/* Signal grade donut */}
-        <div className="bg-white rounded-xl border border-slate-100 p-5">
-          <div className="font-black text-[#0A2540] text-sm mb-1">Signal Grade Distribution</div>
-          <div className="text-xs text-slate-400 mb-3">Current active signals</div>
-          <DonutChart segments={SIGNAL_DONUT}/>
-          <div className="grid grid-cols-2 gap-1 mt-3">
-            {SIGNAL_DONUT.map(s => (
-              <div key={s.label} className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:s.color}}/>
-                <span className="text-xs text-slate-500">{s.label} ({s.value})</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Charts row 2 */}
-      <div className="grid md:grid-cols-2 gap-4">
-        {/* FDI by sector */}
-        <div className="bg-white rounded-xl border border-slate-100 p-5">
-          <div className="font-black text-[#0A2540] text-sm mb-1">FDI Signals by Sector</div>
-          <div className="text-xs text-slate-400 mb-4">Number of active signals per ISIC sector</div>
-          <BarChart data={FDI_BY_SECTOR}/>
-        </div>
-
-        {/* GFR radar */}
-        <div className="bg-white rounded-xl border border-slate-100 p-5">
-          <div className="flex items-center justify-between mb-1">
-            <div className="font-black text-[#0A2540] text-sm">GFR Dimension Profile</div>
-            <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-bold">UAE</span>
-          </div>
-          <div className="text-xs text-slate-400 mb-2">GFR scores across 6 dimensions</div>
-          <RadarChart dimensions={GFR_RADAR_ARE}/>
-        </div>
-      </div>
-
-      {/* Top GFR economies */}
-      <div className="bg-white rounded-xl border border-slate-100 p-5">
-        <div className="font-black text-[#0A2540] text-sm mb-1">Top GFR Economies</div>
-        <div className="text-xs text-slate-400 mb-4">Global Future Readiness composite scores</div>
-        <BarChart data={TOP_ECONOMIES}/>
+        )}
       </div>
     </div>
   );

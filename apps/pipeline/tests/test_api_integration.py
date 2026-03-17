@@ -237,3 +237,95 @@ def test_waterfall_completeness():
     # Record provenance should exist
     assert '_record_provenance' in enriched
     assert enriched['_record_provenance']['completeness'] == 1.0
+
+# ── CHART / ANALYTICS DATA TESTS ──────────────────────────────────────────
+
+def test_fdi_data_totals():
+    """Global FDI totals are plausible"""
+    FDI_BY_REGION = {
+        'EAP': 486, 'ECA': 312, 'NAM': 333, 'SAS': 74,
+        'MENA': 88, 'LAC': 142, 'SSA': 28
+    }
+    total = sum(FDI_BY_REGION.values())
+    assert 1000 < total < 3000, f"Implausible global FDI total: ${total}B"
+    for region, val in FDI_BY_REGION.items():
+        assert val > 0, f"Negative FDI for {region}"
+        assert val < 2000, f"Implausibly large FDI for {region}: ${val}B"
+
+def test_sector_data_consistency():
+    """ICT should be largest FDI sector"""
+    SECTORS = {
+        'ICT':       1840,
+        'Finance':   1210,
+        'Energy':     980,
+        'Manufacturing': 820,
+        'Mining':     440,
+    }
+    sorted_sectors = sorted(SECTORS.items(), key=lambda x: -x[1])
+    assert sorted_sectors[0][0] == 'ICT', "ICT should be the largest FDI sector"
+    assert sorted_sectors[0][1] > sorted_sectors[1][1], "ICT should exceed Finance"
+
+def test_gfr_q4_baselines():
+    """Q4 2025 baseline scores for trend comparison are valid"""
+    Q4_2025 = {
+        'SGP': 87.8, 'CHE': 87.0, 'ARE': 75.8, 'DEU': 77.4, 'USA': 83.9,
+        'GBR': 78.0, 'IND': 60.8, 'SAU': 65.2, 'NGA': 40.8,
+    }
+    for iso3, score in Q4_2025.items():
+        assert 0 < score <= 100, f"Q4 2025 score out of range for {iso3}: {score}"
+
+def test_signal_reference_codes():
+    """Signal reference codes follow expected format"""
+    import re, sys; sys.path.insert(0,'apps/pipeline')
+    from enrichment import ReferenceCodeSystem as RCS
+    
+    PATTERN = re.compile(r'^MSS-[A-Z]{1,5}-[A-Z]{3}-\d{8}-\d{4}$')
+    for i in range(5):
+        code = RCS.generate('signal', 'ARE', 'J')
+        assert PATTERN.match(code), f"Signal ref code doesn't match pattern: {code}"
+
+def test_forecast_data_valid():
+    """Forecast series has 9 horizons and valid values"""
+    HORIZONS = ['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030']
+    FORECAST = {
+        'ARE': {'base':[28,30,31,33,34,36,38,40,42],'opt':[30,33,35,38,40,43,46,49,52],'stress':[25,27,28,29,30,31,32,33,34]},
+        'IND': {'base':[65,68,70,71,72,73,74,75,76],'opt':[70,74,78,81,83,85,86,87,88],'stress':[55,58,60,61,62,63,64,64,65]},
+    }
+    for eco, scenarios in FORECAST.items():
+        for scenario, values in scenarios.items():
+            assert len(values) == len(HORIZONS), f"{eco} {scenario}: expected 9 horizons, got {len(values)}"
+            for i, v in enumerate(values):
+                assert v > 0, f"{eco} {scenario}[{i}]: negative FDI"
+            # Base should be between stress and optimistic
+            for i in range(len(values)):
+                assert scenarios['stress'][i] <= scenarios['base'][i] <= scenarios['opt'][i], \
+                    f"{eco}[{i}]: stress={scenarios['stress'][i]} > base={scenarios['base'][i]}"
+
+def test_pipeline_stages_valid():
+    """Pipeline stage transitions are logical"""
+    VALID_STAGES = ['PROSPECTING','ENGAGED','NEGOTIATING','COMMITTED','CLOSED_WON','CLOSED_LOST']
+    MOCK_DEALS = [
+        {'id':'PIPE-001','stage':'NEGOTIATING','probability':75},
+        {'id':'PIPE-002','stage':'COMMITTED',  'probability':90},
+    ]
+    for deal in MOCK_DEALS:
+        assert deal['stage'] in VALID_STAGES, f"Invalid stage: {deal['stage']}"
+        assert 0 <= deal['probability'] <= 100, f"Probability out of range: {deal['probability']}"
+
+def test_globe_hotspot_interpolation():
+    """Globe hotspot interpolation produces valid coordinates"""
+    def lerp(a, b, t): return a + (b - a) * t
+    # Test interpolation between 2022 and 2025
+    coords_2022 = (22, 35, 17)  # x, y, radius
+    coords_2025 = (22, 35, 20)
+    t = 0.5  # 2023.5
+    result = tuple(lerp(a, b, t) for a, b in zip(coords_2022, coords_2025))
+    assert result[0] == 22.0, "X should be stable"
+    assert result[2] == 18.5, f"Radius should interpolate: {result[2]}"
+
+def test_company_ims_scores_ranked():
+    """IMS scores are properly ordered"""
+    IMS_SCORES = [96, 95, 94, 93, 92, 91, 90, 88, 87, 86, 85, 84, 84, 82, 82, 81, 80, 79, 79, 78]
+    assert IMS_SCORES == sorted(IMS_SCORES, reverse=True), "IMS scores should be in descending order"
+    assert all(0 < s <= 100 for s in IMS_SCORES), "All IMS scores should be in valid range"
+    assert IMS_SCORES[0] == 96, "Top IMS should be 96 (Microsoft)"

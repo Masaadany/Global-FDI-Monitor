@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { OrganizationJsonLd, SoftwareAppJsonLd, FAQJsonLd } from '@/components/JsonLd';
 import dynamic from 'next/dynamic';
 
 const Globe4D       = dynamic(() => import('@/components/Globe4D'),       { ssr:false });
@@ -31,8 +32,18 @@ export default function HomePage() {
       .catch(()=>{});
   }, []);
 
+  const FAQS = [
+    {q:"What is Global FDI Monitor?",a:"GFM is the world's first fully integrated FDI intelligence platform, covering 215 economies with real-time signals, GFR rankings, and AI-powered reports."},
+    {q:"How much does it cost?",a:"Professional plan starts at $899/month (or $799/month billed annually). A 3-day free trial with 5 FIC credits is available with no credit card required."},
+    {q:"What are FIC credits?",a:"Forecasta Intelligence Credits (FIC) are used to unlock premium intelligence: Platinum signals, custom reports, and mission planning dossiers."},
+    {q:"What data sources does GFM use?",a:"IMF, World Bank, UNCTAD, OECD, IEA, ILO, Freedom House, Transparency International, GDELT, and more. Every data point carries full SHA-256 provenance."},
+  ];
+
   return (
     <div className="min-h-screen bg-white">
+      <OrganizationJsonLd/>
+      <SoftwareAppJsonLd/>
+      <FAQJsonLd faqs={FAQS}/>
       {/* HERO */}
       <section className="bg-[#0A2540] text-white">
         <div className="max-w-7xl mx-auto px-6 pt-16 pb-10">
