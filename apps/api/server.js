@@ -1178,3 +1178,45 @@ ROUTES['GET /api/v1/auth/trial-status'] = async(req,res)=>{
     ok(res, {tier:payload.tier||'free_trial', trial_expired:false, days_left:3, fic_balance:5});
   }
 };
+
+// ── COMPANIES DATA ────────────────────────────────────────────────────────
+const COMPANIES_DATA = [
+  {cic:'GFM-USA-MSFT-12847',name:'Microsoft Corporation',hq:'USA',sector:'J',ims:96,rev_b:211.9,esg:'LEADER',esg_score:77.2,signals:12,grade:'PLATINUM',footprints:['GBR','DEU','IND','SGP','ARE','JPN','SAU','IRL'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-AMZN-98120',name:'Amazon Web Services', hq:'USA',sector:'J',ims:95,rev_b:90.8, esg:'LEADER',esg_score:74.1,signals:18,grade:'PLATINUM',footprints:['GBR','DEU','IRL','SGP','AUS','IND','SAU','ARE'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-NVDA-66234',name:'NVIDIA Corporation',  hq:'USA',sector:'J',ims:94,rev_b:60.9, esg:'LEADER',esg_score:71.2,signals:14,grade:'PLATINUM',footprints:['TWN','KOR','GBR','DEU','IND','SGP'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-KOR-SAMS-33891',name:'Samsung Electronics', hq:'KOR',sector:'C',ims:91,rev_b:234.1,esg:'STRONG',esg_score:61.8,signals:9, grade:'GOLD',    footprints:['VNM','IND','USA','DEU','GBR','BRA'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-CHN-CATL-11234',name:'CATL',                hq:'CHN',sector:'C',ims:90,rev_b:44.0, esg:'STRONG',esg_score:62.4,signals:11,grade:'PLATINUM',footprints:['DEU','HUN','IDN','AUS','MAR','CAN'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-BLR-77891', name:'BlackRock Inc',       hq:'USA',sector:'K',ims:88,rev_b:17.9, esg:'STRONG',esg_score:64.2,signals:4, grade:'SILVER',  footprints:['GBR','DEU','SGP','HKG','AUS','ARE'],fdi_stage:'WATCHING'},
+  {cic:'GFM-DEU-SINEN-44221',name:'Siemens Energy',     hq:'DEU',sector:'D',ims:85,rev_b:35.3, esg:'LEADER',esg_score:72.8,signals:8, grade:'GOLD',    footprints:['GBR','USA','SAU','EGY','AUS','BRA'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-DATA-88234',name:'Databricks',          hq:'USA',sector:'J',ims:82,rev_b:1.6,  esg:'ACTIVE',esg_score:52.0,signals:5, grade:'SILVER',  footprints:['GBR','DEU','SGP','AUS','JPN'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-PLTR-25422',name:'Palantir Technologies',hq:'USA',sector:'J',ims:84,rev_b:2.23,esg:'STRONG',esg_score:58.0,signals:3, grade:'GOLD',    footprints:['GBR','DEU','AUS','JPN','FRA'],fdi_stage:'WATCHING'},
+  {cic:'GFM-DNK-VEST-55123',name:'Vestas Wind Systems', hq:'DNK',sector:'D',ims:80,rev_b:15.9, esg:'LEADER',esg_score:78.4,signals:6, grade:'GOLD',    footprints:['GBR','DEU','USA','IND','BRA','AUS'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-USA-APPL-10001',name:'Apple Inc',           hq:'USA',sector:'J',ims:93,rev_b:383.3,esg:'LEADER',esg_score:72.0,signals:8, grade:'GOLD',    footprints:['IRL','CHN','IND','SGP','GBR','DEU'],fdi_stage:'WATCHING'},
+  {cic:'GFM-FRA-TTAL-33412',name:'TotalEnergies',       hq:'FRA',sector:'D',ims:82,rev_b:218.9,esg:'ACTIVE',esg_score:58.4,signals:7, grade:'GOLD',    footprints:['NGA','SAU','ARE','QAT','USA','AUS'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-GBR-BHP-55123', name:'BHP Group',           hq:'GBR',sector:'B',ims:84,rev_b:53.8, esg:'STRONG',esg_score:63.4,signals:6, grade:'GOLD',    footprints:['AUS','CHN','USA','BRA','CHL'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-DEU-BAYG-22341',name:'BASF SE',             hq:'DEU',sector:'C',ims:79,rev_b:68.9, esg:'STRONG',esg_score:66.8,signals:4, grade:'SILVER',  footprints:['CHN','USA','BEL','BRA','IND'],fdi_stage:'WATCHING'},
+  {cic:'GFM-JPN-SONY-44132',name:'Sony Group',          hq:'JPN',sector:'C',ims:82,rev_b:88.0, esg:'STRONG',esg_score:60.2,signals:4, grade:'SILVER',  footprints:['USA','GBR','DEU','IND','IDN'],fdi_stage:'WATCHING'},
+  {cic:'GFM-USA-SNOW-11234',name:'Snowflake Inc',       hq:'USA',sector:'J',ims:79,rev_b:2.8,  esg:'STRONG',esg_score:55.0,signals:3, grade:'SILVER',  footprints:['GBR','DEU','SGP','AUS'],fdi_stage:'WATCHING'},
+  {cic:'GFM-SAU-ACWA-44512',name:'ACWA Power',          hq:'SAU',sector:'D',ims:86,rev_b:4.2,  esg:'LEADER',esg_score:74.1,signals:9, grade:'GOLD',    footprints:['EGY','MAR','SAU','JOR','PAK'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-CHN-HUAW-55312',name:'Huawei Technologies', hq:'CHN',sector:'J',ims:78,rev_b:99.5, esg:'ACTIVE',esg_score:51.2,signals:3, grade:'SILVER',  footprints:['EGY','NGA','SAU','ARE','IDN'],fdi_stage:'WATCHING'},
+  {cic:'GFM-USA-GOOG-77234',name:'Google (Alphabet)',   hq:'USA',sector:'J',ims:92,rev_b:307.4,esg:'LEADER',esg_score:73.8,signals:10,grade:'GOLD',    footprints:['IRL','GBR','DEU','SGP','IND','ARE'],fdi_stage:'ACTIVE'},
+  {cic:'GFM-JPN-TOYT-88123',name:'Toyota Motor Corp',   hq:'JPN',sector:'C',ims:87,rev_b:274.5,esg:'STRONG',esg_score:67.4,signals:7, grade:'GOLD',    footprints:['VNM','IDN','THA','IND','USA','GBR'],fdi_stage:'ACTIVE'},
+];
+
+ROUTES['GET /api/v1/companies'] = async(req,res)=>{
+  const q   = require('url').parse(req.url,true).query;
+  let companies = [...COMPANIES_DATA];
+  if(q.sector) companies=companies.filter(c=>c.sector===q.sector);
+  if(q.hq)     companies=companies.filter(c=>c.hq===q.hq);
+  if(q.grade)  companies=companies.filter(c=>c.grade===q.grade);
+  companies.sort((a,b)=>b.ims-a.ims);
+  const {items,pagination} = paginate(req,companies);
+  ok(res,{companies:items,total:companies.length,pagination});
+};
+
+ROUTES['GET /api/v1/companies/:cic'] = async(req,res,p)=>{
+  const co = COMPANIES_DATA.find(c=>c.cic===p.cic);
+  if(!co) return fail(res,'NOT_FOUND','Company not found',404);
+  const signals = M_SIGNALS.filter(s=>s.company===co.name);
+  ok(res,{...co,signals,signal_count:signals.length});
+};

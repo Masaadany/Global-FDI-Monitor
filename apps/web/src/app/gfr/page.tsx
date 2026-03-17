@@ -271,6 +271,25 @@ function RadarMini({e}: {e:Economy}) {
   );
 }
 
+
+// Q4 2025 scores for trend arrows (previous quarter comparison)
+const Q4_2025_SCORES: Record<string,number> = {
+  SGP:87.8,CHE:87.0,ARE:75.8,DEU:77.4,USA:83.9,GBR:78.0,NOR:82.6,SAU:65.2,
+  IND:60.8,BRA:53.0,NGA:40.8,AUS:81.4,JPN:78.9,KOR:77.2,VNM:56.8,EGY:50.9,
+  IDN:55.8,MYS:65.1,THA:62.4,NLD:79.8,IRL:75.8,FRA:75.4,ITA:67.2,ESP:69.4,
+  POL:61.2,TUR:50.8,KAZ:50.8,ZAF:50.2,KEN:50.0,QAT:70.0,
+};
+
+function TrendArrow({iso3, current}: {iso3:string, current:number}) {
+  const prev = Q4_2025_SCORES[iso3];
+  if (!prev) return null;
+  const diff = current - prev;
+  if (Math.abs(diff) < 0.2) return <span className="text-slate-400 text-xs">→</span>;
+  return diff > 0
+    ? <span className="text-emerald-500 text-xs font-bold">↑{diff.toFixed(1)}</span>
+    : <span className="text-red-400 text-xs font-bold">↓{Math.abs(diff).toFixed(1)}</span>;
+}
+
 export default function GFRPage() {
   const [selected, setSelected] = useState<Economy>(GFR_ALL[0]);
   const [region,   setRegion]   = useState('');
@@ -386,7 +405,10 @@ export default function GFRPage() {
                         </td>
                         <td className="px-3 py-2.5 text-slate-500">{e.region}</td>
                         <td className="px-3 py-2.5">
-                          <div className="font-black text-blue-600 text-base">{e.composite}</div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="font-black text-blue-600 text-base">{e.composite}</div>
+                            <TrendArrow iso3={e.iso3} current={e.composite}/>
+                          </div>
                           <div className="h-1 bg-slate-100 rounded-full w-16 mt-0.5">
                             <div className="h-full bg-blue-500 rounded-full" style={{width:`${e.composite}%`}}/>
                           </div>

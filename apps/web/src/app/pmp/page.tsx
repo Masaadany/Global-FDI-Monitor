@@ -39,6 +39,19 @@ export default function PMPPage() {
   const [newMission,setNewMission]= useState<any>(null);
   const [selected,  setSelected]  = useState<typeof TARGET_COMPANIES[0]|null>(null);
 
+  const [dossierState, setDossierState] = useState<Record<string,'idle'|'generating'|'ready'>>({});
+
+  async function generateDossier(cic: string, company: string) {
+    setDossierState(s=>({...s,[cic]:'generating'}));
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('gfm_token') : null;
+      await new Promise(r=>setTimeout(r,1800)); // simulate AI generation
+      setDossierState(s=>({...s,[cic]:'ready'}));
+    } catch {
+      setDossierState(s=>({...s,[cic]:'idle'}));
+    }
+  }
+
   async function generate() {
     setGenerating(true);
     try {
@@ -138,7 +151,16 @@ export default function PMPPage() {
                   </div>
                   {selected?.cic===co.cic && (
                     <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2">
-                      <button className="text-xs bg-[#0A2540] text-white font-bold py-2 rounded-lg hover:bg-[#1D4ED8] transition-colors">Full Dossier — 18 FIC</button>
+                      <button onClick={()=>generateDossier(co.cic,co.name)} disabled={dossierState[co.cic]==='generating'}
+                        className={`text-xs font-bold py-2 rounded-lg transition-colors ${
+                          dossierState[co.cic]==='ready'?'bg-emerald-600 text-white':
+                          dossierState[co.cic]==='generating'?'bg-slate-300 text-slate-500 cursor-not-allowed':
+                          'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'
+                        }`}>
+                        {dossierState[co.cic]==='generating'?(
+                          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border border-slate-400 border-t-transparent rounded-full animate-spin"/>Generating…</span>
+                        ):dossierState[co.cic]==='ready'?'✓ Download Dossier':'AI Dossier — 18 FIC'}
+                      </button>
                       <button className="text-xs border border-slate-200 text-slate-600 font-bold py-2 rounded-lg hover:border-blue-300 transition-colors">Add to Pipeline</button>
                       <button className="text-xs border border-slate-200 text-slate-600 font-bold py-2 rounded-lg hover:border-blue-300 transition-colors">Generate Outreach</button>
                     </div>

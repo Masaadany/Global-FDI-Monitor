@@ -166,6 +166,38 @@ export default function AdminPage() {
           </div>
         )}
 
+
+            {/* Charts */}
+            <div className="grid md:grid-cols-2 gap-4 mt-5">
+              {/* Signal volume chart */}
+              <div className="bg-white rounded-xl border border-slate-100 p-5">
+                <div className="font-bold text-sm text-[#0A2540] mb-3">Signal Volume — Last 14 Days</div>
+                <svg viewBox="0 0 300 80" className="w-full">
+                  {[18,22,15,28,31,24,19,35,42,38,27,44,48,52].map((v,i)=>{
+                    const x=i*(300/13); const h=(v/60)*65;
+                    return <g key={i}>
+                      <rect x={x+2} y={75-h} width="18" height={h} fill={i>=12?'#1D4ED8':'#dbeafe'} rx="2"/>
+                      {i%3===0&&<text x={x+10} y={78} fontSize="6" textAnchor="middle" fill="#94a3b8">{14-i}d</text>}
+                    </g>;
+                  })}
+                </svg>
+              </div>
+              {/* FDI by region */}
+              <div className="bg-white rounded-xl border border-slate-100 p-5">
+                <div className="font-bold text-sm text-[#0A2540] mb-3">FDI Signals by Region</div>
+                <div className="space-y-2">
+                  {[['MENA','#f59e0b',38],['EAP','#06b6d4',28],['ECA','#3b82f6',18],['SAS','#8b5cf6',10],['SSA','#ef4444',6]].map(([r,c,pct])=>(
+                    <div key={String(r)} className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 w-10">{r}</span>
+                      <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:`${pct}%`,background:String(c)}}/>
+                      </div>
+                      <span className="text-xs font-bold text-slate-600 w-6">{pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
         {tab==='jobs' && (
           <div className="grid md:grid-cols-2 gap-3">
             {JOBS.map(j=>(

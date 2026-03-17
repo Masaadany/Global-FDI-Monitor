@@ -2,6 +2,7 @@
 import { exportSignals } from '@/lib/export';
 import { getPresets, savePreset, deletePreset, BUILTIN_PRESETS } from '@/lib/filterPresets';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
@@ -192,6 +193,9 @@ export default function SignalsPage() {
                           <button className="border border-slate-200 text-slate-600 text-xs font-bold px-4 py-2 rounded-lg hover:border-blue-300 transition-colors">
                             + Watchlist
                           </button>
+                          <Link href="/company-profiles" className="border border-slate-200 text-blue-600 text-xs font-bold px-4 py-2 rounded-lg hover:border-blue-400 transition-colors">
+                            Company →
+                          </Link>
                         </div>
                       </div>
                     )}
