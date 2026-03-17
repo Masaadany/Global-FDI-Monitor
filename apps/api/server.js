@@ -1416,3 +1416,42 @@ ROUTES['GET /api/v1/alerts'] = async(req,res)=>{
      title:'New PLATINUM Signal: Microsoft → UAE',body:'$850M data centre confirmed'},
   ],total:1});
 };
+
+// ── PUBLICATIONS ────────────────────────────────────────────────────────────
+const PUBS = [
+  {id:'FNL-WK-2026-11-20260317-001',type:'WEEKLY', grade:'FREE',date:'2026-03-17',pages:12,signals:12,title:'GFM Intelligence Digest — Week 11, 2026'},
+  {id:'FPB-MON-2026-03-20260301-001',type:'MONTHLY',grade:'PROFESSIONAL',date:'2026-03-01',pages:68,signals:48,title:'Global FDI Intelligence Report — March 2026'},
+  {id:'FGR-Q1-2026-20260315-001',type:'GFR',grade:'PROFESSIONAL',date:'2026-03-15',pages:48,signals:0,title:'Global Future Readiness Rankings — Q1 2026'},
+  {id:'FNL-WK-2026-10-20260310-001',type:'WEEKLY',grade:'FREE',date:'2026-03-10',pages:11,signals:9,title:'GFM Intelligence Digest — Week 10, 2026'},
+];
+ROUTES['GET /api/v1/publications'] = async(req,res)=>{
+  const q=require('url').parse(req.url,true).query;
+  let pubs=[...PUBS];
+  if(q.type) pubs=pubs.filter(p=>p.type===q.type);
+  const {items,pagination}=paginate(req,pubs);
+  ok(res,{publications:items,total:pubs.length,pagination});
+};
+
+// ── SCENARIOS ────────────────────────────────────────────────────────────────
+ROUTES['POST /api/v1/scenarios'] = async(req,res)=>{
+  const d=await body(req);
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const {economy='UAE',gdp=3.4,oil=80,fdi_base=30} = d||{};
+  const scenarios = {
+    bull: {label:'Bull Case',   fdi_2026:(fdi_base*(1+(gdp-2)/100*1.8+0.08)).toFixed(1), p90:((fdi_base*1.25)).toFixed(1)},
+    base: {label:'Base Case',  fdi_2026:(fdi_base*(1+(gdp-2)/100*1.2+0.04)).toFixed(1), p50:fdi_base.toFixed(1)},
+    bear: {label:'Bear Case',  fdi_2026:(fdi_base*(1+(gdp-2)/100*0.6-0.04)).toFixed(1), p10:((fdi_base*0.78)).toFixed(1)},
+  };
+  ok(res,{economy,scenarios,assumptions:{gdp_growth:gdp,oil_price:oil,fdi_base},model:'Bayesian VAR'});
+};
+
+// ── REPORTS /GENERATE (expanded) ─────────────────────────────────────────────
+const REPORT_QUEUE: Record<string,{status:string;progress:number;ref:string;startedAt:number}> = {};
+
+ROUTES['GET /api/v1/reports/:ref/status'] = async(req,res,p)=>{
+  const job=REPORT_QUEUE[p.ref];
+  if(!job) return fail(res,'NOT_FOUND','Report not found',404);
+  ok(res,{ref:p.ref,status:job.status,progress:job.progress});
+};

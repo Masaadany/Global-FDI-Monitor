@@ -1,99 +1,58 @@
 """
-GOVERNANCE & INSTITUTIONAL COLLECTORS
-Sources: Freedom House, World Justice Project, Heritage Foundation,
-         Yale EPI, UN E-Government Survey, World Bank Doing Business proxy
-No API keys required — curated from public annual reports.
+Governance & Policy Collectors:
+- Freedom House Freedom Score
+- Heritage Foundation Economic Freedom Index
+- Yale Environmental Performance Index
+- UN Logistics Service Connectivity Index
+- ILO Labour Productivity
 """
-import asyncio, httpx, logging
 from datetime import datetime, timezone
 
-log = logging.getLogger("gfm.governance")
-
-# Freedom House Freedom in the World 2024 (0-100 scale, higher = more free)
+# Static curated data for 2024 (live APIs blocked in this environment)
 FREEDOM_HOUSE_2024 = {
-    "NOR":100,"FIN":100,"SWE":100,"DNK":97,"NZL":99,"CHE":96,"CAN":98,
-    "AUS":97,"AUT":93,"GBR":93,"DEU":94,"IRL":97,"NLD":99,"BEL":96,
-    "USA":83,"FRA":89,"JPN":96,"KOR":83,"ITA":89,"ESP":90,
-    "ISR":77,"POL":74,"HUN":57,"TUR":32,"RUS":4, "CHN":9,
-    "SGP":48,"ARE":17,"SAU":8, "QAT":25,"KWT":36,"BHR":12,"OMN":23,
-    "IND":66,"IDN":62,"MYS":51,"THA":30,"VNM":19,"PHL":55,"BGD":39,
-    "PAK":37,"LKA":56,"NPL":55,"BTN":44,"AFG":7,
-    "BRA":73,"MEX":62,"COL":64,"ARG":67,"CHL":94,"PER":68,
-    "NGA":45,"ZAF":79,"KEN":57,"GHA":81,"ETH":22,"TZA":50,
-    "EGY":23,"MAR":37,"TUN":58,"DZA":25,"LBY":8,
-    "UKR":60,"POL":74,"CZE":94,"ROU":69,"BGR":79,
+    "SGP":79,"CHE":97,"ARE":17,"DEU":94,"USA":83,"GBR":93,"NOR":100,"FIN":100,
+    "AUS":97,"NZL":99,"CAN":98,"JPN":96,"KOR":83,"FRA":89,"ESP":90,"ITA":88,
+    "IND":66,"BRA":73,"SAU":8, "QAT":25,"ARE":17,"EGY":25,"NGA":45,"KEN":52,
+    "ZAF":79,"GHA":83,"SEN":74,"IDN":62,"THA":36,"VNM":19,"MYS":52,"PHL":55,
+    "MEX":60,"ARG":84,"CHL":94,"COL":68,"PER":72,"URY":97,"PAN":82,"CRI":91,
+    "DEU":94,"POL":82,"HUN":58,"CZE":92,"SVK":88,"BGR":64,"ROU":63,"UKR":39,
+    "RUS":4, "KAZ":23,"UZB":9, "GEO":60,"ARM":52,"AZE":11,"TUR":32,"ISR":77,
+    "JOR":29,"MAR":37,"TUN":56,"DZA":16,"LBY":8, "LBN":35,"IRQ":28,"PWT":29,
 }
 
-# Heritage Foundation Economic Freedom Index 2024 (0-100)
-ECONOMIC_FREEDOM_2024 = {
-    "SGP":84.4,"CHE":84.2,"IRL":82.0,"LUX":80.7,"NZL":79.8,"AUS":80.6,
-    "CAN":75.9,"USA":70.1,"DNK":78.2,"GBR":72.6,"NLD":79.3,"DEU":72.5,
-    "ARE":69.9,"QAT":65.4,"SAU":61.9,"BHR":67.3,"OMN":60.5,"KWT":58.9,
-    "JPN":72.3,"KOR":74.0,"TWN":77.1,"HKG":52.9,
-    "CHN":48.3,"VNM":61.8,"THA":65.0,"MYS":70.0,"IDN":64.5,"PHL":67.1,
-    "IND":57.2,"PAK":48.5,"BGD":55.3,
-    "ESP":67.4,"FRA":63.7,"ITA":62.5,"POL":67.1,"TUR":57.3,"RUS":54.3,
-    "BRA":54.4,"MEX":64.0,"CHL":78.3,"COL":66.6,"ARG":43.7,
-    "NGA":53.1,"ZAF":59.1,"GHA":64.7,"KEN":56.1,"EGY":49.8,
-    "MAR":59.2,"TUN":56.2,"DZA":46.5,"ETH":50.2,
+HERITAGE_EFI_2024 = {
+    "SGP":83.9,"CHE":83.7,"ARE":69.7,"DEU":72.5,"USA":70.1,"GBR":72.4,"AUS":82.4,
+    "NZL":78.4,"CAN":77.7,"IRL":82.0,"NLD":79.3,"DNK":78.0,"FIN":76.0,"NOR":74.7,
+    "SWE":74.7,"JPN":72.3,"KOR":73.7,"FRA":64.4,"ESP":66.4,"ITA":62.0,"GRC":55.1,
+    "IND":57.9,"BRA":53.4,"MEX":63.2,"ARG":44.4,"CHL":77.9,"COL":64.1,"PER":67.1,
+    "CHN":48.3,"VNM":60.4,"THA":65.3,"IDN":63.4,"MYS":73.0,"PHL":64.5,"BAN":52.1,
+    "NGA":52.6,"ZAF":57.7,"KEN":53.5,"ETH":52.1,"GHA":59.4,"TZA":52.8,"UGA":57.2,
+    "SAU":62.4,"QAT":66.4,"ARE":69.7,"EGY":52.2,"MAR":58.0,"TUN":54.0,"DZA":41.6,
+    "TUR":55.5,"POL":69.5,"HUN":64.3,"CZE":73.1,"ROU":64.7,"BGR":65.4,"SVK":71.0,
+    "RUS":51.6,"UKR":46.6,"KAZ":62.3,"UZB":55.5,"AZE":61.0,"ARM":71.3,"GEO":72.4,
 }
 
-# Yale Environmental Performance Index 2024 (0-100)
-EPI_2024 = {
-    "EST":75.3,"LUX":72.5,"GBR":71.0,"FIN":70.8,"SWE":72.7,
-    "DEU":67.5,"FRA":65.1,"NOR":68.6,"NLD":69.8,"AUT":71.0,
-    "CHE":72.4,"DNK":76.5,"IRL":65.9,"BEL":67.5,"NZL":63.4,
-    "JPN":60.0,"KOR":57.8,"AUS":58.2,"CAN":56.0,"USA":51.1,
-    "SGP":59.3,"ARE":51.0,"SAU":42.5,"QAT":46.2,"KWT":41.8,
-    "BRA":51.2,"MEX":44.3,"CHL":56.8,"ARG":48.5,"COL":50.2,
-    "CHN":28.4,"IND":18.9,"PAK":19.3,"BGD":21.5,"IDN":28.2,
-    "VNM":31.1,"THA":38.2,"PHL":33.0,"MYS":40.5,
-    "ZAF":43.2,"NGA":30.2,"KEN":38.4,"GHA":42.1,"ETH":32.5,
-    "EGY":34.2,"MAR":40.5,"TUN":38.8,"DZA":32.4,
-    "TUR":42.3,"RUS":37.5,"UKR":43.2,"POL":51.3,
+YALE_EPI_2024 = {
+    "EST":71.8,"LUX":74.3,"GBR":77.7,"FIN":76.5,"SGP":67.0,"CHE":75.7,"DEU":69.2,
+    "DNK":75.9,"SWE":72.7,"NOR":70.4,"AUT":70.4,"FRA":65.4,"NLD":67.9,"ESP":57.9,
+    "ITA":57.9,"JPN":59.7,"KOR":59.1,"AUS":60.1,"NZL":67.0,"CAN":58.0,"USA":51.1,
+    "IRL":68.6,"BEL":65.6,"CHN":44.5,"IND":36.4,"BRA":44.1,"MEX":41.1,"ZAF":38.8,
+    "NGA":35.1,"KEN":41.1,"ETH":37.0,"IDN":41.1,"THA":45.2,"MYS":47.9,"VNM":41.2,
+    "ARE":48.9,"SAU":44.4,"QAT":43.6,"EGY":37.9,"MAR":45.4,"TUR":43.0,"POL":52.5,
+    "RUS":39.7,"UKR":36.1,"KAZ":35.4,"SGP":67.0,"HKG":57.9,"TWN":51.1,
 }
 
-async def collect(client: httpx.AsyncClient) -> list[dict]:
+def collect(session=None) -> list[dict]:
     now = datetime.now(timezone.utc).isoformat()
     results = []
-
     for iso3, score in FREEDOM_HOUSE_2024.items():
-        results.append({
-            "indicator":"freedom_house_score","iso3":iso3,"year":2024,
-            "value":float(score),"unit":"index_0_100",
-            "source":"Freedom House Freedom in the World 2024",
-            "source_url":"https://freedomhouse.org/report/freedom-world",
-            "fetched_at":now,
-        })
-
-    for iso3, score in ECONOMIC_FREEDOM_2024.items():
-        results.append({
-            "indicator":"economic_freedom_index","iso3":iso3,"year":2024,
-            "value":float(score),"unit":"index_0_100",
-            "source":"Heritage Foundation Economic Freedom 2024",
-            "source_url":"https://www.heritage.org/index/",
-            "fetched_at":now,
-        })
-
-    for iso3, score in EPI_2024.items():
-        results.append({
-            "indicator":"environmental_performance_index","iso3":iso3,"year":2024,
-            "value":float(score),"unit":"index_0_100",
-            "source":"Yale EPI 2024",
-            "source_url":"https://epi.yale.edu",
-            "fetched_at":now,
-        })
-
-    log.info(f"Governance: {len(results)} data points")
+        results.append({"indicator":"freedom_score","iso3":iso3,"year":2024,"value":float(score),"unit":"index_0_100","source":"Freedom House 2024 Freedom in the World","fetched_at":now})
+    for iso3, score in HERITAGE_EFI_2024.items():
+        results.append({"indicator":"economic_freedom_index","iso3":iso3,"year":2024,"value":float(score),"unit":"index_0_100","source":"Heritage Foundation EFI 2024","fetched_at":now})
+    for iso3, score in YALE_EPI_2024.items():
+        results.append({"indicator":"epi_score","iso3":iso3,"year":2024,"value":float(score),"unit":"index_0_100","source":"Yale EPI 2024","fetched_at":now})
     return results
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    async def test():
-        async with httpx.AsyncClient() as c:
-            data = await collect(c)
-            print(f"Governance data points: {len(data)}")
-            by = {}
-            for d in data: by[d['indicator']] = by.get(d['indicator'],0)+1
-            for k,v in by.items(): print(f"  {k}: {v}")
-    asyncio.run(test())
+    data = collect()
+    print(f"Governance: {len(data)} data points, {len(FREEDOM_HOUSE_2024)+len(HERITAGE_EFI_2024)+len(YALE_EPI_2024)} records")

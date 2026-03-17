@@ -1,18 +1,18 @@
 User-agent: *
-Disallow: /api/
-Disallow: /dashboard
-Disallow: /watchlists
-Disallow: /alerts
-Disallow: /investment-pipeline
-Disallow: /pmp
-Disallow: /reports
 Allow: /
+Allow: /demo
+Allow: /about
+Allow: /pricing
 Allow: /gfr
 Allow: /signals
 Allow: /analytics
-Allow: /forecast
-Allow: /pricing
-Allow: /about
 Allow: /contact
 Allow: /register
+Allow: /privacy
+Allow: /terms
+
+Disallow: /admin
+Disallow: /settings
+Disallow: /dashboard
+
 Sitemap: https://fdimonitor.org/sitemap.xml

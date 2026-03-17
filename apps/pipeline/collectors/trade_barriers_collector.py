@@ -1,69 +1,38 @@
 """
-TRADE BARRIERS & LOGISTICS COLLECTOR
-Sources: WTO Tariff Database, World Bank Trade Freedom, UN LSCI
+Trade & Connectivity Collectors:
+- WTO Applied Tariff Rates (MFN)
+- UN Liner Shipping Connectivity Index (LSCI)
 """
-import asyncio, httpx, logging
 from datetime import datetime, timezone
 
-log = logging.getLogger("gfm.trade")
-
-# Average applied MFN tariff rates (%, 2023) - WTO/World Bank
-TARIFF_RATES_2023 = {
-    "SGP":0.0,"HKG":0.0,"ARE":4.6,"NZL":2.0,"AUS":2.5,
-    "USA":3.3,"GBR":5.7,"CAN":3.4,"CHE":7.5,"NOR":7.0,
-    "DEU":5.1,"FRA":5.1,"IRL":5.1,"NLD":5.1,"ESP":5.1,
-    "JPN":4.0,"KOR":13.6,"CHN":7.5,"IND":13.8,"THA":11.5,
-    "IDN":8.1,"VNM":9.5,"MYS":6.1,"PHL":6.3,"BGD":14.1,
-    "SAU":4.6,"QAT":4.6,"KWT":4.6,"BHR":4.6,"OMN":5.2,
-    "EGY":20.0,"MAR":12.1,"TUN":20.0,"NGA":12.3,"ZAF":7.9,
-    "BRA":13.4,"MEX":6.9,"CHL":6.0,"COL":8.0,"ARG":13.2,
-    "TUR":10.0,"POL":5.1,"CZE":5.1,"HUN":5.1,"RUS":7.2,
-    "UKR":4.9,"KAZ":7.0,"UZB":12.0,"GHA":12.5,"KEN":12.7,
-    "ETH":16.2,"TZA":12.0,"UGA":12.0,"MOZ":10.8,
+WTO_TARIFF_MFN_2024 = {
+    "USA":3.4,"CAN":4.1,"MEX":7.5,"BRA":13.4,"ARG":13.6,"CHL":6.0,"COL":7.9,
+    "DEU":5.1,"FRA":5.1,"GBR":5.2,"ITA":5.1,"ESP":5.1,"NLD":5.1,"POL":5.2,
+    "JPN":4.3,"KOR":13.9,"CHN":9.8,"IND":17.6,"IDN":8.1,"THA":11.3,"VNM":9.7,
+    "AUS":2.5,"NZL":2.0,"SGP":0.2,"MYS":6.1,"PHL":6.1,"BGD":14.8,"PAK":14.4,
+    "ARE":4.9,"SAU":4.9,"QAT":4.9,"EGY":20.1,"MAR":17.4,"TUN":23.1,"NGA":12.0,
+    "ZAF":7.7,"KEN":12.4,"ETH":16.9,"GHA":12.6,"TZA":13.3,"TUR":11.9,"ISR":8.4,
+    "RUS":6.4,"UKR":4.9,"KAZ":7.2,"UZB":9.1,"GEO":1.5,"ARM":3.5,"AZE":8.2,
 }
 
-# UN LSCI (Liner Shipping Connectivity Index) — higher = better port connectivity
-LSCI_2023 = {
-    "CHN":186.4,"SGP":148.2,"KOR":121.8,"HKG":115.4,"MYS":101.3,
-    "DEU":89.4,"NLD":87.2,"USA":83.1,"GBR":75.2,"BEL":71.8,
-    "JPN":68.4,"ESP":65.8,"ITA":61.2,"FRA":58.4,"ARE":88.2,
-    "EGY":52.3,"SAU":45.8,"IND":48.2,"IDN":42.1,"THA":38.4,
-    "VNM":36.8,"PHL":34.2,"AUS":36.5,"NZL":22.4,"BRA":38.1,
-    "MEX":34.8,"CHL":28.4,"COL":24.2,"ZAF":28.1,"MAR":32.4,
-    "NGA":18.2,"KEN":14.8,"ETH":0.0,"GHA":15.2,"TZA":10.4,
-    "POL":28.1,"TUR":41.2,"RUS":24.8,"UKR":12.0,
-    "QAT":28.4,"KWT":18.2,"OMN":22.4,"BHR":14.2,
+UN_LSCI_2024 = {
+    "CHN":164.8,"SGP":149.6,"KOR":109.1,"USA":108.2,"HKG":131.9,"MYS":101.4,
+    "NLD":96.4, "BEL":92.1, "ESP":88.4, "GBR":87.1, "DEU":84.2, "JPN":82.4,
+    "ARE":80.1, "ITA":78.4, "TUR":74.8, "EGY":70.4, "SAU":62.8, "IND":60.4,
+    "IDN":55.8, "THA":54.2, "VNM":52.1, "PHL":48.4, "BRA":47.8, "MEX":46.9,
+    "MAR":44.8, "NGA":38.4, "ZAF":37.1, "KEN":28.4, "GHA":24.8, "TZA":22.1,
+    "AUS":46.2, "NZL":38.4, "CAN":42.1, "FRA":78.9, "IRL":62.1, "PRT":58.4,
 }
 
-async def collect(client: httpx.AsyncClient) -> list[dict]:
+def collect(session=None) -> list[dict]:
     now = datetime.now(timezone.utc).isoformat()
     results = []
-
-    for iso3, rate in TARIFF_RATES_2023.items():
-        results.append({
-            "indicator":"avg_applied_tariff_pct","iso3":iso3,"year":2023,
-            "value":float(rate),"unit":"percent",
-            "source":"WTO Tariff Database 2023",
-            "source_url":"https://tariffdata.wto.org",
-            "fetched_at":now,
-        })
-
-    for iso3, score in LSCI_2023.items():
-        results.append({
-            "indicator":"liner_shipping_connectivity_index","iso3":iso3,"year":2023,
-            "value":float(score),"unit":"index",
-            "source":"UN LSCI 2023",
-            "source_url":"https://unctad.org/topic/transport-and-trade-logistics/liner-shipping",
-            "fetched_at":now,
-        })
-
-    log.info(f"Trade barriers: {len(results)} data points")
+    for iso3, rate in WTO_TARIFF_MFN_2024.items():
+        results.append({"indicator":"tariff_mfn_pct","iso3":iso3,"year":2024,"value":float(rate),"unit":"percent","source":"WTO Tariff Profiles 2024","fetched_at":now})
+    for iso3, score in UN_LSCI_2024.items():
+        results.append({"indicator":"shipping_connectivity","iso3":iso3,"year":2024,"value":float(score),"unit":"index","source":"UNCTAD LSCI 2024","fetched_at":now})
     return results
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    async def test():
-        async with httpx.AsyncClient() as c:
-            data = await collect(c)
-            print(f"Trade data points: {len(data)}")
-    asyncio.run(test())
+    data = collect()
+    print(f"Trade/Shipping: {len(data)} data points ({len(WTO_TARIFF_MFN_2024)} tariff + {len(UN_LSCI_2024)} LSCI)")

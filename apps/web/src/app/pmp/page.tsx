@@ -1,4 +1,5 @@
 'use client';
+import { exportCSV } from '@/lib/export';
 import { useState } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
@@ -122,8 +123,15 @@ export default function PMPPage() {
           </div>
         )}
 
-        {/* Targets */}
-        {tab==='targets' && (
+        {/* Targets - with export */}
+        {tab==='targets' && (<>
+        <div className="flex justify-end mb-3">
+          <button onClick={()=>exportCSV(TARGET_COMPANIES.map(co=>({CIC:co.cic,Company:co.name,HQ:co.hq,'MFS Score':co.mfs,'IMS Score':co.ims,'Revenue $B':co.rev_b,Employees:co.employees,ESG:co.esg,Stage:co.stage,Conviction:co.conviction,'Capex Range':co.capex_range})),'GFM_PMP_Targets')}
+            className="text-xs font-bold border border-slate-200 text-slate-500 px-4 py-2 rounded-lg hover:border-blue-300 transition-colors">
+            Export Targets CSV
+          </button>
+        </div></>)}
+      {tab==='targets' && (
           <div className="grid md:grid-cols-3 gap-5">
             <div className="md:col-span-2 space-y-2">
               {TARGET_COMPANIES.map(co=>(

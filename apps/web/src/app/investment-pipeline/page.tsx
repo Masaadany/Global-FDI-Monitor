@@ -1,112 +1,138 @@
 'use client';
-import { exportJSON, exportPipeline } from '@/lib/export';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { exportPipeline, exportJSON } from '@/lib/export';
+import Link from 'next/link';
 
-const DEALS = [
-  {id:'PIPE-001',company:'Microsoft Corp',hq:'USA',economy:'UAE',sector:'Technology',capex_m:850,stage:'COMMITTED',probability:92,contact:'Sarah Chen - VP FDI',days_in_stage:14,notes:'MoU signed Mar 10. Site selection in progress. DSO preferred.'},
-  {id:'PIPE-002',company:'Amazon AWS',hq:'USA',economy:'Saudi Arabia',sector:'Cloud',capex_m:5300,stage:'NEGOTIATING',probability:74,contact:'Ahmed Al-Rashid - Dir Partnerships',days_in_stage:28,notes:'Term sheet under review. Three AZs proposed. Decision Q2.'},
-  {id:'PIPE-003',company:'Siemens Energy',hq:'DEU',economy:'Egypt',sector:'Energy',capex_m:340,stage:'COMMITTED',probability:91,contact:'Klaus Mueller - SVP MENA',days_in_stage:7,notes:'JV agreement with EEHC finalized. Ground-breaking June 2026.'},
-  {id:'PIPE-004',company:'Vestas Wind',hq:'DNK',economy:'India',sector:'Renewables',capex_m:420,stage:'ENGAGED',probability:61,contact:'Priya Sharma - Country Manager',days_in_stage:42,notes:'Rajasthan site shortlisted. Grid connection study underway.'},
-  {id:'PIPE-005',company:'Databricks',hq:'USA',economy:'Singapore',sector:'AI/Data',capex_m:150,stage:'ENGAGED',probability:58,contact:'Wei Lin - APAC Director',days_in_stage:21,notes:'Regional HQ evaluation. EDB incentive package pending.'},
-  {id:'PIPE-006',company:'BlackRock',hq:'USA',economy:'UAE',sector:'Finance',capex_m:500,stage:'PROSPECTING',probability:38,contact:'James Park - MD Middle East',days_in_stage:5,notes:'Initial meeting held. ADGM framework review requested.'},
-  {id:'PIPE-007',company:'Nuveen AM',hq:'USA',economy:'UAE',sector:'Finance',capex_m:600,stage:'PROSPECTING',probability:31,contact:'TBD',days_in_stage:2,notes:'Identified via signal MSS-GFS-ARE-0006. Outreach not yet sent.'},
-  {id:'PIPE-008',company:'Palantir',hq:'USA',economy:'Saudi Arabia',sector:'AI/Data',capex_m:200,stage:'TARGETED',probability:22,contact:'TBD',days_in_stage:0,notes:'MFS 85.1. Generated via Mission PMP-SAU-J-20260317-0001.'},
-  {id:'PIPE-009',company:'Snowflake',hq:'USA',economy:'Singapore',sector:'AI/Data',capex_m:120,stage:'TARGETED',probability:19,contact:'TBD',days_in_stage:0,notes:'MFS 82.7. Target based on sector gap analysis.'},
-  {id:'PIPE-010',company:'CATL',hq:'CHN',economy:'Indonesia',sector:'Manufacturing',capex_m:3200,stage:'COMMITTED',probability:88,contact:'Li Wei - Intl Investments',days_in_stage:31,notes:'Battery gigafactory confirmed. Land acquisition in progress.'},
-];
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
-const STAGES = ['TARGETED','PROSPECTING','ENGAGED','NEGOTIATING','COMMITTED','CLOSED_WON'];
-const STAGE_COLORS: Record<string,{bg:string,text:string,border:string}> = {
-  TARGETED:    {bg:'bg-slate-100',  text:'text-slate-500',   border:'border-slate-300'},
-  PROSPECTING: {bg:'bg-violet-100', text:'text-violet-700',  border:'border-violet-300'},
-  ENGAGED:     {bg:'bg-blue-100',   text:'text-blue-700',    border:'border-blue-300'},
-  NEGOTIATING: {bg:'bg-amber-100',  text:'text-amber-700',   border:'border-amber-300'},
-  COMMITTED:   {bg:'bg-emerald-100',text:'text-emerald-700', border:'border-emerald-300'},
-  CLOSED_WON:  {bg:'bg-teal-100',   text:'text-teal-700',    border:'border-teal-300'},
+const STAGES = ['PROSPECTING','ENGAGED','NEGOTIATING','COMMITTED','CLOSED_WON'] as const;
+type Stage = typeof STAGES[number];
+
+const STAGE_CONFIG: Record<Stage,{label:string;color:string;bg:string;border:string;prob:number}> = {
+  PROSPECTING: {label:'Prospecting',   color:'text-slate-600',   bg:'bg-slate-50',  border:'border-slate-200', prob:20},
+  ENGAGED:     {label:'Engaged',       color:'text-blue-700',    bg:'bg-blue-50',   border:'border-blue-200',  prob:40},
+  NEGOTIATING: {label:'Negotiating',   color:'text-amber-700',   bg:'bg-amber-50',  border:'border-amber-200', prob:65},
+  COMMITTED:   {label:'Committed',     color:'text-emerald-700', bg:'bg-emerald-50',border:'border-emerald-200',prob:85},
+  CLOSED_WON:  {label:'Closed ✓',     color:'text-teal-700',    bg:'bg-teal-50',   border:'border-teal-200',  prob:100},
 };
 
-type ViewMode = 'kanban' | 'table';
+const MOCK_DEALS = [
+  {id:'PIPE-001',company:'Microsoft Corp',hq:'USA',iso3:'ARE',sector:'J',capex_m:850,stage:'NEGOTIATING' as Stage,probability:75,contact:'Sarah Chen',days:8,  notes:'Data centre confirmed. Site visit completed 2026-03-12.',grade:'PLATINUM'},
+  {id:'PIPE-002',company:'Amazon AWS',    hq:'USA',iso3:'SAU',sector:'J',capex_m:5300,stage:'COMMITTED' as Stage, probability:92,contact:'Ahmed Al-Rashid',days:15,notes:'MoU signed. Board approval expected Q2.',grade:'PLATINUM'},
+  {id:'PIPE-003',company:'Siemens Energy',hq:'DEU',iso3:'EGY',sector:'D',capex_m:340, stage:'ENGAGED' as Stage,   probability:55,contact:'Maria Rodriguez',days:5, notes:'Site visit scheduled 2026-03-25.',grade:'GOLD'},
+  {id:'PIPE-004',company:'CATL',          hq:'CHN',iso3:'IDN',sector:'C',capex_m:3200,stage:'COMMITTED' as Stage, probability:88,contact:'James Park',    days:22,notes:'Land acquisition complete. Phase 1 start Q3 2026.',grade:'PLATINUM'},
+  {id:'PIPE-005',company:'Vestas Wind',   hq:'DNK',iso3:'IND',sector:'D',capex_m:420, stage:'PROSPECTING' as Stage,probability:30,contact:'Wei Zhang',    days:3, notes:'Initial inquiry via LinkedIn.',grade:'GOLD'},
+  {id:'PIPE-006',company:'Databricks',    hq:'USA',iso3:'SGP',sector:'J',capex_m:150, stage:'ENGAGED' as Stage,   probability:60,contact:'Priya Nair',    days:8, notes:'Demo scheduled for EDB leadership.',grade:'SILVER'},
+  {id:'PIPE-007',company:'ACWA Power',    hq:'SAU',iso3:'MAR',sector:'D',capex_m:1100,stage:'COMMITTED' as Stage, probability:90,contact:'Omar Malik',    days:18,notes:'EPC contract signed. IFC financing approved.',grade:'GOLD'},
+  {id:'PIPE-008',company:'Palantir',      hq:'USA',iso3:'GBR',sector:'J',capex_m:200, stage:'NEGOTIATING' as Stage,probability:65,contact:'James Davies',  days:11,notes:'Contract terms being finalised.',grade:'GOLD'},
+];
 
-function ProbabilityBar({pct}: {pct:number}) {
-  const color = pct>=80?'bg-emerald-500':pct>=60?'bg-blue-500':pct>=40?'bg-amber-500':'bg-slate-300';
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{width:`${pct}%`}}/>
+const GRADE_DOT: Record<string,string> = {PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'};
+
+export default function PipelinePage() {
+  const [deals,   setDeals]   = useState(MOCK_DEALS);
+  const [view,    setView]    = useState<'kanban'|'table'>('kanban');
+  const [filter,  setFilter]  = useState('');
+  const [dragging,setDragging]= useState<string|null>(null);
+  const [dragOver,setDragOver]= useState<Stage|null>(null);
+  const [saving,  setSaving]  = useState<string|null>(null);
+
+  const totalCapex = deals.reduce((s,d)=>s+d.capex_m,0);
+  const weightedPipe = deals.reduce((s,d)=>s+(d.capex_m*d.probability/100),0);
+
+  async function moveStage(dealId: string, newStage: Stage) {
+    setSaving(dealId);
+    setDeals(prev => prev.map(d => d.id===dealId ? {...d, stage:newStage, probability:STAGE_CONFIG[newStage].prob, days:0} : d));
+    try {
+      const token = typeof window!=='undefined' ? localStorage.getItem('gfm_token') : null;
+      await fetch(`${API}/api/v1/pipeline/deals/${dealId}`,{
+        method:'PATCH',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token||''}`},
+        body:JSON.stringify({stage:newStage}),
+      });
+    } catch {}
+    setTimeout(()=>setSaving(null),500);
+  }
+
+  const filtered = deals.filter(d => !filter || d.company.toLowerCase().includes(filter.toLowerCase()) || d.iso3.includes(filter.toUpperCase()));
+
+  const DealCard = ({deal}: {deal:typeof MOCK_DEALS[0]}) => (
+    <div draggable onDragStart={()=>setDragging(deal.id)} onDragEnd={()=>{setDragging(null);setDragOver(null);}}
+      className={`bg-white rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all shadow-sm hover:shadow-md ${saving===deal.id?'opacity-50':''} ${dragging===deal.id?'opacity-40 rotate-2':''}`}
+      style={{borderColor:GRADE_DOT[deal.grade]+'44'}}>
+      <div className="flex items-start gap-2 mb-2">
+        <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:GRADE_DOT[deal.grade]}}/>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-xs text-[#0A2540] truncate">{deal.company}</div>
+          <div className="text-xs text-slate-400">{deal.iso3} · ISIC {deal.sector}</div>
+        </div>
+        <div className="text-xs font-black text-blue-600 flex-shrink-0">${deal.capex_m>=1000?`${(deal.capex_m/1000).toFixed(1)}B`:`${deal.capex_m}M`}</div>
       </div>
-      <span className="text-xs font-bold text-slate-500 w-6">{pct}%</span>
+      <div className="flex items-center gap-2 mb-1.5">
+        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-500 rounded-full" style={{width:`${deal.probability}%`}}/>
+        </div>
+        <span className="text-xs font-bold text-slate-500">{deal.probability}%</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-slate-400">{deal.contact} · {deal.days}d</span>
+        <div className="flex gap-1">
+          {STAGES.filter(s=>s!==deal.stage).slice(0,1).map(s=>(
+            <button key={s} onClick={()=>moveStage(deal.id,s)}
+              className="text-xs text-slate-400 hover:text-blue-600 px-1 py-0.5 rounded hover:bg-blue-50 transition-colors">
+              → {STAGE_CONFIG[s].label.split(' ')[0]}
+            </button>
+          ))}
+        </div>
+      </div>
+      {deal.notes && <p className="text-xs text-slate-400 mt-1.5 leading-tight line-clamp-1">{deal.notes}</p>}
     </div>
   );
-}
-
-export default function InvestmentPipelinePage() {
-  const [view,     setView]     = useState<ViewMode>('kanban');
-  const [selected, setSelected] = useState<typeof DEALS[0]|null>(null);
-  const [economy,  setEconomy]  = useState('');
-
-  const filtered = DEALS.filter(d => !economy || d.economy===economy);
-  const economies = [...new Set(DEALS.map(d=>d.economy))];
-
-  // Pipeline KPIs
-  const totalCapex   = DEALS.reduce((s,d)=>s+d.capex_m,0);
-  const committed    = DEALS.filter(d=>d.stage==='COMMITTED');
-  const weightedVal  = DEALS.reduce((s,d)=>s+(d.capex_m*d.probability/100),0);
-  const atRisk       = DEALS.filter(d=>d.days_in_stage>45 && d.stage==='NEGOTIATING');
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-2 items-center sticky top-14 z-30">
+      <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-3 items-center sticky top-14 z-30">
         <span className="font-black text-sm text-[#0A2540]">Investment Pipeline</span>
-        <div className="flex gap-1 ml-4">
+        <div className="flex gap-1 ml-2">
           {(['kanban','table'] as const).map(v=>(
             <button key={v} onClick={()=>setView(v)}
               className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>
-              {v==='kanban'?'🗂 Kanban':'📋 Table'}
+              {v==='kanban'?'⬜ Kanban':'📋 Table'}
             </button>
           ))}
         </div>
-        <select className="border border-slate-200 rounded-lg text-xs px-2 py-2 ml-2"
-          value={economy} onChange={e=>setEconomy(e.target.value)}>
-          <option value="">All Economies</option>
-          {economies.map(e=><option key={e}>{e}</option>)}
-        </select>
-        <div className="flex gap-4 ml-auto text-xs">
-          <div className="text-center"><span className="font-black text-blue-600 text-lg">${(totalCapex/1000).toFixed(1)}B</span><div className="text-slate-400">Total pipeline</div></div>
-          <div className="text-center"><span className="font-black text-emerald-600 text-lg">${(committed.reduce((s,d)=>s+d.capex_m,0)/1000).toFixed(1)}B</span><div className="text-slate-400">Committed</div></div>
-          <div className="text-center"><span className="font-black text-amber-600 text-lg">${(weightedVal/1000).toFixed(1)}B</span><div className="text-slate-400">Weighted</div></div>
-          {atRisk.length>0&&<div className="text-center"><span className="font-black text-red-500 text-lg">{atRisk.length}</span><div className="text-slate-400">At risk</div></div>}
+        <input placeholder="Search company, ISO3…" value={filter} onChange={e=>setFilter(e.target.value)}
+          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-36 focus:outline-none focus:border-blue-400 ml-2"/>
+        <div className="flex gap-4 text-xs text-slate-400 ml-auto">
+          <span>Pipeline: <strong className="text-slate-700">${(totalCapex/1000).toFixed(1)}B</strong></span>
+          <span>Weighted: <strong className="text-emerald-600">${(weightedPipe/1000).toFixed(1)}B</strong></span>
+          <span>{filtered.length} deals</span>
         </div>
+        <button onClick={()=>exportPipeline(filtered.map(d=>({...d})))}
+          className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-blue-300">
+          Export CSV
+        </button>
       </div>
 
-      {/* Kanban view */}
+      {/* Kanban */}
       {view==='kanban' && (
         <div className="p-4 overflow-x-auto">
-          <div className="flex gap-4" style={{minWidth:'1100px'}}>
+          <div className="flex gap-3 min-w-max">
             {STAGES.map(stage=>{
-              const stageDeal=filtered.filter(d=>d.stage===stage);
-              const stageVal=stageDeal.reduce((s,d)=>s+d.capex_m,0);
-              const sc=STAGE_COLORS[stage];
+              const stageCfg = STAGE_CONFIG[stage];
+              const stageDeals = filtered.filter(d=>d.stage===stage);
+              const stageCapex = stageDeals.reduce((s,d)=>s+d.capex_m,0);
               return (
-                <div key={stage} className="flex-1 min-w-40">
-                  <div className={`rounded-xl border px-3 py-2 mb-3 ${sc.bg} ${sc.border}`}>
-                    <div className={`text-xs font-black ${sc.text}`}>{stage}</div>
-                    <div className="text-xs text-slate-500 mt-0.5">{stageDeal.length} deals · ${(stageVal/1000).toFixed(1)}B</div>
+                <div key={stage} className="w-60 flex-shrink-0"
+                  onDragOver={e=>{e.preventDefault();setDragOver(stage);}}
+                  onDrop={()=>{if(dragging) moveStage(dragging,stage);}}>
+                  <div className={`rounded-xl border p-2 mb-2 ${stageCfg.bg} ${stageCfg.border}`}>
+                    <div className={`text-xs font-black ${stageCfg.color}`}>{stageCfg.label}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{stageDeals.length} deals · ${stageCapex>=1000?`${(stageCapex/1000).toFixed(1)}B`:`${stageCapex}M`}</div>
                   </div>
-                  <div className="space-y-2">
-                    {stageDeal.map(deal=>(
-                      <div key={deal.id} onClick={()=>setSelected(deal)}
-                        className="bg-white rounded-xl border border-slate-100 p-3 cursor-pointer hover:shadow-sm transition-all hover:border-blue-200">
-                        <div className="font-bold text-xs text-[#0A2540] mb-1">{deal.company}</div>
-                        <div className="text-xs text-slate-400 mb-2">{deal.economy} · {deal.sector}</div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-black text-blue-600">${deal.capex_m}M</span>
-                          <span className="text-xs text-slate-400">{deal.days_in_stage}d</span>
-                        </div>
-                        <ProbabilityBar pct={deal.probability}/>
-                      </div>
-                    ))}
-                    {stageDeal.length===0&&<div className="text-center py-6 text-xs text-slate-300">Empty</div>}
+                  <div className={`space-y-2 min-h-24 rounded-xl p-1 transition-colors ${dragOver===stage&&dragging?'bg-blue-50 border-2 border-dashed border-blue-300':''}`}>
+                    {stageDeals.map(d=><DealCard key={d.id} deal={d}/>)}
                   </div>
                 </div>
               );
@@ -115,83 +141,47 @@ export default function InvestmentPipelinePage() {
         </div>
       )}
 
-      {/* Table view */}
+      {/* Table */}
       {view==='table' && (
-        <div className="p-5">
+        <div className="max-w-6xl mx-auto p-5">
           <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
             <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  {['Company','Economy','Sector','CapEx','Stage','Probability','Days','Contact'].map(h=>(
-                    <th key={h} className="text-left px-4 py-2.5 font-bold text-slate-400 uppercase tracking-wide">{h}</th>
-                  ))}
-                </tr>
-              </thead>
+              <thead><tr className="bg-slate-50 border-b border-slate-100">
+                {['Company','Economy','Sector','CapEx','Stage','Probability','Contact','Days','Notes'].map(h=>(
+                  <th key={h} className="text-left px-4 py-2.5 font-bold text-slate-400 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr></thead>
               <tbody>
-                {filtered.map(deal=>{
-                  const sc=STAGE_COLORS[deal.stage];
+                {filtered.map(d=>{
+                  const sc = STAGE_CONFIG[d.stage];
                   return (
-                    <tr key={deal.id} onClick={()=>setSelected(deal)}
-                      className="border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 font-bold text-[#0A2540]">{deal.company}</td>
-                      <td className="px-4 py-3 text-slate-500">{deal.economy}</td>
-                      <td className="px-4 py-3 text-slate-500">{deal.sector}</td>
-                      <td className="px-4 py-3 font-black text-blue-600">${deal.capex_m}M</td>
+                    <tr key={d.id} className="border-b border-slate-50 hover:bg-slate-50">
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full font-bold border ${sc.bg} ${sc.text} ${sc.border}`}>{deal.stage}</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{background:GRADE_DOT[d.grade]}}/>
+                          <span className="font-bold text-[#0A2540]">{d.company}</span>
+                        </div>
                       </td>
-                      <td className="px-4 py-3"><ProbabilityBar pct={deal.probability}/></td>
-                      <td className="px-4 py-3 text-slate-500">{deal.days_in_stage}d</td>
-                      <td className="px-4 py-3 text-slate-500 truncate max-w-32">{deal.contact}</td>
+                      <td className="px-4 py-3 font-mono text-blue-600">{d.iso3}</td>
+                      <td className="px-4 py-3 text-slate-500">ISIC {d.sector}</td>
+                      <td className="px-4 py-3 font-black text-blue-600">${d.capex_m>=1000?`${(d.capex_m/1000).toFixed(1)}B`:`${d.capex_m}M`}</td>
+                      <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-bold border ${sc.bg} ${sc.color} ${sc.border}`}>{sc.label}</span></td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-500 rounded-full" style={{width:`${d.probability}%`}}/>
+                          </div>
+                          <span className="font-bold text-slate-600">{d.probability}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">{d.contact}</td>
+                      <td className="px-4 py-3 text-slate-400">{d.days}d</td>
+                      <td className="px-4 py-3 text-slate-400 max-w-xs truncate">{d.notes}</td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {/* Deal detail panel */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-end z-50 p-4">
-          <div className="bg-white rounded-2xl w-96 shadow-2xl overflow-y-auto max-h-screen">
-            <div className="flex items-center justify-between p-5 border-b border-slate-100">
-              <div className="font-black text-[#0A2540]">{selected.company}</div>
-              <button onClick={()=>setSelected(null)} className="text-slate-400 hover:text-slate-600 text-xl leading-none">×</button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {[{l:'Economy',v:selected.economy},{l:'Sector',v:selected.sector},{l:'CapEx',v:`$${selected.capex_m}M`},{l:'HQ',v:selected.hq}].map(f=>(
-                  <div key={f.l} className="bg-slate-50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-0.5">{f.l}</div>
-                    <div className="font-bold text-sm text-[#0A2540]">{f.v}</div>
-                  </div>
-                ))}
-              </div>
-              <div>
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-slate-400">Close Probability</span>
-                  <span className="font-bold text-blue-600">{selected.probability}%</span>
-                </div>
-                <ProbabilityBar pct={selected.probability}/>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Notes</div>
-                <div className="text-sm text-slate-600">{selected.notes}</div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-3">
-                <div className="text-xs text-slate-400 mb-1">Primary Contact</div>
-                <div className="text-sm font-semibold text-[#0A2540]">{selected.contact}</div>
-              </div>
-              <div className="flex gap-2">
-                {['ENGAGED','NEGOTIATING','COMMITTED'].filter(s=>s!==selected.stage).map(s=>(
-                  <button key={s} className="flex-1 border border-slate-200 text-slate-600 text-xs font-bold py-2 rounded-lg hover:border-blue-300 transition-colors">
-                    → {s}
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
       )}
