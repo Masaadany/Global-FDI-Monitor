@@ -65,7 +65,7 @@ export default function CorridorIntelligencePage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-[#0A2540] text-white px-6 py-8">
+      <div className="bg-deep text-white px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Bilateral Analysis · Q1 2026</div>
           <h1 className="text-3xl font-black mb-2">Corridor Intelligence</h1>
@@ -87,7 +87,7 @@ export default function CorridorIntelligencePage() {
         <div className="flex gap-2 mb-5">
           {([['fdi_b','FDI Volume'],['growth','YoY Growth'],['signals','Signals']] as const).map(([k,l])=>(
             <button key={k} onClick={()=>setSort(k)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${sort===k?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${sort===k?'bg-deep text-white':'text-slate-400 border border-slate-200'}`}>
               {l}
             </button>
           ))}
@@ -100,7 +100,7 @@ export default function CorridorIntelligencePage() {
               <div key={c.id} onClick={()=>setSelected(c)}
                 className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${selected.id===c.id?'border-blue-400 shadow-md':'border-slate-100 hover:border-blue-200'}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-black text-sm text-[#0A2540]">{c.from} → {c.to}</div>
+                  <div className="font-black text-sm text-deep">{c.from} → {c.to}</div>
                   <span className={`text-xs font-black ${TREND_COLORS[c.trend]}`}>{TREND_ICONS[c.trend]} {c.growth}%</span>
                 </div>
                 <div className="flex gap-3 text-xs text-slate-500">
@@ -117,7 +117,7 @@ export default function CorridorIntelligencePage() {
             <div className="bg-white rounded-xl border border-slate-100 p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="text-2xl font-black text-[#0A2540]">{selected.from} ⟷ {selected.to}</div>
+                  <div className="text-2xl font-black text-deep">{selected.from} ⟷ {selected.to}</div>
                   <div className="text-xs text-slate-400 mt-0.5">{selected.from3} · {selected.to3}</div>
                 </div>
                 <span className={`text-lg font-black ${TREND_COLORS[selected.trend]}`}>
@@ -154,7 +154,7 @@ export default function CorridorIntelligencePage() {
               {/* Historical FDI trend */}
               {HISTORICAL_FDI[selected.id] && (
                 <div className="bg-white rounded-xl border border-slate-100 p-5 mb-4">
-                  <div className="font-bold text-sm text-[#0A2540] mb-3">FDI Inflows History ($B)</div>
+                  <div className="font-bold text-sm text-deep mb-3">FDI Inflows History ($B)</div>
                   <svg viewBox="0 0 280 60" className="w-full">
                     {(() => {
                       const vals = HISTORICAL_FDI[selected.id];
@@ -184,7 +184,7 @@ export default function CorridorIntelligencePage() {
                 <div className="text-xs font-bold text-emerald-700 mb-2">Latest Signal</div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-black text-sm text-[#0A2540]">{selected.top_signal.company}</div>
+                    <div className="font-black text-sm text-deep">{selected.top_signal.company}</div>
                     <div className="text-xs text-slate-500">ISIC {selected.top_signal.sector} · {selected.top_signal.status}</div>
                   </div>
                   <div className="text-xl font-black text-blue-600">{selected.top_signal.capex}</div>

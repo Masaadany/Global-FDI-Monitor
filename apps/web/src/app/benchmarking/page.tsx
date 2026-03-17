@@ -66,11 +66,11 @@ export default function BenchmarkingPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-2 items-center sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">Economy Benchmarking</span>
+        <span className="font-black text-sm text-deep">Economy Benchmarking</span>
         <div className="flex gap-1 ml-4">
           {(['radar','bars','table'] as const).map(v=>(
             <button key={v} onClick={()=>setView(v)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{v}</button>
+              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-deep text-white':'text-slate-400 border border-slate-200'}`}>{v}</button>
           ))}
         </div>
       </div>
@@ -85,7 +85,7 @@ export default function BenchmarkingPage() {
               const col=sel?PALETTE[ecos.indexOf(code)]:undefined;
               return (
                 <button key={code} onClick={()=>toggleEco(code)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${sel?'text-white border-transparent':'text-slate-500 border-slate-200 hover:border-blue-300'}`}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${sel?'text-white border-transparent':'text-slate-500 border-slate-200 hover:border-primary'}`}
                   style={sel?{background:col,borderColor:col}:{}}>
                   {sel && <span className="w-1.5 h-1.5 bg-white rounded-full"/>}
                   {code} — {d.name}
@@ -102,7 +102,7 @@ export default function BenchmarkingPage() {
           <div className="md:col-span-2">
             {view==='radar' && (
               <div className="bg-white rounded-xl border border-slate-100 p-5">
-                <div className="font-black text-sm text-[#0A2540] mb-4">6-Dimension Radar Comparison</div>
+                <div className="font-black text-sm text-deep mb-4">6-Dimension Radar Comparison</div>
                 <RadarChart economies={ecos} colors={PALETTE}/>
                 <div className="flex flex-wrap gap-3 justify-center mt-3">
                   {ecos.map((eco,i)=>(
@@ -116,7 +116,7 @@ export default function BenchmarkingPage() {
             )}
             {view==='bars' && (
               <div className="bg-white rounded-xl border border-slate-100 p-5 space-y-4">
-                <div className="font-black text-sm text-[#0A2540] mb-2">Dimension-by-Dimension</div>
+                <div className="font-black text-sm text-deep mb-2">Dimension-by-Dimension</div>
                 {DIMS.map(dim=>(
                   <div key={dim}>
                     <div className="text-xs font-bold text-slate-400 mb-1.5">{DIM_LABELS[dim]}</div>
@@ -155,7 +155,7 @@ export default function BenchmarkingPage() {
                       return (
                         <tr key={eco} className="border-t border-slate-50">
                           <td className="px-4 py-3 font-bold" style={{color:PALETTE[i]}}>{d.name}</td>
-                          <td className="text-center px-3 py-3 font-black text-lg text-[#0A2540]">{d.composite}</td>
+                          <td className="text-center px-3 py-3 font-black text-lg text-deep">{d.composite}</td>
                           {DIMS.map(dim=>{
                             const v=d[dim]; const mx=dimMax(dim);
                             return <td key={dim} className={`text-center px-2 py-3 font-bold ${v===mx?'text-emerald-600':'text-slate-600'}`}>{v}</td>;
@@ -179,7 +179,7 @@ export default function BenchmarkingPage() {
                 <div key={eco} className="bg-white rounded-xl border border-slate-100 p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-3 h-3 rounded-full flex-shrink-0" style={{background:PALETTE[i]}}/>
-                    <div className="font-black text-sm text-[#0A2540]">{d.name}</div>
+                    <div className="font-black text-sm text-deep">{d.name}</div>
                     <div className="ml-auto font-black text-xl text-blue-600">{d.composite}</div>
                   </div>
                   <div className="text-xs font-bold text-slate-400 mb-2">GAP ANALYSIS</div>

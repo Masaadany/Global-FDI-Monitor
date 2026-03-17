@@ -1,164 +1,97 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { fetchWithAuth } from '@/lib/shared';
-
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
+import { getUser, getOrg, clearAuth, fetchWithAuth } from '@/lib/shared';
+import { useRouter } from 'next/navigation';
+const TABS=['Account','Notifications','Security','Billing'] as const;
 export default function SettingsPage() {
-  const [user,    setUser]    = useState<any>(null);
-  const [org,     setOrg]     = useState<any>(null);
-  const [tab,     setTab]     = useState<'profile'|'billing'|'api'|'notifications'>('profile');
-  const [saving,  setSaving]  = useState(false);
-  const [saved,   setSaved]   = useState(false);
-  const [name,    setName]    = useState('');
-  const [email,   setEmail]   = useState('');
-
+  const router=useRouter();
+  const [tab,setTab]=useState<typeof TABS[number]>('Account');
+  const [user,setUser]=useState<any>(null);
+  const [org,setOrg]=useState<any>(null);
+  const [saved,setSaved]=useState(false);
+  const [notifs,setNotifs]=useState({platinum:true,gold:true,gfr:true,newsletter:true,fic_low:true,pipeline:false});
   useEffect(()=>{
-    // Fetch latest user data from API
-    const token = typeof window !== 'undefined' ? localStorage.getItem('gfm_token') : null;
-    if (token) {
-      fetch(`${API}/api/v1/auth/me`,{headers:{Authorization:`Bearer ${token}`}})
-        .then(r=>r.json())
-        .then(d=>{
-          if(d.success&&d.data){
-            setUser(d.data.user);
-            setOrg(d.data.org);
-            setName(d.data.user?.full_name||'');
-            setEmail(d.data.user?.email||'');
-          }
-        }).catch(()=>{});
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setUser(getUser());setOrg(getOrg());
+    fetchWithAuth('/api/v1/auth/me').then(r=>r.json()).then(d=>{if(d.success){setUser(d.data.user);setOrg(d.data.org);}}).catch(()=>{});
   },[]);
-  useEffect(()=>{ // keep original local storage fallback
-    if (typeof window === 'undefined') return;
-    const u = localStorage.getItem('gfm_user');
-    const o = localStorage.getItem('gfm_org');
-    if (u) { const parsed=JSON.parse(u); setUser(parsed); setName(parsed.full_name||''); setEmail(parsed.email||''); }
-    if (o) setOrg(JSON.parse(o));
-  },[]);
-
-  async function save() {
-    setSaving(true);
-    await new Promise(r=>setTimeout(r,800));
-    setSaving(false); setSaved(true);
-    setTimeout(()=>setSaved(false),3000);
+  function logout(){clearAuth();router.push('/');}
+  async function saveNotifs(){
+    try{await fetchWithAuth('/api/v1/notifications/preferences',{method:'PUT',body:JSON.stringify(notifs)});}catch{}
+    setSaved(true);setTimeout(()=>setSaved(false),2000);
   }
-
-  const TOKEN_PREVIEW = typeof window!=='undefined' ? (localStorage.getItem('gfm_token')||'').slice(0,32)+'…' : '…';
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center gap-4 sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">Settings</span>
-        <div className="flex gap-1 ml-4">
-          {(['profile','billing','api','notifications'] as const).map(t=>(
-            <button key={t} onClick={()=>setTab(t)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${tab===t?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{t}</button>
-          ))}
+  return(
+    <div className="min-h-screen bg-surface">
+      <section className="gfm-hero text-white px-6 py-10">
+        <div className="max-w-3xl mx-auto relative z-10"><h1 className="text-3xl font-extrabold">Settings</h1></div>
+      </section>
+      <div className="max-w-3xl mx-auto px-6 py-6">
+        <div className="flex gap-1 mb-6 bg-white border border-slate-200 rounded-xl p-1">
+          {TABS.map(t=><button key={t} onClick={()=>setTab(t)} className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab===t?'bg-primary text-white':'text-slate-500 hover:text-deep'}`}>{t}</button>)}
         </div>
-      </div>
-
-      <div className="max-w-2xl mx-auto p-5 space-y-5">
-        {tab==='profile' && (
-          <>
-            <div className="bg-white rounded-xl border border-slate-100 p-6">
-              <div className="font-black text-[#0A2540] mb-5">Profile Information</div>
-              <div className="space-y-4">
-                <div><label className="text-xs font-bold text-slate-500 block mb-1.5">Full name</label>
-                  <input value={name} onChange={e=>setName(e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"/></div>
-                <div><label className="text-xs font-bold text-slate-500 block mb-1.5">Email</label>
-                  <input value={email} onChange={e=>setEmail(e.target.value)} type="email" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"/></div>
-                <div><label className="text-xs font-bold text-slate-500 block mb-1.5">Organisation</label>
-                  <input value={org?.name||''} disabled className="w-full border border-slate-100 rounded-xl px-4 py-3 text-sm bg-slate-50 text-slate-400"/></div>
-              </div>
-              <button onClick={save} disabled={saving}
-                className={`mt-5 px-6 py-2.5 rounded-xl text-sm font-black transition-colors ${saving?'bg-slate-300 text-slate-500':'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'}`}>
-                {saving?'Saving…':saved?'✓ Saved':'Save Changes'}
-              </button>
+        {tab==='Account'&&(
+          <div className="gfm-card p-6 space-y-4">
+            <div className="flex items-center gap-4 pb-4 border-b border-slate-100">
+              <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white text-xl font-extrabold">{user?.full_name?.[0]||'U'}</div>
+              <div><div className="font-extrabold text-deep text-lg">{user?.full_name||'Loading…'}</div><div className="text-sm text-slate-400">{user?.email||''}</div><div className="text-xs text-slate-400 mt-0.5">{org?.name} · {org?.tier?.toUpperCase()}</div></div>
             </div>
-            <div className="bg-white rounded-xl border border-slate-100 p-6">
-              <div className="font-black text-[#0A2540] mb-3">Change Password</div>
-              <div className="space-y-3">
-                {['Current password','New password','Confirm new password'].map(l=>(
-                  <div key={l}><label className="text-xs font-bold text-slate-500 block mb-1.5">{l}</label>
-                    <input type="password" placeholder="••••••••" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"/></div>
-                ))}
-              </div>
-              <button className="mt-4 px-6 py-2.5 rounded-xl text-sm font-black bg-[#0A2540] text-white hover:bg-[#1D4ED8] transition-colors">Update Password</button>
-            </div>
-          </>
-        )}
-
-        {tab==='billing' && (
-          <div className="bg-white rounded-xl border border-slate-100 p-6">
-            <div className="font-black text-[#0A2540] mb-5">Billing & Subscription</div>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-slate-50 rounded-xl p-4">
-                <div className="text-xs text-slate-400 mb-1">Current Plan</div>
-                <div className="font-black text-lg text-[#0A2540]">{org?.tier?.replace('_',' ').toUpperCase()||'Free Trial'}</div>
-              </div>
-              <div className="bg-slate-50 rounded-xl p-4">
-                <div className="text-xs text-slate-400 mb-1">FIC Balance</div>
-                <div className="font-black text-lg text-amber-600">⭐ {org?.fic_balance??5} credits</div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <Link href="/pricing" className="block w-full text-center bg-[#0A2540] text-white font-black py-3 rounded-xl hover:bg-[#1D4ED8] transition-colors">Upgrade Plan →</Link>
-              <Link href="/fic"     className="block w-full text-center border border-slate-200 text-slate-600 font-bold py-2.5 rounded-xl hover:border-blue-300 transition-colors">Buy FIC Credits</Link>
-            </div>
-          </div>
-        )}
-
-        {tab==='api' && (
-          <div className="bg-white rounded-xl border border-slate-100 p-6">
-            <div className="font-black text-[#0A2540] mb-5">API Access</div>
-            <div className="mb-4">
-              <div className="text-xs font-bold text-slate-500 mb-2">Your Access Token (Bearer)</div>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-500 truncate">{TOKEN_PREVIEW}</code>
-                <button className="text-xs font-bold text-blue-600 hover:underline flex-shrink-0">Copy</button>
-              </div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-700">
-              <div className="font-black mb-2">API Base URL</div>
-              <code className="block font-mono">https://fdi-backend-api.gentleglacier-ae9701ca.uaenorth.azurecontainerapps.io</code>
-              <div className="font-black mt-3 mb-1">Example request</div>
-              <code className="block font-mono whitespace-pre">{'curl -H "Authorization: Bearer TOKEN" \\\n     /api/v1/signals?grade=PLATINUM'}</code>
-            </div>
-            <a href={`${API}/api/v1/health`} target="_blank" rel="noopener"
-              className="inline-block mt-4 text-xs text-blue-600 font-bold hover:underline">
-              API Health Check →
-            </a>
-          </div>
-        )}
-
-        {tab==='notifications' && (
-          <div className="bg-white rounded-xl border border-slate-100 p-6">
-            <div className="font-black text-[#0A2540] mb-5">Notification Preferences</div>
-            <div className="space-y-4">
-              {[
-                {l:'New PLATINUM signals',    sub:'Instant · Email + in-app',      def:true},
-                {l:'New GOLD signals',        sub:'Hourly digest · Email + in-app', def:true},
-                {l:'GFR ranking updates',     sub:'Quarterly · Email',              def:true},
-                {l:'Weekly newsletter',       sub:'Every Monday · Email',           def:true},
-                {l:'Pipeline stage changes',  sub:'Instant · In-app only',          def:false},
-                {l:'FIC balance low (< 5)',   sub:'Threshold · Email',              def:true},
-                {l:'Watchlist signal matches',sub:'Real-time · In-app',             def:true},
-              ].map(n=>(
-                <div key={n.l} className="flex items-center justify-between py-2 border-b border-slate-50">
-                  <div>
-                    <div className="text-sm font-bold text-[#0A2540]">{n.l}</div>
-                    <div className="text-xs text-slate-400">{n.sub}</div>
-                  </div>
-                  <div className={`w-10 h-5 rounded-full cursor-pointer transition-colors flex-shrink-0 ${n.def?'bg-blue-600':'bg-slate-200'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full mt-0.5 transition-transform shadow ${n.def?'translate-x-5':'translate-x-0.5'}`}/>
-                  </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[['Full Name',user?.full_name],['Email',user?.email],['Organisation',org?.name],['Plan',org?.tier?.toUpperCase()]].map(([l,v])=>(
+                <div key={String(l)}>
+                  <div className="text-xs font-bold text-slate-400 mb-1">{l}</div>
+                  <div className="text-sm text-deep font-medium">{v||'—'}</div>
                 </div>
               ))}
             </div>
-            <button className="mt-5 px-6 py-2.5 rounded-xl text-sm font-black bg-[#0A2540] text-white hover:bg-[#1D4ED8] transition-colors">Save Preferences</button>
+            {org?.tier==='free_trial'&&(
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center justify-between">
+                <div><div className="font-bold text-amber-800 text-sm">Free Trial Active</div><div className="text-xs text-amber-600">{org?.fic_balance} FIC remaining · Expires {org?.trial_end?.slice(0,10)}</div></div>
+                <a href="/subscription" className="gfm-btn-primary text-xs py-2 px-4">Upgrade</a>
+              </div>
+            )}
+            <button onClick={logout} className="text-xs text-red-500 hover:underline font-semibold">Sign out of this device</button>
+          </div>
+        )}
+        {tab==='Notifications'&&(
+          <div className="gfm-card p-6 space-y-4">
+            {[['platinum','PLATINUM signal alerts',true],['gold','GOLD signal alerts',true],['gfr','GFR ranking updates',true],['newsletter','Weekly intelligence digest',true],['fic_low','Low FIC balance warning',true],['pipeline','Pipeline stage changes',false]].map(([k,l,def])=>(
+              <div key={String(k)} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                <div><div className="text-sm font-semibold text-deep">{l}</div></div>
+                <button onClick={()=>setNotifs(n=>({...n,[String(k)]:!n[String(k) as keyof typeof n]}))}
+                  className={`w-12 h-6 rounded-full relative transition-all ${notifs[String(k) as keyof typeof notifs]?'bg-primary':'bg-slate-200'}`}>
+                  <div className={`w-5 h-5 rounded-full bg-white shadow absolute top-0.5 transition-all ${notifs[String(k) as keyof typeof notifs]?'left-6':'left-0.5'}`}/>
+                </button>
+              </div>
+            ))}
+            <button onClick={saveNotifs} className={`gfm-btn-primary py-3 w-full rounded-xl ${saved?'bg-emerald-600':''}`}>{saved?'✓ Saved':'Save Preferences'}</button>
+          </div>
+        )}
+        {tab==='Security'&&(
+          <div className="gfm-card p-6 space-y-4">
+            <div className="font-bold text-deep mb-2">Password</div>
+            <input type="password" placeholder="Current password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
+            <input type="password" placeholder="New password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
+            <input type="password" placeholder="Confirm new password" className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-primary"/>
+            <button className="gfm-btn-primary py-3 w-full rounded-xl">Update Password</button>
+            <div className="pt-2 border-t border-slate-100">
+              <div className="font-bold text-deep mb-2 text-sm">Active Sessions</div>
+              <div className="gfm-card p-3 bg-surface flex justify-between items-center">
+                <div className="text-xs text-slate-600">Current browser · {new Date().toLocaleDateString()}</div>
+                <span className="text-xs font-bold text-emerald-600">Active</span>
+              </div>
+            </div>
+          </div>
+        )}
+        {tab==='Billing'&&(
+          <div className="gfm-card p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
+              <div><div className="font-bold text-deep">Current Plan</div><div className="text-sm text-slate-400 capitalize">{org?.tier?.replace('_',' ')||'Free Trial'}</div></div>
+              <a href="/subscription" className="gfm-btn-primary text-xs py-2 px-4">Manage Plan</a>
+            </div>
+            <div className="flex justify-between items-center">
+              <div><div className="font-bold text-deep">FIC Balance</div><div className="text-sm text-slate-400">Forecasta Intelligence Credits</div></div>
+              <div className="text-2xl font-extrabold text-primary font-mono">{org?.fic_balance??5}</div>
+            </div>
+            <a href="/fic" className="gfm-btn-outline w-full text-center py-3 rounded-xl block">Buy FIC Credits</a>
           </div>
         )}
       </div>

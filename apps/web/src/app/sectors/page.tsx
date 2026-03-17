@@ -1,151 +1,75 @@
 'use client';
-import { exportCSV } from '@/lib/export';
 import { useState } from 'react';
-
-const SECTORS = [
-  {code:'J',name:'Information & Communication Technology',fdi_global_b:1840,growth:22.4,signal_count:284,top_dest:['USA','SGP','IRL','IND','ARE'],risk:'LOW',    icon:'💻',
-   highlights:'AI/ML infrastructure, cloud data centres, cybersecurity. Dominant sector globally. $28B pipeline in MENA alone.'},
-  {code:'K',name:'Financial & Insurance Services',       fdi_global_b:1210,growth:14.8,signal_count:178,top_dest:['GBR','USA','SGP','IRL','ARE'],risk:'LOW',    icon:'🏦',
-   highlights:'Fintech expansion, ESG-linked finance, digital banking licences. UAE and Singapore competing for regional HQs.'},
-  {code:'D',name:'Electricity, Gas & Energy',            fdi_global_b:980, growth:31.2,signal_count:142,top_dest:['IND','VNM','SAU','EGY','ZAF'],risk:'MEDIUM', icon:'⚡',
-   highlights:'Renewables dominate: $40B clean energy pipeline. Nuclear renaissance adds uranium demand. Green hydrogen corridors opening.'},
-  {code:'C',name:'Manufacturing',                        fdi_global_b:820, growth:8.4, signal_count:198,top_dest:['VNM','IDN','IND','MEX','MAR'],risk:'MEDIUM', icon:'🏭',
-   highlights:'China+1 supply chain relocation accelerating. EV battery gigafactories primary driver. Semiconductor fabs second.'},
-  {code:'B',name:'Mining & Quarrying',                   fdi_global_b:440, growth:12.1,signal_count:88, top_dest:['AUS','CHL','CAN','ZAF','IDN'],risk:'HIGH',   icon:'⛏️',
-   highlights:'Critical minerals race: lithium, cobalt, nickel, copper. Energy transition creating new mining FDI supercycle.'},
-  {code:'H',name:'Transportation & Logistics',           fdi_global_b:360, growth:9.8, signal_count:76, top_dest:['ARE','SGP','NLD','EGY','PAN'],risk:'LOW',    icon:'🚢',
-   highlights:'Port expansion, logistics hubs, e-commerce warehousing. UAE and Singapore competing for regional logistics supremacy.'},
-  {code:'L',name:'Real Estate',                          fdi_global_b:680, growth:6.2, signal_count:94, top_dest:['ARE','USA','GBR','AUS','CAN'],risk:'MEDIUM', icon:'🏢',
-   highlights:'Data centres classified under real estate. Luxury residential resilient. Commercial office recovering post-COVID.'},
-  {code:'F',name:'Construction',                         fdi_global_b:280, growth:18.4,signal_count:52, top_dest:['SAU','EGY','IND','IDN','NGA'],risk:'MEDIUM', icon:'🏗️',
-   highlights:'NEOM mega-project driving $100B+ construction FDI to Saudi Arabia. Africa infrastructure gap attracting Chinese capital.'},
+import Link from 'next/link';
+import { exportCSV } from '@/lib/export';
+const SECTORS=[
+  {code:'J',name:'ICT & Technology',     icon:'💻',color:'#0A66C2',fdi_global_b:1840,growth:12.4,signals:48,risk:'LOW',  leaders:['USA','CHN','IRL'],desc:'Cloud infrastructure, AI data centres, semiconductor manufacturing, software platforms.'},
+  {code:'K',name:'Finance',              icon:'🏦',color:'#059669',fdi_global_b:1210,growth:8.1, signals:32,risk:'LOW',  leaders:['GBR','USA','SGP'],desc:'Regional HQs, fintech, Islamic banking, asset management, insurance.'},
+  {code:'D',name:'Energy & Renewables',  icon:'⚡',color:'#D97706',fdi_global_b:980, growth:14.8,signals:28,risk:'MED',  leaders:['SAU','ARE','DEU'],desc:'Solar, wind, green hydrogen, LNG, power grid infrastructure.'},
+  {code:'C',name:'Manufacturing',        icon:'🏭',color:'#7C3AED',fdi_global_b:820, growth:5.2, signals:24,risk:'MED',  leaders:['CHN','VNM','MEX'],desc:'EV batteries, semiconductors, electronics, automotive, pharmaceutical.'},
+  {code:'H',name:'Logistics & Transport',icon:'🚚',color:'#0891B2',fdi_global_b:420, growth:9.4, signals:14,risk:'LOW',  leaders:['SGP','ARE','NLD'],desc:'Port infrastructure, cold chain, e-commerce logistics, rail corridors.'},
+  {code:'L',name:'Real Estate',          icon:'🏢',color:'#DB2777',fdi_global_b:380, growth:6.8, signals:18,risk:'MED',  leaders:['GBR','ARE','USA'],desc:'Commercial office, data centre real estate, logistics parks, residential.'},
+  {code:'B',name:'Mining & Resources',   icon:'⛏️',color:'#78716C',fdi_global_b:440, growth:11.2,signals:16,risk:'HIGH', leaders:['AUS','CAN','CHL'],desc:'Critical minerals, copper, lithium, cobalt, iron ore.'},
+  {code:'G',name:'Retail & E-commerce',  icon:'🛒',color:'#EA580C',fdi_global_b:210, growth:7.6, signals:10,risk:'MED',  leaders:['USA','GBR','CHN'],desc:'Omnichannel retail, marketplace platforms, last-mile delivery.'},
+  {code:'I',name:'Education',            icon:'🎓',color:'#16A34A',fdi_global_b:140, growth:5.8, signals:8, risk:'LOW',  leaders:['GBR','USA','AUS'],desc:'Higher education campuses, EdTech platforms, vocational training.'},
+  {code:'Q',name:'Healthcare',           icon:'🏥',color:'#DC2626',fdi_global_b:290, growth:9.9, signals:12,risk:'LOW',  leaders:['USA','GBR','DEU'],desc:'Hospital networks, pharma manufacturing, medical devices, biotech R&D.'},
+  {code:'I2',name:'Tourism & Hospitality',icon:'✈️',color:'#0284C7',fdi_global_b:165, growth:13.4,signals:9, risk:'MED',  leaders:['ARE','THA','FRA'],desc:'Luxury hotels, MICE venues, theme parks, cultural tourism.'},
+  {code:'A',name:'Agri & Food Tech',     icon:'🌾',color:'#65A30D',fdi_global_b:120, growth:8.2, signals:6, risk:'MED',  leaders:['BRA','NLD','AUS'],desc:'Precision agriculture, food processing, cold chain, AgriTech.'},
 ];
-
-const RISK_COLORS: Record<string,string> = {
-  LOW:   'bg-emerald-100 text-emerald-700 border-emerald-200',
-  MEDIUM:'bg-amber-100 text-amber-700 border-amber-200',
-  HIGH:  'bg-red-100 text-red-700 border-red-200',
-};
-
+const RISK_CFG: Record<string,{bg:string;text:string}> = {LOW:{bg:'bg-emerald-100',text:'text-emerald-700'},MED:{bg:'bg-amber-100',text:'text-amber-700'},HIGH:{bg:'bg-red-100',text:'text-red-700'}};
 export default function SectorsPage() {
-  const [selected, setSelected]  = useState(SECTORS[0]);
-  const [sortKey,  setSortKey]   = useState<'fdi_global_b'|'growth'|'signal_count'>('fdi_global_b');
-  const [risk,     setRisk]      = useState('');
-
-  const sorted = [...SECTORS]
-    .filter(s => !risk || s.risk === risk)
-    .sort((a,b) => b[sortKey]-a[sortKey]);
-
-  const maxFDI = Math.max(...SECTORS.map(s=>s.fdi_global_b));
-
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="bg-[#0A2540] text-white px-6 py-8">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-black mb-2">Sector Intelligence</h1>
-          <p className="text-blue-200 text-sm">ISIC sector FDI analysis across 21 classifications. Global flows, growth trends, top destinations, and risk assessment.</p>
-          <div className="grid grid-cols-3 gap-6 mt-6">
-            {[
-              {l:'Total Global FDI',  v:`$${(SECTORS.reduce((s,c)=>s+c.fdi_global_b,0)/1000).toFixed(1)}T`},
-              {l:'Fastest Growing',   v:`ISIC D +${Math.max(...SECTORS.map(s=>s.growth))}%`},
-              {l:'Total Signals',     v:SECTORS.reduce((s,c)=>s+c.signal_count,0)},
-            ].map(s=>(
-              <div key={s.l}><div className="text-2xl font-black">{s.v}</div><div className="text-blue-400 text-xs mt-0.5">{s.l}</div></div>
-            ))}
-          </div>
+  const [selected,setSelected]=useState<typeof SECTORS[0]|null>(null);
+  const [sort,setSort]=useState<'fdi_global_b'|'growth'|'signals'>('fdi_global_b');
+  const sorted=[...SECTORS].sort((a,b)=>b[sort]-a[sort]);
+  return(
+    <div className="min-h-screen bg-surface">
+      <section className="gfm-hero text-white px-6 py-12">
+        <div className="max-w-screen-xl mx-auto relative z-10">
+          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">Investment Sectors</div>
+          <h1 className="text-4xl font-extrabold mb-2">Sector Intelligence</h1>
+          <p className="text-white/70">21 ISIC sectors · Global FDI flows · Signal counts · Risk profiles</p>
+        </div>
+      </section>
+      <div className="bg-white border-b border-slate-200 px-6 py-3">
+        <div className="max-w-screen-xl mx-auto flex gap-2 items-center">
+          <span className="text-xs font-bold text-slate-400">Sort by:</span>
+          {[['fdi_global_b','FDI Volume'],['growth','Growth'],['signals','Signals']].map(([k,l])=>(
+            <button key={k} onClick={()=>setSort(k as any)} className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${sort===k?'bg-primary text-white':'border border-slate-200 text-slate-500 hover:border-primary'}`}>{l}</button>
+          ))}
+          <button onClick={()=>exportCSV(SECTORS.map(s=>({Code:s.code,Sector:s.name,'FDI $B':s.fdi_global_b,'Growth%':s.growth,Signals:s.signals,Risk:s.risk})),'GFM_Sectors')} className="ml-auto gfm-btn-outline text-xs py-1.5">Export CSV</button>
         </div>
       </div>
-
-      <div className="max-w-6xl mx-auto p-5">
-        {/* Controls */}
-        <div className="flex flex-wrap gap-2 mb-5">
-          <button onClick={()=>exportCSV(SECTORS.map(s=>({Code:s.code,Sector:s.name,'FDI Global $B':s.fdi_global_b,'Growth YoY%':s.growth,Signals:s.signal_count,Risk:s.risk})),'GFM_Sectors')}
-            className="ml-auto px-4 py-1.5 rounded-full text-xs font-bold border border-slate-200 text-slate-400 hover:border-blue-300">
-            Export CSV
-          </button>
-          {([['fdi_global_b','FDI Volume'],['growth','Growth'],['signal_count','Signals']] as const).map(([k,l])=>(
-            <button key={k} onClick={()=>setSortKey(k)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${sortKey===k?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{l}</button>
-          ))}
-          {['','LOW','MEDIUM','HIGH'].map(r=>(
-            <button key={r} onClick={()=>setRisk(r)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${risk===r?'bg-blue-600 text-white':'text-slate-400 border border-slate-200'}`}>
-              {r||'All Risk'}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-5">
-          {/* Bar chart list */}
-          <div className="md:col-span-2 bg-white rounded-xl border border-slate-100 p-5">
-            <div className="text-sm font-black text-[#0A2540] mb-4">Sector FDI Comparison</div>
-            <div className="space-y-3">
-              {sorted.map(s=>(
-                <div key={s.code} onClick={()=>setSelected(s)}
-                  className={`p-3 rounded-xl cursor-pointer transition-all border ${selected.code===s.code?'border-blue-400 bg-blue-50':'border-transparent hover:bg-slate-50'}`}>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl w-8 text-center flex-shrink-0">{s.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className="text-xs font-black text-[#0A2540] truncate">ISIC {s.code} — {s.name.split(',')[0]}</span>
-                        <span className="text-xs font-black text-blue-600 flex-shrink-0 ml-2">${s.fdi_global_b}B</span>
-                      </div>
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-500 rounded-full transition-all duration-700"
-                          style={{width:`${(s.fdi_global_b/maxFDI)*100}%`}}/>
-                      </div>
-                    </div>
-                    <span className={`text-xs font-black px-2 py-0.5 rounded border flex-shrink-0 ${RISK_COLORS[s.risk]}`}>{s.risk}</span>
-                  </div>
-                  <div className="flex gap-4 text-xs text-slate-400 ml-11">
-                    <span className="text-emerald-600 font-bold">↑ {s.growth}% YoY</span>
-                    <span>{s.signal_count} signals</span>
-                  </div>
+      <div className="max-w-screen-xl mx-auto px-6 py-6 grid md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {sorted.map(s=>{
+          const rc=RISK_CFG[s.risk];
+          const isSel=selected?.code===s.code;
+          return(
+            <div key={s.code} onClick={()=>setSelected(isSel?null:s)}
+              className={`gfm-card p-5 cursor-pointer ${isSel?'ring-2 ring-primary':''}`}>
+              <div className="flex items-start justify-between mb-3">
+                <div className="sector-icon text-xl" style={{background:`${s.color}18`,color:s.color}}>{s.icon}</div>
+                <span className={`gfm-badge ${rc.bg} ${rc.text} text-xs`}>{s.risk}</span>
+              </div>
+              <div className="font-bold text-deep text-sm mb-1">{s.name}</div>
+              <div className="text-xs text-slate-400 font-mono mb-3">ISIC {s.code}</div>
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <div><div className="text-lg font-extrabold font-mono" style={{color:s.color}}>${s.fdi_global_b >= 1000?(s.fdi_global_b/1000).toFixed(1)+'T':s.fdi_global_b+'B'}</div><div className="text-xs text-slate-400">Global FDI</div></div>
+                <div><div className="text-lg font-extrabold font-mono text-emerald-600">+{s.growth}%</div><div className="text-xs text-slate-400">YoY Growth</div></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 gfm-progress"><div className="gfm-progress-fill" style={{width:`${Math.min(100,s.fdi_global_b/22)}%`,background:s.color}}/></div>
+                <span className="text-xs font-mono text-slate-500">{s.signals} signals</span>
+              </div>
+              {isSel&&(
+                <div className="mt-3 pt-3 border-t border-slate-100 space-y-2">
+                  <p className="text-xs text-slate-500 leading-relaxed">{s.desc}</p>
+                  <div><div className="text-xs font-bold text-slate-400 mb-1">Top Destinations</div><div className="flex gap-1.5">{s.leaders.map(l=><span key={l} className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded font-mono">{l}</span>)}</div></div>
+                  <Link href="/signals" className="text-xs text-primary font-semibold hover:underline">View {s.signals} signals →</Link>
                 </div>
-              ))}
+              )}
             </div>
-          </div>
-
-          {/* Sector detail */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-4xl">{selected.icon}</span>
-                <div>
-                  <div className="font-black text-[#0A2540]">ISIC {selected.code}</div>
-                  <div className="text-xs text-slate-400 leading-snug">{selected.name}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[
-                  {l:'Global FDI', v:`$${selected.fdi_global_b}B`, c:'text-blue-600'},
-                  {l:'YoY Growth', v:`+${selected.growth}%`,       c:'text-emerald-600'},
-                  {l:'Signals',    v:selected.signal_count,         c:'text-violet-600'},
-                  {l:'Risk Level', v:selected.risk,                 c:'text-amber-600'},
-                ].map(m=>(
-                  <div key={m.l} className="bg-slate-50 rounded-lg p-2.5 text-center">
-                    <div className={`font-black text-sm ${m.c}`}>{m.v}</div>
-                    <div className="text-xs text-slate-400">{m.l}</div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed mb-4">{selected.highlights}</p>
-              <div className="mb-3">
-                <div className="text-xs font-bold text-slate-400 mb-1.5">Top Destinations</div>
-                <div className="flex flex-wrap gap-1">
-                  {selected.top_dest.map((iso,i)=>(
-                    <span key={iso} className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${i===0?'bg-amber-50 border-amber-300 text-amber-700':'bg-blue-50 border-blue-200 text-blue-700'}`}>
-                      {i===0&&'#1 '}{iso}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <button className="w-full bg-[#0A2540] text-white text-xs font-bold py-2.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
-                Sector Intelligence Report — 14 FIC
-              </button>
-            </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
     </div>
   );

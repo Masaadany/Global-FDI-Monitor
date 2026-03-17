@@ -90,7 +90,7 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-[#0A2540] text-white px-6 py-8">
+      <div className="bg-deep text-white px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-black mb-2">Custom Intelligence Reports</h1>
           <p className="text-blue-200 text-sm">10 AI-powered types · Z3 verified · SHA-256 provenance · ~45–120 seconds</p>
@@ -106,7 +106,7 @@ export default function ReportsPage() {
         {/* Type grid */}
         <div className="md:col-span-2 space-y-4">
           <div className="bg-white rounded-xl border border-slate-100 p-5">
-            <div className="text-sm font-black text-[#0A2540] mb-3">Select Report Type</div>
+            <div className="text-sm font-black text-deep mb-3">Select Report Type</div>
             <div className="grid grid-cols-2 gap-2">
               {REPORT_TYPES.map(rt=>(
                 <div key={rt.code} onClick={()=>setSelectedType(rt)}
@@ -115,7 +115,7 @@ export default function ReportsPage() {
                     <span className="text-xl">{rt.icon}</span>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-black text-slate-400">{rt.code}</div>
-                      <div className="text-xs font-black text-[#0A2540] leading-tight truncate">{rt.name}</div>
+                      <div className="text-xs font-black text-deep leading-tight truncate">{rt.name}</div>
                     </div>
                     <span className="text-xs font-black text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex-shrink-0">{rt.fic} FIC</span>
                   </div>
@@ -130,13 +130,13 @@ export default function ReportsPage() {
           {/* Job queue */}
           {jobs.length > 0 && (
             <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="text-sm font-black text-[#0A2540] mb-3">Report Queue ({jobs.length})</div>
+              <div className="text-sm font-black text-deep mb-3">Report Queue ({jobs.length})</div>
               <div className="space-y-3">
                 {jobs.map(job=>(
                   <div key={job.id} className={`p-3 rounded-xl border ${job.status==='ready'?'border-emerald-200 bg-emerald-50':job.status==='error'?'border-red-200 bg-red-50':'border-slate-100'}`}>
                     <div className="flex items-center justify-between mb-2">
                       <div>
-                        <div className="text-xs font-black text-[#0A2540]">{job.type} — {job.economy}</div>
+                        <div className="text-xs font-black text-deep">{job.type} — {job.economy}</div>
                         <div className="text-xs font-mono text-slate-300">{job.ref}</div>
                       </div>
                       <div className={`text-xs font-bold ${STATUS_COLOR[job.status]}`}>
@@ -164,12 +164,12 @@ export default function ReportsPage() {
         {/* Generator panel */}
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-100 p-5">
-            <div className="text-sm font-black text-[#0A2540] mb-4">Generate Report</div>
+            <div className="text-sm font-black text-deep mb-4">Generate Report</div>
             <div className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-200">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">{selectedType.icon}</span>
                 <div>
-                  <div className="font-black text-sm text-[#0A2540]">{selectedType.name}</div>
+                  <div className="font-black text-sm text-deep">{selectedType.name}</div>
                   <div className="text-xs text-blue-600">{selectedType.pages} pages · {selectedType.fic} FIC · {selectedType.time}</div>
                 </div>
               </div>
@@ -178,20 +178,20 @@ export default function ReportsPage() {
               <div>
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy</label>
                 <select value={economy} onChange={e=>setEconomy(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary">
                   {ECONOMIES.map(e=><option key={e}>{e}</option>)}
                 </select>
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Primary Sector</label>
                 <select value={sector} onChange={e=>setSector(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400">
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary">
                   {SECTORS_LIST.map(([c,n])=><option key={c} value={c}>ISIC {c} — {n}</option>)}
                 </select>
               </div>
             </div>
             <button onClick={generate} disabled={generating}
-              className={`w-full font-black py-3.5 rounded-xl transition-colors ${generating?'bg-slate-300 text-slate-500 cursor-not-allowed':'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'}`}>
+              className={`w-full font-black py-3.5 rounded-xl transition-colors ${generating?'bg-slate-300 text-slate-500 cursor-not-allowed':'bg-deep text-white hover:bg-primary'}`}>
               {generating?(
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>

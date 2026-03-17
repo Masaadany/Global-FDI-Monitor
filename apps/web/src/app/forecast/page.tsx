@@ -110,11 +110,11 @@ export default function ForecastPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-2 items-center sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">FDI Forecast</span>
+        <span className="font-black text-sm text-deep">FDI Forecast</span>
         <div className="flex gap-1 ml-4 flex-wrap">
           {ECONOMIES.map(([c,n])=>(
             <button key={c} onClick={()=>setEco(c)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${eco===c?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{c}</button>
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${eco===c?'bg-deep text-white':'text-slate-400 border border-slate-200'}`}>{c}</button>
           ))}
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function ForecastPage() {
         <div className="bg-white rounded-xl border border-slate-100 p-5">
           <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-2xl font-black text-[#0A2540]">{ecoName}</h2>
+              <h2 className="text-2xl font-black text-deep">{ecoName}</h2>
               <div className="text-xs text-slate-400 mt-0.5">FDI Inflows Forecast · 9 horizons · Bayesian VAR + Prophet Ensemble</div>
             </div>
             <div className="flex gap-4">
@@ -162,7 +162,7 @@ export default function ForecastPage() {
 
         {/* Scenario table */}
         <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-          <div className="px-5 py-3 border-b border-slate-100 font-black text-sm text-[#0A2540]">Scenario Comparison Table (FDI Inflows $B)</div>
+          <div className="px-5 py-3 border-b border-slate-100 font-black text-sm text-deep">Scenario Comparison Table (FDI Inflows $B)</div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -187,7 +187,7 @@ export default function ForecastPage() {
 
         {/* Multi-economy compare */}
         <div className="bg-white rounded-xl border border-slate-100 p-5">
-          <div className="font-black text-sm text-[#0A2540] mb-3">Economy Comparison — 2030 Baseline Forecast ($B)</div>
+          <div className="font-black text-sm text-deep mb-3">Economy Comparison — 2030 Baseline Forecast ($B)</div>
           <div className="space-y-2">
             {ECONOMIES.filter(([c])=>FORECASTS[c]).sort((a,b)=>FORECASTS[b[0]].base[8]-FORECASTS[a[0]].base[8]).map(([code,name],i)=>{
               const val   = FORECASTS[code].base[8];
@@ -208,7 +208,7 @@ export default function ForecastPage() {
 
         <div className="text-center mb-3">
           <button onClick={()=>exportCSV(HORIZONS.map((h,i)=>({Horizon:h,Optimistic:data.opt[i],Baseline:data.base[i],Stress:data.stress[i]})),'GFM_Forecast_'+eco)}
-            className="text-xs font-bold border border-slate-200 text-slate-500 px-4 py-1.5 rounded-lg hover:border-blue-300 transition-colors">
+            className="text-xs font-bold border border-slate-200 text-slate-500 px-4 py-1.5 rounded-lg hover:border-primary transition-colors">
             Export Forecast CSV
           </button>
         </div>

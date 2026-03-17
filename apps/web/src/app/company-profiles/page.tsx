@@ -70,9 +70,9 @@ export default function CompanyProfilesPage(){
   return(
     <div className="min-h-screen bg-slate-50">
       <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-2 items-center sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">Company Intelligence (CIC)</span>
+        <span className="font-black text-sm text-deep">Company Intelligence (CIC)</span>
         <input placeholder="Search company, HQ…" value={search} onChange={e=>setSearch(e.target.value)}
-          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-40 focus:outline-none focus:border-blue-400 ml-2"/>
+          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-40 focus:outline-none focus:border-primary ml-2"/>
         {[{v:sector,s:setSector,opts:['',...SECTORS],p:'All Sectors'},
           {v:hq,s:setHQ,opts:['',...HQS],p:'All HQs'},
           {v:grade,s:setGrade,opts:['',...GRADES],p:'All Grades'}
@@ -100,7 +100,7 @@ export default function CompanyProfilesPage(){
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-6 h-6 rounded flex items-center justify-center text-xs font-black text-white flex-shrink-0"
                   style={{background:GRADE_COLORS[co.grade]}}>{co.sector}</div>
-                <div className="font-bold text-sm text-[#0A2540] truncate">{co.name}</div>
+                <div className="font-bold text-sm text-deep truncate">{co.name}</div>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-400 ml-8">
                 <span>{co.hq_city}</span><span>·</span>
@@ -117,7 +117,7 @@ export default function CompanyProfilesPage(){
             <div className="bg-white rounded-xl border border-slate-100 p-5">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="text-2xl font-black text-[#0A2540]">{selected.name}</div>
+                  <div className="text-2xl font-black text-deep">{selected.name}</div>
                   <div className="text-xs text-slate-400 font-mono mt-0.5">{selected.cic}</div>
                   <div className="text-xs text-slate-400 mt-0.5">{selected.hq_city}, {selected.hq} · Founded {selected.founded} · {selected.listed?'Public':'Private'} · CEO: {selected.ceo}</div>
                 </div>
@@ -160,7 +160,7 @@ export default function CompanyProfilesPage(){
             </div>
             <div className="bg-white rounded-xl border border-slate-100 p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="font-bold text-sm text-[#0A2540]">ESG Profile</div>
+                <div className="font-bold text-sm text-deep">ESG Profile</div>
                 <span className="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">{selected.esg}</span>
               </div>
               <div className="flex items-center gap-3">
@@ -171,14 +171,14 @@ export default function CompanyProfilesPage(){
               </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="font-bold text-sm text-[#0A2540] mb-3">Intelligence Actions</div>
+              <div className="font-bold text-sm text-deep mb-3">Intelligence Actions</div>
               <div className="grid grid-cols-2 gap-2">
                 {[{label:'Full CIC Report',cost:'5 FIC',icon:'📋'},{label:'Add to Pipeline',cost:'Free',icon:'➕'},
                   {label:'View Signals',cost:'Free',icon:'📡'},{label:'Mission Dossier',cost:'30 FIC',icon:'🎯'}
                 ].map(a=>(
                   <button key={a.label} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors text-xs text-left">
                     <span className="text-lg">{a.icon}</span>
-                    <div><div className="font-bold text-[#0A2540]">{a.label}</div><div className="text-slate-400">{a.cost}</div></div>
+                    <div><div className="font-bold text-deep">{a.label}</div><div className="text-slate-400">{a.cost}</div></div>
                   </button>
                 ))}
               </div>

@@ -1,4 +1,2 @@
 import { redirect } from 'next/navigation';
-export default function SourcesPage() {
-  redirect('/about');
-}
+export default function SourcesPage() { redirect('/about#methodology'); }

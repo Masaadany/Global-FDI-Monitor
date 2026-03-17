@@ -86,7 +86,7 @@ export default function ScenarioPlannerPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-[#0A2540] text-white px-6 py-8">
+      <div className="bg-deep text-white px-6 py-8">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-3xl font-black mb-2">Scenario Planner</h1>
           <p className="text-blue-200 text-sm">Model investment outcomes across macro scenarios. Adjust assumptions and see projected FDI impact by sector.</p>
@@ -104,7 +104,7 @@ export default function ScenarioPlannerPage() {
                 <span className="text-xs font-black px-2 py-0.5 rounded text-white" style={{background:s.color}}>{s.tag}</span>
                 <span className="text-xs text-slate-400">{s.probability}% prob.</span>
               </div>
-              <div className="font-black text-sm text-[#0A2540] mb-1">{s.name}</div>
+              <div className="font-black text-sm text-deep mb-1">{s.name}</div>
               <div className="text-2xl font-black" style={{color:s.color}}>+{s.gdp_growth}%</div>
               <div className="text-xs text-slate-400">GDP growth</div>
               <div className="text-sm font-black text-blue-600 mt-1">${s.fdi_b}B</div>
@@ -119,7 +119,7 @@ export default function ScenarioPlannerPage() {
             <div className="bg-white rounded-xl border border-slate-100 p-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-3 h-3 rounded-full" style={{background:sc.color}}/>
-                <div className="font-black text-lg text-[#0A2540]">{sc.name}</div>
+                <div className="font-black text-lg text-deep">{sc.name}</div>
                 <span className="text-xs font-bold text-slate-400 ml-auto">{sc.probability}% probability</span>
               </div>
               <p className="text-slate-500 text-sm mb-5">{sc.desc}</p>
@@ -134,7 +134,7 @@ export default function ScenarioPlannerPage() {
                 ].map(k=>(
                   <div key={k.l} className="bg-slate-50 rounded-lg p-3 text-center">
                     <div className="text-xs text-slate-400 mb-0.5">{k.l}</div>
-                    <div className="font-black text-sm text-[#0A2540]">{k.v}</div>
+                    <div className="font-black text-sm text-deep">{k.v}</div>
                   </div>
                 ))}
               </div>
@@ -149,7 +149,7 @@ export default function ScenarioPlannerPage() {
 
             {/* Scenario comparison */}
             <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="font-bold text-sm text-[#0A2540] mb-4">Scenario Comparison — Total FDI Signals</div>
+              <div className="font-bold text-sm text-deep mb-4">Scenario Comparison — Total FDI Signals</div>
               <div className="space-y-3">
                 {BASE_SCENARIOS.map(s=>(
                   <div key={s.id} className="flex items-center gap-3">
@@ -170,16 +170,16 @@ export default function ScenarioPlannerPage() {
           {/* Custom assumptions */}
           <div className="space-y-4">
             <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="font-bold text-sm text-[#0A2540] mb-4">Custom Assumptions</div>
+              <div className="font-bold text-sm text-deep mb-4">Custom Assumptions</div>
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy</label>
-                <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400 mb-3"
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary mb-3"
                   value={customEconomy} onChange={e=>setCustomEconomy(e.target.value)}>
                   {ECON_LIST.map(e=><option key={e}>{e}</option>)}
                 </select>
                 <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy focus</label>
-                  <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+                  <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-primary"
                     value={economy} onChange={e=>setEconomy(e.target.value)}>
                     {['UAE','Saudi Arabia','India','Egypt','Vietnam','Indonesia','Germany','Singapore'].map(e=>(
                       <option key={e}>{e}</option>
@@ -202,14 +202,14 @@ export default function ScenarioPlannerPage() {
                       className="w-full accent-blue-600"/>
                   </div>
                 ))}
-                <button className="w-full bg-[#0A2540] text-white font-black py-2.5 rounded-xl text-sm hover:bg-[#1D4ED8] transition-colors">
+                <button className="w-full bg-deep text-white font-black py-2.5 rounded-xl text-sm hover:bg-primary transition-colors">
                   Run Custom Scenario
                 </button>
               </div>
             </div>
 
             <div className="bg-white rounded-xl border border-slate-100 p-5">
-              <div className="font-bold text-sm text-[#0A2540] mb-3">Probability Weights</div>
+              <div className="font-bold text-sm text-deep mb-3">Probability Weights</div>
               <div className="space-y-2">
                 {BASE_SCENARIOS.map(s=>(
                   <div key={s.id} className="flex items-center gap-2">
@@ -233,7 +233,7 @@ export default function ScenarioPlannerPage() {
         <div className="bg-white rounded-xl border border-slate-100 p-5 mt-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-black text-sm text-[#0A2540]">Monte Carlo Simulation</div>
+              <div className="font-black text-sm text-deep">Monte Carlo Simulation</div>
               <div className="text-xs text-slate-400">10,000 runs · 95% confidence interval</div>
             </div>
             <span className="text-xs bg-violet-100 text-violet-700 border border-violet-200 px-2 py-0.5 rounded font-bold">β</span>
@@ -276,7 +276,7 @@ export default function ScenarioPlannerPage() {
         {/* Monte Carlo simulation */}
         <div className="bg-white rounded-xl border border-slate-100 p-5 mt-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="font-black text-sm text-[#0A2540]">Monte Carlo Simulation</div>
+            <div className="font-black text-sm text-deep">Monte Carlo Simulation</div>
             <div className="text-xs text-slate-400">10,000 simulations · P10/P50/P90</div>
           </div>
           <div className="grid grid-cols-3 gap-4 mb-4">

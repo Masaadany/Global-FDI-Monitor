@@ -63,7 +63,7 @@ export default function PipelinePage() {
       <div className="flex items-start gap-2 mb-2">
         <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:GRADE_DOT[deal.grade]}}/>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-xs text-[#0A2540] truncate">{deal.company}</div>
+          <div className="font-bold text-xs text-deep truncate">{deal.company}</div>
           <div className="text-xs text-slate-400">{deal.iso3} · ISIC {deal.sector}</div>
         </div>
         <div className="text-xs font-black text-blue-600 flex-shrink-0">${deal.capex_m>=1000?`${(deal.capex_m/1000).toFixed(1)}B`:`${deal.capex_m}M`}</div>
@@ -93,24 +93,24 @@ export default function PipelinePage() {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-3 items-center sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">Investment Pipeline</span>
+        <span className="font-black text-sm text-deep">Investment Pipeline</span>
         <div className="flex gap-1 ml-2">
           {(['kanban','table'] as const).map(v=>(
             <button key={v} onClick={()=>setView(v)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>
+              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-deep text-white':'text-slate-400 border border-slate-200'}`}>
               {v==='kanban'?'⬜ Kanban':'📋 Table'}
             </button>
           ))}
         </div>
         <input placeholder="Search company, ISO3…" value={filter} onChange={e=>setFilter(e.target.value)}
-          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-36 focus:outline-none focus:border-blue-400 ml-2"/>
+          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-36 focus:outline-none focus:border-primary ml-2"/>
         <div className="flex gap-4 text-xs text-slate-400 ml-auto">
           <span>Pipeline: <strong className="text-slate-700">${(totalCapex/1000).toFixed(1)}B</strong></span>
           <span>Weighted: <strong className="text-emerald-600">${(weightedPipe/1000).toFixed(1)}B</strong></span>
           <span>{filtered.length} deals</span>
         </div>
         <button onClick={()=>exportPipeline(filtered.map(d=>({...d})))}
-          className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-blue-300">
+          className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-primary">
           Export CSV
         </button>
       </div>
@@ -159,7 +159,7 @@ export default function PipelinePage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full" style={{background:GRADE_DOT[d.grade]}}/>
-                          <span className="font-bold text-[#0A2540]">{d.company}</span>
+                          <span className="font-bold text-deep">{d.company}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3 font-mono text-blue-600">{d.iso3}</td>
