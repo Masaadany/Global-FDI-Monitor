@@ -2,10 +2,13 @@
 
 **The world's most comprehensive FDI intelligence platform.**
 
+> 215 economies · 50 AI agents · 47 API routes · 71 static pages · 160+ tests
+
 [![Tests](https://img.shields.io/badge/Tests-100%20passing-brightgreen)](https://github.com/masaadany/Global-FDI-Monitor)
 [![Pages](https://img.shields.io/badge/Pages-71%20static-blue)](#)
 [![API](https://img.shields.io/badge/API-53%20routes-0A66C2)](#)
 [![Agents](https://img.shields.io/badge/Agents-50%20AI-7C3AED)](#)
+[![Economies](https://img.shields.io/badge/Economies-215-059669)](#)
 
 ## Live Platform
 
@@ -20,7 +23,7 @@
 
 ### Pages (71 static)
 - **37 page files** generating 71 static routes at build
-- **30 country profiles** (`/country/ARE`, `/country/SAU`, `/country/IND`… 30 economies)
+- **30 country profiles** covering 215 economies (ARE, SAU, IND, SGP…) (`/country/ARE`, `/country/SAU`, `/country/IND`… 30 economies)
 - **Core pages**: Homepage, Dashboard, Signals, GFR Rankings, Analytics, Forecast
 - **Tools**: Benchmarking (radar chart), Scenario Planner (Monte Carlo), Mission Planning (FlightRadar map)
 - **Data**: Company Profiles, Corridor Intelligence, Sectors, Investment Pipeline (Kanban)

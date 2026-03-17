@@ -685,3 +685,22 @@ if __name__ == "__main__":
             print(f"    AR: {agt20.translate_section_title(s,'ar')} | FR: {agt20.translate_section_title(s,'fr')} | KO: {agt20.translate_section_title(s,'ko')}")
 
     asyncio.run(test())
+
+
+def execute(payload: dict) -> dict:
+    import hashlib, json
+    from datetime import datetime, timezone
+    ref = "AGT-MULTI-" + datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')
+    result = run(payload)
+    return {
+        "agent":      "AGT-MULTI",
+        "ref":        ref,
+        "status":     "completed",
+        "result":     result,
+        "provenance": {"hash": "sha256:" + hashlib.sha256(ref.encode()).hexdigest()[:16],
+                       "executed_at": datetime.now(timezone.utc).isoformat()}
+    }
+
+if __name__ == "__main__":
+    import json
+    print(json.dumps(execute({"test": True}), indent=2))
