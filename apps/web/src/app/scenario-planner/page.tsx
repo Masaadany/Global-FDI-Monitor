@@ -1,4 +1,35 @@
 'use client';
+
+function CustomScenarioChart({gdp,oil,fdi_base}: {gdp:number;oil:number;fdi_base:number}) {
+  const years = [2024,2025,2026,2027,2028,2029,2030];
+  const base  = years.map((_,i)=>fdi_base*(1+(gdp-2.5)/100*1.2+i*0.035));
+  const bull  = years.map((_,i)=>fdi_base*(1+(gdp-2.5)/100*2.0+i*0.06+0.08));
+  const bear  = years.map((_,i)=>fdi_base*(1+(gdp-2.5)/100*0.6+i*0.015-0.04));
+  const allV  = [...base,...bull,...bear];
+  const maxV  = Math.max(...allV)*1.05; const minV = Math.min(...allV)*0.92;
+  const W=380,H=160,padL=44,padR=12,padT=8,padB=28;
+  function px(i:number,v:number){
+    return {x:padL+i*(W-padL-padR)/(years.length-1),y:padT+(H-padT-padB)*(1-(v-minV)/(maxV-minV))};
+  }
+  function path(vals:number[]){return vals.map((v,i)=>{const {x,y}=px(i,v);return `${i===0?'M':'L'}${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');}
+  const area=(hi:number[],lo:number[])=>`${path(hi)} ${[...lo].reverse().map((v,i)=>{const j=lo.length-1-i;const {x,y}=px(j,v);return `L${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ')} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      {[0,0.33,0.66,1].map(t=>{
+        const y=padT+(H-padT-padB)*t; const v=maxV-t*(maxV-minV);
+        return <g key={t}><line x1={padL} y1={y} x2={W-padR} y2={y} stroke="#e2e8f0" strokeWidth="0.5"/>
+          <text x={padL-3} y={y+3} fontSize="7" fill="#94a3b8" textAnchor="end">${v.toFixed(0)}B</text></g>;
+      })}
+      <path d={area(bull,bear)} fill="#3b82f620"/>
+      <path d={path(bull)}  fill="none" stroke="#10b981" strokeWidth="1.8"/>
+      <path d={path(base)}  fill="none" stroke="#3b82f6" strokeWidth="2.2"/>
+      <path d={path(bear)}  fill="none" stroke="#ef4444" strokeWidth="1.8" strokeDasharray="4,3"/>
+      {years.map((y,i)=>{const {x}=px(i,base[i]);return <text key={y} x={x} y={H-padB+12} fontSize="7" fill="#94a3b8" textAnchor="middle">{y}</text>;})}
+      {base.map((v,i)=>{const {x,y}=px(i,v);return <circle key={i} cx={x} cy={y} r={2.5} fill="#3b82f6"/>;})}
+    </svg>
+  );
+}
+
 import { useState } from 'react';
 
 const BASE_SCENARIOS = [

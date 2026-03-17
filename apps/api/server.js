@@ -1455,3 +1455,37 @@ ROUTES['GET /api/v1/reports/:ref/status'] = async(req,res,p)=>{
   if(!job) return fail(res,'NOT_FOUND','Report not found',404);
   ok(res,{ref:p.ref,status:job.status,progress:job.progress});
 };
+
+// ── GFR BY ISO3 ────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/gfr/:iso3'] = async(req,res,p)=>{
+  const data = await dbQ('SELECT * FROM intelligence.gfr_scores WHERE iso3=$1 LIMIT 1',[p.iso3],[]);
+  const eco  = M_GFR.find(e=>e.iso3===p.iso3);
+  if(!eco) return fail(res,'NOT_FOUND',`Economy ${p.iso3} not found`,404);
+  const q4   = {macro:eco.macro-2,policy:eco.policy-1,digital:eco.digital-3,human:eco.human,infra:eco.infra-1,sustain:eco.sustain-2,composite:eco.composite-2.1};
+  ok(res,{
+    ...eco,
+    q4_2025: q4,
+    trend:   {composite:eco.composite-q4.composite,direction:eco.composite>q4.composite?'UP':eco.composite<q4.composite?'DOWN':'STABLE'},
+    signals: M_SIGNALS.filter(s=>s.iso3===p.iso3).length,
+    updated: '2026-03-17',
+  });
+};
+
+// ── NOTIFICATION PREFERENCES ─────────────────────────────────────────────
+const NOTIF_STORE: Record<string,any> = {};
+ROUTES['GET /api/v1/notifications/preferences'] = async(req,res)=>{
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const prefs=NOTIF_STORE[payload.sub]||{platinum:true,gold:true,gfr:true,newsletter:true,pipeline:false,fic_low:true,watchlist:true};
+  ok(res,{preferences:prefs});
+};
+ROUTES['PUT /api/v1/notifications/preferences'] = async(req,res)=>{
+  const d=await body(req);
+  const token=getToken(req);
+  const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  NOTIF_STORE[payload.sub]={...NOTIF_STORE[payload.sub]||{},...d};
+  if(db) await dbQ('UPDATE auth.users SET notification_prefs=$1 WHERE id=$2',[JSON.stringify(d),payload.sub]).catch(()=>{});
+  ok(res,{preferences:NOTIF_STORE[payload.sub]});
+};

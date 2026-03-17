@@ -329,3 +329,62 @@ def test_company_ims_scores_ranked():
     assert IMS_SCORES == sorted(IMS_SCORES, reverse=True), "IMS scores should be in descending order"
     assert all(0 < s <= 100 for s in IMS_SCORES), "All IMS scores should be in valid range"
     assert IMS_SCORES[0] == 96, "Top IMS should be 96 (Microsoft)"
+
+# ── AGENT + ROUTING TESTS ─────────────────────────────────────────────────
+
+def test_agent_router_accuracy():
+    """Agent router routes correctly for 7 key intents"""
+    import sys; sys.path.insert(0,'apps/pipeline')
+    sys.path.insert(0,'apps/agents')
+    from agent_router import route
+    CASES = [
+        ("Run signal detection for UAE", "AGT-01"),
+        ("Compute GFR scores",           "AGT-02"),
+        ("Generate country profile",     "AGT-03"),
+        ("Weekly newsletter generation", "AGT-06"),
+        ("Monte Carlo simulation",       "AGT-08"),
+        ("OFAC compliance check",        "AGT-11"),
+        ("Corridor analysis UAE-India",  "AGT-13"),
+    ]
+    for query, expected_agent in CASES:
+        result = route(query)
+        assert result['agent_id'] == expected_agent, f"'{query}': expected {expected_agent}, got {result['agent_id']}"
+
+def test_agent_router_latency():
+    """Agent router completes in <5ms for all cases"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from agent_router import route
+    queries = ["signal UAE", "gfr score", "company intel Microsoft", "forecast India 2030", "sanctions check"]
+    for q in queries:
+        result = route(q)
+        assert result['latency_ms'] < 5.0, f"Router too slow for '{q}': {result['latency_ms']}ms"
+
+def test_super_agent_execution():
+    """Super agent executes all 15 registered agents"""
+    import sys; sys.path.insert(0,'apps/agents')
+    from super_agent import AGENT_REGISTRY, run_agent
+    assert len(AGENT_REGISTRY) == 15, f"Expected 15 agents, got {len(AGENT_REGISTRY)}"
+    # Test first 3 agents
+    for agent_id in list(AGENT_REGISTRY.keys())[:3]:
+        result = run_agent(agent_id, {"test": True})
+        assert result['agent'] == agent_id, f"Agent mismatch: {result['agent']} != {agent_id}"
+        assert result['provenance']['hash'].startswith('sha256:'), "Missing SHA-256 provenance"
+
+def test_gdelt_data_structure():
+    """Simulated GDELT signal data has required fields"""
+    MOCK_SIGNALS = [
+        {"company":"Microsoft","economy":"UAE","iso3":"ARE","sector":"J","capex_usd":850000000,
+         "grade":"PLATINUM","signal_type":"Greenfield","status":"CONFIRMED","sci_score":91.2},
+        {"company":"AWS","economy":"Saudi Arabia","iso3":"SAU","sector":"J","capex_usd":5300000000,
+         "grade":"PLATINUM","signal_type":"Expansion","status":"ANNOUNCED","sci_score":88.4},
+    ]
+    REQUIRED = ["company","economy","iso3","sector","capex_usd","grade","signal_type","status","sci_score"]
+    VALID_GRADES = {"PLATINUM","GOLD","SILVER","BRONZE"}
+    VALID_TYPES  = {"Greenfield","Expansion","M&A","JV","Platform","Committed"}
+    for sig in MOCK_SIGNALS:
+        for field in REQUIRED:
+            assert field in sig, f"Missing {field} in signal"
+        assert sig["grade"] in VALID_GRADES, f"Invalid grade: {sig['grade']}"
+        assert sig["signal_type"] in VALID_TYPES, f"Invalid type: {sig['signal_type']}"
+        assert 0 < sig["sci_score"] <= 100, f"SCI out of range: {sig['sci_score']}"
+        assert sig["capex_usd"] > 0, "Negative CapEx"

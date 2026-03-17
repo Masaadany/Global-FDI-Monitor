@@ -1,4 +1,27 @@
 'use client';
+
+const SIGNAL_HISTORY: Record<string,number[]> = {
+  'GFM-USA-MSFT-12847':[2,3,4,3,5,4,6,5,7,8,9,12],
+  'GFM-USA-AMZN-98120':[3,4,5,6,5,7,8,9,10,12,15,18],
+  'GFM-CHN-CATL-11234':[1,2,2,3,4,5,6,7,8,9,10,11],
+  'GFM-USA-GOOG-77234':[2,3,3,4,5,5,6,7,7,8,9,10],
+};
+
+function SignalMiniChart({cic}: {cic:string}) {
+  const data = SIGNAL_HISTORY[cic] || [1,2,2,3,3,4];
+  const max  = Math.max(...data);
+  const W=120, H=32;
+  const pts  = data.map((v,i)=>`${(i/(data.length-1)*W).toFixed(1)},${(H-(v/max)*H*0.85+2).toFixed(1)}`).join(' ');
+  const area = `0,${H} ${pts} ${W},${H}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-28 h-8">
+      <polygon points={area} fill="#3b82f625"/>
+      <polyline points={pts} fill="none" stroke="#3b82f6" strokeWidth="1.5"/>
+      <circle cx={data.length?W:0} cy={H-(data[data.length-1]/max)*H*0.85+2} r={2.5} fill="#3b82f6"/>
+    </svg>
+  );
+}
+
 import { useState, useMemo, useEffect } from 'react';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';

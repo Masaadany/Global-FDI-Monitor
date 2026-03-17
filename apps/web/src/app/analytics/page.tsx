@@ -7,6 +7,8 @@ import { exportSignals, exportGFR } from '@/lib/export';
 const Globe4D          = dynamic(() => import('@/components/Globe4D'),           { ssr:false, loading:()=><div className="h-96 bg-[#060f1a] rounded-2xl animate-pulse"/> });
 const AdvancedAnalytics= dynamic(() => import('@/components/AdvancedAnalytics'),  { ssr:false, loading:()=><div className="h-64 bg-slate-100 rounded-2xl animate-pulse"/> });
 const InvestmentHeatmap= dynamic(() => import('@/components/InvestmentHeatmap'),  { ssr:false, loading:()=><div className="h-64 bg-slate-100 rounded-2xl animate-pulse"/> });
+const FDIWorldMap      = dynamic(() => import('@/components/FDIWorldMap'),        { ssr:false, loading:()=><div className="h-96 bg-slate-100 rounded-2xl animate-pulse"/> });
+const GlobeMap         = dynamic(() => import('@/components/GlobeMap'),            { ssr:false, loading:()=><div className="h-96 bg-[#030d1a] rounded-2xl animate-pulse"/> });
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
 const GRADE_COLORS: Record<string,string> = {PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'};
@@ -85,7 +87,8 @@ export default function AnalyticsPage() {
 
         {tab==='globe'   && <Globe4D/>}
         {tab==='charts'  && <AdvancedAnalytics/>}
-        {tab==='heatmap' && <InvestmentHeatmap/>}
+        {tab==='heatmap'   && <InvestmentHeatmap/>}
+        {tab==='worldmap'  && <FDIWorldMap/>}
 
         {tab==='live' && (
           <div className="bg-white rounded-xl border border-slate-100 p-5">

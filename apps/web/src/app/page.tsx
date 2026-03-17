@@ -1,8 +1,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { OrganizationJsonLd, SoftwareAppJsonLd, FAQJsonLd } from '@/components/JsonLd';
+const GlobeMap = dynamic(() => import('@/components/GlobeMap'),{ssr:false});
 import dynamic from 'next/dynamic';
+import { OrganizationJsonLd, SoftwareAppJsonLd, FAQJsonLd } from '@/components/JsonLd';
 
 const Globe4D       = dynamic(() => import('@/components/Globe4D'),       { ssr:false });
 const BentoDashboard= dynamic(() => import('@/components/BentoDashboard'), { ssr:false });

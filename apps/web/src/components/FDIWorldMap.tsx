@@ -1,328 +1,163 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 
-// ── WORLD MAP DATA ─────────────────────────────────────────────────────────
-// Simplified country positions for SVG world map (x,y as % of viewBox)
-const COUNTRIES: Record<string, {
-  name: string; x: number; y: number; region: string;
-  fdi_b: number; gfr: number; signals: number; grade: string;
-}> = {
-  ARE: { name:'UAE',           x:62, y:44, region:'MENA',   fdi_b:30.7, gfr:80.0, signals:12, grade:'PLATINUM' },
-  SAU: { name:'Saudi Arabia',  x:60, y:46, region:'MENA',   fdi_b:28.3, gfr:68.1, signals:9,  grade:'GOLD' },
-  QAT: { name:'Qatar',         x:61, y:45, region:'MENA',   fdi_b:8.2,  gfr:71.2, signals:5,  grade:'GOLD' },
-  EGY: { name:'Egypt',         x:56, y:43, region:'MENA',   fdi_b:9.8,  gfr:52.4, signals:4,  grade:'SILVER' },
-  IND: { name:'India',         x:67, y:46, region:'SAS',    fdi_b:71.0, gfr:62.3, signals:18, grade:'PLATINUM' },
-  CHN: { name:'China',         x:76, y:38, region:'EAP',    fdi_b:163.0,gfr:61.8, signals:22, grade:'GOLD' },
-  SGP: { name:'Singapore',     x:77, y:52, region:'EAP',    fdi_b:141.2,gfr:88.5, signals:15, grade:'PLATINUM' },
-  USA: { name:'United States', x:18, y:36, region:'NAM',    fdi_b:285.0,gfr:84.5, signals:28, grade:'PLATINUM' },
-  GBR: { name:'UK',            x:46, y:28, region:'ECA',    fdi_b:52.0, gfr:78.5, signals:11, grade:'GOLD' },
-  DEU: { name:'Germany',       x:50, y:28, region:'ECA',    fdi_b:35.4, gfr:81.5, signals:8,  grade:'GOLD' },
-  FRA: { name:'France',        x:48, y:30, region:'ECA',    fdi_b:28.1, gfr:76.2, signals:7,  grade:'GOLD' },
-  IRL: { name:'Ireland',       x:44, y:27, region:'ECA',    fdi_b:94.5, gfr:78.5, signals:6,  grade:'GOLD' },
-  NGA: { name:'Nigeria',       x:50, y:52, region:'SSA',    fdi_b:4.1,  gfr:42.1, signals:3,  grade:'BRONZE' },
-  ZAF: { name:'South Africa',  x:54, y:64, region:'SSA',    fdi_b:5.4,  gfr:51.3, signals:4,  grade:'SILVER' },
-  KEN: { name:'Kenya',         x:58, y:56, region:'SSA',    fdi_b:1.8,  gfr:51.3, signals:2,  grade:'SILVER' },
-  BRA: { name:'Brazil',        x:30, y:60, region:'LAC',    fdi_b:65.1, gfr:54.2, signals:10, grade:'SILVER' },
-  MEX: { name:'Mexico',        x:16, y:44, region:'LAC',    fdi_b:36.1, gfr:56.8, signals:7,  grade:'SILVER' },
-  VNM: { name:'Vietnam',       x:77, y:47, region:'EAP',    fdi_b:18.1, gfr:58.2, signals:9,  grade:'GOLD' },
-  IDN: { name:'Indonesia',     x:78, y:55, region:'EAP',    fdi_b:22.0, gfr:57.1, signals:8,  grade:'SILVER' },
-  AUS: { name:'Australia',     x:82, y:68, region:'EAP',    fdi_b:59.4, gfr:82.1, signals:7,  grade:'GOLD' },
-  JPN: { name:'Japan',         x:82, y:36, region:'EAP',    fdi_b:30.5, gfr:79.3, signals:6,  grade:'GOLD' },
-  KOR: { name:'South Korea',   x:80, y:35, region:'EAP',    fdi_b:18.4, gfr:77.8, signals:5,  grade:'GOLD' },
-  NOR: { name:'Norway',        x:49, y:22, region:'ECA',    fdi_b:12.3, gfr:83.2, signals:4,  grade:'GOLD' },
-  CHE: { name:'Switzerland',   x:50, y:30, region:'ECA',    fdi_b:26.4, gfr:87.5, signals:5,  grade:'PLATINUM' },
-  CAN: { name:'Canada',        x:16, y:26, region:'NAM',    fdi_b:48.3, gfr:83.1, signals:6,  grade:'GOLD' },
-  KAZ: { name:'Kazakhstan',    x:66, y:30, region:'ECA',    fdi_b:8.1,  gfr:58.4, signals:3,  grade:'SILVER' },
-  RUS: { name:'Russia',        x:65, y:24, region:'ECA',    fdi_b:5.2,  gfr:48.1, signals:2,  grade:'BRONZE' },
-  TUR: { name:'Turkey',        x:57, y:34, region:'MENA',   fdi_b:12.4, gfr:59.8, signals:5,  grade:'SILVER' },
-  MYS: { name:'Malaysia',      x:76, y:52, region:'EAP',    fdi_b:14.2, gfr:66.4, signals:6,  grade:'SILVER' },
-  THA: { name:'Thailand',      x:76, y:49, region:'EAP',    fdi_b:9.8,  gfr:63.1, signals:5,  grade:'SILVER' },
+// Simplified world map using country centroids for bubble placement
+const COUNTRY_POSITIONS: Record<string,[number,number]> = {
+  // [lon, lat] → converted to SVG x,y
+  USA:[-100,38],CAN:[-96,56],MEX:[-102,24],BRA:[-51,-10],ARG:[-65,-34],
+  CHL:[-71,-30],COL:[-74,4],PER:[-76,-10],VEN:[-66,8],ECU:[-78,-2],
+  GBR:[-2,54],FRA:[2,46],DEU:[10,51],ITA:[12,42],ESP:[-4,40],
+  PRT:[-8,39],NLD:[5,52],BEL:[4,51],CHE:[8,47],AUT:[14,47],
+  POL:[20,52],CZE:[16,50],HUN:[19,47],ROU:[25,46],BGR:[25,43],
+  NOR:[10,62],SWE:[18,60],DNK:[10,56],FIN:[26,64],GRC:[22,39],
+  TUR:[35,39],RUS:[60,60],UKR:[32,49],KAZ:[67,48],UZB:[63,41],
+  SAU:[45,25],ARE:[54,24],QAT:[51,25],KWT:[48,29],OMN:[57,22],
+  BHR:[50,26],JOR:[36,31],ISR:[35,32],LBN:[36,34],EGY:[30,27],
+  MAR:[6,32],TUN:[9,34],DZA:[2,28],LBY:[17,27],NGA:[8,10],
+  GHA:[-2,8],KEN:[38,-1],ETH:[40,9],ZAF:[25,-29],TZA:[34,-6],
+  UGA:[32,1],RWA:[30,-2],MZQ:[35,-18],ANG:[18,-12],CMR:[12,6],
+  IND:[78,20],CHN:[104,35],JPN:[138,36],KOR:[128,37],TWN:[121,24],
+  HKG:[114,22],SGP:[104,1],MYS:[108,4],IDN:[117,-2],PHL:[122,13],
+  THA:[101,15],VNM:[108,16],MMR:[96,17],BGD:[90,24],PAK:[70,30],
+  LKA:[81,8],NPL:[84,28],AFG:[67,33],IRN:[53,33],IRQ:[44,33],
+  AUS:[134,-26],NZL:[172,-42],FJI:[178,-18],PNG:[145,-6],
+  ZMB:[28,-15],ZWE:[30,-20],BWA:[24,-22],NAM:[18,-22],MWI:[34,-14],
 };
 
-const GRADE_COLORS: Record<string, string> = {
-  PLATINUM: '#f59e0b',
-  GOLD:     '#10b981',
-  SILVER:   '#3b82f6',
-  BRONZE:   '#6b7280',
-};
-
-const REGION_COLORS: Record<string, string> = {
-  MENA: '#f59e0b', SAS: '#8b5cf6', EAP: '#06b6d4',
-  ECA:  '#3b82f6', NAM: '#10b981', LAC: '#f97316',
-  SSA:  '#ef4444',
-};
-
-interface TooltipData {
-  iso3: string; x: number; y: number;
+// Convert lon/lat to SVG coords (mercator approximation)
+function toSVG(lon: number, lat: number, W=800, H=450): [number,number] {
+  const x = (lon + 180) / 360 * W;
+  const latRad = lat * Math.PI / 180;
+  const mercN  = Math.log(Math.tan(Math.PI/4 + latRad/2));
+  const y      = H/2 - (mercN * H / (2 * Math.PI));
+  return [Math.round(x), Math.round(y)];
 }
 
+// Simplified continent paths
+const CONTINENTS = [
+  {name:'North America',color:'#1e3a5f',d:'M 40,60 L 220,50 L 250,130 L 200,200 L 130,210 L 60,170 Z'},
+  {name:'South America',color:'#1e3a5f',d:'M 150,220 L 230,215 L 250,310 L 200,390 L 150,380 L 130,310 Z'},
+  {name:'Europe',       color:'#1e3a5f',d:'M 310,45 L 420,40 L 440,100 L 400,130 L 310,120 Z'},
+  {name:'Africa',       color:'#1e3a5f',d:'M 310,135 L 420,130 L 435,260 L 390,350 L 330,340 L 305,240 Z'},
+  {name:'Asia',         color:'#1e3a5f',d:'M 425,40 L 680,35 L 710,180 L 620,240 L 490,220 L 420,130 Z'},
+  {name:'SE Asia',      color:'#1e3a5f',d:'M 590,195 L 660,190 L 665,250 L 600,255 Z'},
+  {name:'Australia',   color:'#1e3a5f',d:'M 600,290 L 720,280 L 730,370 L 610,375 Z'},
+];
+
+const FDI_DATA: Record<string,{fdi_b:number;grade:'PLATINUM'|'GOLD'|'SILVER'|'BRONZE';name:string}> = {
+  USA:{fdi_b:285,grade:'PLATINUM',name:'United States'},
+  CHN:{fdi_b:163,grade:'PLATINUM',name:'China'},
+  SGP:{fdi_b:141,grade:'PLATINUM',name:'Singapore'},
+  IRL:{fdi_b:94, grade:'PLATINUM',name:'Ireland'},
+  NLD:{fdi_b:92, grade:'GOLD',    name:'Netherlands'},
+  IND:{fdi_b:71, grade:'GOLD',    name:'India'},
+  BRA:{fdi_b:65, grade:'GOLD',    name:'Brazil'},
+  AUS:{fdi_b:59, grade:'GOLD',    name:'Australia'},
+  DEU:{fdi_b:35, grade:'GOLD',    name:'Germany'},
+  ARE:{fdi_b:30, grade:'PLATINUM',name:'UAE'},
+  JPN:{fdi_b:30, grade:'GOLD',    name:'Japan'},
+  GBR:{fdi_b:52, grade:'GOLD',    name:'United Kingdom'},
+  SAU:{fdi_b:28, grade:'GOLD',    name:'Saudi Arabia'},
+  FRA:{fdi_b:28, grade:'SILVER',  name:'France'},
+  KOR:{fdi_b:18, grade:'SILVER',  name:'South Korea'},
+  VNM:{fdi_b:18, grade:'GOLD',    name:'Vietnam'},
+  MEX:{fdi_b:36, grade:'SILVER',  name:'Mexico'},
+  IDN:{fdi_b:22, grade:'GOLD',    name:'Indonesia'},
+  EGY:{fdi_b:9,  grade:'SILVER',  name:'Egypt'},
+  NGA:{fdi_b:4,  grade:'SILVER',  name:'Nigeria'},
+  MAR:{fdi_b:3,  grade:'SILVER',  name:'Morocco'},
+  KEN:{fdi_b:1,  grade:'BRONZE',  name:'Kenya'},
+  ZAF:{fdi_b:5,  grade:'SILVER',  name:'South Africa'},
+  QAT:{fdi_b:5,  grade:'SILVER',  name:'Qatar'},
+};
+
+const GRADE_COLORS: Record<string,string> = {
+  PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'
+};
+
+type Metric = 'fdi_b';
+
 export default function FDIWorldMap() {
-  const [selected, setSelected]     = useState<string>('ARE');
-  const [tooltip, setTooltip]       = useState<TooltipData | null>(null);
-  const [mode, setMode]             = useState<'signals'|'gfr'|'fdi'>('signals');
-  const [region, setRegion]         = useState<string>('');
-  const [animFrame, setAnimFrame]   = useState(0);
-  const svgRef = useRef<SVGSVGElement>(null);
+  const [hovered, setHovered] = useState<string|null>(null);
+  const [filter,  setFilter]  = useState<string>('');
+  const W=800, H=450;
 
-  // Animate signal pulses
-  useEffect(() => {
-    const id = setInterval(() => setAnimFrame(f => (f + 1) % 60), 100);
-    return () => clearInterval(id);
-  }, []);
+  const bubbles = useMemo(() => Object.entries(COUNTRY_POSITIONS).map(([iso3,[lon,lat]]) => {
+    const [x,y] = toSVG(lon,lat,W,H);
+    const data   = FDI_DATA[iso3];
+    if (!data) return null;
+    const r = Math.max(4, Math.min(28, Math.sqrt(data.fdi_b) * 1.6));
+    return { iso3, x, y, r, ...data };
+  }).filter(Boolean), [W,H]);
 
-  const filtered = Object.entries(COUNTRIES).filter(([, c]) =>
-    !region || c.region === region
-  );
-
-  const selectedCountry = COUNTRIES[selected];
-
-  function getDotSize(iso3: string): number {
-    const c = COUNTRIES[iso3];
-    if (mode === 'fdi')     return Math.max(4, Math.min(20, c.fdi_b / 15));
-    if (mode === 'gfr')     return Math.max(4, Math.min(18, c.gfr / 7));
-    return Math.max(4, Math.min(18, c.signals * 0.8));
-  }
-
-  function getDotColor(iso3: string): string {
-    const c = COUNTRIES[iso3];
-    if (mode === 'signals') return GRADE_COLORS[c.grade];
-    if (mode === 'gfr')     return c.gfr >= 75 ? '#10b981' : c.gfr >= 60 ? '#3b82f6' : c.gfr >= 45 ? '#f59e0b' : '#ef4444';
-    return REGION_COLORS[c.region] || '#6b7280';
-  }
+  const totalFDI = Object.values(FDI_DATA).reduce((s,d)=>s+d.fdi_b,0);
 
   return (
-    <div className="bg-[#060f1a] rounded-2xl overflow-hidden border border-blue-900">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-blue-900">
-        <div className="flex items-center gap-3">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest">Global FDI Intelligence Map</div>
-          <div className="flex items-center gap-1 text-xs text-emerald-400">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"/>
-            LIVE
-          </div>
+    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+        <div>
+          <div className="font-black text-sm text-[#0A2540]">FDI World Map — 2025</div>
+          <div className="text-xs text-slate-400">Total: ${totalFDI.toFixed(0)}B · Bubble size ∝ FDI volume</div>
         </div>
-        <div className="flex gap-1">
-          {([['signals','Signals'],['gfr','GFR Score'],['fdi','FDI Volume']] as const).map(([m,l]) => (
-            <button key={m} onClick={() => setMode(m)}
-              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
-                mode===m ? 'bg-blue-600 text-white' : 'text-blue-400 hover:bg-blue-900'
-              }`}>{l}</button>
+        <div className="flex gap-2">
+          {Object.entries(GRADE_COLORS).map(([g,c])=>(
+            <button key={g} onClick={()=>setFilter(filter===g?'':g)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${filter===g?'text-white':'text-slate-500 border-slate-200'}`}
+              style={filter===g?{background:c,borderColor:c}:{}}>
+              <div className="w-2 h-2 rounded-full" style={{background:c}}/>
+              {g}
+            </button>
           ))}
         </div>
       </div>
 
-      <div className="flex">
-        {/* Map */}
-        <div className="flex-1 relative">
-          <svg ref={svgRef} viewBox="0 0 100 75" className="w-full"
-            style={{background:'linear-gradient(180deg,#060f1a 0%,#0a1628 100%)'}}>
-
-            {/* Grid lines */}
-            {[20,40,60,80].map(x => (
-              <line key={x} x1={x} y1={0} x2={x} y2={75} stroke="#1e3a5f" strokeWidth="0.1"/>
-            ))}
-            {[25,50].map(y => (
-              <line key={y} x1={0} y1={y} x2={100} y2={y} stroke="#1e3a5f" strokeWidth="0.1"/>
-            ))}
-            {/* Equator */}
-            <line x1={0} y1={38} x2={100} y2={38} stroke="#1e3a5f" strokeWidth="0.2" strokeDasharray="1,1"/>
-
-            {/* FDI flow lines between top economies */}
-            {[
-              ['USA','GBR'], ['USA','DEU'], ['USA','SGP'],
-              ['GBR','ARE'], ['DEU','ARE'], ['CHN','SGP'],
-              ['SGP','IND'], ['ARE','IND'], ['USA','IND'],
-            ].map(([a,b]) => {
-              const ca = COUNTRIES[a], cb = COUNTRIES[b];
-              if (!ca || !cb) return null;
-              const pulse = (animFrame / 60);
-              const mx = ca.x + (cb.x-ca.x)*pulse;
-              const my = ca.y + (cb.y-ca.y)*pulse;
-              return (
-                <g key={`${a}-${b}`}>
-                  <line x1={ca.x} y1={ca.y} x2={cb.x} y2={cb.y}
-                    stroke="#1e3a5f" strokeWidth="0.15" strokeDasharray="0.5,0.5" opacity="0.6"/>
-                  <circle cx={mx} cy={my} r="0.4" fill="#3b82f6" opacity="0.8"/>
-                </g>
-              );
-            })}
-
-            {/* Country dots */}
-            {filtered.map(([iso3, country]) => {
-              const size  = getDotSize(iso3);
-              const color = getDotColor(iso3);
-              const isSelected = iso3 === selected;
-              const isPlatinum = country.grade === 'PLATINUM';
-
-              return (
-                <g key={iso3}
-                  onClick={() => setSelected(iso3)}
-                  onMouseEnter={() => setTooltip({iso3, x:country.x, y:country.y})}
-                  onMouseLeave={() => setTooltip(null)}
-                  style={{cursor:'pointer'}}>
-
-                  {/* Pulse ring for platinum signals */}
-                  {isPlatinum && (
-                    <circle cx={country.x} cy={country.y}
-                      r={size/10 + (animFrame % 20) * 0.05}
-                      fill="none" stroke={color} strokeWidth="0.2"
-                      opacity={1 - (animFrame % 20) * 0.05}/>
-                  )}
-
-                  {/* Selection ring */}
-                  {isSelected && (
-                    <circle cx={country.x} cy={country.y}
-                      r={size/10 + 1.5} fill="none" stroke="white" strokeWidth="0.3"/>
-                  )}
-
-                  {/* Main dot */}
-                  <circle cx={country.x} cy={country.y}
-                    r={size/10}
-                    fill={color}
-                    opacity={isSelected ? 1 : 0.8}/>
-
-                  {/* Label for selected or large countries */}
-                  {(isSelected || size > 12) && (
-                    <text x={country.x} y={country.y - size/10 - 0.8}
-                      fontSize="1.8" fill="white" textAnchor="middle"
-                      fontWeight="bold" opacity="0.9">
-                      {country.name}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Tooltip */}
-            {tooltip && COUNTRIES[tooltip.iso3] && (
-              <g>
-                <rect x={tooltip.x + 1} y={tooltip.y - 8}
-                  width="22" height="10" rx="0.5"
-                  fill="#0A2540" stroke="#1e3a5f" strokeWidth="0.2"/>
-                <text x={tooltip.x + 2} y={tooltip.y - 5.5}
-                  fontSize="1.6" fill="white" fontWeight="bold">
-                  {COUNTRIES[tooltip.iso3].name}
-                </text>
-                <text x={tooltip.x + 2} y={tooltip.y - 3.5}
-                  fontSize="1.4" fill="#94a3b8">
-                  GFR: {COUNTRIES[tooltip.iso3].gfr} | FDI: ${COUNTRIES[tooltip.iso3].fdi_b}B
-                </text>
-                <text x={tooltip.x + 2} y={tooltip.y - 1.5}
-                  fontSize="1.4" fill={GRADE_COLORS[COUNTRIES[tooltip.iso3].grade]}>
-                  {COUNTRIES[tooltip.iso3].signals} signals · {COUNTRIES[tooltip.iso3].grade}
-                </text>
+      <div className="relative">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full"
+          style={{background:'radial-gradient(ellipse at 50% 50%, #f0f4f8 0%, #e2e8f0 100%)'}}>
+          {/* Ocean */}
+          <rect width={W} height={H} fill="#dbeafe" opacity="0.3"/>
+          {/* Continents */}
+          {CONTINENTS.map(c=>(
+            <path key={c.name} d={c.d} fill={c.color} stroke="#334155" strokeWidth="0.5" opacity="0.9"/>
+          ))}
+          {/* Graticule */}
+          {[-60,-30,0,30,60].map(lat=>{
+            const [,y]=toSVG(0,lat,W,H);
+            return <line key={lat} x1={0} y1={y} x2={W} y2={y} stroke="#cbd5e1" strokeWidth="0.3" strokeDasharray="4,4"/>;
+          })}
+          {[-120,-60,0,60,120].map(lon=>{
+            const [x]=toSVG(lon,0,W,H);
+            return <line key={lon} x1={x} y1={0} x2={x} y2={H} stroke="#cbd5e1" strokeWidth="0.3" strokeDasharray="4,4"/>;
+          })}
+          {/* FDI bubbles */}
+          {bubbles.filter(b=>!filter||b!.grade===filter).map(b=>{
+            if(!b) return null;
+            const isHov = hovered === b.iso3;
+            const col   = GRADE_COLORS[b.grade];
+            return (
+              <g key={b.iso3} onMouseEnter={()=>setHovered(b.iso3)} onMouseLeave={()=>setHovered(null)}
+                style={{cursor:'pointer'}}>
+                {isHov && <circle cx={b.x} cy={b.y} r={b.r*1.6} fill={col} opacity="0.15"/>}
+                <circle cx={b.x} cy={b.y} r={b.r} fill={col} opacity="0.85" stroke="white" strokeWidth="0.8"/>
+                {b.r > 10 && (
+                  <text x={b.x} y={b.y+3} textAnchor="middle" fontSize="7" fill="white" fontWeight="700">{b.iso3}</text>
+                )}
+                {isHov && (
+                  <g>
+                    <rect x={b.x+b.r+2} y={b.y-16} width={90} height={34} rx={4} fill="#0f172a" opacity="0.92"/>
+                    <text x={b.x+b.r+6} y={b.y-3}  fontSize="9" fill={col}   fontWeight="700">{b.name}</text>
+                    <text x={b.x+b.r+6} y={b.y+10}  fontSize="10" fill="white" fontWeight="900">${b.fdi_b}B FDI</text>
+                  </g>
+                )}
               </g>
-            )}
-          </svg>
-
-          {/* Legend */}
-          <div className="absolute bottom-3 left-3 bg-[#0a1628]/90 rounded-lg p-2 border border-blue-900">
-            <div className="text-xs text-blue-400 font-bold mb-1.5 uppercase tracking-wide">
-              {mode === 'signals' ? 'Signal Grade' : mode === 'gfr' ? 'GFR Score' : 'FDI Volume'}
-            </div>
-            {mode === 'signals' && (
-              <div className="space-y-1">
-                {[['PLATINUM','#f59e0b'],['GOLD','#10b981'],['SILVER','#3b82f6'],['BRONZE','#6b7280']].map(([g,c]) => (
-                  <div key={g} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full" style={{background:c}}/>
-                    <span className="text-xs text-slate-300">{g}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {mode === 'gfr' && (
-              <div className="space-y-1">
-                {[['75+','#10b981','Frontier'],['60-75','#3b82f6','High'],['45-60','#f59e0b','Medium'],['<45','#ef4444','Emerging']].map(([r,c,l]) => (
-                  <div key={r} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full" style={{background:c}}/>
-                    <span className="text-xs text-slate-300">{r} {l}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Country panel */}
-        {selectedCountry && (
-          <div className="w-56 border-l border-blue-900 p-4 flex-shrink-0">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white"
-                style={{background: GRADE_COLORS[selectedCountry.grade]}}>
-                {selected}
-              </div>
-              <div>
-                <div className="text-white font-black text-sm">{selectedCountry.name}</div>
-                <div className="text-blue-400 text-xs">{selectedCountry.region}</div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                {l:'GFR Score', v:selectedCountry.gfr, max:100, color:'#10b981'},
-                {l:'FDI Inflows', v:Math.min(100,selectedCountry.fdi_b/3), max:100, display:`$${selectedCountry.fdi_b}B`, color:'#3b82f6'},
-                {l:'Active Signals', v:Math.min(100,selectedCountry.signals*3.5), max:100, display:selectedCountry.signals, color:'#f59e0b'},
-              ].map(s => (
-                <div key={s.l}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-400">{s.l}</span>
-                    <span className="text-white font-bold">{s.display ?? s.v}</span>
-                  </div>
-                  <div className="h-1.5 bg-blue-950 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all duration-500"
-                      style={{width:`${s.v}%`, background:s.color}}/>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-blue-900">
-              <div className="text-xs text-blue-400 mb-2">Signal Grade</div>
-              <div className="text-sm font-black px-2 py-1 rounded-lg text-center"
-                style={{
-                  color: GRADE_COLORS[selectedCountry.grade],
-                  background: GRADE_COLORS[selectedCountry.grade] + '20',
-                  border: `1px solid ${GRADE_COLORS[selectedCountry.grade]}40`
-                }}>
-                {selectedCountry.grade}
-              </div>
-            </div>
-
-            {/* Top signals */}
-            <div className="mt-4">
-              <div className="text-xs text-blue-400 mb-2">Recent Signals</div>
-              <div className="space-y-1.5">
-                {[
-                  {co:'Microsoft', val:'$850M', g:'PLATINUM'},
-                  {co:'Siemens', val:'$340M', g:'GOLD'},
-                  {co:'BlackRock', val:'$500M', g:'SILVER'},
-                ].slice(0, Math.min(3, selectedCountry.signals)).map((s,i) => (
-                  <div key={i} className="flex items-center justify-between bg-blue-950/50 rounded px-2 py-1">
-                    <div className="text-xs text-slate-300 truncate">{s.co}</div>
-                    <div className="text-xs font-bold ml-1"
-                      style={{color:GRADE_COLORS[s.g]}}>{s.val}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+            );
+          })}
+        </svg>
       </div>
 
-      {/* Region filter bar */}
-      <div className="flex gap-1.5 px-4 py-2.5 border-t border-blue-900 flex-wrap">
-        <button onClick={() => setRegion('')}
-          className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
-            !region ? 'bg-blue-600 text-white' : 'text-blue-400 hover:bg-blue-900'
-          }`}>All Regions</button>
-        {Object.entries(REGION_COLORS).map(([r,c]) => (
-          <button key={r} onClick={() => setRegion(r === region ? '' : r)}
-            className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all ${
-              region===r ? 'text-white' : 'text-blue-400 hover:bg-blue-900'
-            }`} style={region===r ? {background:c} : {}}>
-            {r}
-          </button>
-        ))}
+      <div className="flex justify-between px-5 py-2 border-t border-slate-100 text-xs text-slate-400">
+        <span>Source: UNCTAD WIR 2025 · GFM Intelligence</span>
+        <span>{bubbles.filter(b=>b&&(!filter||b.grade===filter)).length} economies shown</span>
       </div>
     </div>
   );
