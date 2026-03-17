@@ -1,51 +1,58 @@
-// GFM Service Worker — offline support + cache
-const CACHE_VERSION = 'gfm-v3';
-const STATIC_CACHE  = `${CACHE_VERSION}-static`;
-const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
+/**
+ * GFM Service Worker
+ * Caches static assets and provides offline fallback.
+ */
+const CACHE_NAME = 'gfm-v22';
+const STATIC_ASSETS = ['/', '/demo', '/gfr', '/signals', '/about', '/pricing'];
+const API_CACHE_TTL = 60 * 1000; // 60s for API responses
 
-const PRECACHE = [
-  '/', '/dashboard/', '/signals/', '/gfr/', '/pricing/',
-  '/analytics/', '/about/', '/contact/', '/register/',
-];
-
-// Install — precache core pages
-self.addEventListener('install', evt => {
-  evt.waitUntil(
-    caches.open(STATIC_CACHE).then(c => c.addAll(PRECACHE).catch(() => {}))
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME).then(cache =>
+      cache.addAll(STATIC_ASSETS).catch(() => {})
+    ).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate — clean old caches
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== STATIC_CACHE && k !== DYNAMIC_CACHE).map(k => caches.delete(k)))
-    )
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch — cache-first for static, network-first for API
-self.addEventListener('fetch', evt => {
-  const { request } = evt;
-  const url = new URL(request.url);
-
-  // API calls — network first, no cache
-  if (url.pathname.startsWith('/api/')) return;
-
-  // Static assets — cache first
-  if (request.method !== 'GET') return;
-
-  evt.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(res => {
-        if (res.ok && res.type !== 'opaque') {
-          caches.open(DYNAMIC_CACHE).then(c => c.put(request, res.clone()));
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
+  
+  // Skip non-GET requests and cross-origin
+  if (e.request.method !== 'GET') return;
+  
+  // API requests: network first, cache fallback
+  if (url.pathname.startsWith('/api/')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return res;
-      }).catch(() => caches.match('/') || new Response('Offline', {status:503}));
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  
+  // Static: cache first, network fallback
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.ok && res.type === 'basic') {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+        }
+        return res;
+      }).catch(() => caches.match('/') || new Response('Offline', { status: 503 }));
     })
   );
 });

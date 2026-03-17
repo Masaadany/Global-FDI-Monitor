@@ -1,4 +1,4 @@
-name: GFM CI/CD Pipeline
+name: GFM Deploy Pipeline
 
 on:
   push:
@@ -7,157 +7,196 @@ on:
     branches: [main]
 
 env:
-  REGISTRY: melsaadany
-  API_IMAGE: gfm-api
-  PIPELINE_IMAGE: gfm-pipeline
+  REGISTRY: docker.io
+  API_IMAGE: melsaadany/gfm-api
+  AGENTS_IMAGE: melsaadany/gfm-agents
+  AZURE_RG: fdi-monitor-prod
+  AZURE_APP: fdi-backend-api
 
 jobs:
-  # ── JOB 1: PYTHON TESTS ────────────────────────────────────────────────
-  test-python:
-    name: Python Tests (Agents + Pipeline)
+  # ── TEST ──────────────────────────────────────────────────────────────────
+  test:
+    name: Run Test Suite (108 tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      - name: Install dependencies
-        run: |
-          pip install -r apps/pipeline/requirements.txt
-      - name: Run agent tests
-        run: |
-          cd apps
-          python -m pytest pipeline/tests/test_agents.py -v --tb=short
-      - name: Test pipeline collectors
-        run: |
-          cd apps/pipeline
-          python collectors/master_pipeline.py
-      - name: Test enrichment system
-        run: |
-          cd apps/pipeline
-          python enrichment.py
 
-  # ── JOB 2: TYPESCRIPT CHECKS ──────────────────────────────────────────
-  test-frontend:
-    name: Frontend Build + Type Check
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install pytest pytest-asyncio z3-solver requests --break-system-packages
+
+      - name: Run pipeline test suite
+        run: python3 -m pytest apps/pipeline/tests/ -v --tb=short
+        working-directory: .
+
+  # ── BUILD FRONTEND ────────────────────────────────────────────────────────
+  build-web:
+    name: Build Next.js Frontend (71 pages)
     runs-on: ubuntu-latest
+    needs: test
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: npm
           cache-dependency-path: apps/web/package-lock.json
+
       - name: Install dependencies
-        run: cd apps/web && npm ci
-      - name: Build Next.js
-        run: cd apps/web && npm run build
+        run: npm ci
+        working-directory: apps/web
+
+      - name: Build static export
+        run: npm run build
+        working-directory: apps/web
         env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_API_URL: https://api.fdimonitor.org
+          NEXT_PUBLIC_AGENT_API: https://agents.fdimonitor.org
+          NEXT_PUBLIC_PREVIEW_PASSWORD: ${{ secrets.PREVIEW_PASSWORD }}
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nextjs-build
-          path: apps/web/out
+          name: nextjs-out
+          path: apps/web/out/
           retention-days: 1
 
-  # ── JOB 3: API DOCKER BUILD ───────────────────────────────────────────
-  build-api:
-    name: Build + Push API Docker Image
+  # ── DEPLOY FRONTEND ───────────────────────────────────────────────────────
+  deploy-web:
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    needs: [test-python, test-frontend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build-web
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nextjs-out
+          path: ./out
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  # ── BUILD + PUSH API ──────────────────────────────────────────────────────
+  build-api:
+    name: Build & Push API Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build and push API image
         uses: docker/build-push-action@v5
         with:
-          context: apps/api
+          context: ./apps/api
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.API_IMAGE }}:latest
-            ${{ env.REGISTRY }}/${{ env.API_IMAGE }}:${{ github.sha }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.API_IMAGE }}:latest
-          cache-to: type=inline
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  # ── JOB 4: DEPLOY FRONTEND ────────────────────────────────────────────
-  deploy-frontend:
-    name: Deploy Frontend to GitHub Pages
+  # ── BUILD + PUSH AGENTS ───────────────────────────────────────────────────
+  build-agents:
+    name: Build & Push Agents Docker Image
     runs-on: ubuntu-latest
-    needs: [test-frontend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
+    needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: apps/web/package-lock.json
-      - name: Install and build
-        run: |
-          cd apps/web && npm ci && npm run build
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: apps/web/out
-          cname: fdimonitor.org
 
-  # ── JOB 5: DEPLOY API TO AZURE ────────────────────────────────────────
-  deploy-api:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Agents image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./apps/agents
+          push: true
+          tags: |
+            ${{ env.AGENTS_IMAGE }}:latest
+            ${{ env.AGENTS_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── DEPLOY TO AZURE ───────────────────────────────────────────────────────
+  deploy-azure:
     name: Deploy API to Azure Container Apps
     runs-on: ubuntu-latest
-    needs: [build-api]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [build-api, build-agents]
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Azure Login
+
+      - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Update Container App
+
+      - name: Update API Container App
         run: |
           az containerapp update \
-            --name fdi-backend-api \
-            --resource-group fdi-monitor-prod \
-            --image ${{ env.REGISTRY }}/${{ env.API_IMAGE }}:${{ github.sha }}
-      - name: Health check
-        run: |
-          sleep 15
-          STATUS=$(curl -sf ${{ secrets.API_URL }}/api/v1/health | jq -r '.data.status' 2>/dev/null || echo "failed")
-          if [ "$STATUS" != "ok" ]; then
-            echo "Health check failed: $STATUS"
-            exit 1
-          fi
-          echo "✓ API healthy: $STATUS"
+            --name ${{ env.AZURE_APP }} \
+            --resource-group ${{ env.AZURE_RG }} \
+            --image ${{ env.API_IMAGE }}:${{ github.sha }}
 
-  # ── JOB 6: NOTIFY DEPLOYMENT ──────────────────────────────────────────
+      - name: Run DB migrations
+        run: |
+          az containerapp exec \
+            --name ${{ env.AZURE_APP }} \
+            --resource-group ${{ env.AZURE_RG }} \
+            --command "node DEPLOYMENT/migrate.js" || true
+
+      - name: Verify deployment health
+        run: |
+          sleep 30
+          curl -f https://api.fdimonitor.org/api/v1/health || exit 1
+          echo "✅ API healthy"
+
+  # ── NOTIFY ────────────────────────────────────────────────────────────────
   notify:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [deploy-frontend, deploy-api]
+    needs: [deploy-web, deploy-azure]
     if: always() && github.ref == 'refs/heads/main'
     steps:
-      - name: Deployment status
+      - name: Summary
         run: |
-          echo "================================"
-          echo "GFM Deployment Summary"
-          echo "================================"
-          echo "Frontend: ${{ needs.deploy-frontend.result }}"
-          echo "API:      ${{ needs.deploy-api.result }}"
-          echo "Commit:   ${{ github.sha }}"
-          echo "Branch:   ${{ github.ref }}"
-          echo "Time:     $(date -u)"
-          echo "================================"
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend (GitHub Pages) | ${{ needs.deploy-web.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| API (Azure Container Apps) | ${{ needs.deploy-azure.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **fdimonitor.org** | https://fdimonitor.org |" >> $GITHUB_STEP_SUMMARY

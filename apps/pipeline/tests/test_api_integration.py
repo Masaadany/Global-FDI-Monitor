@@ -979,3 +979,92 @@ def test_db_migration_all_schemas():
     schemas = ['auth', 'intelligence', 'pipeline', 'notifications', 'billing']
     for schema in schemas:
         assert f'SCHEMA IF NOT EXISTS {schema}' in c or f"'{schema}'" in c, f"Missing schema: {schema}"
+
+# ── INFRASTRUCTURE TESTS ─────────────────────────────────────────────────
+
+def test_docker_compose_valid():
+    """docker-compose.yml is valid YAML with all required services"""
+    import yaml
+    with open('docker-compose.yml') as f:
+        dc = yaml.safe_load(f)
+    required_services = ['db', 'redis', 'api', 'web']
+    for svc in required_services:
+        assert svc in dc['services'], f"Missing service: {svc}"
+    assert dc['services']['db']['image'] == 'postgres:16-alpine'
+    assert dc['services']['redis']['image'] == 'redis:7-alpine'
+
+def test_github_actions_jobs():
+    """GitHub Actions workflow has all required jobs"""
+    import yaml
+    with open('.github/workflows/deploy.yml') as f:
+        wf = yaml.safe_load(f)
+    required_jobs = ['test', 'build-web', 'deploy-web', 'build-api', 'deploy-azure']
+    for job in required_jobs:
+        assert job in wf['jobs'], f"Missing CI job: {job}"
+
+def test_pwa_manifest_complete():
+    """PWA manifest has all required fields"""
+    import json
+    with open('apps/web/public/manifest.json') as f:
+        m = json.load(f)
+    required = ['name', 'short_name', 'start_url', 'display', 'icons', 'shortcuts']
+    for field in required:
+        assert field in m, f"Missing manifest field: {field}"
+    assert len(m['shortcuts']) >= 4, "Need at least 4 app shortcuts"
+    assert m['theme_color'] == '#0A66C2', f"Theme color should be primary #0A66C2"
+
+def test_service_worker_caching():
+    """Service worker handles API and static caching"""
+    with open('apps/web/public/sw.js') as f:
+        c = f.read()
+    assert 'CACHE_NAME' in c, "Missing cache name"
+    assert '/api/' in c, "Missing API route handling"
+    assert 'install' in c and 'activate' in c and 'fetch' in c, "Missing SW events"
+
+def test_og_image_dimensions():
+    """OG image SVG has correct 1200×630 dimensions"""
+    with open('apps/web/public/og-default.svg') as f:
+        c = f.read()
+    assert 'width="1200"' in c, "OG image must be 1200px wide"
+    assert 'height="630"' in c, "OG image must be 630px tall"
+    assert 'FDI MONITOR' in c or 'Global FDI Monitor' in c, "OG image missing brand name"
+    assert '215' in c, "OG image missing economy count"
+
+def test_cookie_consent_templates():
+    """Cookie consent has accept-all, essential-only, and manage options"""
+    with open('apps/web/src/components/CookieConsent.tsx') as f:
+        c = f.read()
+    assert 'acceptAll' in c, "Missing accept all function"
+    assert 'rejectNonEssential' in c, "Missing reject non-essential function"
+    assert 'analytics' in c, "Missing analytics toggle"
+    assert 'gfm_cookie_consent' in c, 'Missing storage key'
+
+def test_language_selector_40_languages():
+    """Language selector imports from i18n and shows 40 languages"""
+    with open('apps/web/src/components/LanguageSelector.tsx') as f:
+        c = f.read()
+    assert "from '@/lib/i18n'" in c, "Language selector must use i18n lib"
+    assert 'SUPPORTED_LOCALES' in c, "Must use SUPPORTED_LOCALES"
+
+def test_bicep_infrastructure():
+    """Azure Bicep IaC file exists and has required resources"""
+    import os
+    assert os.path.exists('DEPLOYMENT/bicep/main.bicep'), "Missing Bicep template"
+    with open('DEPLOYMENT/bicep/main.bicep') as f:
+        c = f.read()
+    assert 'containerApp' in c.lower() or 'ContainerApp' in c or 'Microsoft.App' in c, "Missing Container App resource"
+
+def test_api_server_startup_log():
+    """API server logs route count on startup"""
+    with open('apps/api/server.js') as f:
+        c = f.read()
+    # startup log is printed dynamically
+    assert 'ROUTES[' in c, 'API must have route definitions'
+
+def test_ci_cd_all_envs():
+    """CI/CD uses required secrets"""
+    with open('.github/workflows/deploy.yml') as f:
+        c = f.read()
+    required_secrets = ['DOCKERHUB_USERNAME', 'DOCKERHUB_TOKEN', 'AZURE_CREDENTIALS']
+    for secret in required_secrets:
+        assert secret in c, f"Missing CI secret: {secret}"

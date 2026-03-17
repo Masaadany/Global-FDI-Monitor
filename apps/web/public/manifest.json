@@ -5,16 +5,23 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0A2540",
-  "theme_color": "#0A2540",
-  "orientation": "any",
-  "categories": ["finance", "business", "productivity"],
+  "theme_color": "#0A66C2",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
-    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.svg", "type": "image/svg+xml", "sizes": "180x180", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "/og-default.svg", "type": "image/svg+xml", "sizes": "1200x630", "label": "Global FDI Monitor Dashboard" }
   ],
   "shortcuts": [
-    {"name": "Dashboard",     "url": "/dashboard",  "description": "Open your GFM dashboard"},
-    {"name": "Live Signals",  "url": "/signals",    "description": "View live FDI signals"},
-    {"name": "GFR Rankings",  "url": "/gfr",        "description": "Global Future Readiness Rankings"},
-    {"name": "Generate Report","url": "/reports",   "description": "Create a custom intelligence report"}
-  ]
+    { "name": "Live Signals", "url": "/signals", "description": "Real-time FDI signals" },
+    { "name": "GFR Rankings", "url": "/gfr", "description": "215 economy rankings" },
+    { "name": "Dashboard", "url": "/dashboard", "description": "Intelligence dashboard" },
+    { "name": "Reports", "url": "/reports", "description": "Generate intelligence reports" }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
