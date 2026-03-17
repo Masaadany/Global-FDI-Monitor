@@ -1,42 +1,44 @@
 'use client';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 export function CookieConsent() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    const consent = typeof window !== 'undefined' ? localStorage.getItem('gfm_cookie_consent') : null;
-    if (!consent) setShow(true);
+    const c = typeof window !== 'undefined' ? localStorage.getItem('gfm_cookie_consent') : null;
+    if (!c) setShow(true);
   }, []);
 
   function accept() {
-    localStorage.setItem('gfm_cookie_consent', 'accepted');
+    if (typeof window !== 'undefined') localStorage.setItem('gfm_cookie_consent','accepted');
     setShow(false);
   }
   function decline() {
-    localStorage.setItem('gfm_cookie_consent', 'declined');
+    if (typeof window !== 'undefined') localStorage.setItem('gfm_cookie_consent','declined');
     setShow(false);
   }
 
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-50">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl p-5">
-        <div className="font-bold text-sm text-[#0A2540] mb-2">Cookie preferences</div>
-        <p className="text-xs text-slate-500 leading-relaxed mb-4">
-          We use essential cookies to operate the platform and analytics cookies to improve your experience.{' '}
-          <Link href="/about" className="text-blue-600 hover:underline">Learn more</Link>
-        </p>
-        <div className="flex gap-2">
-          <button onClick={accept}
-            className="flex-1 bg-[#0A2540] text-white text-xs font-bold py-2 rounded-lg hover:bg-[#1D4ED8] transition-colors">
-            Accept all
-          </button>
+    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+      <div className="max-w-4xl mx-auto bg-[#0A2540] text-white rounded-2xl shadow-2xl border border-blue-800 p-5 flex flex-wrap items-center gap-4">
+        <div className="flex-1 min-w-0">
+          <div className="font-black text-sm mb-1">🍪 Cookie Notice</div>
+          <p className="text-blue-200 text-xs leading-relaxed">
+            We use cookies to improve your experience and analyse platform usage. 
+            No advertising cookies. Full privacy policy at{' '}
+            <a href="/privacy" className="underline hover:text-white">fdimonitor.org/privacy</a>.
+          </p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
           <button onClick={decline}
-            className="flex-1 border border-slate-200 text-slate-500 text-xs font-semibold py-2 rounded-lg hover:border-slate-300 transition-colors">
-            Essential only
+            className="border border-blue-700 text-blue-300 text-xs font-bold px-4 py-2 rounded-lg hover:bg-white/5 transition-colors">
+            Decline
+          </button>
+          <button onClick={accept}
+            className="bg-[#1D4ED8] text-white text-xs font-bold px-5 py-2 rounded-lg hover:bg-blue-500 transition-colors">
+            Accept All
           </button>
         </div>
       </div>

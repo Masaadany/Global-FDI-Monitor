@@ -1,90 +1,148 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
 
-const ALERTS = [
-  {id:'ALT001',type:'SIGNAL',    priority:'HIGH',  title:'New PLATINUM signal: Microsoft Corp → UAE',        desc:'SCI 91.2 · $850M · Technology sector · Confirmed greenfield investment.',time:'2 min ago', read:false},
-  {id:'ALT002',type:'SIGNAL',    priority:'HIGH',  title:'New PLATINUM signal: Vestas Wind → India',         desc:'SCI 85.9 · $420M · Renewable Energy · Announced greenfield.',           time:'18 min ago',read:false},
-  {id:'ALT003',type:'GFR',       priority:'MEDIUM',title:'UAE GFR score improved: +4.2 points this quarter', desc:'New composite: 80.0. Strongest gain in index history.',                  time:'1 hr ago',  read:false},
-  {id:'ALT004',type:'REGULATORY',priority:'HIGH',  title:'India raises FDI cap in insurance to 100%',        desc:'Automatic route approved. Effective immediately. Significant M&A window.',time:'3 hr ago',  read:true},
-  {id:'ALT005',type:'SIGNAL',    priority:'MEDIUM',title:'New GOLD signal: Amazon AWS → Saudi Arabia',       desc:'SCI 88.4 · $5.3B · Cloud Infrastructure · Announced expansion.',          time:'5 hr ago',  read:true},
-  {id:'ALT006',type:'FORECAST',  priority:'LOW',   title:'UAE FDI forecast updated: baseline raised to $36B', desc:'2026 nowcast revised upward. Energy transition driving demand.',          time:'1 day ago', read:true},
-  {id:'ALT007',type:'PIPELINE',  priority:'MEDIUM',title:'Microsoft Corp deal stalled — 60+ days in NEGOTIATING',desc:'At-risk flag raised. Follow-up action recommended.',                  time:'1 day ago', read:true},
-  {id:'ALT008',type:'PUBLICATION',priority:'LOW',  title:'Weekly Newsletter published: FNL-WK-2026-11',      desc:'12 signals, 3 GFR movements, sector spotlight: Green Hydrogen.',          time:'2 days ago',read:true},
+const API = process.env.NEXT_PUBLIC_API_URL || '';
+
+const STATIC_ALERTS = [
+  {id:'ALT001',type:'SIGNAL',    priority:'HIGH',  read:false,created_at:'2026-03-17T09:14:00Z',
+   title:'New PLATINUM Signal: Microsoft → UAE',
+   body:'MSS-GFS-ARE-20260317-0001 · $850M data centre · SCI 91.2 · CONFIRMED',
+   ref:'MSS-GFS-ARE-20260317-0001',action_url:'/signals'},
+  {id:'ALT002',type:'REGULATORY',priority:'HIGH',  read:false,created_at:'2026-03-17T06:00:00Z',
+   title:'Policy: India raises insurance FDI cap to 100%',
+   body:'Regulatory change opens $8–12B M&A pipeline in life insurance sector.',
+   ref:'GFM-INS-20260317-0002',action_url:'/market-insights'},
+  {id:'ALT003',type:'GFR',       priority:'MEDIUM',read:true, created_at:'2026-03-17T04:00:00Z',
+   title:'GFR Update: UAE +4.2 pts — largest gain on record',
+   body:'Q1 2026 GFR score: 80.0 (+4.2). Digital Foundations and Sustainability lead.',
+   ref:'FGR-Q1-2026-20260317-0001',action_url:'/gfr'},
+  {id:'ALT004',type:'PIPELINE',  priority:'MEDIUM',read:false,created_at:'2026-03-16T18:30:00Z',
+   title:'Pipeline update: Amazon AWS deal moves to NEGOTIATING',
+   body:'PIPE-002 progress: Committed → Negotiating. Term sheet under review.',
+   ref:'PIPE-002',action_url:'/investment-pipeline'},
+  {id:'ALT005',type:'FIC',       priority:'LOW',   read:true, created_at:'2026-03-16T12:00:00Z',
+   title:'FIC balance: 4 credits remaining',
+   body:'You have 4 FIC credits. Buy more to continue accessing Platinum intelligence.',
+   ref:null,action_url:'/fic'},
+  {id:'ALT006',type:'SIGNAL',    priority:'HIGH',  read:false,created_at:'2026-03-15T14:20:00Z',
+   title:'New PLATINUM Signal: Siemens Energy → Egypt',
+   body:'MSS-GFS-EGY-20260317-0003 · $340M wind JV · SCI 86.1 · CONFIRMED',
+   ref:'MSS-GFS-EGY-20260317-0003',action_url:'/signals'},
+  {id:'ALT007',type:'WATCHLIST', priority:'MEDIUM',read:true, created_at:'2026-03-15T08:00:00Z',
+   title:'Watchlist: MENA Tech — 3 new signals this week',
+   body:'Your MENA Technology watchlist has 3 new Gold+ signals since Friday.',
+   ref:null,action_url:'/watchlists'},
+  {id:'ALT008',type:'REPORT',    priority:'LOW',   read:true, created_at:'2026-03-14T16:00:00Z',
+   title:'Report ready: UAE Country Economic Profile',
+   body:'FCR-CEGP-ARE-20260314-143022-0001 is ready for download.',
+   ref:'FCR-CEGP-ARE-20260314-143022-0001',action_url:'/reports'},
 ];
 
-const TYPE_STYLES: Record<string,{bg:string,text:string,icon:string}> = {
-  SIGNAL:     {bg:'bg-blue-100',      text:'text-blue-700',      icon:'📡'},
-  GFR:        {bg:'bg-violet-100',    text:'text-violet-700',    icon:'🏆'},
-  REGULATORY: {bg:'bg-amber-100',     text:'text-amber-700',     icon:'📜'},
-  FORECAST:   {bg:'bg-emerald-100',   text:'text-emerald-700',   icon:'🔮'},
-  PIPELINE:   {bg:'bg-orange-100',    text:'text-orange-700',    icon:'⚠️'},
-  PUBLICATION:{bg:'bg-slate-100',     text:'text-slate-600',     icon:'📰'},
-};
-
-const PRIORITY_DOT: Record<string,string> = {
-  HIGH:'bg-red-500', MEDIUM:'bg-amber-500', LOW:'bg-slate-300',
+const TYPE_ICONS: Record<string,string> = {SIGNAL:'📡',REGULATORY:'📜',GFR:'🏆',PIPELINE:'💼',FIC:'⭐',WATCHLIST:'👁',REPORT:'📋'};
+const PRIORITY_STYLES: Record<string,string> = {
+  HIGH:  'border-l-4 border-l-red-400',
+  MEDIUM:'border-l-4 border-l-amber-400',
+  LOW:   'border-l-4 border-l-blue-300',
 };
 
 export default function AlertsPage() {
-  const [alerts, setAlerts] = useState(ALERTS);
-  const [filter, setFilter] = useState('');
+  const [alerts,  setAlerts]  = useState(STATIC_ALERTS);
+  const [filter,  setFilter]  = useState<'all'|'unread'|'SIGNAL'|'REGULATORY'|'GFR'>('all');
+  const { signals: liveSignals, connected } = useRealTimeSignals(5);
 
-  const unread   = alerts.filter(a => !a.read).length;
-  const filtered = alerts.filter(a => !filter || a.type === filter);
+  // Convert live signals to alerts
+  useEffect(() => {
+    if (liveSignals.length === 0) return;
+    const newest = liveSignals[0];
+    if (!newest) return;
+    const newAlert = {
+      id: `live-${newest.reference_code}`,
+      type: 'SIGNAL',
+      priority: newest.grade === 'PLATINUM' ? 'HIGH' : 'MEDIUM',
+      read: false,
+      created_at: newest.timestamp,
+      title: `New ${newest.grade}: ${newest.company} → ${newest.economy}`,
+      body: `${newest.reference_code} · $${newest.capex_m}M · SCI ${newest.sci_score}`,
+      ref: newest.reference_code,
+      action_url: '/signals',
+    };
+    setAlerts(prev => {
+      if (prev.find(a => a.id === newAlert.id)) return prev;
+      return [newAlert, ...prev];
+    });
+  }, [liveSignals]);
 
+  function markRead(id: string) {
+    setAlerts(prev => prev.map(a => a.id === id ? {...a, read:true} : a));
+  }
   function markAllRead() {
     setAlerts(prev => prev.map(a => ({...a, read:true})));
   }
 
+  const shown = alerts.filter(a =>
+    filter === 'all'    ? true :
+    filter === 'unread' ? !a.read :
+    a.type === filter
+  );
+  const unreadCount = alerts.filter(a => !a.read).length;
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center gap-3 sticky top-14 z-30">
+      <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-2 items-center sticky top-14 z-30">
         <span className="font-black text-sm text-[#0A2540]">Alerts</span>
-        {unread > 0 && (
-          <span className="bg-red-500 text-white text-xs font-black px-2 py-0.5 rounded-full">{unread} new</span>
+        {unreadCount > 0 && (
+          <span className="text-xs font-black bg-red-500 text-white px-2 py-0.5 rounded-full">{unreadCount}</span>
         )}
-        <div className="flex gap-1 ml-4">
-          {['','SIGNAL','GFR','REGULATORY','FORECAST','PIPELINE'].map(t => (
-            <button key={t} onClick={() => setFilter(t)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                filter===t ? 'bg-[#0A2540] text-white' : 'text-slate-400 border border-slate-200'
-              }`}>{t || 'All'}</button>
+        <div className="flex gap-1 ml-3 flex-wrap">
+          {(['all','unread','SIGNAL','REGULATORY','GFR'] as const).map(f=>(
+            <button key={f} onClick={()=>setFilter(f)}
+              className={`px-3 py-1 rounded-full text-xs font-bold capitalize transition-all ${filter===f?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>
+              {f}
+            </button>
           ))}
         </div>
-        <button onClick={markAllRead} className="ml-auto text-xs text-blue-600 font-semibold hover:underline">
-          Mark all read
-        </button>
+        <div className="ml-auto flex items-center gap-3">
+          <div className={`flex items-center gap-1.5 text-xs font-bold ${connected?'text-emerald-600':'text-slate-400'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${connected?'bg-emerald-400 animate-pulse':'bg-slate-300'}`}/>
+            {connected?'Live':'Offline'}
+          </div>
+          {unreadCount > 0 && (
+            <button onClick={markAllRead} className="text-xs text-blue-600 font-bold hover:underline">Mark all read</button>
+          )}
+        </div>
       </div>
 
       <div className="max-w-3xl mx-auto p-5 space-y-2">
-        {filtered.map(alert => {
-          const style = TYPE_STYLES[alert.type];
-          return (
-            <div key={alert.id} onClick={() => setAlerts(prev => prev.map(a => a.id===alert.id ? {...a,read:true} : a))}
-              className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-sm ${
-                !alert.read ? 'border-blue-200 bg-blue-50/20' : 'border-slate-100'
-              }`}>
-              <div className="flex items-start gap-3">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${style.bg}`}>
-                  {style.icon}
+        {shown.map(a => (
+          <div key={a.id} onClick={() => markRead(a.id)}
+            className={`bg-white rounded-xl border border-slate-100 p-4 cursor-pointer transition-all hover:shadow-sm ${PRIORITY_STYLES[a.priority]} ${!a.read?'':'opacity-70'}`}>
+            <div className="flex items-start gap-3">
+              <span className="text-xl flex-shrink-0">{TYPE_ICONS[a.type]||'🔔'}</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm font-black text-[#0A2540]">{a.title}</span>
+                  {!a.read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"/>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${style.bg} ${style.text}`}>{alert.type}</span>
-                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${PRIORITY_DOT[alert.priority]}`}/>
-                    <span className="text-xs text-slate-400 font-semibold">{alert.priority}</span>
-                    {!alert.read && <span className="w-2 h-2 bg-blue-500 rounded-full ml-auto flex-shrink-0"/>}
-                    <span className="text-xs text-slate-400 ml-auto">{alert.time}</span>
-                  </div>
-                  <div className={`font-bold text-sm mb-0.5 ${!alert.read ? 'text-[#0A2540]' : 'text-slate-600'}`}>
-                    {alert.title}
-                  </div>
-                  <div className="text-xs text-slate-400 leading-relaxed">{alert.desc}</div>
+                <p className="text-xs text-slate-500">{a.body}</p>
+                <div className="flex items-center gap-3 mt-1.5">
+                  <span className="text-xs text-slate-300">{new Date(a.created_at).toLocaleString()}</span>
+                  {a.ref && <span className="text-xs font-mono text-slate-300 truncate">{a.ref}</span>}
+                  {a.action_url && (
+                    <a href={a.action_url} onClick={e=>e.stopPropagation()}
+                      className="text-xs text-blue-600 font-bold hover:underline ml-auto">View →</a>
+                  )}
                 </div>
               </div>
             </div>
-          );
-        })}
+          </div>
+        ))}
+        {shown.length === 0 && (
+          <div className="text-center py-16 text-slate-400">
+            <div className="text-4xl mb-3">🔔</div>
+            <div className="text-sm font-semibold">No alerts match the filter</div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,154 +1,46 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { UPDATE_INTERVALS } from '@/lib/shared';
+import { useEffect, useState } from 'react';
+import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
 
-interface TickerSignal {
-  grade: string;
-  company: string;
-  destination: string;
-  capex: string;
-  type: string;
-}
+const GRADE_COLORS: Record<string,string> = {PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'};
 
-// Seed signals for immediate display before WebSocket connects
-const SEED_SIGNALS: TickerSignal[] = [
-  { grade: 'PLATINUM', type: 'Greenfield', company: 'Microsoft Corp', destination: 'UAE', capex: '$850M' },
-  { grade: 'GOLD', type: 'Expansion', company: 'Amazon Web Services', destination: 'Saudi Arabia', capex: '$5.3B' },
-  { grade: 'PLATINUM', type: 'Greenfield', company: 'Samsung Electronics', destination: 'Vietnam', capex: '$2.8B' },
-  { grade: 'GOLD', type: 'M&A', company: 'BlackRock Inc', destination: 'Saudi Arabia', capex: '$1.2B' },
-  { grade: 'GOLD', type: 'Greenfield', company: 'Siemens Energy', destination: 'Egypt', capex: '$340M' },
-  { grade: 'SILVER', type: 'JV', company: 'Goldman Sachs', destination: 'India', capex: '$220M' },
-];
+export default function LiveTicker() {
+  const { signals, connected } = useRealTimeSignals(20);
+  const [offset, setOffset] = useState(0);
 
-const GRADE_STYLES: Record<string, string> = {
-  PLATINUM: 'text-amber-400 font-black',
-  GOLD: 'text-emerald-400 font-bold',
-  SILVER: 'text-blue-400 font-semibold',
-  BRONZE: 'text-slate-400',
-};
-
-export function LiveTicker() {
-  const [signals, setSignals] = useState<TickerSignal[]>(SEED_SIGNALS);
-  const [liveCount, setLiveCount] = useState(1247);
-  const [utcTime, setUtcTime] = useState('');
-  const wsRef = useRef<WebSocket | null>(null);
-
-  // Clock update
   useEffect(() => {
-    const tick = () => {
-      setUtcTime(new Date().toUTCString().slice(17, 22) + ' UTC');
-      // Simulate live signal count fluctuation (±1-3)
-      setLiveCount(c => c + Math.floor(Math.random() * 3 - 1));
-    };
-    tick();
-    const id = setInterval(tick, UPDATE_INTERVALS.critical_signals_ms);
+    const id = setInterval(() => setOffset(o => o + 1), 50);
     return () => clearInterval(id);
   }, []);
 
-  // WebSocket connection for real-time signals
-  useEffect(() => {
-    const WS_URL = process.env.NEXT_PUBLIC_WS_URL;
-    if (!WS_URL || typeof window === 'undefined') return;
-
-    const token = typeof window !== 'undefined'
-      ? localStorage.getItem('gfm_access_token')
-      : null;
-    if (!token) return;
-
-    try {
-      const ws = new WebSocket(WS_URL);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        ws.send(JSON.stringify({ type: 'auth', token }));
-      };
-
-      ws.onmessage = (ev) => {
-        try {
-          const data = JSON.parse(ev.data);
-          if (data.type === 'new_signal' || data.type === 'watchlist_signal') {
-            const newSignal: TickerSignal = {
-              grade: data.grade,
-              type: data.signal_type_label ?? data.signal_type,
-              company: data.company_name ?? 'Company',
-              destination: data.economy_iso3,
-              capex: data.capex_usd ? formatCapex(data.capex_usd) : '',
-            };
-            setSignals(prev => [newSignal, ...prev.slice(0, 8)]);
-            setLiveCount(c => c + 1);
-          }
-        } catch {}
-      };
-
-      ws.onerror = () => {}; // Graceful degradation — ticker works without WS
-      ws.onclose = () => {};
-    } catch {}
-
-    return () => {
-      wsRef.current?.close();
-    };
-  }, []);
+  const items = signals.length > 0 ? signals : [
+    {grade:'PLATINUM',company:'Microsoft',economy:'UAE',capex_m:850,reference_code:'MSS-J-ARE-20260317-0001'},
+    {grade:'GOLD',company:'AWS',economy:'Saudi Arabia',capex_m:5300,reference_code:'MSS-J-SAU-20260317-0002'},
+    {grade:'PLATINUM',company:'Siemens Energy',economy:'Egypt',capex_m:340,reference_code:'MSS-D-EGY-20260317-0003'},
+    {grade:'GOLD',company:'Samsung',economy:'Vietnam',capex_m:2800,reference_code:'MSS-C-VNM-20260317-0004'},
+    {grade:'PLATINUM',company:'Vestas',economy:'India',capex_m:420,reference_code:'MSS-D-IND-20260317-0005'},
+  ];
 
   return (
-    <div className="bg-[#0A2540] text-white h-9 flex items-center gap-4 px-4 text-xs overflow-hidden border-b border-white/10">
-      {/* Live indicator */}
+    <div className="bg-[#060f1a] border-b border-blue-900 py-1.5 px-4 flex items-center gap-3 overflow-hidden">
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-        <span className="font-bold opacity-70 tracking-wide">LIVE</span>
+        <span className={`w-1.5 h-1.5 rounded-full ${connected?'bg-emerald-400 animate-pulse':'bg-slate-600'}`}/>
+        <span className="text-xs font-black text-emerald-400 tracking-widest uppercase">Live</span>
       </div>
-
-      {/* Scrolling ticker */}
       <div className="flex-1 overflow-hidden relative">
-        <div className="flex gap-8 animate-ticker whitespace-nowrap">
-          {[...signals, ...signals].map((sig, i) => (
-            <span key={i} className="inline-flex items-center gap-1.5">
-              <span className={GRADE_STYLES[sig.grade] ?? 'text-white'}>
-                {sig.grade === 'PLATINUM' ? '⚡' : '●'} {sig.grade}
-              </span>
-              <span className="text-white/70">·</span>
-              <span className="text-white/90">{sig.type}</span>
-              <span className="text-white/70">·</span>
-              <span className="font-semibold">{sig.company}</span>
-              <span className="text-white/70">→</span>
-              <span className="text-white/80">{sig.destination}</span>
-              {sig.capex && (
-                <>
-                  <span className="text-white/70">·</span>
-                  <span className="text-emerald-400 font-bold">{sig.capex}</span>
-                </>
-              )}
-            </span>
+        <div className="flex gap-6 whitespace-nowrap"
+          style={{transform:`translateX(-${(offset*0.4)%((items.length)*220)}px)`,transition:'none'}}>
+          {[...items,...items].map((s,i)=>(
+            <div key={i} className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:GRADE_COLORS[s.grade]||'#6b7280'}}/>
+              <span className="text-xs text-white font-semibold">{s.company}</span>
+              <span className="text-xs text-blue-400">→ {s.economy}</span>
+              <span className="text-xs font-black text-blue-300">${s.capex_m}M</span>
+              <span className="text-xs text-blue-800 font-mono">{(s.reference_code||'').slice(0,24)}</span>
+            </div>
           ))}
         </div>
       </div>
-
-      {/* Stats + clock */}
-      <div className="flex items-center gap-3 flex-shrink-0 text-white/50">
-        <span className="text-white/70">
-          <span className="font-bold text-white/90">{liveCount.toLocaleString()}</span> signals today
-        </span>
-        <span className="font-mono">{utcTime}</span>
-      </div>
-
-      <style>{`
-        @keyframes ticker {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .animate-ticker {
-          animation: ticker 40s linear infinite;
-        }
-        .animate-ticker:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
     </div>
   );
-}
-
-function formatCapex(usd: number): string {
-  if (usd >= 1e12) return `$${(usd / 1e12).toFixed(1)}T`;
-  if (usd >= 1e9) return `$${(usd / 1e9).toFixed(1)}B`;
-  if (usd >= 1e6) return `$${(usd / 1e6).toFixed(0)}M`;
-  return `$${usd.toLocaleString()}`;
 }

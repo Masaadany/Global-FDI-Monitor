@@ -1,105 +1,92 @@
-# Global FDI Monitor — Local Development Stack
-# Usage: docker-compose up -d
-# Then: cd apps/web && npm run dev
-
-version: '3.9'
+# GFM Local Development
+# Usage: docker compose up -d
+version: "3.9"
 
 services:
-  postgres:
+  db:
     image: postgres:16-alpine
-    container_name: gfm-postgres
     environment:
-      POSTGRES_USER: fdiuser
-      POSTGRES_PASSWORD: devpassword123
-      POSTGRES_DB: gfm
+      POSTGRES_DB:       gfm
+      POSTGRES_USER:     gfm_app
+      POSTGRES_PASSWORD: gfm_local_dev
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL","pg_isready -U fdiuser -d gfm"]
+      test: ["CMD-SHELL","pg_isready -U gfm_app -d gfm"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: gfm-redis
     ports:
       - "6379:6379"
-    command: redis-server --save 20 1 --loglevel warning
-    volumes:
-      - redis_data:/data
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD","redis-cli","ping"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
 
   api:
     build:
-      context: apps/api
+      context: ./apps/api
       dockerfile: Dockerfile
-    container_name: gfm-api
     ports:
       - "3001:3001"
     environment:
-      NODE_ENV: development
-      PORT: 3001
-      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev-secret-change-in-production
+      NODE_ENV:      development
+      PORT:          3001
+      DATABASE_URL:  postgresql://gfm_app:gfm_local_dev@db:5432/gfm
+      REDIS_URL:     redis://redis:6379
+      JWT_SECRET:    gfm-local-dev-secret-change-in-prod
     depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      db:    { condition: service_healthy }
+      redis: { condition: service_healthy }
     volumes:
       - ./apps/api:/app
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD","node","-e","require('http').get('http://localhost:3001/api/v1/health',r=>{process.exit(r.statusCode===200?0:1)})"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+      - /app/node_modules
+
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+    command: sh -c "npm ci && npm run dev"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - api
 
   pipeline:
     build:
-      context: apps/pipeline
+      context: ./apps/pipeline
       dockerfile: Dockerfile
-    container_name: gfm-pipeline
     environment:
-      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
-      PYTHONUNBUFFERED: "1"
+      DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
     depends_on:
-      postgres:
-        condition: service_healthy
-    volumes:
-      - ./apps/pipeline:/app
-    profiles: ["pipeline"]
-    command: ["python", "collectors/master_pipeline.py"]
+      db: { condition: service_healthy }
+    command: python collectors/master_pipeline.py
+    profiles: ["pipeline"]  # run with: docker compose --profile pipeline up
 
-  agents:
-    build:
-      context: apps/agents
-      dockerfile: Dockerfile
-    container_name: gfm-agents
-    ports:
-      - "8080:8080"
+  migrate:
+    image: node:20-alpine
+    working_dir: /app
     environment:
-      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      PORT: 8080
+      DATABASE_URL: postgresql://gfm_app:gfm_local_dev@db:5432/gfm
+    command: node DEPLOYMENT/migrate.js
+    volumes:
+      - ./DEPLOYMENT:/app/DEPLOYMENT
+      - ./apps/api:/app/apps/api
     depends_on:
-      postgres:
-        condition: service_healthy
-    profiles: ["agents"]
-    command: ["python", "super_agent.py", "--serve"]
+      db: { condition: service_healthy }
+    profiles: ["migrate"]  # run with: docker compose --profile migrate up
 
 volumes:
-  postgres_data:
-  redis_data:
-
-networks:
-  default:
-    name: gfm-network
+  pgdata:

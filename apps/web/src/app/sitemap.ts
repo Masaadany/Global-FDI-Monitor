@@ -7,6 +7,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/pmp','/forecast','/investment-pipeline','/company-profiles',
     '/market-insights','/watchlists','/alerts','/publications',
     '/benchmarking','/scenario-planner','/corridor-intelligence',
+    '/sectors',
+    '/ar',
     '/pricing','/about','/contact','/register','/auth/login','/fic',
   ];
   return routes.map(route => ({

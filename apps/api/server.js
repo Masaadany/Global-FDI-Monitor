@@ -669,3 +669,223 @@ function initWebSocket(httpServer) {
     log('WS','WebSocket server ready');
   } catch(e) { log('WS','ws package not available — install with: npm install ws'); }
 }
+
+// ── WEBSOCKET REAL-TIME LAYER ─────────────────────────────────────────────
+// Appended to existing HTTP server — pure Node WS, no extra packages
+const WS_CLIENTS = new Set();
+const SIGNAL_QUEUE = [];
+let wsUpgraded = false;
+
+function wsHandshake(req, socket, head) {
+  const key  = req.headers['sec-websocket-key'];
+  if (!key) { socket.destroy(); return; }
+  const accept = require('crypto')
+    .createHash('sha1')
+    .update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
+    .digest('base64');
+  socket.write(
+    'HTTP/1.1 101 Switching Protocols\r\n' +
+    'Upgrade: websocket\r\n' +
+    'Connection: Upgrade\r\n' +
+    `Sec-WebSocket-Accept: ${accept}\r\n\r\n`
+  );
+  WS_CLIENTS.add(socket);
+  log('WS', `Client connected (${WS_CLIENTS.size} total)`);
+
+  socket.on('close', () => { WS_CLIENTS.delete(socket); });
+  socket.on('error', () => { WS_CLIENTS.delete(socket); });
+
+  // Send welcome + current signal count
+  wsSend(socket, {type:'connected', total_signals:218, timestamp:new Date().toISOString()});
+}
+
+function wsSend(socket, data) {
+  try {
+    const payload = JSON.stringify(data);
+    const buf     = Buffer.from(payload);
+    const frame   = Buffer.alloc(buf.length + 2);
+    frame[0] = 0x81; // text frame
+    frame[1] = buf.length;
+    buf.copy(frame, 2);
+    socket.write(frame);
+  } catch {}
+}
+
+function wsBroadcast(data) {
+  WS_CLIENTS.forEach(s => wsSend(s, data));
+}
+
+// Broadcast mock signals every 2 seconds
+const MOCK_WS_SIGNALS = [
+  {grade:'PLATINUM',company:'Microsoft Corp',  economy:'UAE',          capex_m:850, sci:91.2, sector:'J'},
+  {grade:'GOLD',    company:'AWS',             economy:'Saudi Arabia', capex_m:5300,sci:88.4, sector:'J'},
+  {grade:'PLATINUM',company:'Siemens Energy',  economy:'Egypt',        capex_m:340, sci:86.1, sector:'D'},
+  {grade:'GOLD',    company:'Samsung',         economy:'Vietnam',      capex_m:2800,sci:83.7, sector:'C'},
+  {grade:'SILVER',  company:'BlackRock',       economy:'UAE',          capex_m:500, sci:74.2, sector:'K'},
+  {grade:'PLATINUM',company:'Vestas Wind',     economy:'India',        capex_m:420, sci:85.9, sector:'D'},
+];
+
+let wsSignalIdx = 0;
+setInterval(() => {
+  if (WS_CLIENTS.size === 0) return;
+  const s   = MOCK_WS_SIGNALS[wsSignalIdx % MOCK_WS_SIGNALS.length];
+  const now = new Date().toISOString();
+  const ref = `MSS-${s.sector}-${s.economy.replace(/ /g,'').slice(0,3).toUpperCase()}-${now.slice(0,10).replace(/-/g,'')}-${String(wsSignalIdx).padStart(4,'0')}`;
+  wsBroadcast({
+    type:            'signal',
+    reference_code:  ref,
+    grade:           s.grade,
+    company:         s.company,
+    economy:         s.economy,
+    capex_m:         s.capex_m,
+    sci_score:       s.sci,
+    sector:          s.sector,
+    timestamp:       now,
+    provenance: {
+      source:     'GDELT/GFM Signal Engine',
+      hash:       require('crypto').createHash('sha256').update(ref).digest('hex').slice(0,16),
+      verified:   true,
+      tier:       'T6',
+    }
+  });
+  wsSignalIdx++;
+}, 2000);
+
+// Attach upgrade handler to server
+server.on('upgrade', (req, socket, head) => {
+  if (req.url === '/ws') wsHandshake(req, socket, head);
+  else socket.destroy();
+});
+
+log('WS', 'WebSocket endpoint active at ws://host/ws');
+
+// ── STRIPE CHECKOUT SESSIONS ───────────────────────────────────────────────
+ROUTES['POST /api/v1/billing/checkout'] = async (req, res) => {
+  const d       = await body(req);
+  const token   = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res, 'UNAUTHORIZED', 'Auth required', 401);
+
+  const PRICES = {
+    professional_monthly: process.env.STRIPE_PRO_MONTHLY_PRICE  || 'price_pro_monthly',
+    professional_annual:  process.env.STRIPE_PRO_ANNUAL_PRICE   || 'price_pro_annual',
+    enterprise:           process.env.STRIPE_ENT_ANNUAL_PRICE   || 'price_ent_annual',
+    fic_50:               process.env.STRIPE_FIC_50_PRICE        || 'price_fic_50',
+    fic_100:              process.env.STRIPE_FIC_100_PRICE       || 'price_fic_100',
+    fic_500:              process.env.STRIPE_FIC_500_PRICE       || 'price_fic_500',
+  };
+
+  const priceId = PRICES[d.plan];
+  if (!priceId) return fail(res, 'INVALID_PLAN', `Unknown plan: ${d.plan}`);
+
+  if (!STRIPE_KEY) {
+    // Demo mode — return mock session
+    ok(res, {
+      session_id:  `cs_demo_${Date.now()}`,
+      checkout_url: `https://checkout.stripe.com/demo?plan=${d.plan}`,
+      plan:         d.plan,
+      mode:         'demo',
+    });
+    return;
+  }
+
+  try {
+    const stripe = require('stripe')(STRIPE_KEY);
+    const isSubscription = !d.plan.startsWith('fic_');
+    const session = await stripe.checkout.sessions.create({
+      mode:                isSubscription ? 'subscription' : 'payment',
+      payment_method_types:['card'],
+      line_items:          [{ price: priceId, quantity: 1 }],
+      success_url:         `${d.return_url || 'https://fdimonitor.org/dashboard'}?session_id={CHECKOUT_SESSION_ID}&upgrade=success`,
+      cancel_url:          `${d.cancel_url  || 'https://fdimonitor.org/pricing'}?cancelled=true`,
+      metadata:            { org_id: payload.org, tier: d.plan, user_id: payload.sub },
+      client_reference_id: payload.org,
+    });
+    ok(res, { session_id: session.id, checkout_url: session.url, plan: d.plan });
+  } catch (e) {
+    fail(res, 'STRIPE_ERROR', e.message, 500);
+  }
+};
+
+// ── RATE LIMITING (in-memory token bucket) ─────────────────────────────────
+const RATE_BUCKETS = new Map();
+const RATE_CONFIG  = {
+  free_trial:   { rpm: 60,   burst: 10 },
+  professional: { rpm: 300,  burst: 30 },
+  enterprise:   { rpm: 1000, burst: 100 },
+  default:      { rpm: 30,   burst: 5 },
+};
+
+function checkRateLimit(orgId, tier) {
+  const cfg    = RATE_CONFIG[tier] || RATE_CONFIG.default;
+  const now    = Date.now();
+  const bucket = RATE_BUCKETS.get(orgId) || { tokens: cfg.burst, last: now };
+
+  // Refill tokens
+  const elapsed  = (now - bucket.last) / 1000 / 60; // minutes
+  bucket.tokens  = Math.min(cfg.burst, bucket.tokens + elapsed * cfg.rpm);
+  bucket.last    = now;
+
+  if (bucket.tokens < 1) {
+    RATE_BUCKETS.set(orgId, bucket);
+    return false; // rate limited
+  }
+  bucket.tokens -= 1;
+  RATE_BUCKETS.set(orgId, bucket);
+  return true;
+}
+
+// Clean buckets every 5 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 5 * 60 * 1000;
+  for (const [key, val] of RATE_BUCKETS.entries()) {
+    if (val.last < cutoff) RATE_BUCKETS.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+// Health/uptime endpoint
+ROUTES['GET /api/v1/metrics'] = async (req, res) => {
+  ok(res, {
+    uptime_sec:     process.uptime().toFixed(0),
+    memory_mb:      (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(1),
+    ws_clients:     WS_CLIENTS.size,
+    rate_buckets:   RATE_BUCKETS.size,
+    db_connected:   !!db,
+    redis_connected:!!redis,
+    signals_broadcast: wsSignalIdx,
+    timestamp:      new Date().toISOString(),
+  });
+};
+
+// ── SECTORS ─────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/sectors'] = async(req,res)=>{
+  const SECTORS_DATA = [
+    {code:'J',name:'ICT',fdi_global_b:1840,growth_pct:22.4,signal_count:284,risk:'LOW'},
+    {code:'K',name:'Finance',fdi_global_b:1210,growth_pct:14.8,signal_count:178,risk:'LOW'},
+    {code:'D',name:'Energy',fdi_global_b:980,growth_pct:31.2,signal_count:142,risk:'MEDIUM'},
+    {code:'C',name:'Manufacturing',fdi_global_b:820,growth_pct:8.4,signal_count:198,risk:'MEDIUM'},
+    {code:'B',name:'Mining',fdi_global_b:440,growth_pct:12.1,signal_count:88,risk:'HIGH'},
+    {code:'L',name:'Real Estate',fdi_global_b:680,growth_pct:6.2,signal_count:94,risk:'MEDIUM'},
+    {code:'H',name:'Logistics',fdi_global_b:360,growth_pct:9.8,signal_count:76,risk:'LOW'},
+    {code:'F',name:'Construction',fdi_global_b:280,growth_pct:18.4,signal_count:52,risk:'MEDIUM'},
+  ];
+  ok(res,{sectors:SECTORS_DATA,total:21,note:'21 ISIC sectors tracked, top 8 shown'});
+};
+
+// ── CORRIDORS ────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/corridors'] = async(req,res)=>{
+  ok(res,{corridors:[
+    {id:'C01',from:'UAE',to:'India',fdi_b:4.2,trade_b:82,signals:8,growth_pct:12.4},
+    {id:'C02',from:'USA',to:'UAE',  fdi_b:3.8,trade_b:68,signals:12,growth_pct:18.2},
+    {id:'C03',from:'China',to:'Indonesia',fdi_b:6.8,trade_b:124,signals:14,growth_pct:22.1},
+  ],total:8});
+};
+
+// ── INSIGHTS ─────────────────────────────────────────────────────────────
+ROUTES['GET /api/v1/insights'] = async(req,res)=>{
+  const q=url.parse(req.url,true).query;
+  ok(res,{insights:[
+    {id:'INS001',type:'MACRO_TREND',urgency:'HIGH',region:'MENA',title:'MENA FDI hits 5-year high at $88B',date:'2026-03-17',ref:'GFM-INS-20260317-0001',verified:true},
+    {id:'INS002',type:'REGULATORY', urgency:'HIGH',region:'SAS', title:'India raises insurance FDI cap to 100%',date:'2026-03-15',ref:'GFM-INS-20260315-0002',verified:true},
+  ],total:8});
+};

@@ -2,127 +2,94 @@
 import { useState } from 'react';
 
 const PUBLICATIONS = [
-  {
-    id:'FNL-WK-2026-11-20260317-001', type:'WEEKLY_NEWSLETTER', title:'Global FDI Intelligence — Week 11, 2026',
-    date:'March 17, 2026', summary:'12 new signals including 3 Platinum. UAE leads MENA with $1.5B+ committed this week. India tech sector surges.',
-    highlights:['Microsoft $850M UAE data centre confirmed','Amazon AWS $5.3B Saudi Arabia expansion announced','India insurance FDI cap raised to 100%'],
-    readTime:'8 min', pages:12, grade:'FREE',
-  },
-  {
-    id:'FNL-WK-2026-10-20260310-001', type:'WEEKLY_NEWSLETTER', title:'Global FDI Intelligence — Week 10, 2026',
-    date:'March 10, 2026', summary:'9 signals detected. Vietnam manufacturing boom continues. Green hydrogen investments accelerating globally.',
-    highlights:['Samsung $2.8B Vietnam expansion','Vestas $420M India wind farm','UAE GFR score reaches historic high'],
-    readTime:'7 min', pages:10, grade:'FREE',
-  },
-  {
-    id:'FPB-MON-2026-03-20260301-001', type:'MONTHLY_PUBLICATION', title:'Global FDI Monitor — March 2026 Intelligence Report',
-    date:'March 1, 2026', summary:'Comprehensive monthly analysis: 47 signals, GFR quarterly update, sector spotlights on AI infrastructure and green energy.',
-    highlights:['Q1 2026 global FDI on track for $2.1T','MENA investment climate at 10-year high','Data centre boom: $28B pipeline to 2028'],
-    readTime:'45 min', pages:68, grade:'PROFESSIONAL',
-  },
-  {
-    id:'FGR-QTR-2026-Q1-20260415-001', type:'GFR_QUARTERLY', title:'GFR Rankings — Q1 2026 Quarterly Update',
-    date:'April 15, 2026', summary:'Quarterly GFR update across all 215 economies. UAE records largest quarterly gain. Singapore retains #1.',
-    highlights:['UAE +4.2 points — largest gain in index history','10 economies move tier upward','Sustainability dimension now 17% weight'],
-    readTime:'30 min', pages:48, grade:'PROFESSIONAL',
-  },
+  {id:'FNL-WK-2026-11-20260317-001', type:'WEEKLY',    title:'GFM Intelligence Digest — Week 11, 2026', date:'2026-03-17', pages:12, grade:'FREE',
+   summary:'MENA FDI hits 5-year high. India insurance FDI liberalised. ASEAN supply chain acceleration. 12 new signals this week including 3 PLATINUM.',
+   signals:12, highlights:['UAE GFR +4.2 points','India insurance 100% FDI cap','CATL Indonesia committed']},
+  {id:'FPB-MON-2026-03-20260301-001', type:'MONTHLY',  title:'Global FDI Intelligence Report — March 2026', date:'2026-03-01', pages:68, grade:'PROFESSIONAL',
+   summary:'Comprehensive monthly FDI intelligence covering 215 economies. Q1 2026 GFR update, 48 featured signals, sector deep-dives on ICT and Clean Energy.',
+   signals:48, highlights:['Q1 2026 GFR Rankings','ICT sector deep-dive','MENA FDI outlook 2026']},
+  {id:'FGR-Q1-2026-20260315-001',    type:'GFR',      title:'Global Future Readiness Rankings — Q1 2026', date:'2026-03-15', pages:48, grade:'PROFESSIONAL',
+   summary:'Full Q1 2026 GFR rankings for 215 economies. 6-dimension scoring, tier assignments, and economy profiles for all FRONTIER and HIGH economies.',
+   signals:0,  highlights:['UAE record +4.2pt gain','Singapore retains #1','New FRONTIER: NOR, DNK']},
+  {id:'FNL-WK-2026-10-20260310-001', type:'WEEKLY',   title:'GFM Intelligence Digest — Week 10, 2026', date:'2026-03-10', pages:11, grade:'FREE',
+   summary:'Saudi Arabia Vision 2030 FDI update. Korea-Vietnam bilateral reaches $28B cumulative. Nigeria tech hub signals emerging.',
+   signals:9, highlights:['CATL Indonesia $3.2B','Databricks Singapore HQ','Nigeria tech FDI']},
+  {id:'FPB-MON-2026-02-20260201-001', type:'MONTHLY', title:'Global FDI Intelligence Report — February 2026', date:'2026-02-01', pages:64, grade:'PROFESSIONAL',
+   summary:'Year-end 2025 FDI recap. Top 20 destinations by inflows. Clean energy FDI supercycle analysis. Emerging corridor report.',
+   signals:42, highlights:['2025 FDI year-end review','Clean energy supercycle','Top 20 destinations']},
 ];
 
-const TYPE_LABELS: Record<string,string> = {
-  WEEKLY_NEWSLETTER:'Weekly Newsletter',
-  MONTHLY_PUBLICATION:'Monthly Report',
-  GFR_QUARTERLY:'GFR Quarterly',
-};
-
-const TYPE_COLORS: Record<string,string> = {
-  WEEKLY_NEWSLETTER:'bg-blue-100 text-blue-700',
-  MONTHLY_PUBLICATION:'bg-violet-100 text-violet-700',
-  GFR_QUARTERLY:'bg-amber-100 text-amber-700',
+const TYPE_STYLES: Record<string,{bg:string,text:string}> = {
+  WEEKLY:      {bg:'bg-blue-100',  text:'text-blue-700'},
+  MONTHLY:     {bg:'bg-emerald-100',text:'text-emerald-700'},
+  GFR:         {bg:'bg-amber-100', text:'text-amber-700'},
+  QUARTERLY:   {bg:'bg-violet-100',text:'text-violet-700'},
 };
 
 export default function PublicationsPage() {
-  const [selected, setSelected] = useState(PUBLICATIONS[0]);
-  const [filter,   setFilter]   = useState('');
-
-  const filtered = PUBLICATIONS.filter(p => !filter || p.type === filter);
+  const [filter, setFilter] = useState('');
+  const shown = PUBLICATIONS.filter(p => !filter || p.type===filter);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center gap-3 sticky top-14 z-30">
-        <span className="font-black text-sm text-[#0A2540]">Publications</span>
-        <div className="flex gap-1 ml-4">
-          {[['','All'],['WEEKLY_NEWSLETTER','Weekly'],['MONTHLY_PUBLICATION','Monthly'],['GFR_QUARTERLY','GFR Quarterly']].map(([v,l]) => (
-            <button key={v} onClick={() => setFilter(v)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                filter===v ? 'bg-[#0A2540] text-white' : 'text-slate-400 border border-slate-200'
-              }`}>{l}</button>
-          ))}
+      <div className="bg-[#0A2540] text-white px-6 py-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-black mb-2">Publications</h1>
+          <p className="text-blue-200 text-sm">Weekly digests, monthly intelligence reports, and quarterly GFR publications.</p>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto p-5 grid md:grid-cols-5 gap-5">
-        {/* List */}
-        <div className="md:col-span-2 space-y-3">
-          {filtered.map(pub => (
-            <div key={pub.id} onClick={() => setSelected(pub)}
-              className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${
-                selected.id===pub.id ? 'border-blue-400 shadow-sm' : 'border-slate-100 hover:border-blue-200'
-              }`}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className={`text-xs font-bold px-2 py-0.5 rounded ${TYPE_COLORS[pub.type]}`}>
-                  {TYPE_LABELS[pub.type]}
-                </span>
-                {pub.grade === 'PROFESSIONAL' && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">PRO</span>
-                )}
-              </div>
-              <div className="font-bold text-sm text-[#0A2540] mb-1 leading-snug">{pub.title}</div>
-              <div className="text-xs text-slate-400">{pub.date} · {pub.readTime} · {pub.pages} pages</div>
-            </div>
+      <div className="max-w-4xl mx-auto p-5">
+        <div className="flex gap-2 mb-5">
+          {[['','All'],['WEEKLY','Weekly'],['MONTHLY','Monthly'],['GFR','GFR Reports']].map(([v,l])=>(
+            <button key={v} onClick={()=>setFilter(v)}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filter===v?'bg-[#0A2540] text-white':'text-slate-400 border border-slate-200'}`}>{l}</button>
           ))}
         </div>
 
-        {/* Detail */}
-        <div className="md:col-span-3 bg-white rounded-xl border border-slate-100 p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded ${TYPE_COLORS[selected.type]}`}>
-              {TYPE_LABELS[selected.type]}
-            </span>
-            {selected.grade === 'PROFESSIONAL' && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold">PROFESSIONAL PLAN</span>
-            )}
-          </div>
-          <h2 className="font-black text-xl text-[#0A2540] mb-1">{selected.title}</h2>
-          <div className="text-xs text-slate-400 font-mono mb-4">{selected.id}</div>
-          <div className="flex gap-4 text-xs text-slate-500 mb-5">
-            <span>📅 {selected.date}</span>
-            <span>⏱ {selected.readTime}</span>
-            <span>📄 {selected.pages} pages</span>
-          </div>
-          <p className="text-slate-600 text-sm leading-relaxed mb-5">{selected.summary}</p>
-          <div className="font-bold text-xs text-slate-400 uppercase tracking-wide mb-3">Key Highlights</div>
-          <div className="space-y-2 mb-6">
-            {selected.highlights.map((h,i) => (
-              <div key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                <span className="text-blue-500 font-bold flex-shrink-0 mt-0.5">→</span>
-                <span>{h}</span>
+        <div className="space-y-4">
+          {shown.map(pub=>{
+            const ts = TYPE_STYLES[pub.type] || TYPE_STYLES.MONTHLY;
+            const isFree = pub.grade === 'FREE';
+            return (
+              <div key={pub.id} className="bg-white rounded-xl border border-slate-100 p-5 hover:shadow-sm transition-all">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${ts.bg} ${ts.text}`}>{pub.type}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded ${isFree?'bg-emerald-100 text-emerald-700':'bg-violet-100 text-violet-700'}`}>
+                        {pub.grade}
+                      </span>
+                      <span className="text-xs text-slate-400">{pub.date}</span>
+                      <span className="text-xs text-slate-400">{pub.pages} pages</span>
+                    </div>
+                    <h3 className="font-black text-[#0A2540] mb-1.5">{pub.title}</h3>
+                    <p className="text-sm text-slate-500 leading-relaxed mb-3">{pub.summary}</p>
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {pub.highlights.map(h=>(
+                        <span key={h} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded">{h}</span>
+                      ))}
+                    </div>
+                    <div className="text-xs font-mono text-slate-300">{pub.id}</div>
+                  </div>
+                  <div className="flex flex-col gap-2 flex-shrink-0">
+                    {isFree ? (
+                      <button className="bg-[#0A2540] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
+                        Download PDF
+                      </button>
+                    ) : (
+                      <button className="bg-blue-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-blue-500 transition-colors">
+                        Download — 5 FIC
+                      </button>
+                    )}
+                    <button className="border border-slate-200 text-slate-500 text-xs font-bold px-5 py-2 rounded-xl hover:border-blue-300 transition-colors">
+                      Preview
+                    </button>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-          {selected.grade === 'PROFESSIONAL' ? (
-            <button className="w-full bg-[#0A2540] text-white font-black py-3 rounded-xl hover:bg-[#1D4ED8] transition-colors">
-              Download PDF (Professional Plan)
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <button className="flex-1 bg-[#0A2540] text-white font-black py-3 rounded-xl hover:bg-[#1D4ED8] transition-colors">
-                Read Online
-              </button>
-              <button className="flex-1 border border-slate-200 text-slate-600 font-bold py-3 rounded-xl hover:border-blue-300 transition-colors">
-                Download PDF
-              </button>
-            </div>
-          )}
+            );
+          })}
         </div>
       </div>
     </div>

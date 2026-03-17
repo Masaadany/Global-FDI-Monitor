@@ -1,112 +1,119 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-const QUICK_LINKS = [
-  {label:'UAE Signals',     href:'/signals?economy=ARE',    icon:'📡'},
-  {label:'GFR Rankings',    href:'/gfr',                    icon:'🏆'},
-  {label:'Generate Report', href:'/reports',                icon:'📋'},
-  {label:'Dashboard',       href:'/dashboard',              icon:'📊'},
-  {label:'Mission Planning',href:'/pmp',                    icon:'🎯'},
-  {label:'Forecast',        href:'/forecast',               icon:'🔮'},
+const ROUTES = [
+  {path:'/dashboard',         label:'Dashboard',           icon:'🗂',  type:'page'},
+  {path:'/signals',           label:'Signal Monitor',      icon:'📡',  type:'page'},
+  {path:'/gfr',               label:'GFR Rankings',        icon:'🏆',  type:'page'},
+  {path:'/analytics',         label:'Analytics & Globe',   icon:'📊',  type:'page'},
+  {path:'/reports',           label:'Custom Reports',      icon:'📋',  type:'page'},
+  {path:'/pmp',               label:'Mission Planning',    icon:'🎯',  type:'page'},
+  {path:'/forecast',          label:'Forecast',            icon:'🔮',  type:'page'},
+  {path:'/investment-pipeline',label:'Investment Pipeline',icon:'💼',  type:'page'},
+  {path:'/company-profiles',  label:'Company Profiles',    icon:'🏢',  type:'page'},
+  {path:'/market-insights',   label:'Market Insights',     icon:'💡',  type:'page'},
+  {path:'/watchlists',        label:'Watchlists',          icon:'👁',  type:'page'},
+  {path:'/benchmarking',      label:'Benchmarking',        icon:'📐',  type:'page'},
+  {path:'/scenario-planner',  label:'Scenario Planner',    icon:'🧩',  type:'page'},
+  {path:'/corridor-intelligence',label:'Corridor Intel',   icon:'🔗',  type:'page'},
+  {path:'/pricing',           label:'Pricing',             icon:'💳',  type:'page'},
+  {path:'/fic',               label:'Buy FIC Credits',     icon:'⭐',  type:'page'},
+  // Economies quick links
+  {path:'/gfr?iso3=ARE',      label:'UAE — GFR Profile',   icon:'🇦🇪',  type:'economy'},
+  {path:'/gfr?iso3=SAU',      label:'Saudi Arabia — GFR',  icon:'🇸🇦',  type:'economy'},
+  {path:'/gfr?iso3=IND',      label:'India — GFR Profile', icon:'🇮🇳',  type:'economy'},
+  {path:'/gfr?iso3=SGP',      label:'Singapore — GFR',     icon:'🇸🇬',  type:'economy'},
+  {path:'/gfr?iso3=DEU',      label:'Germany — GFR',       icon:'🇩🇪',  type:'economy'},
+  {path:'/gfr?iso3=USA',      label:'United States — GFR', icon:'🇺🇸',  type:'economy'},
+  // Signals quick actions
+  {path:'/signals?grade=PLATINUM',label:'Platinum Signals',icon:'⭐',  type:'signal'},
+  {path:'/signals?grade=GOLD',    label:'Gold Signals',    icon:'🥇',  type:'signal'},
+  {path:'/reports?type=CEGP',     label:'Generate Country Profile',icon:'📋',type:'action'},
+  {path:'/reports?type=MIB',      label:'Generate Market Brief',   icon:'⚡',type:'action'},
 ];
 
-const ECONOMY_SEARCH = [
-  {iso3:'ARE',name:'United Arab Emirates',region:'MENA'},
-  {iso3:'SAU',name:'Saudi Arabia',region:'MENA'},
-  {iso3:'IND',name:'India',region:'SAS'},
-  {iso3:'SGP',name:'Singapore',region:'EAP'},
-  {iso3:'DEU',name:'Germany',region:'ECA'},
-  {iso3:'USA',name:'United States',region:'NAM'},
-  {iso3:'GBR',name:'United Kingdom',region:'ECA'},
-  {iso3:'CHN',name:'China',region:'EAP'},
-  {iso3:'VNM',name:'Vietnam',region:'EAP'},
-  {iso3:'NGA',name:'Nigeria',region:'SSA'},
-  {iso3:'EGY',name:'Egypt',region:'MENA'},
-  {iso3:'BRA',name:'Brazil',region:'LAC'},
-];
-
-export function GlobalSearch() {
-  const [open,    setOpen]   = useState(false);
-  const [query,   setQuery]  = useState('');
+export default function GlobalSearch() {
+  const [open,   setOpen]   = useState(false);
+  const [query,  setQuery]  = useState('');
+  const [cursor, setCursor] = useState(0);
+  const router   = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const filtered = query.length < 1 ? ROUTES.slice(0, 8) :
+    ROUTES.filter(r => r.label.toLowerCase().includes(query.toLowerCase())).slice(0, 10);
+
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setOpen(o => !o);
-      }
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setOpen(o => !o); }
       if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 50);
+    else { setQuery(''); setCursor(0); }
   }, [open]);
 
-  const results = query.length > 1
-    ? ECONOMY_SEARCH.filter(e =>
-        e.name.toLowerCase().includes(query.toLowerCase()) ||
-        e.iso3.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
+  function navigate(path: string) {
+    router.push(path);
+    setOpen(false);
+  }
 
-  if (!open) return (
-    <button onClick={() => setOpen(true)}
-      className="hidden md:flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-400 hover:border-blue-300 transition-colors">
-      <span>🔍</span>
-      <span>Search…</span>
-      <kbd className="ml-2 bg-slate-100 px-1.5 py-0.5 rounded text-slate-400 font-mono text-xs">⌘K</kbd>
-    </button>
-  );
+  function handleKey(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setCursor(c => Math.min(c+1, filtered.length-1)); }
+    if (e.key === 'ArrowUp')   { e.preventDefault(); setCursor(c => Math.max(c-1, 0)); }
+    if (e.key === 'Enter' && filtered[cursor]) navigate(filtered[cursor].path);
+  }
+
+  const TYPE_COLORS: Record<string,string> = {
+    page:'bg-blue-900 text-blue-300',
+    economy:'bg-amber-900 text-amber-300',
+    signal:'bg-emerald-900 text-emerald-300',
+    action:'bg-violet-900 text-violet-300',
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20 px-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
-          <span className="text-slate-400">🔍</span>
-          <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
-            placeholder="Search economies, signals, reports…"
-            className="flex-1 text-sm focus:outline-none text-[#0A2540]"/>
-          <button onClick={() => setOpen(false)}
-            className="text-xs text-slate-400 border border-slate-200 px-2 py-1 rounded hover:bg-slate-50">
-            ESC
-          </button>
-        </div>
+    <>
+      <button onClick={() => setOpen(true)}
+        className="flex items-center gap-2 bg-blue-900/40 border border-blue-800 rounded-lg px-3 py-1.5 text-xs text-blue-400 hover:border-blue-600 transition-colors">
+        <span>🔍</span>
+        <span>Search</span>
+        <span className="bg-blue-900 px-1.5 py-0.5 rounded text-[10px] font-mono ml-1">⌘K</span>
+      </button>
 
-        {results.length > 0 ? (
-          <div className="p-2 max-h-72 overflow-y-auto">
-            <div className="text-xs text-slate-400 font-bold uppercase tracking-wide px-2 py-1.5">Economies</div>
-            {results.map(e => (
-              <Link key={e.iso3} href={`/gfr?search=${e.iso3}`} onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors">
-                <span className="text-xs font-mono font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded w-12 text-center">
-                  {e.iso3}
-                </span>
-                <div>
-                  <div className="text-sm font-semibold text-[#0A2540]">{e.name}</div>
-                  <div className="text-xs text-slate-400">{e.region}</div>
+      {open && (
+        <div className="fixed inset-0 bg-black/60 flex items-start justify-center pt-20 z-50 px-4"
+          onClick={() => setOpen(false)}>
+          <div className="bg-[#0d1f35] rounded-2xl border border-blue-700 w-full max-w-lg shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-blue-900">
+              <span className="text-blue-400">🔍</span>
+              <input ref={inputRef} value={query} onChange={e=>{ setQuery(e.target.value); setCursor(0); }}
+                onKeyDown={handleKey} placeholder="Search pages, economies, signals…"
+                className="flex-1 bg-transparent text-white placeholder-blue-600 text-sm focus:outline-none"/>
+              <button onClick={() => setOpen(false)} className="text-blue-600 hover:text-blue-400 text-xs font-bold">ESC</button>
+            </div>
+            <div className="max-h-80 overflow-y-auto">
+              {filtered.map((r, i) => (
+                <div key={r.path} onClick={() => navigate(r.path)}
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-blue-900/50 ${
+                    i === cursor ? 'bg-blue-800/50' : 'hover:bg-blue-900/30'
+                  }`}>
+                  <span className="text-xl w-7 flex-shrink-0">{r.icon}</span>
+                  <span className="flex-1 text-sm text-white">{r.label}</span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded font-bold ${TYPE_COLORS[r.type]}`}>{r.type}</span>
                 </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="p-3">
-            <div className="text-xs text-slate-400 font-bold uppercase tracking-wide px-2 py-1.5 mb-1">Quick Access</div>
-            <div className="grid grid-cols-2 gap-1">
-              {QUICK_LINKS.map(l => (
-                <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors text-sm text-slate-600">
-                  <span>{l.icon}</span>{l.label}
-                </Link>
               ))}
             </div>
+            <div className="px-4 py-2 border-t border-blue-900 flex gap-3 text-xs text-blue-700">
+              <span>↑↓ navigate</span><span>↵ select</span><span>ESC close</span>
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

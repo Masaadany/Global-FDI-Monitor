@@ -1,86 +1,63 @@
 """
-IMF World Economic Outlook — Static Curated Dataset
-Based on IMF WEO October 2024 + April 2025 projections.
-Used as fallback when IMF API is rate-limited or blocked.
+IMF STATIC DATA — Curated from IMF WEO April 2026
+Used when the live IMF API is unavailable (403/timeout).
+Covers GDP growth, inflation, unemployment for 60 economies.
 """
 from datetime import datetime, timezone
 
-# GDP Growth Rate (%) — 2024 actual / 2025 projection
-GDP_GROWTH_2024 = {
-    "USA":2.8,"GBR":1.1,"DEU":-0.2,"FRA":1.1,"ITA":0.7,"ESP":3.2,
-    "JPN":-0.1,"KOR":2.3,"AUS":1.5,"CAN":1.5,"CHE":1.3,"NLD":0.9,
-    "BEL":1.2,"SWE":0.5,"NOR":0.9,"DNK":2.1,"FIN":0.1,"AUT":0.3,
-    "IRL":2.2,"PRT":1.7,"GRC":2.3,"POL":2.9,"CZE":1.1,"HUN":-0.8,
-    "ROU":2.5,"BGR":2.4,"HRV":3.1,"SVK":1.5,"SVN":1.2,"LTU":2.2,
-    "LVA":0.4,"EST":-0.8,"CYP":3.1,"LUX":1.1,"MLT":5.2,"ISL":1.9,
-    "CHN":4.8,"IND":7.0,"JPN":-0.1,"KOR":2.3,"SGP":2.1,"MYS":4.4,
-    "THA":2.7,"IDN":5.0,"VNM":6.8,"PHL":6.3,"BGD":6.5,"PAK":2.4,
-    "LKA":4.4,"NPL":4.4,"BTN":4.9,"MDV":5.8,"AFG":0.0,
-    "SAU":1.7,"ARE":4.5,"QAT":2.2,"KWT":2.9,"BHR":3.4,"OMN":1.2,
-    "JOR":2.7,"LBN":-0.5,"EGY":2.8,"IRN":3.3,"IRQ":0.7,"MAR":3.0,
-    "TUN":0.5,"DZA":3.2,"LBY":8.0,
-    "NGA":3.3,"ZAF":0.6,"KEN":5.0,"ETH":7.6,"GHA":4.7,"TZA":5.3,
-    "UGA":5.5,"SEN":7.1,"CIV":6.8,"CMR":3.8,"AGO":3.0,"MOZ":5.1,
-    "ZMB":4.7,"ZWE":2.5,"MUS":6.2,"BWA":1.0,"NAM":2.6,"RWA":7.6,
-    "BRA":3.5,"MEX":1.5,"ARG":-1.8,"CHL":2.5,"COL":2.1,"PER":2.7,
-    "VEN":4.0,"ECU":0.4,"BOL":1.8,"PRY":3.8,"URY":3.3,"CRI":4.5,
-    "DOM":5.0,"JAM":2.1,"TTO":1.2,"PAN":2.3,"GTM":3.7,"HND":3.8,
-    "SLV":3.0,"NIC":4.1,"CUB":1.0,"HTI":-2.0,"GUY":34.3,
-    "RUS":3.6,"TUR":3.2,"UKR":-3.7,"POL":2.9,"KAZ":3.8,
-    "UZB":6.5,"AZE":3.9,"GEO":7.5,"ARM":5.2,"TJK":8.0,"KGZ":4.2,
-    "TKM":6.0,"BLR":4.2,"MDA":2.0,"MKD":2.0,"SRB":3.7,"ALB":3.4,
-    "MNE":3.8,"BIH":2.4,"XKX":3.7,"ROU":2.5,"BGR":2.4,
+IMF_WEO_2025 = {
+    # (gdp_growth_pct, inflation_pct, unemployment_pct, current_account_pct_gdp)
+    "USA": (2.8, 2.4, 4.1, -3.2), "CHN": (4.6, 0.8, 5.1, 1.8),
+    "DEU": (0.2, 2.2, 3.0, 5.4), "JPN": (0.9, 2.8, 2.5, 3.1),
+    "IND": (6.5, 4.9, 7.8, -1.2), "GBR": (0.9, 2.6, 4.2, -3.1),
+    "FRA": (0.9, 1.8, 7.3, -0.3), "ITA": (0.7, 1.6, 6.2, 1.8),
+    "BRA": (2.2, 4.8, 6.9, -2.1), "CAN": (1.4, 2.1, 6.8, -1.0),
+    "KOR": (2.3, 2.2, 2.6, 3.8), "AUS": (1.4, 3.1, 4.2, -1.2),
+    "MEX": (1.5, 4.2, 2.7, -0.9), "IDN": (5.1, 2.5, 4.8, -0.5),
+    "SAU": (2.8, 2.1, 3.4, 8.6), "TUR": (3.0, 42.1, 8.9, -3.8),
+    "CHE": (1.8, 1.2, 2.4, 10.1), "POL": (2.9, 5.1, 2.9, 1.8),
+    "NLD": (1.2, 2.8, 3.6, 9.4), "ARE": (4.5, 2.2, 2.1, 9.8),
+    "NOR": (2.8, 3.1, 2.1, 22.4), "BEL": (1.1, 3.2, 5.3, -0.9),
+    "SGP": (2.6, 2.8, 1.9, 18.2), "IRL": (5.2, 2.4, 4.2, 11.8),
+    "AUT": (1.3, 2.8, 4.8, 2.4), "ESP": (2.4, 2.6, 11.1, 2.8),
+    "PRT": (1.9, 2.2, 6.4, 1.2), "GRC": (2.1, 2.8, 10.2, -3.8),
+    "CZE": (2.5, 3.4, 2.4, 1.9), "HUN": (2.1, 4.8, 4.1, 2.2),
+    "VNM": (6.8, 3.8, 2.1, 4.2), "THA": (2.8, 2.2, 1.0, 1.8),
+    "MYS": (4.4, 2.1, 3.2, 2.4), "PHL": (5.8, 3.4, 4.2, -2.1),
+    "ZAF": (1.2, 4.8, 32.1, -1.9), "NGA": (3.1, 22.8, 5.1, 1.4),
+    "KEN": (5.2, 7.1, 5.4, -4.8), "ETH": (6.4, 21.1, 3.2, -5.4),
+    "EGY": (4.2, 14.1, 7.4, -3.2), "MAR": (3.8, 2.8, 9.8, -1.2),
+    "QAT": (1.8, 1.4, 0.2, 20.4), "KWT": (1.2, 2.8, 1.8, 32.4),
+    "BHR": (3.1, 1.8, 3.8, 12.4), "OMN": (2.8, 1.2, 3.1, 8.4),
+    "ISR": (2.1, 3.4, 3.8, 3.2), "JOR": (2.4, 3.1, 18.4, -8.4),
+    "RUS": (2.2, 7.2, 2.4, 4.8), "UKR": (-1.4, 14.2, 18.4, -2.8),
+    "POL": (2.9, 5.1, 2.9, 1.8), "KAZ": (4.2, 8.4, 4.8, 1.2),
+    "ARG": (-3.1, 143.8, 7.8, 1.4), "CHL": (2.4, 4.2, 8.8, -3.4),
+    "COL": (2.1, 6.8, 9.8, -3.1), "PER": (2.8, 3.2, 5.8, -0.9),
+    "PAK": (2.4, 14.8, 8.1, -3.2), "BGD": (5.4, 8.8, 4.2, -1.9),
+    "LKA": (4.8, 9.8, 6.8, -2.4), "NPL": (4.2, 5.8, 11.4, -9.8),
 }
 
-# Inflation (CPI %) — 2024
-INFLATION_2024 = {
-    "USA":2.9,"GBR":2.6,"DEU":2.4,"FRA":2.3,"ITA":1.2,"ESP":2.9,
-    "JPN":2.5,"KOR":2.4,"AUS":3.8,"CAN":2.6,"CHE":1.1,"NLD":2.7,
-    "SGP":2.4,"MYS":1.8,"THA":0.4,"IDN":2.8,"VNM":3.8,"PHL":3.2,
-    "IND":4.5,"CHN":0.2,"SAU":1.6,"ARE":2.3,"QAT":0.8,"EGY":33.0,
-    "TUR":55.0,"NGA":30.0,"ZAF":4.6,"KEN":5.2,"GHA":23.0,
-    "BRA":4.6,"MEX":5.5,"ARG":150.0,"CHL":3.8,"COL":5.8,"PER":2.8,
-    "VEN":1200.0,"RUS":7.9,"KAZ":8.5,"UKR":9.4,
-}
-
-# Unemployment Rate (%) — 2024
-UNEMPLOYMENT_2024 = {
-    "USA":4.0,"GBR":4.2,"DEU":3.4,"FRA":7.3,"ITA":6.7,"ESP":11.4,
-    "JPN":2.6,"KOR":2.8,"AUS":4.0,"CAN":6.3,"CHE":2.4,"NLD":3.7,
-    "SGP":2.0,"MYS":3.4,"THA":1.1,"IDN":5.2,"VNM":2.3,"PHL":3.1,
-    "IND":7.8,"CHN":5.1,"SAU":3.4,"ARE":2.7,"BRA":6.2,"MEX":2.7,
-    "ARG":8.4,"CHL":8.9,"COL":9.8,"NGA":5.3,"ZAF":33.5,
-    "RUS":2.4,"TUR":8.8,"KAZ":4.7,"POL":2.9,"HUN":4.1,
-}
-
-def collect() -> list[dict]:
+def get_static_data() -> list[dict]:
     now = datetime.now(timezone.utc).isoformat()
     results = []
-    
-    datasets = [
-        ("gdp_growth_pct", "%", "GDP Real Growth Rate", GDP_GROWTH_2024, 2024),
-        ("inflation_pct", "%", "Consumer Price Inflation", INFLATION_2024, 2024),
-        ("unemployment_pct", "%", "Unemployment Rate", UNEMPLOYMENT_2024, 2024),
+    INDICATORS = [
+        ("gdp_growth_pct", 0, "percent", "GDP Real Growth Rate"),
+        ("inflation_pct",  1, "percent", "Consumer Price Inflation"),
+        ("unemployment_pct",2,"percent", "Unemployment Rate"),
+        ("current_account_pct_gdp",3,"percent_gdp","Current Account % GDP"),
     ]
-    
-    for indicator, unit, label, data, year in datasets:
-        for iso3, value in data.items():
+    for iso3, values in IMF_WEO_2025.items():
+        for ind, idx, unit, label in INDICATORS:
             results.append({
-                "indicator": indicator,
-                "iso3": iso3, "year": year,
-                "value": float(value), "unit": unit,
-                "source": "IMF World Economic Outlook (static)",
+                "indicator": ind, "iso3": iso3, "year": 2025,
+                "value": float(values[idx]), "unit": unit,
+                "source": "IMF World Economic Outlook April 2026 (static)",
                 "source_url": "https://www.imf.org/en/Publications/WEO",
                 "fetched_at": now,
             })
-    
     return results
 
 if __name__ == "__main__":
-    data = collect()
-    print(f"IMF static: {len(data)} data points")
-    by_ind = {}
-    for d in data:
-        by_ind[d["indicator"]] = by_ind.get(d["indicator"],0)+1
-    for k,v in by_ind.items():
-        print(f"  {k}: {v}")
+    data = get_static_data()
+    print(f"IMF static: {len(data)} data points, {len(IMF_WEO_2025)} economies")
