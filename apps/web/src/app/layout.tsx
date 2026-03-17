@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <body className="font-sans antialiased">
         <PreviewGate>
           <SiteNav />
@@ -27,58 +27,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 function SiteNav() {
   return (
-    <nav className="h-14 bg-white border-b border-slate-100 flex items-center gap-0 px-4 sticky top-0 z-50 shadow-sm">
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-2 mr-7 flex-shrink-0">
-        <div className="w-8 h-8 bg-[#0A2540] rounded-lg flex items-center justify-center text-white font-black text-sm">
-          G
-        </div>
-        <span className="font-black text-[#0A2540] text-[15px]">
-          Global <span className="text-[#1D4ED8]">FDI</span> Monitor
-        </span>
-      </Link>
-
-      {/* Nav items */}
-      <div className="flex gap-0.5 flex-1 overflow-x-auto scrollbar-none">
-        {NAV_ITEMS.map(item => (
-          <Link key={item.href} href={item.href}
-            className="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-all whitespace-nowrap">
-            {item.label}
+    <nav className="bg-white border-b border-slate-100 px-5 py-3 flex items-center gap-4 sticky top-0 z-40 shadow-sm">
+      <a href="/" className="font-black text-[#0A2540] text-sm flex items-center gap-2">
+        <span className="w-6 h-6 bg-[#0A2540] rounded text-white text-xs flex items-center justify-center font-black">G</span>
+        GFM
+      </a>
+      <div className="flex gap-0.5 flex-wrap ml-2">
+        {[
+          ['/dashboard',      'Dashboard'],
+          ['/signals',        'Signals'],
+          ['/gfr',            'GFR'],
+          ['/analytics',      'Analytics'],
+          ['/reports',        'Reports'],
+          ['/pmp',            'Mission'],
+          ['/forecast',       'Forecast'],
+          ['/investment-pipeline','Pipeline'],
+          ['/company-profiles','Companies'],
+          ['/market-insights','Insights'],
+          ['/watchlists',     'Watchlists'],
+        ].map(([href,label]) => (
+          <Link key={href} href={href}
+            className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] hover:bg-slate-50 transition-colors px-2.5 py-1.5 rounded-lg">
+            {label}
           </Link>
         ))}
       </div>
-
-      {/* Right actions */}
-      <div className="flex gap-2 items-center ml-auto pl-4">
-        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Live
-        </div>
-        <Link href="/pricing"
-              className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] transition-colors">Pricing</Link>
-            <Link href="/about"
-              className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] transition-colors">About</Link>
-            <Link href="/contact"
-          className="border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-1.5 rounded-md hover:border-blue-300 hover:text-blue-700 transition-all">
-          Free Trial
+      <div className="ml-auto flex items-center gap-2">
+        <Link href="/pricing" className="text-xs font-semibold text-slate-500 hover:text-[#0A2540] px-2.5 py-1.5 rounded-lg">
+          Pricing
         </Link>
-        <Link href="/register"
-          className="bg-[#1D4ED8] text-white text-xs font-bold px-4 py-1.5 rounded-md hover:bg-blue-700 transition-colors">
-          Subscribe
+        <Link href="/auth/login" className="text-xs font-semibold text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg hover:border-blue-300 transition-colors">
+          Sign In
+        </Link>
+        <Link href="/register" className="text-xs font-black text-white bg-[#0A2540] px-3 py-1.5 rounded-lg hover:bg-[#1D4ED8] transition-colors">
+          Free Trial
         </Link>
       </div>
     </nav>
   );
 }
-
-const NAV_ITEMS = [
-  { href: '/dashboard',   label: 'Dashboard' },
-  { href: '/signals',     label: 'Market Signals' },
-  { href: '/forecast',    label: 'Forecast & Outlook' },
-  { href: '/gfr',         label: 'GFR Ranking' },
-  { href: '/reports',     label: 'Custom Reports' },
-  { href: '/pmp',         label: 'Mission Planning' },
-  { href: '/publications',label: 'Publications' },
-  { href: '/sources',     label: 'Data Sources' },
-  { href: '/pricing',     label: 'Pricing' },
-];

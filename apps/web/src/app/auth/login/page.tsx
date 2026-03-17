@@ -1,89 +1,87 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
 function LoginForm() {
-  const params   = useSearchParams();
-  const [email, setEmail]       = useState('');
+  const router = useRouter();
+  const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
-  const [notice, setNotice]     = useState('');
-
-  useEffect(() => {
-    if (params.get('expired') === '1')       setNotice('Your session has expired. Please sign in again.');
-    if (params.get('trial_expired') === '1') setNotice('Your free trial has ended. Sign in to upgrade to Professional.');
-    if (params.get('registered') === '1')    setNotice('Account created! Sign in to access your dashboard.');
-  }, [params]);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password) { setError('Please enter your email and password.'); return; }
+    if (!email || !password) { setError('Email and password required'); return; }
     setLoading(true); setError('');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
-      const res  = await fetch(`${apiUrl}/api/v1/auth/login`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const res = await fetch(`${API}/api/v1/auth/login`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({email, password}),
       });
       const data = await res.json();
-      if (!data.success) {
-        const msgs: Record<string,string> = {
-          INVALID_CREDENTIALS: 'Incorrect email or password.',
-          ACCOUNT_SUSPENDED:   'Your account has been suspended. Contact support.',
-        };
-        setError(msgs[data.error?.code] ?? 'Sign in failed. Please try again.');
-        return;
+      if (data.success) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('gfm_token', data.data.tokens.accessToken);
+          localStorage.setItem('gfm_user',  JSON.stringify(data.data.user));
+          localStorage.setItem('gfm_org',   JSON.stringify(data.data.org));
+        }
+        router.push('/dashboard');
+      } else {
+        setError(data.error?.message || 'Invalid credentials');
       }
-      localStorage.setItem('gfm_access_token',  data.data.tokens.accessToken);
-      localStorage.setItem('gfm_refresh_token', data.data.tokens.refreshToken);
-      if (data.data.org?.trial_expired) { window.location.href = '/pricing?trial_expired=1'; return; }
-      window.location.href = decodeURIComponent(params.get('return') ?? '/dashboard');
     } catch {
-      setError('Connection error. Please check your connection and try again.');
-    } finally { setLoading(false); }
+      setError('Connection error — check your internet');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="min-h-screen bg-[#0A2540] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-[#0A2540] text-lg">G</div>
-            <span className="font-black text-white text-xl">Global <span className="text-blue-400">FDI</span> Monitor</span>
-          </Link>
+          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center font-black text-[#0A2540] text-2xl mx-auto mb-4">G</div>
+          <h1 className="text-2xl font-black text-white">Sign in</h1>
+          <p className="text-blue-300 text-sm mt-1">Global FDI Monitor</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-[#0A2540] to-[#1D4ED8] px-6 py-5 text-center">
-            <div className="text-white font-black text-lg">Sign In</div>
-          </div>
-          <div className="p-6">
-            {notice && <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg p-3 mb-4">{notice}</div>}
-            {error  && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3 mb-4">{error}</div>}
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Email Address</label>
-                <input type="email" autoFocus className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
-                  placeholder="you@organisation.com" value={email} onChange={e => setEmail(e.target.value)}/>
-              </div>
-              <div>
-                <div className="flex justify-between items-center mb-1.5">
-                  <label className="text-xs font-bold text-slate-500">Password</label>
-                  <Link href="/auth/reset-password" className="text-xs text-blue-600 hover:underline">Forgot password?</Link>
-                </div>
-                <input type="password" className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
-                  placeholder="Your password" value={password} onChange={e => setPassword(e.target.value)}/>
-              </div>
-              <button type="submit" disabled={loading}
-                className={`w-full font-black py-3 rounded-lg transition-colors text-sm ${loading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'}`}>
-                {loading ? 'Signing in…' : 'Sign In'}
-              </button>
-            </form>
-            <div className="mt-4 text-center text-xs text-slate-400">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-blue-600 font-semibold hover:underline">Start free trial</Link>
+        <div className="bg-white rounded-2xl p-7 shadow-2xl">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-500 block mb-1.5">Work email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                placeholder="you@organisation.com" autoFocus
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"/>
             </div>
+            <div>
+              <label className="text-xs font-bold text-slate-500 block mb-1.5">Password</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+                placeholder="••••••••••"
+                className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-blue-400"/>
+            </div>
+            {error && <p className="text-red-500 text-xs font-semibold bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
+            <button type="submit" disabled={loading}
+              className={`w-full font-black py-3.5 rounded-xl transition-colors ${
+                loading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'
+              }`}>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                  Signing in…
+                </span>
+              ) : 'Sign In'}
+            </button>
+          </form>
+          <div className="mt-5 pt-5 border-t border-slate-100 text-center space-y-2">
+            <p className="text-slate-400 text-xs">
+              Don&apos;t have an account?{' '}
+              <Link href="/register" className="text-blue-600 font-bold hover:underline">Start free trial</Link>
+            </p>
+            <p className="text-slate-300 text-xs">
+              <a href="#" className="hover:text-slate-500 transition-colors">Forgot password?</a>
+            </p>
           </div>
         </div>
       </div>
@@ -92,9 +90,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0A2540] flex items-center justify-center"><div className="text-white">Loading…</div></div>}>
-      <LoginForm />
-    </Suspense>
-  );
+  return <Suspense fallback={null}><LoginForm/></Suspense>;
 }

@@ -372,3 +372,28 @@ const server = http.createServer(async (req,res) => {
     server.close(()=>process.exit(0));
   });
 })();
+
+// ── JWT MIDDLEWARE (append to existing server.js) ─────────────────────────
+// This block adds token verification to protected routes.
+// Import crypto at top level (already in Node core - no install needed)
+const crypto = require('crypto');
+
+function signToken(payload) {
+  const header  = Buffer.from(JSON.stringify({alg:'HS256',typ:'JWT'})).toString('base64url');
+  const body    = Buffer.from(JSON.stringify({...payload,iat:Math.floor(Date.now()/1000)})).toString('base64url');
+  const secret  = process.env.JWT_SECRET || 'gfm-dev-secret-change-in-production';
+  const sig     = crypto.createHmac('sha256',secret).update(`${header}.${body}`).digest('base64url');
+  return `${header}.${body}.${sig}`;
+}
+
+function verifyToken(token) {
+  try {
+    const [header,body,sig] = token.split('.');
+    const secret = process.env.JWT_SECRET || 'gfm-dev-secret-change-in-production';
+    const expected = crypto.createHmac('sha256',secret).update(`${header}.${body}`).digest('base64url');
+    if (sig !== expected) return null;
+    const payload = JSON.parse(Buffer.from(body,'base64url').toString());
+    if (payload.exp && payload.exp < Math.floor(Date.now()/1000)) return null;
+    return payload;
+  } catch { return null; }
+}
