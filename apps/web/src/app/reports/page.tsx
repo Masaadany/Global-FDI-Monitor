@@ -1,262 +1,147 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 
 const REPORT_TYPES = [
-  {code:'MIB',  name:'Market Intelligence Brief',              pages:'8–12',   fic:5,  depth:'summary',  desc:'Quick-read investment summary with key signals and risks'},
-  {code:'CEGP', name:'Country Economic & Geopolitical Profile',pages:'25–40',  fic:20, depth:'detailed', desc:'Comprehensive economy profile across all 6 GFR dimensions'},
-  {code:'ICR',  name:'Investment Climate Review',              pages:'20–35',  fic:18, depth:'detailed', desc:'Full assessment of regulatory, tax, and investment environment'},
-  {code:'SPOR', name:'Sector Profile & Outlook',               pages:'25–45',  fic:22, depth:'detailed', desc:'Deep-dive sector intelligence with 3-year FE forecasts'},
-  {code:'TIR',  name:'Trade Intelligence Report',              pages:'20–35',  fic:18, depth:'detailed', desc:'Bilateral trade flows, RCA, TiVA and corridor analysis'},
-  {code:'ZFP',  name:'Zone / Free Zone Profile',               pages:'15–25',  fic:12, depth:'standard', desc:'Zone investment case, incentives, setup process and tenants'},
-  {code:'PRIB', name:'Policy & Regulatory Intelligence Brief', pages:'15–25',  fic:12, depth:'standard', desc:'Recent policy changes and regulatory outlook'},
-  {code:'STD',  name:'Standard Report',                        pages:'15–25',  fic:15, depth:'standard', desc:'Versatile standard-depth intelligence report'},
-  {code:'DET',  name:'Detailed Report',                        pages:'30–60',  fic:30, depth:'detailed', desc:'In-depth analysis across all priority areas'},
-  {code:'DDF',  name:'Deep-Dive / Flagship',                   pages:'60–150', fic:50, depth:'flagship', desc:'Comprehensive flagship publication — board and ministry level'},
-];
-
-const ECONOMIES = [
-  {iso3:'ARE',name:'United Arab Emirates'},{iso3:'SAU',name:'Saudi Arabia'},{iso3:'IND',name:'India'},
-  {iso3:'DEU',name:'Germany'},{iso3:'SGP',name:'Singapore'},{iso3:'USA',name:'United States'},
-  {iso3:'GBR',name:'United Kingdom'},{iso3:'QAT',name:'Qatar'},{iso3:'EGY',name:'Egypt'},
-  {iso3:'VNM',name:'Vietnam'},{iso3:'KEN',name:'Kenya'},{iso3:'NGA',name:'Nigeria'},
-];
-
-const SECTORS = [
-  {isic:'all',name:'All Sectors'},{isic:'J',name:'J — Information & Communication'},
-  {isic:'C',name:'C — Manufacturing'},{isic:'K',name:'K — Financial Services'},
-  {isic:'D',name:'D — Energy & Utilities'},{isic:'F',name:'F — Construction'},
-  {isic:'L',name:'L — Real Estate'},{isic:'B',name:'B — Mining & Quarrying'},
-  {isic:'Q',name:'Q — Human Health'},{isic:'H',name:'H — Transport & Logistics'},
-];
-
-const DEPTHS = [
-  {id:'standard',label:'Standard (15–25pp)'},
-  {id:'detailed',label:'Detailed (30–60pp)'},
-  {id:'deep_dive',label:'Deep-Dive (60–150pp)'},
-];
-
-const STEPS = [
-  'Querying ITIM Investment Monitor…',
-  'Assembling GFR readiness data…',
-  'Running sector gap analysis…',
-  'Processing CIC company benchmarks…',
-  'Generating AI intelligence narrative…',
-  'Running Z3 factual verification…',
-  'Rendering PDF + DOCX + Excel…',
-  '✓ Report ready for download!',
+  {code:'CEGP', name:'Country Economic & Geopolitical Profile', fic:20, time:'~3 min', desc:'Comprehensive country analysis: macro, political, regulatory, FDI trends, sector opportunities, risk assessment.', icon:'🌍'},
+  {code:'MIB',  name:'Market Intelligence Brief',               fic:5,  time:'~1 min', desc:'Quick brief: current investment climate, top 5 signals, sector highlights, IPA contact.', icon:'⚡'},
+  {code:'ICR',  name:'Investment Climate Report',               fic:18, time:'~2 min', desc:'Detailed analysis of investment environment, policy changes, regulatory updates, ease of doing business.', icon:'📈'},
+  {code:'SPOR', name:'Sector Potential & Opportunity Report',    fic:22, time:'~3 min', desc:'Deep sector analysis: market size, competitive landscape, top investors, incentives, gap analysis.', icon:'🎯'},
+  {code:'TIR',  name:'Trade Intelligence Report',               fic:18, time:'~2 min', desc:'Bilateral trade flows, tariff analysis, supply chain mapping, trade agreement assessment.', icon:'🚢'},
+  {code:'SBP',  name:'Sector Benchmark Profile',                fic:15, time:'~2 min', desc:'Benchmark your economy vs. peer competitors across 12 sector-specific indicators.', icon:'📊'},
+  {code:'SER',  name:'Sectoral Entry Report',                   fic:12, time:'~1 min', desc:'Market entry assessment: barriers, opportunities, regulatory requirements, investor contacts.', icon:'🚀'},
+  {code:'SIR',  name:'Sector Intelligence Report',              fic:14, time:'~2 min', desc:'Sector-specific FDI signals, investor profiling, competitive intelligence.', icon:'🔍'},
+  {code:'RQBR', name:'Regulatory & Policy Brief',               fic:16, time:'~1 min', desc:'Latest regulatory changes, policy updates, compliance requirements, legal framework analysis.', icon:'📜'},
+  {code:'FCGR', name:'Flagship Country & GFR Report',           fic:25, time:'~4 min', desc:'Premium flagship report: full GFR analysis, FDI strategy, 5-year outlook, IPA playbook.', icon:'⭐'},
 ];
 
 const RECENT = [
-  {code:'FCR-CEGP-ARE-20260315-143022-0047',type:'CEGP',eco:'UAE',time:'12 min ago',fic:20},
-  {code:'FCR-MIB-SAU-20260314-091500-0031', type:'MIB', eco:'Saudi Arabia',time:'1 day ago',fic:5},
-  {code:'FCR-SPOR-IND-20260313-162211-0019',type:'SPOR',eco:'India',time:'2 days ago',fic:22},
+  {code:'FCR-CEGP-ARE-20260317-143022-0047', type:'CEGP', economy:'UAE',          date:'Today 14:30', status:'Ready'},
+  {code:'FCR-MIB-SAU-20260317-091205-0046',  type:'MIB',  economy:'Saudi Arabia', date:'Today 09:12', status:'Ready'},
+  {code:'FCR-SPOR-IND-20260316-163044-0045', type:'SPOR', economy:'India',        date:'Yesterday',   status:'Ready'},
+  {code:'FCR-TIR-DEU-20260316-104512-0044',  type:'TIR',  economy:'Germany',      date:'Yesterday',   status:'Ready'},
 ];
 
-export default function ReportsPage() {
-  const [selectedType, setSelectedType] = useState('CEGP');
-  const [economy, setEconomy]   = useState('ARE');
-  const [sector, setSector]     = useState('all');
-  const [depth, setDepth]       = useState('standard');
-  const [language, setLanguage] = useState('en');
-  const [peers, setPeers]       = useState<string[]>(['SAU','SGP']);
-  const [generating, setGenerating] = useState(false);
-  const [stepIdx, setStepIdx]   = useState(0);
-  const [done, setDone]         = useState(false);
-  const [generatedRef, setGeneratedRef] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval>|null>(null);
+const ECONOMIES = ['UAE','Saudi Arabia','India','Germany','UK','Singapore','Egypt','Vietnam','Indonesia','Nigeria','South Africa','Brazil','USA','China'];
 
-  const rtype = REPORT_TYPES.find(r => r.code === selectedType)!;
-  const ficCost = rtype?.fic ?? 15;
+export default function ReportsPage() {
+  const [selected, setSelected] = useState(REPORT_TYPES[0]);
+  const [economy,  setEconomy]  = useState('UAE');
+  const [sector,   setSector]   = useState('J');
+  const [generating, setGenerating] = useState(false);
+  const [generated,  setGenerated]  = useState<string|null>(null);
 
   function generate() {
-    if (generating) return;
-    setGenerating(true); setStepIdx(0); setDone(false);
-    const now = new Date();
-    const dateStr = now.toISOString().slice(0,10).replace(/-/g,'');
-    const timeStr = now.toISOString().slice(11,19).replace(/:/g,'');
-    setGeneratedRef(`FCR-${selectedType}-${economy}-${dateStr}-${timeStr}-0048`);
-
-    timerRef.current = setInterval(() => {
-      setStepIdx(prev => {
-        const next = prev + 1;
-        if (next >= STEPS.length) {
-          clearInterval(timerRef.current!);
-          setDone(true);
-          setGenerating(false);
-        }
-        return next;
-      });
-    }, 600);
+    setGenerating(true);
+    setTimeout(() => {
+      const ref = `FCR-${selected.code}-${economy.replace(' ','').slice(0,3).toUpperCase()}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.floor(Math.random()*900000+100000)}-${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`;
+      setGenerated(ref);
+      setGenerating(false);
+    }, 2500);
   }
-
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
-
-  const pct = Math.round((stepIdx / (STEPS.length - 1)) * 100);
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex items-center gap-3">
-        <div>
-          <span className="font-black text-sm text-[#0A2540]">Custom Reports Engine (CODRE)</span>
-          <span className="text-xs text-slate-400 ml-3">10 report types · AI-generated · Z3 SMT verified · Under 60 seconds</span>
-        </div>
-        <button className="ml-auto bg-white border border-slate-200 text-slate-500 text-xs px-3 py-2 rounded-lg hover:border-blue-300 hover:text-blue-600 transition-colors">
-          Report History
-        </button>
+      <div className="bg-white border-b border-slate-100 px-5 py-3 sticky top-14 z-30">
+        <span className="font-black text-sm text-[#0A2540]">Custom Reports Engine</span>
+        <span className="ml-3 text-xs text-slate-400">10 report types · AI-generated in minutes</span>
       </div>
 
-      <div className="grid grid-cols-[1fr_300px] gap-5 p-5">
-        <div>
-          {/* Report type selector */}
-          <div className="bg-white rounded-xl border border-slate-100 p-5 mb-4">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Select Report Type</div>
-            <div className="grid grid-cols-2 gap-2">
-              {REPORT_TYPES.map(rt => (
-                <button key={rt.code}
-                  onClick={() => {setSelectedType(rt.code); setDone(false);}}
-                  className={`text-left p-3 rounded-lg border transition-all ${
-                    selectedType === rt.code
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-slate-100 hover:border-slate-200 bg-white'
-                  }`}>
-                  <div className="flex items-baseline gap-2">
-                    <span className={`text-xs font-black ${selectedType===rt.code?'text-blue-700':'text-slate-400'}`}>{rt.code}</span>
-                    <span className="text-xs text-slate-400">{rt.pages}pp</span>
-                    <span className={`ml-auto text-xs font-bold ${selectedType===rt.code?'text-blue-600':'text-slate-400'}`}>{rt.fic} FIC</span>
-                  </div>
-                  <div className={`text-xs font-semibold mt-0.5 ${selectedType===rt.code?'text-[#0A2540]':'text-slate-600'}`}>{rt.name}</div>
-                  <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{rt.desc}</div>
+      <div className="max-w-7xl mx-auto p-5 grid md:grid-cols-3 gap-5">
+        {/* Report type selector */}
+        <div className="space-y-2">
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Select Report Type</div>
+          {REPORT_TYPES.map(r => (
+            <div key={r.code} onClick={() => { setSelected(r); setGenerated(null); }}
+              className={`bg-white rounded-xl border p-3.5 cursor-pointer transition-all ${
+                selected.code===r.code ? 'border-blue-400 bg-blue-50/30 shadow-sm' : 'border-slate-100 hover:border-blue-200'
+              }`}>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">{r.icon}</span>
+                <div className="font-bold text-xs text-[#0A2540]">{r.name}</div>
+              </div>
+              <div className="flex items-center gap-2 ml-7">
+                <span className="text-xs font-black text-blue-600">{r.fic} FIC</span>
+                <span className="text-xs text-slate-400">{r.time}</span>
+                <span className="text-xs font-mono text-slate-400 ml-auto">{r.code}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Report config + generator */}
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-slate-100 p-5">
+            <div className="font-black text-lg text-[#0A2540] mb-1">{selected.icon} {selected.name}</div>
+            <div className="flex gap-3 text-xs mb-4">
+              <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded font-bold">{selected.fic} FIC</span>
+              <span className="bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded">{selected.time}</span>
+            </div>
+            <p className="text-slate-500 text-sm mb-5">{selected.desc}</p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy Focus</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+                  value={economy} onChange={e => setEconomy(e.target.value)}>
+                  {ECONOMIES.map(e => <option key={e}>{e}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-500 block mb-1.5">Sector Focus</label>
+                <select className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-blue-400"
+                  value={sector} onChange={e => setSector(e.target.value)}>
+                  {[
+                    ['J','ICT & Technology'],['K','Financial Services'],['C','Manufacturing'],
+                    ['D','Energy & Utilities'],['L','Real Estate'],['H','Logistics'],
+                    ['Q','Healthcare'],['F','Construction'],['B','Mining'],['M','Professional Services'],
+                  ].map(([v,l]) => <option key={v} value={v}>ISIC {v} — {l}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {generated ? (
+              <div className="mt-5 bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <div className="font-bold text-emerald-700 text-sm mb-1">Report Generated</div>
+                <div className="text-xs font-mono text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded mb-3">{generated}</div>
+                <button className="bg-emerald-600 text-white text-xs font-bold px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+                  Download PDF
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <button onClick={generate} disabled={generating}
+                className={`w-full mt-5 font-black py-3.5 rounded-xl transition-colors ${
+                  generating ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'
+                }`}>
+                {generating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"/>
+                    Generating with AI…
+                  </span>
+                ) : `Generate ${selected.name} — ${selected.fic} FIC`}
+              </button>
+            )}
           </div>
-
-          {/* Parameters */}
-          <div className="bg-white rounded-xl border border-slate-100 p-5 mb-4">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4">Report Parameters</div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Economy</label>
-                <select className="w-full border border-slate-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:border-blue-400"
-                  value={economy} onChange={e=>setEconomy(e.target.value)}>
-                  {ECONOMIES.map(e => <option key={e.iso3} value={e.iso3}>{e.name} ({e.iso3})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Sector (ISIC)</label>
-                <select className="w-full border border-slate-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:border-blue-400"
-                  value={sector} onChange={e=>setSector(e.target.value)}>
-                  {SECTORS.map(s => <option key={s.isic} value={s.isic}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Report Depth</label>
-                <select className="w-full border border-slate-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:border-blue-400"
-                  value={depth} onChange={e=>setDepth(e.target.value)}>
-                  {DEPTHS.map(d => <option key={d.id} value={d.id}>{d.label}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-bold text-slate-500 block mb-1.5">Language</label>
-                <select className="w-full border border-slate-200 rounded-lg text-xs px-3 py-2 focus:outline-none focus:border-blue-400"
-                  value={language} onChange={e=>setLanguage(e.target.value)}>
-                  <option value="en">English</option>
-                  <option value="ar">Arabic (العربية)</option>
-                  <option value="fr">French (Français)</option>
-                  <option value="es">Spanish (Español)</option>
-                  <option value="zh">Chinese (中文)</option>
-                  <option value="de">German (Deutsch)</option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="text-xs font-bold text-slate-500 block mb-2">Benchmark Peers</label>
-                <div className="flex flex-wrap gap-2">
-                  {['SAU','SGP','IRL','NLD','KOR','DEU'].map(iso => (
-                    <button key={iso}
-                      onClick={() => setPeers(prev => prev.includes(iso) ? prev.filter(p=>p!==iso) : [...prev,iso])}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                        peers.includes(iso) ? 'bg-blue-600 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:border-blue-300'
-                      }`}>{iso}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* FIC cost + generate */}
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 flex items-center gap-3">
-            <div className="text-2xl font-black text-blue-700">{ficCost}</div>
-            <div>
-              <div className="text-sm font-bold text-blue-700">FIC cost · {rtype?.name} ({depth})</div>
-              <div className="text-xs text-blue-500">Estimated generation time: ~45 seconds · Reference code assigned automatically</div>
-            </div>
-          </div>
-          <button onClick={generate} disabled={generating || done}
-            className={`w-full py-3 rounded-xl text-sm font-black transition-all ${
-              done ? 'bg-emerald-600 text-white cursor-default' :
-              generating ? 'bg-slate-300 text-slate-500 cursor-not-allowed' :
-              'bg-[#0A2540] text-white hover:bg-[#1D4ED8]'
-            }`}>
-            {done ? `✓ Report Ready — ${generatedRef}` :
-             generating ? 'Generating…' :
-             `Generate ${rtype?.code} Report — ${ficCost} FIC`}
-          </button>
-
-          {/* Progress */}
-          {(generating || done) && (
-            <div className="mt-4 bg-white border border-slate-100 rounded-xl p-4">
-              <div className="flex justify-between text-xs mb-2">
-                <span className="font-bold text-[#0A2540]">{done ? '✓ Report Generated!' : 'Generating…'}</span>
-                <span className="text-slate-400 font-mono">{pct}%</span>
-              </div>
-              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
-                <div className={`h-full rounded-full transition-all duration-300 ${done ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                  style={{width:`${pct}%`}} />
-              </div>
-              <div className="text-xs text-slate-500">{STEPS[Math.min(stepIdx, STEPS.length-1)]}</div>
-              {done && (
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  <button className="bg-[#1D4ED8] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">↓ Download PDF</button>
-                  <button className="bg-white border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-2 rounded-lg hover:border-blue-300 transition-colors">↓ DOCX</button>
-                  <button className="bg-white border border-slate-200 text-slate-600 text-xs font-semibold px-4 py-2 rounded-lg hover:border-blue-300 transition-colors">↓ Excel Data</button>
-                  <div className="text-xs text-slate-400 self-center ml-auto font-mono">{generatedRef}</div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Recent reports */}
         <div>
-          <div className="bg-white rounded-xl border border-slate-100 p-4 mb-4">
-            <div className="font-bold text-xs text-[#0A2540] mb-3">Recent Reports</div>
+          <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Recent Reports</div>
+          <div className="space-y-2">
             {RECENT.map(r => (
-              <div key={r.code} className="flex gap-2 items-start py-2.5 border-b border-slate-50 last:border-0">
-                <span className="text-xs font-black text-blue-600 w-10">{r.type}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-[#0A2540] truncate">{r.eco}</div>
-                  <div className="text-xs text-slate-400">{r.time} · {r.fic} FIC</div>
-                  <div className="text-xs text-slate-300 font-mono truncate mt-0.5">{r.code}</div>
+              <div key={r.code} className="bg-white rounded-xl border border-slate-100 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-black text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">{r.type}</span>
+                  <span className="text-xs text-emerald-600 font-semibold ml-auto">{r.status}</span>
                 </div>
-                <button className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-100 transition-colors flex-shrink-0">↓</button>
+                <div className="font-bold text-xs text-[#0A2540] mb-1">{r.economy}</div>
+                <div className="text-xs font-mono text-slate-400 mb-2 truncate">{r.code}</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400">{r.date}</span>
+                  <button className="text-xs text-blue-600 font-semibold hover:underline">Download</button>
+                </div>
               </div>
             ))}
-          </div>
-
-          <div className="bg-white rounded-xl border border-slate-100 p-4">
-            <div className="font-bold text-xs text-[#0A2540] mb-3">All 10 Report Types</div>
-            <div className="space-y-2">
-              {REPORT_TYPES.map(rt => (
-                <div key={rt.code} className="flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-bold text-slate-500 w-10 inline-block">{rt.code}</span>
-                    <span className="text-slate-600">{rt.name.split(' ').slice(0,3).join(' ')}…</span>
-                  </div>
-                  <span className="font-bold text-blue-600 flex-shrink-0">{rt.fic} FIC</span>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>
