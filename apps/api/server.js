@@ -441,6 +441,64 @@ const ROUTES = {
   },
 
   // ── STRIPE WEBHOOK ────────────────────────────────────────────────────
+
+  'POST /api/v1/billing/create-session': async(req,res)=>{
+    const d=await body(req);
+    const token=getToken(req);
+    const payload=token?verifyJWT(token):null;
+    if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+
+    const PRICES = {
+      professional_monthly: process.env.STRIPE_PRO_MONTHLY_PRICE,
+      professional_annual:  process.env.STRIPE_PRO_ANNUAL_PRICE,
+      enterprise:           process.env.STRIPE_ENT_ANNUAL_PRICE,
+    };
+    const priceId = PRICES[d.plan];
+    if(!priceId) return fail(res,'INVALID_PLAN','Unknown plan: '+d.plan);
+
+    if(!STRIPE_KEY) {
+      // Demo mode - return mock session
+      return ok(res,{session_id:'cs_demo_'+Date.now(),url:'/pricing?demo=true'});
+    }
+
+    try {
+      const stripe = require('https');
+      const params = new URLSearchParams({
+        'payment_method_types[]': 'card',
+        'line_items[0][price]': priceId,
+        'line_items[0][quantity]': '1',
+        'mode': d.plan.includes('monthly') ? 'subscription' : 'subscription',
+        'success_url': (d.success_url||'https://fdimonitor.org/dashboard')+'?session_id={CHECKOUT_SESSION_ID}',
+        'cancel_url': d.cancel_url||'https://fdimonitor.org/pricing',
+        'metadata[org_id]': payload.org,
+        'metadata[tier]': d.plan.startsWith('enterprise')?'enterprise':'professional',
+        'customer_email': payload.email||'',
+      }).toString();
+
+      const options = {
+        hostname:'api.stripe.com', path:'/v1/checkout/sessions',
+        method:'POST',
+        headers:{
+          'Authorization':'Bearer '+STRIPE_KEY,
+          'Content-Type':'application/x-www-form-urlencoded',
+          'Content-Length':Buffer.byteLength(params),
+        }
+      };
+      const session = await new Promise((resolve,reject)=>{
+        const r=stripe.request(options, resp=>{
+          let data='';
+          resp.on('data',d=>data+=d);
+          resp.on('end',()=>{ try{resolve(JSON.parse(data))}catch(e){reject(e)} });
+        });
+        r.on('error',reject);
+        r.write(params); r.end();
+      });
+      ok(res,{session_id:session.id,url:session.url});
+    } catch(e) {
+      fail(res,'STRIPE_ERROR',e.message,500);
+    }
+  },
+
   'POST /api/v1/billing/webhook': async(req,res)=>{
     const raw=await rawBody(req);
     const sig=req.headers['stripe-signature'];
@@ -537,3 +595,77 @@ const server=http.createServer(async(req,res)=>{
   process.on('SIGTERM',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
   process.on('SIGINT',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
 })();
+
+// ── RATE LIMITING ─────────────────────────────────────────────────────────
+const RATE_LIMITS = {
+  '/api/v1/auth/login':    {window:900,max:10,msg:'Too many login attempts'},
+  '/api/v1/auth/register': {window:3600,max:5,msg:'Too many registrations'},
+  '/api/v1/reports/generate': {window:60,max:5,msg:'Too many report requests'},
+  'default':               {window:60,max:120,msg:'Rate limit exceeded'},
+};
+const rateCounts = new Map();
+function checkRateLimit(ip, path) {
+  const rule = RATE_LIMITS[path] || RATE_LIMITS.default;
+  const key  = `${ip}:${path}`;
+  const now  = Date.now();
+  const entry = rateCounts.get(key) || {count:0,reset:now+rule.window*1000};
+  if(now > entry.reset) { entry.count=0; entry.reset=now+rule.window*1000; }
+  entry.count++;
+  rateCounts.set(key, entry);
+  if(entry.count > rule.max) return {limited:true, msg:rule.msg, retry:Math.ceil((entry.reset-now)/1000)};
+  return {limited:false};
+}
+
+// ── RATE LIMITER (append to existing server.js) ───────────────────────────
+const RATE_LIMITS = new Map(); // ip -> {count, reset}
+
+function rateLimit(req, res, max=100, windowMs=60000) {
+  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const entry = RATE_LIMITS.get(ip) || {count:0, reset:now+windowMs};
+  if (now > entry.reset) { entry.count=0; entry.reset=now+windowMs; }
+  entry.count++;
+  RATE_LIMITS.set(ip, entry);
+  res.setHeader('X-RateLimit-Limit', max);
+  res.setHeader('X-RateLimit-Remaining', Math.max(0, max-entry.count));
+  res.setHeader('X-RateLimit-Reset', Math.ceil(entry.reset/1000));
+  if (entry.count > max) {
+    res.writeHead(429, {'Content-Type':'application/json'});
+    res.end(JSON.stringify({success:false,error:{code:'RATE_LIMITED',message:'Too many requests'}}));
+    return false;
+  }
+  return true;
+}
+
+// ── WEBSOCKET — live signal push ──────────────────────────────────────────
+let wsClients = new Set();
+
+function initWebSocket(httpServer) {
+  try {
+    const {WebSocketServer} = require('ws');
+    const wss = new WebSocketServer({server:httpServer});
+    wss.on('connection', (ws, req) => {
+      wsClients.add(ws);
+      log('WS', `Client connected (${wsClients.size} total)`);
+      ws.send(JSON.stringify({type:'connected',ts:new Date().toISOString(),message:'GFM Live Feed connected'}));
+      ws.on('close', () => { wsClients.delete(ws); });
+      ws.on('error', () => { wsClients.delete(ws); });
+    });
+    // Push fake signals every 8s (real: replace with DB LISTEN)
+    const DEMO_SIGNALS = [
+      {grade:'GOLD',company:'Siemens Energy',economy:'Egypt',capex_usd:340000000,sci_score:86.1},
+      {grade:'PLATINUM',company:'Microsoft',economy:'UAE',capex_usd:850000000,sci_score:91.2},
+      {grade:'SILVER',company:'BlackRock',economy:'UAE',capex_usd:500000000,sci_score:74.2},
+      {grade:'GOLD',company:'Samsung',economy:'Vietnam',capex_usd:2800000000,sci_score:83.7},
+    ];
+    let idx=0;
+    setInterval(() => {
+      if(wsClients.size===0) return;
+      const signal = {...DEMO_SIGNALS[idx%DEMO_SIGNALS.length], id:'MSS-LIVE-'+Date.now(), ts:new Date().toISOString()};
+      const msg = JSON.stringify({type:'signal',data:signal});
+      wsClients.forEach(ws => { try{ws.send(msg);}catch{wsClients.delete(ws);} });
+      idx++;
+    }, 8000);
+    log('WS','WebSocket server ready');
+  } catch(e) { log('WS','ws package not available — install with: npm install ws'); }
+}

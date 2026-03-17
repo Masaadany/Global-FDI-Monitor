@@ -1,7 +1,17 @@
 {
   "name": "gfm-api",
-  "version": "2.0.0",
+  "version": "3.0.0",
+  "description": "Global FDI Monitor API - Production",
   "main": "server.js",
-  "scripts": { "start": "node server.js", "dev": "node server.js" },
-  "dependencies": { "pg": "^8.11.5", "redis": "^4.6.14" }
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "migrate": "node ../DEPLOYMENT/migrate.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.5",
+    "redis": "^4.6.14",
+    "ws": "^8.17.0"
+  },
+  "engines": { "node": ">=20.0.0" }
 }

@@ -1,0 +1,105 @@
+# Global FDI Monitor — Local Development Stack
+# Usage: docker-compose up -d
+# Then: cd apps/web && npm run dev
+
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: gfm-postgres
+    environment:
+      POSTGRES_USER: fdiuser
+      POSTGRES_PASSWORD: devpassword123
+      POSTGRES_DB: gfm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U fdiuser -d gfm"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: gfm-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD","redis-cli","ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: apps/api
+      dockerfile: Dockerfile
+    container_name: gfm-api
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: dev-secret-change-in-production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","node","-e","require('http').get('http://localhost:3001/api/v1/health',r=>{process.exit(r.statusCode===200?0:1)})"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  pipeline:
+    build:
+      context: apps/pipeline
+      dockerfile: Dockerfile
+    container_name: gfm-pipeline
+    environment:
+      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/pipeline:/app
+    profiles: ["pipeline"]
+    command: ["python", "collectors/master_pipeline.py"]
+
+  agents:
+    build:
+      context: apps/agents
+      dockerfile: Dockerfile
+    container_name: gfm-agents
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://fdiuser:devpassword123@postgres:5432/gfm
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles: ["agents"]
+    command: ["python", "super_agent.py", "--serve"]
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: gfm-network
