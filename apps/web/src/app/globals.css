@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #0A2540;
+  --blue: #1D4ED8;
+  --neutral: #64748B;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+/* Hide scrollbars but keep scrolling */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Ticker animation */
+@keyframes ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 45s linear infinite;
+}
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Signal pulse */
+@keyframes signalPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(1.5); }
+}
+.animate-signal-pulse {
+  animation: signalPulse 2s ease-in-out infinite;
+}
+
+/* Grade badges */
+.grade-platinum {
+  @apply bg-amber-50 text-amber-700 border border-amber-200;
+}
+.grade-gold {
+  @apply bg-emerald-50 text-emerald-700 border border-emerald-200;
+}
+.grade-silver {
+  @apply bg-blue-50 text-blue-700 border border-blue-200;
+}
+.grade-bronze {
+  @apply bg-slate-100 text-slate-500 border border-slate-200;
+}
