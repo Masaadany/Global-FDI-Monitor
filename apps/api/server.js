@@ -20,8 +20,8 @@ async function initDB() {
   if (!DB_URL) return log('DB','No DATABASE_URL — demo mode');
   try {
     const {Pool} = require('pg');
-    db = new Pool({connectionString:DB_URL,max:10,ssl:{rejectUnauthorized:false}});
-    await db.query('SELECT 1');
+    db = new Pool({connectionString:DB_URL,max:10,ssl:{rejectUnauthorized:false},connectionTimeoutMillis:5000,idleTimeoutMillis:10000});
+    await Promise.race([db.query('SELECT 1'), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),5000))]);
     log('DB','✓ PostgreSQL connected');
   } catch(e) { log('DB','fallback to demo: '+e.message); db=null; }
 }
@@ -30,7 +30,7 @@ async function initRedis() {
   try {
     const r = require('redis').createClient({url:RD_URL});
     r.on('error',()=>{ redis=null; });
-    await r.connect();
+    await Promise.race([r.connect(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('Redis timeout')),5000))]);
     redis = r;
     log('Redis','✓ Connected');
   } catch(e) { redis=null; }
