@@ -20,7 +20,7 @@ const TIERS = [
     features: [
       '1 user included',
       '1 economy (selected at signup)',
-      '1 ISIC sector (selected at signup)',
+      '1 investment sector (selected at signup)',
       'Gold+ signals (Platinum: 1 FIC/view)',
       'CIC: 3 of 12 dimensions',
       'Weekly newsletter (1 edition)',
@@ -50,7 +50,7 @@ const TIERS = [
     features: [
       '3 named users included',
       'All 215 economies · 100 priority cities',
-      'All 21 ISIC sections',
+      'All 21 investment sectors',
       'All 10 report types (5–50 FIC)',
       'All 9 forecast horizons · 3 scenarios',
       'Full GFR — 6 dimensions + reform sim',
@@ -78,7 +78,7 @@ const TIERS = [
     features: [
       '10 named users (unlimited available)',
       '215 economies + 500 cities + all zones',
-      'All ISIC + 88 divisions + 238 groups',
+      'All sectors + subsectors + groups',
       'Platinum signals: 0 FIC (always free)',
       'All reports: 40% FIC discount',
       'White-label all outputs',

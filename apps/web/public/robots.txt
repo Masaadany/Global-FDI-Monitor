@@ -1,18 +1,13 @@
 User-agent: *
 Allow: /
-Allow: /demo
-Allow: /about
-Allow: /pricing
-Allow: /gfr
-Allow: /signals
-Allow: /analytics
-Allow: /contact
-Allow: /register
-Allow: /privacy
-Allow: /terms
-
 Disallow: /admin
 Disallow: /settings
-Disallow: /dashboard
+Disallow: /api/
+Disallow: /auth/
+Disallow: /onboarding
+Disallow: /dashboard/success
+Disallow: /fic/success
 
 Sitemap: https://fdimonitor.org/sitemap.xml
+
+# FDI Monitor — fdimonitor.org

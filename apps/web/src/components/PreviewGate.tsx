@@ -1,92 +1,77 @@
 'use client';
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 
-const PREVIEW_PASSWORD = process.env.NEXT_PUBLIC_PREVIEW_PASSWORD || 'GFM2026PREVIEW';
-const STORAGE_KEY      = 'gfm_preview_auth';
+type Feature = 'reports' | 'downloads' | 'full_profile' | 'api';
 
-export function PreviewGate({ children }: { children: ReactNode }) {
-  const [authed,  setAuthed]  = useState(false);
-  const [pwd,     setPwd]     = useState('');
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(true);
-  const [shake,   setShake]   = useState(false);
+const FEATURE_LABELS: Record<Feature, { title: string; desc: string; icon: string }> = {
+  reports:      { title:'Intelligence Reports', desc:'Generate PDF reports with AI analysis',       icon:'📋' },
+  downloads:    { title:'Data Downloads',        desc:'Export signals, GFR data, and analytics',    icon:'⬇️' },
+  full_profile: { title:'Full Intelligence Profile', desc:'Access complete company & country data', icon:'🔍' },
+  api:          { title:'API Access',            desc:'Programmatic access to all endpoints',       icon:'🔑' },
+};
+
+export default function PreviewGate({
+  feature,
+  children,
+  preview,
+}: {
+  feature: Feature;
+  children: ReactNode;
+  preview?: ReactNode;
+}) {
+  const [isTrial, setIsTrial] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    // Skip gate for: login, register, demo, health, pricing, about, privacy, terms, ar
-    const path = window.location.pathname;
-    const PUBLIC = ['/auth/','/register','/demo','/health','/pricing','/about','/privacy','/terms','/ar','/contact'];
-    if (PUBLIC.some(p => path.startsWith(p)) || path === '/') {
-      setAuthed(true); setLoading(false); return;
-    }
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored === 'true') { setAuthed(true); }
-    setLoading(false);
+    try {
+      const start = localStorage.getItem('gfm_trial_start');
+      const token = localStorage.getItem('gfm_token');
+      if (token && start) {
+        const daysLeft = 7 - Math.floor((Date.now() - +start) / 86400000);
+        setIsTrial(daysLeft > 0);
+      }
+    } catch {}
   }, []);
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (pwd.trim() === PREVIEW_PASSWORD) {
-      sessionStorage.setItem(STORAGE_KEY, 'true');
-      setAuthed(true); setError('');
-    } else {
-      setError('Incorrect password. Contact sales@fdimonitor.org for access.');
-      setShake(true);
-      setTimeout(() => setShake(false), 600);
-      setPwd('');
-    }
-  }
+  if (!isTrial) return <>{children}</>;
 
-  if (loading) return null;
-  if (authed)  return <>{children}</>;
+  const meta = FEATURE_LABELS[feature];
 
   return (
-    <div className="min-h-screen bg-[#0A2540] flex items-center justify-center px-4">
-      <div className={`w-full max-w-sm transition-all ${shake ? 'translate-x-2' : ''}`}
-        style={{transition:'transform 0.1s ease'}}>
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center font-black text-[#0A2540] text-3xl mx-auto mb-4 shadow-2xl">G</div>
-          <h1 className="text-2xl font-black text-white">Global FDI Monitor</h1>
-          <p className="text-blue-300 text-sm mt-1">Preview Access Required</p>
+    <>
+      {preview || (
+        <div role="region" aria-label="Premium feature preview" className="relative rounded-xl overflow-hidden" style={{filter:'blur(3px)',pointerEvents:'none'}}>
+          {children}
         </div>
-        <div className="bg-white rounded-2xl p-7 shadow-2xl">
-          <div className="text-center mb-5">
-            <div className="text-3xl mb-2">🔒</div>
-            <h2 className="font-black text-[#0A2540] text-lg">Preview Password</h2>
-            <p className="text-slate-400 text-xs mt-1">This platform is in private preview</p>
-          </div>
-          <form onSubmit={submit} className="space-y-4">
-            <input
-              type="password" value={pwd} onChange={e=>setPwd(e.target.value)}
-              placeholder="Enter preview password" autoFocus
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-center text-sm tracking-widest focus:outline-none focus:border-blue-400"/>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-xs px-3 py-2 rounded-lg text-center font-semibold">
-                {error}
-              </div>
-            )}
-            <button type="submit"
-              className="w-full bg-[#0A2540] text-white font-black py-3.5 rounded-xl hover:bg-[#1D4ED8] transition-colors">
-              Access Platform
-            </button>
-          </form>
-          <div className="mt-5 pt-4 border-t border-slate-100 text-center space-y-2">
-            <div className="text-xs text-slate-400">Don't have access?</div>
-            <div className="flex gap-2">
-              <Link href="/demo"     className="flex-1 text-xs bg-slate-50 border border-slate-200 text-slate-600 font-bold py-2 rounded-xl hover:border-blue-300 transition-colors">
-                View Demo
-              </Link>
-              <Link href="/register" className="flex-1 text-xs bg-blue-600 text-white font-bold py-2 rounded-xl hover:bg-blue-500 transition-colors">
-                Free Trial
-              </Link>
-            </div>
-            <a href="mailto:sales@fdimonitor.org" className="block text-xs text-blue-600 hover:underline">
-              Contact sales@fdimonitor.org
-            </a>
-          </div>
+      )}
+
+      <div className="mt-3 p-4 rounded-xl text-center" style={{background:'rgba(116,187,101,0.06)',border:'1px solid rgba(116,187,101,0.15)'}}>
+        <div className="text-xl mb-2">{meta.icon}</div>
+        <div className="font-extrabold text-sm mb-1" style={{color:'#0A3D62'}}>{meta.title}</div>
+        <div className="text-xs mb-3" style={{color:'#696969'}}>{meta.desc} — requires a paid subscription.</div>
+        <div className="flex gap-2 justify-center">
+          <Link href="/subscription" className="gfm-btn-primary text-xs py-1.5 px-5">Upgrade Now</Link>
+          <button onClick={()=>setShowModal(true)} className="gfm-btn-outline text-xs py-1.5 px-4" style={{color:'#696969'}}>Learn more</button>
         </div>
       </div>
-    </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={()=>setShowModal(false)}>
+          <div className="gfm-card p-7 max-w-md w-full text-center" onClick={e=>e.stopPropagation()}>
+            <div className="text-4xl mb-3">{meta.icon}</div>
+            <h3 className="font-extrabold text-lg mb-2" style={{color:'#0A3D62'}}>{meta.title}</h3>
+            <p className="text-sm mb-5" style={{color:'#696969'}}>
+              {meta.desc}. Available on Professional ($799/month) and Enterprise plans.
+              Your 3-day free trial provides read-only access to all dashboards.
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/subscription" className="gfm-btn-primary text-sm px-6 py-2.5">Upgrade to Professional</Link>
+              <button onClick={()=>setShowModal(false)} className="gfm-btn-outline text-sm px-6 py-2.5" style={{color:'#696969'}}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

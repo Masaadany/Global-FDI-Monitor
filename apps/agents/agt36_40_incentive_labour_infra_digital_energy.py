@@ -1,4 +1,17 @@
 """
+Agent: agt36_40_incentive_labour_infra_digital_energy — FDI Monitor Intelligence Pipeline
+Error handling wrapper applied at module level.
+"""
+import datetime as _dt
+
+def _safe_run(fn, params):
+    try:
+        return fn(params)
+    except Exception as e:
+        return {"success": False, "error": str(e), "agent": "agt36_40_incentive_labour_infra_digital_energy",
+                "ts": _dt.datetime.utcnow().isoformat() + "Z"}
+
+"""
 GLOBAL FDI MONITOR — AGT-36 through AGT-40
 AGT-36: INVESTMENT INCENTIVE ANALYZER — Maps incentive packages globally using GIID/MIGA data
 AGT-37: LABOR MARKET INTELLIGENCE — Workforce availability, skills, cost, and productivity
@@ -691,3 +704,8 @@ def execute(payload: dict) -> dict:
 if __name__ == "__main__":
     import json
     print(json.dumps(execute({"test": True}), indent=2))
+
+
+def run(payload: dict) -> dict:
+    """Standard GFM agent run interface."""
+    return execute(payload).get('result', {'status': 'completed', 'module': __name__})

@@ -1,4 +1,17 @@
 """
+Agent: agt31_35_trade_supply_geo_fx_regulatory — FDI Monitor Intelligence Pipeline
+Error handling wrapper applied at module level.
+"""
+import datetime as _dt
+
+def _safe_run(fn, params):
+    try:
+        return fn(params)
+    except Exception as e:
+        return {"success": False, "error": str(e), "agent": "agt31_35_trade_supply_geo_fx_regulatory",
+                "ts": _dt.datetime.utcnow().isoformat() + "Z"}
+
+"""
 GLOBAL FDI MONITOR — AGT-31 through AGT-35
 AGT-31: TRADE FLOW ANALYZER — Bilateral trade corridor analytics and TiVA decomposition
 AGT-32: SUPPLY CHAIN MONITOR — GVC mapping, reshoring signals, chokepoint alerts
@@ -640,3 +653,8 @@ def execute(payload: dict) -> dict:
 if __name__ == "__main__":
     import json
     print(json.dumps(execute({"test": True}), indent=2))
+
+
+def run(payload: dict) -> dict:
+    """Standard GFM agent run interface."""
+    return execute(payload).get('result', {'status': 'completed', 'module': __name__})

@@ -1,190 +1,239 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { exportPipeline, exportJSON } from '@/lib/export';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
 import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+const STAGES = ['Prospecting','Qualified','Proposal','Negotiation','Committed','Active'];
+const STAGE_C = ['#696969','#74BB65','#0A3D62','#74BB65','#22c55e','#0A66C2'];
 
-const STAGES = ['PROSPECTING','ENGAGED','NEGOTIATING','COMMITTED','CLOSED_WON'] as const;
-type Stage = typeof STAGES[number];
-
-const STAGE_CONFIG: Record<Stage,{label:string;color:string;bg:string;border:string;prob:number}> = {
-  PROSPECTING: {label:'Prospecting',   color:'text-slate-600',   bg:'bg-slate-50',  border:'border-slate-200', prob:20},
-  ENGAGED:     {label:'Engaged',       color:'text-blue-700',    bg:'bg-blue-50',   border:'border-blue-200',  prob:40},
-  NEGOTIATING: {label:'Negotiating',   color:'text-amber-700',   bg:'bg-amber-50',  border:'border-amber-200', prob:65},
-  COMMITTED:   {label:'Committed',     color:'text-emerald-700', bg:'bg-emerald-50',border:'border-emerald-200',prob:85},
-  CLOSED_WON:  {label:'Closed ✓',     color:'text-teal-700',    bg:'bg-teal-50',   border:'border-teal-200',  prob:100},
-};
-
-const MOCK_DEALS = [
-  {id:'PIPE-001',company:'Microsoft Corp',hq:'USA',iso3:'ARE',sector:'J',capex_m:850,stage:'NEGOTIATING' as Stage,probability:75,contact:'Sarah Chen',days:8,  notes:'Data centre confirmed. Site visit completed 2026-03-12.',grade:'PLATINUM'},
-  {id:'PIPE-002',company:'Amazon AWS',    hq:'USA',iso3:'SAU',sector:'J',capex_m:5300,stage:'COMMITTED' as Stage, probability:92,contact:'Ahmed Al-Rashid',days:15,notes:'MoU signed. Board approval expected Q2.',grade:'PLATINUM'},
-  {id:'PIPE-003',company:'Siemens Energy',hq:'DEU',iso3:'EGY',sector:'D',capex_m:340, stage:'ENGAGED' as Stage,   probability:55,contact:'Maria Rodriguez',days:5, notes:'Site visit scheduled 2026-03-25.',grade:'GOLD'},
-  {id:'PIPE-004',company:'CATL',          hq:'CHN',iso3:'IDN',sector:'C',capex_m:3200,stage:'COMMITTED' as Stage, probability:88,contact:'James Park',    days:22,notes:'Land acquisition complete. Phase 1 start Q3 2026.',grade:'PLATINUM'},
-  {id:'PIPE-005',company:'Vestas Wind',   hq:'DNK',iso3:'IND',sector:'D',capex_m:420, stage:'PROSPECTING' as Stage,probability:30,contact:'Wei Zhang',    days:3, notes:'Initial inquiry via LinkedIn.',grade:'GOLD'},
-  {id:'PIPE-006',company:'Databricks',    hq:'USA',iso3:'SGP',sector:'J',capex_m:150, stage:'ENGAGED' as Stage,   probability:60,contact:'Priya Nair',    days:8, notes:'Demo scheduled for EDB leadership.',grade:'SILVER'},
-  {id:'PIPE-007',company:'ACWA Power',    hq:'SAU',iso3:'MAR',sector:'D',capex_m:1100,stage:'COMMITTED' as Stage, probability:90,contact:'Omar Malik',    days:18,notes:'EPC contract signed. IFC financing approved.',grade:'GOLD'},
-  {id:'PIPE-008',company:'Palantir',      hq:'USA',iso3:'GBR',sector:'J',capex_m:200, stage:'NEGOTIATING' as Stage,probability:65,contact:'James Davies',  days:11,notes:'Contract terms being finalised.',grade:'GOLD'},
+const INIT_DEALS = [
+  {id:1, company:'Microsoft',     eco:'UAE',          flag:'🇦🇪',sector:'💻 ICT',   capex:'$850M', grade:'PLATINUM', stage:'Negotiation',prob:82,cic:'GFM-USA-MSFT'},
+  {id:2, company:'CATL',          eco:'Indonesia',    flag:'🇮🇩',sector:'🏭 Manuf', capex:'$3.2B', grade:'PLATINUM', stage:'Proposal',   prob:68,cic:'GFM-CHN-CATL'},
+  {id:3, company:'ACWA Power',    eco:'Saudi Arabia', flag:'🇸🇦',sector:'⚡ Energy', capex:'$980M', grade:'GOLD',     stage:'Qualified',  prob:55,cic:'GFM-SAU-ACWA'},
+  {id:4, company:'Samsung SDI',   eco:'Vietnam',      flag:'🇻🇳',sector:'🏭 Manuf', capex:'$2.1B', grade:'PLATINUM', stage:'Prospecting',prob:40,cic:'GFM-KOR-SAMS'},
+  {id:5, company:'TotalEnergies', eco:'Egypt',        flag:'🇪🇬',sector:'⚡ Energy', capex:'$890M', grade:'GOLD',     stage:'Committed',  prob:91,cic:'GFM-FRA-TOTE'},
+  {id:6, company:'Google Cloud',  eco:'Singapore',    flag:'🇸🇬',sector:'💻 ICT',   capex:'$620M', grade:'GOLD',     stage:'Active',     prob:99,cic:'GFM-USA-GOOG'},
+  {id:7, company:'Siemens',       eco:'UAE',          flag:'🇦🇪',sector:'⚡ Energy', capex:'$340M', grade:'GOLD',     stage:'Qualified',  prob:52,cic:'GFM-DEU-SIEN'},
+  {id:8, company:'BYD',           eco:'Saudi Arabia', flag:'🇸🇦',sector:'🏭 Manuf', capex:'$1.8B', grade:'GOLD',     stage:'Proposal',   prob:65,cic:'GFM-CHN-BYDO'},
 ];
 
-const GRADE_DOT: Record<string,string> = {PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'};
+const GRADE_C: Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#696969'};
+
+function capexNum(s: string) {
+  const n = parseFloat(s.replace(/[^0-9.]/g,''));
+  return s.includes('B') ? n*1000 : n;
+}
 
 export default function PipelinePage() {
-  const [deals,   setDeals]   = useState(MOCK_DEALS);
+  const [deals,   setDeals]   = useState(INIT_DEALS);
   const [view,    setView]    = useState<'kanban'|'table'>('kanban');
-  const [filter,  setFilter]  = useState('');
-  const [dragging,setDragging]= useState<string|null>(null);
-  const [dragOver,setDragOver]= useState<Stage|null>(null);
-  const [saving,  setSaving]  = useState<string|null>(null);
+  const [modal,   setModal]   = useState(false);
+  const [newDeal, setNewDeal] = useState({company:'',eco:'',sector:'💻 ICT',capex:'',stage:'Prospecting',grade:'GOLD'});
 
-  const totalCapex = deals.reduce((s,d)=>s+d.capex_m,0);
-  const weightedPipe = deals.reduce((s,d)=>s+(d.capex_m*d.probability/100),0);
+  const totalCapex = deals.reduce((a,d)=>a+capexNum(d.capex),0);
+  const committed  = deals.filter(d=>['Committed','Active'].includes(d.stage)).length;
 
-  async function moveStage(dealId: string, newStage: Stage) {
-    setSaving(dealId);
-    setDeals(prev => prev.map(d => d.id===dealId ? {...d, stage:newStage, probability:STAGE_CONFIG[newStage].prob, days:0} : d));
-    try {
-      const token = typeof window!=='undefined' ? localStorage.getItem('gfm_token') : null;
-      await fetch(`${API}/api/v1/pipeline/deals/${dealId}`,{
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${token||''}`},
-        body:JSON.stringify({stage:newStage}),
-      });
-    } catch {}
-    setTimeout(()=>setSaving(null),500);
+  function advance(id:number) {
+    setDeals(prev=>prev.map(d=>{
+      if(d.id!==id) return d;
+      const si=STAGES.indexOf(d.stage);
+      return si<STAGES.length-1?{...d,stage:STAGES[si+1],prob:Math.min(d.prob+10,99)}:d;
+    }));
   }
 
-  const filtered = deals.filter(d => !filter || d.company.toLowerCase().includes(filter.toLowerCase()) || d.iso3.includes(filter.toUpperCase()));
-
-  const DealCard = ({deal}: {deal:typeof MOCK_DEALS[0]}) => (
-    <div draggable onDragStart={()=>setDragging(deal.id)} onDragEnd={()=>{setDragging(null);setDragOver(null);}}
-      className={`bg-white rounded-xl border p-3 cursor-grab active:cursor-grabbing transition-all shadow-sm hover:shadow-md ${saving===deal.id?'opacity-50':''} ${dragging===deal.id?'opacity-40 rotate-2':''}`}
-      style={{borderColor:GRADE_DOT[deal.grade]+'44'}}>
-      <div className="flex items-start gap-2 mb-2">
-        <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:GRADE_DOT[deal.grade]}}/>
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-xs text-deep truncate">{deal.company}</div>
-          <div className="text-xs text-slate-400">{deal.iso3} · ISIC {deal.sector}</div>
-        </div>
-        <div className="text-xs font-black text-blue-600 flex-shrink-0">${deal.capex_m>=1000?`${(deal.capex_m/1000).toFixed(1)}B`:`${deal.capex_m}M`}</div>
-      </div>
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-blue-500 rounded-full" style={{width:`${deal.probability}%`}}/>
-        </div>
-        <span className="text-xs font-bold text-slate-500">{deal.probability}%</span>
-      </div>
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-slate-400">{deal.contact} · {deal.days}d</span>
-        <div className="flex gap-1">
-          {STAGES.filter(s=>s!==deal.stage).slice(0,1).map(s=>(
-            <button key={s} onClick={()=>moveStage(deal.id,s)}
-              className="text-xs text-slate-400 hover:text-blue-600 px-1 py-0.5 rounded hover:bg-blue-50 transition-colors">
-              → {STAGE_CONFIG[s].label.split(' ')[0]}
-            </button>
-          ))}
-        </div>
-      </div>
-      {deal.notes && <p className="text-xs text-slate-400 mt-1.5 leading-tight line-clamp-1">{deal.notes}</p>}
-    </div>
-  );
+  function addDeal() {
+    if(!newDeal.company||!newDeal.eco) return;
+    setDeals(prev=>[...prev,{...newDeal,id:Date.now(),flag:'🌍',prob:30,cic:'GFM-NEW-'+Math.random().toString(36).slice(2,6).toUpperCase()}]);
+    setNewDeal({company:'',eco:'',sector:'💻 ICT',capex:'',stage:'Prospecting',grade:'GOLD'});
+    setModal(false);
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-5 py-3 flex flex-wrap gap-3 items-center sticky top-14 z-30">
-        <span className="font-black text-sm text-deep">Investment Pipeline</span>
-        <div className="flex gap-1 ml-2">
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-10">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex flex-wrap justify-between gap-4 items-end">
+          <div>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>CRM Intelligence</div>
+            <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Investment Pipeline</h1>
+            <p className="text-sm mt-1" style={{color:'#696969'}}>Track deals through 6 stages · Kanban & table view · Add custom deals</p>
+          </div>
+          <div className="flex gap-5">
+            {[[deals.length,'Total Deals'],[committed,'Committed/Active'],['$'+(totalCapex/1000).toFixed(1)+'B','Pipeline Value'],['6','Stages']].map(([v,l])=>(
+              <div key={String(l)} className="text-center">
+                <div className="text-2xl font-extrabold font-data" style={{color:'#74BB65'}}>{v}</div>
+                <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="sticky top-16 z-30 border-b px-6 py-2.5 flex items-center gap-3"
+        style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
+        <div className="flex rounded-lg border border-white/10 overflow-hidden">
           {(['kanban','table'] as const).map(v=>(
             <button key={v} onClick={()=>setView(v)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${view===v?'bg-deep text-white':'text-slate-400 border border-slate-200'}`}>
-              {v==='kanban'?'⬜ Kanban':'📋 Table'}
+              className="px-4 py-1.5 text-xs font-bold capitalize transition-all"
+              style={view===v?{background:'#74BB65',color:'#fff'}:{color:'#696969'}}>
+              {v==='kanban'?'🗂 Kanban':'📋 Table'}
             </button>
           ))}
         </div>
-        <input placeholder="Search company, ISO3…" value={filter} onChange={e=>setFilter(e.target.value)}
-          className="border border-slate-200 rounded-lg text-xs px-3 py-2 w-36 focus:outline-none focus:border-primary ml-2"/>
-        <div className="flex gap-4 text-xs text-slate-400 ml-auto">
-          <span>Pipeline: <strong className="text-slate-700">${(totalCapex/1000).toFixed(1)}B</strong></span>
-          <span>Weighted: <strong className="text-emerald-600">${(weightedPipe/1000).toFixed(1)}B</strong></span>
-          <span>{filtered.length} deals</span>
-        </div>
-        <button onClick={()=>exportPipeline(filtered.map(d=>({...d})))}
-          className="text-xs font-bold border border-slate-200 text-slate-500 px-3 py-1.5 rounded-lg hover:border-primary">
-          Export CSV
-        </button>
+        <button onClick={()=>setModal(true)} className="gfm-btn-primary text-xs py-1.5 px-4 ml-auto">+ Add Deal</button>
       </div>
 
-      {/* Kanban */}
-      {view==='kanban' && (
-        <div className="p-4 overflow-x-auto">
-          <div className="flex gap-3 min-w-max">
-            {STAGES.map(stage=>{
-              const stageCfg = STAGE_CONFIG[stage];
-              const stageDeals = filtered.filter(d=>d.stage===stage);
-              const stageCapex = stageDeals.reduce((s,d)=>s+d.capex_m,0);
-              return (
-                <div key={stage} className="w-60 flex-shrink-0"
-                  onDragOver={e=>{e.preventDefault();setDragOver(stage);}}
-                  onDrop={()=>{if(dragging) moveStage(dragging,stage);}}>
-                  <div className={`rounded-xl border p-2 mb-2 ${stageCfg.bg} ${stageCfg.border}`}>
-                    <div className={`text-xs font-black ${stageCfg.color}`}>{stageCfg.label}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{stageDeals.length} deals · ${stageCapex>=1000?`${(stageCapex/1000).toFixed(1)}B`:`${stageCapex}M`}</div>
+      <div className="max-w-screen-xl mx-auto px-6 py-4">
+        {/* Add deal modal */}
+        {modal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={()=>setModal(false)}>
+            <div className="gfm-card p-6 max-w-md w-full animate-fadeIn" onClick={e=>e.stopPropagation()}>
+              <div className="font-extrabold text-sm mb-4" style={{color:'#0A3D62'}}>Add New Deal</div>
+              <div className="space-y-3">
+                {[['Company','company'],['Economy','eco'],['CapEx ($M)','capex']].map(([l,k])=>(
+                  <div key={k}>
+                    <label className="text-xs font-bold block mb-1" style={{color:'#696969'}}>{l}</label>
+                    <input value={(newDeal as any)[k]} onChange={e=>setNewDeal(p=>({...p,[k]:e.target.value}))}
+                      className="w-full px-3 py-2 text-sm rounded-xl" placeholder={`Enter ${l.toLowerCase()}…`}/>
                   </div>
-                  <div className={`space-y-2 min-h-24 rounded-xl p-1 transition-colors ${dragOver===stage&&dragging?'bg-blue-50 border-2 border-dashed border-blue-300':''}`}>
-                    {stageDeals.map(d=><DealCard key={d.id} deal={d}/>)}
+                ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {[['Stage','stage',STAGES],['Grade','grade',['PLATINUM','GOLD','SILVER','BRONZE']]].map(([l,k,opts])=>(
+                    <div key={k}>
+                      <label className="text-xs font-bold block mb-1" style={{color:'#696969'}}>{l}</label>
+                      <select value={(newDeal as any)[k]} onChange={e=>setNewDeal(p=>({...p,[k]:e.target.value}))} className="w-full px-3 py-2 text-sm rounded-xl">
+                        {(opts as string[]).map(o=><option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={addDeal} className="gfm-btn-primary flex-1 py-2.5 text-sm">Add Deal</button>
+                <button onClick={()=>setModal(false)} className="gfm-btn-outline px-4 py-2.5 text-sm" style={{color:'#696969'}}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* KANBAN */}
+        {view === 'kanban' && (
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            {STAGES.map((stage,si)=>{
+              const col = deals.filter(d=>d.stage===stage);
+              const colCapex = col.reduce((a,d)=>a+capexNum(d.capex),0);
+              return (
+                <div key={stage} className="flex-shrink-0 w-52">
+                  <div className="flex items-center gap-2 mb-3 px-1">
+                    <div className="w-2 h-2 rounded-full" style={{background:STAGE_C[si]}}/>
+                    <span className="text-xs font-extrabold uppercase tracking-wide" style={{color:STAGE_C[si]}}>{stage}</span>
+                    <span className="text-xs ml-auto" style={{color:'#696969'}}>{col.length}</span>
+                  </div>
+                  {col.length > 0 && (
+                    <div className="text-xs mb-2 text-right" style={{color:'#696969'}}>
+                      ${(colCapex/1000).toFixed(1)}B
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {col.map(deal=>(
+                      <div key={deal.id} className="gfm-card p-3 cursor-default">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-base">{deal.flag}</span>
+                          <div>
+                            <div className="font-bold text-xs" style={{color:'#0A3D62'}}>{deal.company}</div>
+                            <div className="text-xs" style={{color:'#696969'}}>{deal.eco}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-extrabold font-data" style={{color:'#74BB65'}}>{deal.capex}</span>
+                          <span className="text-xs font-extrabold" style={{color:GRADE_C[deal.grade]}}>{deal.grade.slice(0,2)}</span>
+                        </div>
+                        <div className="mb-2">
+                          <div className="flex justify-between text-xs mb-0.5">
+                            <span style={{color:'#696969'}}>Probability</span>
+                            <span style={{color:'#22c55e'}}>{deal.prob}%</span>
+                          </div>
+                          <div className="gfm-progress h-1"><div className="gfm-progress-bar h-1" style={{width:`${deal.prob}%`}}/></div>
+                        </div>
+                        <div className="flex gap-1">
+                          {si < STAGES.length-1 && (
+                            <button onClick={()=>advance(deal.id)}
+                              className="flex-1 text-xs py-1 rounded-lg font-bold transition-all"
+                              style={{background:'rgba(116,187,101,0.1)',color:'#74BB65'}}>
+                              → Advance
+                            </button>
+                          )}
+                          <Link href={`/company-profiles`}
+                            className="text-xs py-1 px-2 rounded-lg"
+                            style={{background:'rgba(10,61,98,0.1)',color:'#696969'}}>
+                            🔍
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Table */}
-      {view==='table' && (
-        <div className="max-w-6xl mx-auto p-5">
-          <div className="bg-white rounded-xl border border-slate-100 overflow-hidden">
-            <table className="w-full text-xs">
-              <thead><tr className="bg-slate-50 border-b border-slate-100">
-                {['Company','Economy','Sector','CapEx','Stage','Probability','Contact','Days','Notes'].map(h=>(
-                  <th key={h} className="text-left px-4 py-2.5 font-bold text-slate-400 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr></thead>
-              <tbody>
-                {filtered.map(d=>{
-                  const sc = STAGE_CONFIG[d.stage];
-                  return (
-                    <tr key={d.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{background:GRADE_DOT[d.grade]}}/>
-                          <span className="font-bold text-deep">{d.company}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-blue-600">{d.iso3}</td>
-                      <td className="px-4 py-3 text-slate-500">ISIC {d.sector}</td>
-                      <td className="px-4 py-3 font-black text-blue-600">${d.capex_m>=1000?`${(d.capex_m/1000).toFixed(1)}B`:`${d.capex_m}M`}</td>
-                      <td className="px-4 py-3"><span className={`px-2 py-0.5 rounded text-xs font-bold border ${sc.bg} ${sc.color} ${sc.border}`}>{sc.label}</span></td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{width:`${d.probability}%`}}/>
+        {/* TABLE */}
+        {view === 'table' && (
+          <div className="gfm-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="gfm-table">
+                <thead><tr>
+                  <th>Company</th><th>Economy</th><th>Sector</th><th>CapEx</th>
+                  <th>Stage</th><th>Grade</th><th>Probability</th><th></th>
+                </tr></thead>
+                <tbody>
+                  {deals.map(d=>{
+                    const si=STAGES.indexOf(d.stage);
+                    return (
+                      <tr key={d.id}>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span>{d.flag}</span>
+                            <span className="font-bold" style={{color:'#0A3D62'}}>{d.company}</span>
                           </div>
-                          <span className="font-bold text-slate-600">{d.probability}%</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500">{d.contact}</td>
-                      <td className="px-4 py-3 text-slate-400">{d.days}d</td>
-                      <td className="px-4 py-3 text-slate-400 max-w-xs truncate">{d.notes}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td style={{color:'#696969'}}>{d.eco}</td>
+                        <td style={{color:'#696969'}}>{d.sector}</td>
+                        <td className="font-extrabold font-data" style={{color:'#74BB65'}}>{d.capex}</td>
+                        <td>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded"
+                            style={{background:`${STAGE_C[si]}20`,color:STAGE_C[si]}}>
+                            {d.stage}
+                          </span>
+                        </td>
+                        <td className="font-extrabold" style={{color:GRADE_C[d.grade]}}>{d.grade}</td>
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm" style={{color:'#22c55e'}}>{d.prob}%</span>
+                            <div className="w-16 bg-white/5 rounded-full h-1">
+                              <div className="h-1 rounded-full" style={{width:`${d.prob}%`,background:'#22c55e'}}/>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <button onClick={()=>advance(d.id)}
+                            className="text-xs px-2 py-1 rounded font-bold"
+                            style={{color:'#74BB65',background:'rgba(116,187,101,0.1)'}}>
+                            Advance →
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

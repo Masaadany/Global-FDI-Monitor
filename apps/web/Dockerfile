@@ -30,3 +30,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+  CMD curl -f http://localhost:3000/ || exit 1

@@ -1,96 +1,120 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { fetchWithAuth } from '@/lib/shared';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import Link from 'next/link';
+import PreviewGate from '@/components/PreviewGate';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
-const DEMO_LISTS = [
-  { id:'wl1', name:'MENA Technology', economies:['UAE','SAU','QAT','EGY'], sectors:['J'], signal_count:14, created_at:'2026-02-01' },
-  { id:'wl2', name:'ASEAN Battery Chain', economies:['IDN','VNM','THA','MYS'], sectors:['C'], signal_count:9, created_at:'2026-02-15' },
-  { id:'wl3', name:'Africa Energy', economies:['NGA','ZAF','EGY','MAR'], sectors:['D'], signal_count:5, created_at:'2026-03-01' },
+const INIT_LISTS = [
+  { id:1, name:'MENA Priority Economies', type:'ECONOMY',  color:'#74BB65',
+    items:[{flag:'🇦🇪',name:'UAE',iso3:'ARE'},{flag:'🇸🇦',name:'Saudi Arabia',iso3:'SAU'},{flag:'🇶🇦',name:'Qatar',iso3:'QAT'},{flag:'🇪🇬',name:'Egypt',iso3:'EGY'}],
+    signals_7d:12, gfr_changes:2 },
+  { id:2, name:'ICT Sector Watch',        type:'SECTOR',   color:'#0A3D62',
+    items:[{flag:'💻',name:'ICT'},{flag:'🤖',name:'AI/Data Centers'},{flag:'⚡',name:'Semiconductors'}],
+    signals_7d:18, gfr_changes:0 },
+  { id:3, name:'Key Investors',           type:'COMPANY',  color:'#22c55e',
+    items:[{flag:'🇺🇸',name:'Microsoft'},{flag:'🇺🇸',name:'Google Cloud'},{flag:'🇸🇦',name:'ACWA Power'}],
+    signals_7d:6, gfr_changes:0 },
 ];
 
+const TYPE_C: Record<string,string> = {ECONOMY:'#74BB65',SECTOR:'#0A3D62',COMPANY:'#22c55e'};
+
 export default function WatchlistsPage() {
-  const [lists,   setLists]   = useState(DEMO_LISTS);
-  const [loading, setLoading] = useState(true);
+  const [lists, setLists] = useState(INIT_LISTS);
+  const [modal, setModal] = useState(false);
   const [newName, setNewName] = useState('');
-  const [creating,setCreating]= useState(false);
+  const [newType, setNewType] = useState('ECONOMY');
 
-  useEffect(() => {
-    fetchWithAuth(`${API}/api/v1/watchlists`).then(r => r.json())
-      .then(d => { if (d.data?.watchlists?.length) setLists(d.data.watchlists); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  async function create() {
+  function addList() {
     if (!newName.trim()) return;
-    setCreating(true);
-    try {
-      const r = await fetchWithAuth(`${API}/api/v1/watchlists`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName }),
-      });
-      const d = await r.json();
-      if (d.data) setLists(l => [d.data, ...l]);
-      else setLists(l => [{ id:`wl${Date.now()}`, name:newName, economies:[], sectors:[], signal_count:0, created_at:new Date().toISOString().slice(0,10) }, ...l]);
-    } catch {}
-    setNewName(''); setCreating(false);
+    setLists(p=>[...p,{id:Date.now(),name:newName,type:newType as any,color:TYPE_C[newType],items:[],signals_7d:0,gfr_changes:0}]);
+    setNewName(''); setModal(false);
   }
 
+  function removeList(id: number) { setLists(p=>p.filter(l=>l.id!==id)); }
+
   return (
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-10">
-        <div className="max-w-3xl mx-auto relative z-10 flex items-center justify-between">
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-8">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Intelligence Tracking</div>
-            <h1 className="text-3xl font-extrabold">Watchlists</h1>
-            <p className="text-white/60 mt-1 text-sm">Track economies, corridors, and sectors. Alerts auto-generated.</p>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-1" style={{color:'#74BB65'}}>Intelligence</div>
+            <h1 className="text-2xl font-extrabold" style={{color:'#0A3D62'}}>Watchlists</h1>
+            <p className="text-sm mt-1" style={{color:'#696969'}}>Monitor economies, sectors, and companies · Real-time alerts</p>
           </div>
-          <div className="stat-number text-3xl font-bold text-white">{lists.length}</div>
+          <button onClick={()=>setModal(true)} className="gfm-btn-primary text-sm py-2 px-5">+ New Watchlist</button>
         </div>
       </section>
 
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-4">
-        {/* Create */}
-        <div className="gfm-card p-5">
-          <div className="font-bold text-deep text-sm mb-3">Create Watchlist</div>
-          <div className="flex gap-3">
-            <input value={newName} onChange={e=>setNewName(e.target.value)} onKeyDown={e=>e.key==='Enter'&&create()}
-              placeholder="e.g. India Manufacturing 2026" className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary"/>
-            <button onClick={create} disabled={creating||!newName.trim()} className={`gfm-btn-primary px-5 py-2.5 rounded-xl text-sm ${creating||!newName.trim()?'opacity-50':''}`}>
-              {creating ? '…' : '+ Create'}
-            </button>
+      <div className="max-w-screen-xl mx-auto px-6 py-5">
+        {modal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={()=>setModal(false)}>
+            <div className="gfm-card p-6 max-w-sm w-full" onClick={e=>e.stopPropagation()}>
+              <div className="font-extrabold text-sm mb-4" style={{color:'#0A3D62'}}>Create Watchlist</div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#696969'}}>Name</label>
+                  <input value={newName} onChange={e=>setNewName(e.target.value)}
+                    className="w-full px-3 py-2.5 text-sm rounded-xl" placeholder="My MENA Watch…"/>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1" style={{color:'#696969'}}>Type</label>
+                  <select value={newType} onChange={e=>setNewType(e.target.value)} className="w-full px-3 py-2.5 text-sm rounded-xl">
+                    {['ECONOMY','SECTOR','COMPANY'].map(t=><option key={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={addList} className="gfm-btn-primary flex-1 py-2.5 text-sm">Create</button>
+                <button onClick={()=>setModal(false)} className="gfm-btn-outline px-4 text-sm" style={{color:'#696969'}}>Cancel</button>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Lists */}
-        {loading ? (
-          Array(3).fill(0).map((_,i) => <div key={i} className="gfm-card p-5 h-24 animate-pulse bg-slate-50"/>)
-        ) : lists.map(list => (
-          <div key={list.id} className="gfm-card p-5">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="font-extrabold text-deep text-base">{list.name}</div>
-                <div className="text-xs text-slate-400 mt-0.5">Created {list.created_at?.slice(0,10)}</div>
+        <PreviewGate feature="full_profile">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {lists.map(list=>(
+            <div key={list.id} className="gfm-card p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded" style={{background:`${list.color}15`,color:list.color}}>{list.type}</span>
+                  </div>
+                  <div className="font-extrabold text-sm" style={{color:'#0A3D62'}}>{list.name}</div>
+                </div>
+                <button onClick={()=>removeList(list.id)} className="text-sm" style={{color:'#696969'}} aria-label="Remove watchlist">✕</button>
               </div>
-              <div className="flex gap-2">
-                <a href={`/signals?watchlist=${list.id}`} className="gfm-btn-outline text-xs py-1.5 px-3">View Signals</a>
-                <button className="text-xs text-red-400 hover:text-red-600 px-2">✕</button>
+
+              <div className="flex flex-wrap gap-1 mb-3">
+                {list.items.slice(0,3).map((item:any,i:number)=>(
+                  <span key={i} className="text-xs px-2 py-0.5 rounded flex items-center gap-1" style={{background:'rgba(10,61,98,0.1)',color:'#696969'}}>
+                    {item.flag} {item.name}
+                  </span>
+                ))}
+                {list.items.length > 3 && <span className="text-xs" style={{color:'#696969'}}>+{list.items.length-3} more</span>}
               </div>
+
+              <div className="flex gap-4 text-xs mb-3">
+                <div><span style={{color:'#696969'}}>Signals 7d: </span><span className="font-bold" style={{color:'#22c55e'}}>{list.signals_7d}</span></div>
+                <div><span style={{color:'#696969'}}>GFR changes: </span><span className="font-bold" style={{color:'#74BB65'}}>{list.gfr_changes}</span></div>
+              </div>
+
+              <Link href="/signals" className="text-xs font-bold" style={{color:'#74BB65'}}>View Signals →</Link>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {(list.economies||[]).map((e:string) => (
-                <a key={e} href={`/country/${e}`} className="text-xs bg-primary-light text-primary px-2 py-0.5 rounded font-mono border border-blue-200 hover:bg-primary hover:text-white transition-all">{e}</a>
-              ))}
-              {(list.sectors||[]).map((s:string) => (
-                <span key={s} className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-semibold">ISIC-{s}</span>
-              ))}
-              <span className="text-xs text-slate-400 ml-auto">{list.signal_count} signals</span>
+          ))}
+
+          {lists.length === 0 && (
+            <div className="md:col-span-3 text-center py-16" style={{color:'#696969'}}>
+              <div className="text-4xl mb-3">📋</div>
+              <div className="font-extrabold mb-2" style={{color:'#696969'}}>No watchlists yet</div>
+              <button onClick={()=>setModal(true)} className="gfm-btn-primary text-sm px-5 py-2.5">Create First Watchlist</button>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
+        </PreviewGate>
       </div>
     </div>
   );

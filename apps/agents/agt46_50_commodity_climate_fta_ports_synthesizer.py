@@ -1,4 +1,17 @@
 """
+Agent: agt46_50_commodity_climate_fta_ports_synthesizer — FDI Monitor Intelligence Pipeline
+Error handling wrapper applied at module level.
+"""
+import datetime as _dt
+
+def _safe_run(fn, params):
+    try:
+        return fn(params)
+    except Exception as e:
+        return {"success": False, "error": str(e), "agent": "agt46_50_commodity_climate_fta_ports_synthesizer",
+                "ts": _dt.datetime.utcnow().isoformat() + "Z"}
+
+"""
 GLOBAL FDI MONITOR — AGT-46 through AGT-50
 AGT-46: COMMODITY INTELLIGENCE — Links commodity price moves to FDI signals
 AGT-47: CLIMATE FINANCE TRACKER — Green bonds, blended finance, climate FDI

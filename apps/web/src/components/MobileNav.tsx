@@ -1,125 +1,100 @@
 'use client';
-import { useState } from 'react';
+import Logo from '@/components/Logo';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 const NAV_SECTIONS = [
-  {
-    label: 'Intelligence',
-    items: [
-      {href:'/dashboard',           icon:'🗂',  label:'Dashboard'},
-      {href:'/signals',             icon:'📡',  label:'Market Signals'},
-      {href:'/analytics',           icon:'📊',  label:'Analytics'},
-      {href:'/market-insights',     icon:'💡',  label:'Resources & Insights'},
-    ]
-  },
-  {
-    label: 'Rankings & Data',
-    items: [
-      {href:'/gfr',                 icon:'🏆',  label:'GFR Rankings'},
-      {href:'/country/ARE',         icon:'🌍',  label:'Country Profiles'},
-      {href:'/company-profiles',    icon:'🏢',  label:'Company Profiles'},
-      {href:'/sectors',             icon:'🏭',  label:'Sector Intelligence'},
-      {href:'/corridor-intelligence',icon:'🛤', label:'Corridor Intelligence'},
-    ]
-  },
-  {
-    label: 'Analysis Tools',
-    items: [
-      {href:'/forecast',            icon:'🔮',  label:'Forecast & Outlook'},
-      {href:'/scenario-planner',    icon:'🎲',  label:'Scenario Planner'},
-      {href:'/benchmarking',        icon:'📐',  label:'Benchmarking'},
-      {href:'/pmp',                 icon:'🎯',  label:'Mission Planning'},
-    ]
-  },
-  {
-    label: 'Platform',
-    items: [
-      {href:'/reports',             icon:'📋',  label:'Custom Reports'},
-      {href:'/investment-pipeline', icon:'➕',  label:'Investment Pipeline'},
-      {href:'/watchlists',          icon:'👁',  label:'Watchlists'},
-      {href:'/alerts',              icon:'🔔',  label:'Alerts'},
-      {href:'/publications',        icon:'📰',  label:'Publications'},
-    ]
-  },
-  {
-    label: 'Account',
-    items: [
-      {href:'/fic',                 icon:'⭐',  label:'FIC Credits'},
-      {href:'/subscription',        icon:'💳',  label:'Subscription Plans'},
-      {href:'/settings',            icon:'⚙️',  label:'Settings'},
-      {href:'/demo',                icon:'▶️',  label:'Live Demo'},
-    ]
-  },
-  {
-    label: 'Company',
-    items: [
-      {href:'/about',               icon:'ℹ️',  label:'About Us'},
-      {href:'/pricing',             icon:'💰',  label:'Pricing'},
-      {href:'/contact',             icon:'✉️',  label:'Contact'},
-      {href:'/ar',                  icon:'🌐',  label:'العربية'},
-    ]
-  },
+  { title:'Intelligence', links:[
+    {href:'/dashboard',  label:'Dashboard',         icon:'📊'},
+    {href:'/signals',    label:'Live Signals',       icon:'📡'},
+    {href:'/gfr',        label:'GFR Rankings',       icon:'🏆'},
+    {href:'/analytics',  label:'Analytics',          icon:'📈'},
+  ]},
+  { title:'Planning', links:[
+    {href:'/forecast',   label:'Foresight 2050',     icon:'🔭'},
+    {href:'/pmp',        label:'Mission Planning',   icon:'🎯'},
+    {href:'/scenario-planner', label:'Scenarios',   icon:'🎛'},
+    {href:'/benchmarking',label:'Benchmarking',      icon:'📊'},
+  ]},
+  { title:'Data', links:[
+    {href:'/sectors',    label:'Sectors',            icon:'🏭'},
+    {href:'/company-profiles',label:'Companies',    icon:'🏢'},
+    {href:'/corridor-intelligence',label:'Corridors',icon:'↔️'},
+    {href:'/publications',label:'Publications',     icon:'📚'},
+  ]},
+  { title:'Account', links:[
+    {href:'/reports',    label:'Reports',            icon:'📋'},
+    {href:'/watchlists', label:'Watchlists',         icon:'👁️'},
+    {href:'/alerts',     label:'Alerts',             icon:'🔔'},
+    {href:'/settings',   label:'Settings',           icon:'⚙️'},
+  ]},
 ];
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
+  const path = usePathname() || '';
+
+  // Close on route change
+  useEffect(() => { setOpen(false); }, [path]);
+
+  // Prevent body scroll when open
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
 
   return (
-    <div className="lg:hidden">
-      <button onClick={() => setOpen(true)}
-        className="flex flex-col gap-1 p-2 rounded-lg hover:bg-slate-100 transition-colors"
-        aria-label="Open menu">
-        <span className="w-5 h-0.5 bg-slate-600 rounded"/>
-        <span className="w-5 h-0.5 bg-slate-600 rounded"/>
-        <span className="w-4 h-0.5 bg-slate-600 rounded"/>
+    <>
+      <button onClick={()=>setOpen(p=>!p)}
+        aria-label="Open mobile navigation" className="lg:hidden p-2 rounded-lg transition-all"
+        style={{color:'#696969'}}>
+        {open
+          ? <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          : <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        }
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)}/>
-          {/* Panel */}
-          <div className="relative ml-auto w-72 bg-white h-full overflow-y-auto shadow-2xl flex flex-col">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center font-black text-white text-sm"
-                  style={{background:'linear-gradient(135deg,#0A2540,#0A66C2)'}}>G</div>
-                <span className="font-extrabold text-deep text-sm">GFM Menu</span>
-              </div>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-deep p-1.5 rounded-lg hover:bg-slate-100 transition-colors text-lg">×</button>
-            </div>
+      {/* Backdrop */}
+      {open && <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={()=>setOpen(false)}/>}
 
-            {/* Nav sections */}
-            <div className="flex-1 overflow-y-auto py-2">
-              {NAV_SECTIONS.map(section => (
-                <div key={section.label} className="mb-1">
-                  <div className="px-4 py-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest">{section.label}</div>
-                  {section.items.map(item => (
-                    <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition-colors group">
-                      <span className="text-base w-5 text-center flex-shrink-0">{item.icon}</span>
-                      <span className="text-sm font-medium text-slate-600 group-hover:text-primary transition-colors">{item.label}</span>
-                    </Link>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Footer */}
-            <div className="border-t border-slate-100 px-4 py-4 flex-shrink-0 space-y-2">
-              <Link href="/register" onClick={() => setOpen(false)}
-                className="block w-full text-center gfm-btn-primary py-2.5 rounded-xl text-sm">
-                Start Free Trial
-              </Link>
-              <Link href="/auth/login" onClick={() => setOpen(false)}
-                className="block w-full text-center border border-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-sm hover:border-primary hover:text-primary transition-all">
-                Sign In
-              </Link>
-            </div>
-          </div>
+      {/* Slide-out panel */}
+      <div className={`fixed top-0 right-0 bottom-0 z-50 lg:hidden flex flex-col transition-transform duration-300 ${open?'translate-x-0':'translate-x-full'}`}
+           style={{width:280,background:'#0F1A1C',borderLeft:'1px solid rgba(10,61,98,0.15)'}}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderBottomColor:'rgba(10,61,98,0.15)'}}>
+          <Link href="/" className="flex items-center gap-2">
+            <Logo variant="nav"/>
+            <span className="font-extrabold text-sm" style={{color:'#0A3D62'}}>FDI Monitor</span>
+          </Link>
+          <button onClick={()=>setOpen(false)} className="text-fog hover:text-bright text-2xl leading-none">×</button>
         </div>
-      )}
-    </div>
+
+        {/* Nav sections */}
+        <div className="flex-1 overflow-y-auto py-4">
+          {NAV_SECTIONS.map(section=>(
+            <div key={section.title} className="mb-5 px-5">
+              <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#696969'}}>{section.title}</div>
+              <div className="space-y-0.5">
+                {section.links.map(link=>(
+                  <Link key={link.href} href={link.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${path===link.href?'text-radiance bg-radiance/10':'text-fog hover:text-bright hover:bg-white/5'}`}>
+                    <span className="text-base">{link.icon}</span>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom CTAs */}
+        <div className="px-5 pb-5 pt-3 border-t space-y-2" style={{borderTopColor:'rgba(10,61,98,0.15)'}}>
+          <Link href="/ar"           className="flex items-center gap-2 text-sm text-fog hover:text-bright px-3 py-2">🌐 العربية</Link>
+          <Link href="/auth/login"   className="gfm-btn-outline w-full text-sm py-2.5 text-center" style={{color:'#696969'}}>Sign In</Link>
+          <Link href="/register"     className="gfm-btn-primary w-full text-sm py-2.5 text-center block">Start Free Trial</Link>
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,62 +1,93 @@
+"""Agent Router — FDI Monitor Intelligence Pipeline
+Routes intelligence requests to appropriate specialist agents.
 """
-GFM Agent Router — Fast Intent Classification
-Routes requests to appropriate agent with <1ms latency.
-"""
-import re, time, hashlib
-from datetime import datetime, timezone
+import datetime as _dt
 
-# Keyword → agent mapping (ordered by priority)
-ROUTES = [
-    (r'\b(signal|detect|news|gdelt|announcement)\b',     'AGT-01', 'Signal Detection'),
-    (r'\b(gfr|ranking|score|readiness|tier)\b',          'AGT-02', 'GFR Computation'),
-    (r'\b(country|economy|profile|gdp|cegp)\b',          'AGT-03', 'Country Profile'),
-    (r'\b(brief|market|sector|summary|mib)\b',           'AGT-04', 'Market Brief'),
-    (r'\b(mission|target|company|mfs|pmp)\b',            'AGT-05', 'Mission Planning'),
-    (r'\b(newsletter|digest|weekly|monthly)\b',           'AGT-06', 'Newsletter'),
-    (r'\b(forecast|predict|projection|var|prophet)\b',   'AGT-07', 'Forecast'),
-    (r'\b(scenario|monte.carlo|simulate|stress)\b',      'AGT-08', 'Scenario'),
-    (r'\b(enrich|verify|provenance|z3|waterfall)\b',     'AGT-09', 'Enrichment'),
-    (r'\b(translat|language|arabic|french|arabic)\b',    'AGT-10', 'Translation'),
-    (r'\b(sanction|ofac|blocklist|compliance)\b',         'AGT-11', 'Sanctions'),
-    (r'\b(cic|company.intel|ims|footprint|esg)\b',       'AGT-12', 'Company Intel'),
-    (r'\b(corridor|bilateral|flow|trade.route)\b',        'AGT-13', 'Corridor'),
-    (r'\b(publish|pdf|compile|render|report)\b',          'AGT-14', 'Publication'),
-    (r'\b(alert|notify|threshold|watchlist)\b',           'AGT-15', 'Alert'),
+def _safe_route(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        return {"success": False, "error": str(e), "agent": "agent_router",
+                "ts": _dt.datetime.utcnow().isoformat() + "Z"}
+
+
+import re, time
+
+ROUTING_PATTERNS = [
+    ('AGT-01', ['signal','detect','feed','live','stream','gdelt','curated']),
+    ('AGT-02', ['gfr','ranking','score','readiness','composite','215 economies']),
+    ('AGT-03', ['country','profile','economy','iso3','geographic']),
+    ('AGT-04', ['brief','market','summary','mib','intelligence brief']),
+    ('AGT-05', ['mission','target','mfs','feasibility','outreach']),
+    ('AGT-06', ['newsletter','digest','weekly','fnl','compile news']),
+    ('AGT-07', ['forecast','projection','outlook','2030','2028','future fdi']),
+    ('AGT-08', ['scenario','monte carlo','simulation','stress test','p10','p50','p90']),
+    ('AGT-09', ['enrich','provenance','verify','waterfall','z3','enrichment']),
+    ('AGT-10', ['translate','arabic','french','spanish','language','localise']),
+    ('AGT-11', ['ofac','sanction','compliance','screen','sanctioned','un list']),
+    ('AGT-12', ['company','intelligence','ims','cic','esg','corporate']),
+    ('AGT-13', ['corridor','bilateral','route','flow','trade route']),
+    ('AGT-14', ['publish','publication','document','compile report','document']),
+    ('AGT-15', ['orchestrat','dispatch','pipeline','all agents','coordinate']),
 ]
-_COMPILED = [(re.compile(p, re.IGNORECASE), aid, name) for p, aid, name in ROUTES]
 
-def route(query: str, context: dict | None = None) -> dict:
-    """Route query to best-match agent. Returns routing decision with latency."""
-    t0      = time.perf_counter()
-    matches = [(aid, name) for pat, aid, name in _COMPILED if pat.search(query)]
-    agent_id, agent_name = matches[0] if matches else ('AGT-03', 'Country Profile')
-    latency_ms = (time.perf_counter() - t0) * 1000
-
+def route(query: str) -> dict:
+    """Classify query and return routing decision in <5ms."""
+    start = time.perf_counter()
+    q = query.lower().strip()
+    
+    best_agent = 'AGT-01'
+    best_score = 0
+    
+    for agent_id, keywords in ROUTING_PATTERNS:
+        score = sum(1 for kw in keywords if kw in q)
+        if score > best_score:
+            best_score = score
+            best_agent = agent_id
+    
+    elapsed = (time.perf_counter() - start) * 1000
+    
     return {
+        'agent_id':    best_agent,
+        'confidence':  min(1.0, best_score / 2),
+        'elapsed_ms':  round(elapsed, 3),
         'query':       query,
-        'agent_id':    agent_id,
-        'agent_name':  agent_name,
-        'confidence':  0.92 if matches else 0.55,
-        'alternatives':[{'id':m[0],'name':m[1]} for m in matches[1:3]],
-        'latency_ms':  round(latency_ms, 3),
-        'timestamp':   datetime.now(timezone.utc).isoformat(),
     }
 
-def batch_route(queries: list[str]) -> list[dict]:
-    return [route(q) for q in queries]
+def route_intent(query: str) -> str:
+    """Simple helper returning just agent ID."""
+    return route(query)['agent_id']
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tests = [
-        "Run signal detection for UAE tech sector",
-        "Compute GFR scores for all 215 economies",
-        "Generate country profile for India",
-        "Weekly newsletter generation",
-        "Monte Carlo scenario for oil price shock",
-        "OFAC sanctions check for new company",
-        "Bilateral corridor analysis UAE-India",
+        ('signal detection run',    'AGT-01'),
+        ('compute gfr rankings',    'AGT-02'),
+        ('country profile UAE',     'AGT-03'),
+        ('market brief ICT',        'AGT-04'),
+        ('mission planning targets','AGT-05'),
+        ('generate newsletter',     'AGT-06'),
+        ('forecast fdi 2030',       'AGT-07'),
+        ('monte carlo scenario',    'AGT-08'),
+        ('enrich signal record',    'AGT-09'),
+        ('translate arabic',        'AGT-10'),
+        ('ofac sanctions check',    'AGT-11'),
+        ('company intelligence',    'AGT-12'),
+        ('corridor analysis',       'AGT-13'),
+        ('compile publication',     'AGT-14'),
+        ('orchestrate pipeline',    'AGT-15'),
     ]
-    print("GFM Agent Router — Test Results")
-    print("=" * 60)
-    for q in tests:
-        r = route(q)
-        print(f"  [{r['agent_id']}] {r['agent_name']:20s} | {r['latency_ms']:.3f}ms | {q[:45]}")
+    print("Agent Router Test:")
+    for query, expected in tests:
+        result = route(query)
+        status = '✓' if result['agent_id'] == expected else '✗'
+        print(f"  {status} {result['agent_id']} ({result['elapsed_ms']:.3f}ms): {query}")
+
+
+def run(payload: dict) -> dict:
+    """Standard GFM agent run interface for agent_router."""
+    query = payload.get('query', '')
+    return route(query)
+
+def execute(payload: dict) -> dict:
+    """Standard GFM execute interface."""
+    return {'status': 'completed', 'result': run(payload)}

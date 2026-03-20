@@ -1,31 +1,39 @@
 import Link from 'next/link';
+import NavBar from '@/components/NavBar';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: '404 — Page Not Found | FDI Monitor' };
+
 export default function NotFound() {
-  const SUGGESTIONS = [
-    {href:'/dashboard',   icon:'🗂', label:'Dashboard',     desc:'Your intelligence home'},
-    {href:'/signals',     icon:'📡', label:'Live Signals',  desc:'Real-time FDI signals'},
-    {href:'/gfr',         icon:'🏆', label:'GFR Rankings',  desc:'215 economy rankings'},
-    {href:'/demo',        icon:'🎯', label:'Live Demo',     desc:'No login required'},
-    {href:'/pricing',     icon:'💳', label:'Pricing',       desc:'From $899/month'},
-    {href:'/register',    icon:'🚀', label:'Free Trial',    desc:'3 days free'},
-  ];
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-16">
-      <div className="text-center max-w-2xl w-full">
-        <div className="text-8xl font-extrabold text-slate-200 mb-4 font-mono select-none">404</div>
-        <h1 className="text-2xl font-extrabold text-deep mb-2">Intelligence not found</h1>
-        <p className="text-slate-500 mb-10">The page you're looking for doesn't exist or has moved.</p>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-8">
-          {SUGGESTIONS.map(s=>(
-            <Link key={s.href} href={s.href} className="gfm-card p-4 text-left group hover:border-primary">
-              <div className="text-2xl mb-2">{s.icon}</div>
-              <div className="font-bold text-sm text-deep group-hover:text-primary transition-colors">{s.label}</div>
-              <div className="text-xs text-slate-400 mt-0.5">{s.desc}</div>
+    <div className="min-h-screen" style={{background:'#0F0A0A'}}>
+      <NavBar/>
+      <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
+        <div className="text-8xl font-extrabold font-data mb-4" style={{color:'rgba(255,102,0,0.15)'}}>404</div>
+        <div className="text-4xl font-extrabold mb-3" style={{color:'#FAFAF0'}}>Page Not Found</div>
+        <p className="text-base max-w-md mb-8" style={{color:'#87A19E'}}>
+          The intelligence you&apos;re looking for may have moved. Try navigating from the dashboard.
+        </p>
+        <div className="flex gap-3 flex-wrap justify-center">
+          <Link href="/dashboard" className="gfm-btn-primary px-8 py-3">Go to Dashboard</Link>
+          <Link href="/"          className="gfm-btn-outline px-8 py-3" style={{color:'#87A19E'}}>Homepage</Link>
+          <Link href="/signals"   className="gfm-btn-outline px-8 py-3" style={{color:'#87A19E'}}>Live Signals</Link>
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-12 max-w-2xl">
+          {[
+            {href:'/gfr',          label:'GFR Rankings',      icon:'🏆'},
+            {href:'/forecast',     label:'Foresight 2050',    icon:'📈'},
+            {href:'/pmp',          label:'Mission Planning',  icon:'🎯'},
+            {href:'/sectors',      label:'Sectors',           icon:'🏭'},
+            {href:'/reports',      label:'Reports',           icon:'📋'},
+            {href:'/sources',      label:'Data Sources',      icon:'🔍'},
+          ].map(item=>(
+            <Link key={item.href} href={item.href}
+              className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-white/5 transition-all">
+              <span className="text-2xl">{item.icon}</span>
+              <span className="text-xs" style={{color:'#496767'}}>{item.label}</span>
             </Link>
           ))}
-        </div>
-        <div className="flex gap-3 justify-center">
-          <Link href="/" className="gfm-btn-primary px-6 py-2.5">← Home</Link>
-          <Link href="/contact" className="gfm-btn-outline px-6 py-2.5">Report issue</Link>
         </div>
       </div>
     </div>

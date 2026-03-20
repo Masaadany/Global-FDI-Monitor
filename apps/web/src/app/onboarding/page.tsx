@@ -1,168 +1,202 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { fetchWithAuth } from '@/lib/shared';
+import Logo from '@/components/Logo';
+import Link from 'next/link';
 
-const STEPS = ['Welcome','Your Role','Interests','Access'] as const;
-const ROLES = [
-  {v:'ipa',l:'Investment Promotion Agency',icon:'🏛'},
-  {v:'fund',l:'Sovereign / Private Fund',icon:'💰'},
-  {v:'corp',l:'Corporate Strategy',icon:'🏢'},
-  {v:'gov',l:'Government / Policy',icon:'⚖️'},
-  {v:'consult',l:'Consultant / Advisor',icon:'📊'},
-  {v:'research',l:'Research / Academia',icon:'🔬'},
+const API = process.env.NEXT_PUBLIC_API_URL || '';
+
+const STEPS = [
+  { id:1, title:'Welcome to FDI Monitor', subtitle:'Tell us about yourself' },
+  { id:2, title:'Your Use Case',           subtitle:'How will you use the platform?' },
+  { id:3, title:'Regions of Interest',     subtitle:'Which regions do you track?' },
+  { id:4, title:'Target Sectors',          subtitle:'Which sectors matter most?' },
+  { id:5, title:'Ready to Launch',         subtitle:'Your intelligence dashboard awaits' },
 ];
-const REGIONS = ['MENA','ASEAN','Sub-Saharan Africa','South Asia','Europe','North America','Latin America','East Asia'];
+
+const USE_CASES = [
+  {id:'ipa',      label:'Investment Promotion Agency', icon:'🏛'},
+  {id:'swf',      label:'Sovereign Wealth Fund',       icon:'💰'},
+  {id:'pe',       label:'Private Equity / VC',         icon:'📊'},
+  {id:'consult',  label:'Strategy Consultant',         icon:'🎯'},
+  {id:'research', label:'Academic Research',           icon:'🔬'},
+  {id:'govt',     label:'Government / Ministry',       icon:'⚖️'},
+  {id:'corp',     label:'Corporate Strategy',          icon:'🏢'},
+  {id:'other',    label:'Other',                       icon:'💼'},
+];
+
+const REGIONS = [
+  {id:'mena',       label:'MENA',            icon:'🌍'},
+  {id:'apac',       label:'Asia-Pacific',    icon:'🌏'},
+  {id:'europe',     label:'Europe',          icon:'🇪🇺'},
+  {id:'namerica',   label:'North America',   icon:'🌎'},
+  {id:'africa',     label:'Africa',          icon:'🌍'},
+  {id:'latam',      label:'Latin America',   icon:'🌎'},
+  {id:'global',     label:'Global',          icon:'🌐'},
+  {id:'south_asia', label:'South Asia',      icon:'🌏'},
+];
+
 const SECTORS = [
-  {v:'J',l:'Technology & ICT'},
-  {v:'D',l:'Renewable Energy'},
-  {v:'K',l:'Finance & Insurance'},
-  {v:'C',l:'Manufacturing'},
-  {v:'H',l:'Logistics & Transport'},
-  {v:'B',l:'Mining & Resources'},
-  {v:'Q',l:'Healthcare'},
-  {v:'I',l:'Education & Tourism'},
+  {id:'ict',    label:'ICT & Digital',        icon:'💻'},
+  {id:'energy', label:'Energy & Utilities',   icon:'⚡'},
+  {id:'manuf',  label:'Manufacturing',        icon:'🏭'},
+  {id:'fin',    label:'Financial Services',   icon:'💰'},
+  {id:'re',     label:'Real Estate',          icon:'🏢'},
+  {id:'health', label:'Health & Life Sci',   icon:'🏥'},
+  {id:'infra',  label:'Infrastructure',       icon:'🏗'},
+  {id:'auto',   label:'Auto & Mobility',      icon:'🚗'},
 ];
 
 export default function OnboardingPage() {
-  const router = useRouter();
-  const [step,     setStep]     = useState(0);
-  const [role,     setRole]     = useState('');
+  const [step,     setStep]     = useState(1);
+  const [useCase,  setUseCase]  = useState('');
   const [regions,  setRegions]  = useState<string[]>([]);
   const [sectors,  setSectors]  = useState<string[]>([]);
   const [loading,  setLoading]  = useState(false);
+  const router = useRouter();
 
-  function toggle<T>(arr: T[], val: T, set: (a: T[]) => void) {
-    set(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val]);
+  function toggleRegion(id: string) {
+    setRegions(r => r.includes(id) ? r.filter(x=>x!==id) : [...r,id]);
+  }
+  function toggleSector(id: string) {
+    setSectors(s => s.includes(id) ? s.filter(x=>x!==id) : [...s,id]);
   }
 
   async function finish() {
     setLoading(true);
     try {
-      await fetchWithAuth('/api/v1/auth/me', { method: 'GET' });
+      const token = typeof window!=='undefined' ? localStorage.getItem('gfm_token')||'' : '';
+      await fetch(`${API}/api/v1/onboarding`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({use_case:useCase, regions, sectors}),
+      });
     } catch {}
-    router.push('/dashboard/success');
+    router.push('/dashboard');
   }
 
-  const progress = ((step) / (STEPS.length - 1)) * 100;
+  const pct = Math.round((step/STEPS.length)*100);
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg">
-        {/* Progress */}
-        <div className="mb-8 text-center">
-          <div className="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-3">
-            Step {step + 1} of {STEPS.length} — {STEPS[step]}
-          </div>
-          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col" style={{background:'#E2F2DF'}}>
+      {/* Header */}
+      <div className="px-6 py-4 border-b flex items-center justify-between" style={{borderBottomColor:'rgba(10,61,98,0.1)'}}>
+        <Logo variant="nav" href="/"/>
+        <div className="text-xs" style={{color:'#696969'}}>Step {step} of {STEPS.length}</div>
+      </div>
 
-        <div className="gfm-card p-8">
-          {/* Step 0: Welcome */}
-          {step === 0 && (
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary-light rounded-2xl flex items-center justify-center text-4xl mx-auto mb-5">🌍</div>
-              <h2 className="font-extrabold text-2xl text-deep mb-2">Welcome to Global FDI Monitor</h2>
-              <p className="text-slate-500 text-sm leading-relaxed mb-6">
-                You have <strong className="text-primary">5 FIC credits</strong> to start. Let&apos;s personalise your experience so we can surface the most relevant FDI intelligence for you.
+      {/* Progress bar */}
+      <div className="h-0.5" style={{background:'rgba(10,61,98,0.1)'}}>
+        <div className="h-full transition-all duration-500" style={{width:`${pct}%`,background:'#74BB65'}}/>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-lg">
+          {/* Step header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center gap-2 mb-4">
+              {STEPS.map(s=>(
+                <div key={s.id} className={`w-2 h-2 rounded-full transition-all ${step>=s.id?'':'opacity-30'}`}
+                  style={{background:step>=s.id?'#74BB65':'#696969'}}/>
+              ))}
+            </div>
+            <h1 className="text-2xl font-extrabold mb-1" style={{color:'#0A3D62'}}>{STEPS[step-1].title}</h1>
+            <p className="text-sm" style={{color:'#696969'}}>{STEPS[step-1].subtitle}</p>
+          </div>
+
+          {/* Step content */}
+          {step === 1 && (
+            <div className="gfm-card p-6 text-center">
+              <div className="text-5xl mb-4">👋</div>
+              <p className="text-sm leading-relaxed mb-4" style={{color:'#696969'}}>
+                Welcome to FDI Monitor — the global standard for investment intelligence. This quick setup takes 2 minutes and personalises your dashboard experience.
               </p>
-              <div className="grid grid-cols-2 gap-3 mb-6 text-left">
-                {[
-                  ['📡','Live FDI Signals','218+ signals across 215 economies'],
-                  ['🏆','GFR Rankings','Quarterly readiness scores'],
-                  ['📋','AI Reports','10 report types, 45–120s'],
-                  ['🎯','Mission Planning','Company targeting maps'],
-                ].map(([icon,title,desc]) => (
-                  <div key={String(title)} className="bg-surface rounded-xl p-3 border border-slate-100">
-                    <div className="text-xl mb-1">{icon}</div>
-                    <div className="font-bold text-xs text-deep">{title}</div>
-                    <div className="text-xs text-slate-400 mt-0.5">{desc}</div>
+              <div className="grid grid-cols-3 gap-3 text-xs mt-4">
+                {[['218','Live Signals'],['215','Economies'],['10','Report Types']].map(([v,l])=>(
+                  <div key={l} className="p-3 rounded-xl" style={{background:'rgba(116,187,101,0.06)'}}>
+                    <div className="font-extrabold font-data text-lg" style={{color:'#74BB65'}}>{v}</div>
+                    <div style={{color:'#696969'}}>{l}</div>
                   </div>
                 ))}
               </div>
-              <button onClick={() => setStep(1)} className="w-full gfm-btn-primary py-3.5 rounded-xl">
-                Get Started →
-              </button>
             </div>
           )}
 
-          {/* Step 1: Role */}
-          {step === 1 && (
-            <div>
-              <h2 className="font-extrabold text-xl text-deep mb-1">What best describes your role?</h2>
-              <p className="text-sm text-slate-400 mb-5">We&apos;ll tailor your dashboard and default filters.</p>
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                {ROLES.map(r => (
-                  <button key={r.v} onClick={() => setRole(r.v)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      role === r.v ? 'border-primary bg-primary-light' : 'border-slate-200 hover:border-primary'
-                    }`}>
-                    <div className="text-2xl mb-1.5">{r.icon}</div>
-                    <div className={`text-xs font-bold leading-tight ${role === r.v ? 'text-primary' : 'text-deep'}`}>{r.l}</div>
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(0)} className="gfm-btn-outline px-6 py-2.5 rounded-xl">Back</button>
-                <button onClick={() => setStep(2)} disabled={!role} className={`flex-1 gfm-btn-primary py-2.5 rounded-xl ${!role ? 'opacity-40' : ''}`}>Continue →</button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Interests */}
           {step === 2 && (
-            <div>
-              <h2 className="font-extrabold text-xl text-deep mb-1">Your focus areas</h2>
-              <p className="text-sm text-slate-400 mb-4">Select the regions and sectors you track most.</p>
-              <div className="mb-4">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Regions</div>
-                <div className="flex flex-wrap gap-2">
-                  {REGIONS.map(r => (
-                    <button key={r} onClick={() => toggle(regions, r, setRegions)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                        regions.includes(r) ? 'bg-primary text-white border-primary' : 'border-slate-200 text-slate-500 hover:border-primary'
-                      }`}>{r}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="mb-6">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Sectors</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {SECTORS.map(s => (
-                    <button key={s.v} onClick={() => toggle(sectors, s.v, setSectors)}
-                      className={`px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all border ${
-                        sectors.includes(s.v) ? 'bg-primary text-white border-primary' : 'border-slate-200 text-slate-500 hover:border-primary'
-                      }`}>{s.l}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => setStep(1)} className="gfm-btn-outline px-6 py-2.5 rounded-xl">Back</button>
-                <button onClick={() => setStep(3)} className="flex-1 gfm-btn-primary py-2.5 rounded-xl">Continue →</button>
+            <div className="grid grid-cols-2 gap-3">
+              {USE_CASES.map(uc=>(
+                <button key={uc.id} onClick={()=>setUseCase(uc.id)}
+                  className={`gfm-card p-4 text-left transition-all border-2 ${useCase===uc.id?'':'border-transparent'}`}
+                  style={useCase===uc.id?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
+                  <div className="text-2xl mb-1">{uc.icon}</div>
+                  <div className="text-xs font-semibold" style={{color:useCase===uc.id?'#74BB65':'#0A3D62'}}>{uc.label}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="grid grid-cols-2 gap-3">
+              {REGIONS.map(r=>(
+                <button key={r.id} onClick={()=>toggleRegion(r.id)}
+                  className={`gfm-card p-4 text-left transition-all border-2 ${regions.includes(r.id)?'':'border-transparent'}`}
+                  style={regions.includes(r.id)?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
+                  <div className="text-2xl mb-1">{r.icon}</div>
+                  <div className="text-xs font-semibold" style={{color:regions.includes(r.id)?'#74BB65':'#0A3D62'}}>{r.label}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="grid grid-cols-2 gap-3">
+              {SECTORS.map(s=>(
+                <button key={s.id} onClick={()=>toggleSector(s.id)}
+                  className={`gfm-card p-4 text-left transition-all border-2 ${sectors.includes(s.id)?'':'border-transparent'}`}
+                  style={sectors.includes(s.id)?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
+                  <div className="text-2xl mb-1">{s.icon}</div>
+                  <div className="text-xs font-semibold" style={{color:sectors.includes(s.id)?'#74BB65':'#0A3D62'}}>{s.label}</div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="gfm-card p-6 text-center">
+              <div className="text-5xl mb-4">🚀</div>
+              <h2 className="text-xl font-extrabold mb-2" style={{color:'#0A3D62'}}>You are all set!</h2>
+              <p className="text-sm mb-4" style={{color:'#696969'}}>
+                Your dashboard is personalised for {useCase ? USE_CASES.find(u=>u.id===useCase)?.label : 'your profile'}.
+                {regions.length > 0 ? ` Tracking ${regions.length} region${regions.length>1?'s':''}.` : ''}
+                {sectors.length > 0 ? ` Focus on ${sectors.length} sector${sectors.length>1?'s':''}.` : ''}
+              </p>
+              <div className="text-xs mb-4 p-3 rounded-xl" style={{background:'rgba(34,197,94,0.06)',color:'#22c55e'}}>
+                3-day free trial active · No credit card required
               </div>
             </div>
           )}
 
-          {/* Step 3: Access */}
-          {step === 3 && (
-            <div className="text-center">
-              <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-4xl mx-auto mb-5">✅</div>
-              <h2 className="font-extrabold text-2xl text-deep mb-2">You&apos;re ready to go!</h2>
-              <div className="bg-surface rounded-xl p-4 border border-slate-200 mb-5 text-left space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Role:</span><span className="font-bold text-deep">{ROLES.find(r=>r.v===role)?.l||'—'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Regions:</span><span className="font-bold text-deep">{regions.length > 0 ? regions.slice(0,2).join(', ')+(regions.length>2?` +${regions.length-2}`:'') : 'All regions'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">Sectors:</span><span className="font-bold text-deep">{sectors.length > 0 ? `${sectors.length} selected` : 'All sectors'}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-slate-500">FIC Balance:</span><span className="font-extrabold text-amber-600">5 credits</span></div>
-              </div>
-              <button onClick={finish} disabled={loading}
-                className={`w-full gfm-btn-primary py-3.5 rounded-xl text-base font-bold ${loading ? 'opacity-50' : ''}`}>
-                {loading ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Setting up…</span> : 'Launch Dashboard →'}
+          {/* Navigation */}
+          <div className="flex gap-3 mt-6">
+            {step > 1 && (
+              <button onClick={()=>setStep(s=>s-1)}
+                className="gfm-btn-outline px-5 py-3 text-sm flex-shrink-0" style={{color:'#696969'}}>← Back</button>
+            )}
+            {step < 5 ? (
+              <button onClick={()=>setStep(s=>s+1)} disabled={step===2&&!useCase}
+                className={`gfm-btn-primary flex-1 py-3 font-extrabold ${step===2&&!useCase?'opacity-50':''}`}>
+                Continue →
               </button>
-              <button onClick={() => setStep(2)} className="text-sm text-slate-400 hover:text-slate-600 mt-3 block w-full">← Edit preferences</button>
-            </div>
-          )}
+            ) : (
+              <button onClick={finish} disabled={loading}
+                className={`gfm-btn-primary flex-1 py-3 font-extrabold ${loading?'opacity-70':''}`}>
+                {loading ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Loading…</span> : 'Enter Dashboard →'}
+              </button>
+            )}
+          </div>
+          {step === 2 && <p className="text-xs text-center mt-2" style={{color:'#696969'}}>Select your primary use case to continue</p>}
+          <div className="text-center mt-3">
+            <Link href="/dashboard" className="text-xs" style={{color:'#696969'}}>Skip onboarding →</Link>
+          </div>
         </div>
       </div>
     </div>

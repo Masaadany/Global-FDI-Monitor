@@ -1,318 +1,463 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { exportGFR, exportCSV } from '@/lib/export';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
+import DimensionWheel from '@/components/DimensionWheel';
 import Link from 'next/link';
 
-const TIER_CONFIG = {
-  FRONTIER:  {bg:'bg-violet-100',text:'text-violet-800',border:'border-violet-200',color:'#7C3AED'},
-  HIGH:      {bg:'bg-blue-100',  text:'text-blue-800',  border:'border-blue-200',  color:'#2563EB'},
-  MEDIUM:    {bg:'bg-amber-100', text:'text-amber-800', border:'border-amber-200', color:'#D97706'},
-  EMERGING:  {bg:'bg-orange-100',text:'text-orange-800',border:'border-orange-200',color:'#EA580C'},
-  DEVELOPING:{bg:'bg-slate-100', text:'text-slate-600', border:'border-slate-200', color:'#6B7280'},
-};
+const DIMS  = ['ETR','ICT','TCM','DTF','SGT','GRP'];
+const TIERS = ['ALL','FRONTIER','HIGH','MEDIUM','DEVELOPING'];
+const REGIONS = ['All Regions','Americas','Europe','Asia-Pacific','Middle East','Africa','South Asia'];
 
-// Q4 2025 baselines for trend arrows
-const Q4_2025: Record<string,number> = {
-  SGP:87.8,CHE:87.0,ARE:75.8,DEU:77.4,USA:83.9,GBR:78.0,NOR:82.6,SAU:65.2,
-  IND:60.8,BRA:53.0,NGA:40.8,AUS:81.4,JPN:78.9,KOR:77.2,VNM:56.8,EGY:50.9,
-  IDN:55.8,MYS:65.1,THA:62.4,NLD:79.8,IRL:75.8,FRA:75.4,ITA:67.2,ESP:69.4,
-  POL:61.2,TUR:50.8,KAZ:50.8,ZAF:50.2,KEN:50.0,QAT:70.0,CHN:61.2,KWT:68.4,
-  BHR:64.2,OMN:56.8,ISR:72.1,HKG:82.4,TWN:74.2,DNK:85.4,SWE:83.1,FIN:84.2,
-};
-
-// Proprietary factors (derived from composite + dimension scores)
-function propFactors(eco: any) {
-  const c = eco.composite;
-  return {
-    IRES: Math.min(99,Math.round(c*1.05+eco.macro*0.02)),
-    IMS:  Math.min(99,Math.round(c*1.10+eco.digital*0.03)),
-    SCI:  Math.min(99,Math.round(c*1.08+eco.policy*0.02)),
-    FZII: Math.min(99,Math.round(c*0.92+eco.infra*0.05)),
-    PAI:  Math.min(99,Math.round(c*0.98+eco.policy*0.03)),
-    GCI:  Math.min(99,Math.round(c*1.02+eco.macro*0.03)),
-  };
-}
-
-const GFR_ALL: any[] = [
-  {iso3:'SGP',name:'Singapore',    region:'EAP', income:'High', composite:88.5,tier:'FRONTIER', macro:87,policy:91,digital:87,human:63,infra:94,sustain:62,fdi_b:141.2,gdp_b:501,  pop_m:6,  internet_pct:97,rank:1},
-  {iso3:'CHE',name:'Switzerland',  region:'ECA', income:'High', composite:87.5,tier:'FRONTIER', macro:87,policy:88,digital:86,human:70,infra:90,sustain:78,fdi_b:26.0, gdp_b:884,  pop_m:9,  internet_pct:94,rank:2},
-  {iso3:'USA',name:'United States',region:'NAM', income:'High', composite:84.5,tier:'FRONTIER', macro:89,policy:83,digital:91,human:74,infra:86,sustain:68,fdi_b:285.0,gdp_b:27360,pop_m:335,internet_pct:92,rank:3},
-  {iso3:'NOR',name:'Norway',        region:'ECA', income:'High', composite:83.2,tier:'FRONTIER', macro:88,policy:90,digital:84,human:71,infra:85,sustain:82,fdi_b:8.4,  gdp_b:620,  pop_m:5,  internet_pct:99,rank:4},
-  {iso3:'DNK',name:'Denmark',       region:'ECA', income:'High', composite:82.8,tier:'FRONTIER', macro:85,policy:91,digital:86,human:72,infra:83,sustain:80,fdi_b:7.8,  gdp_b:420,  pop_m:6,  internet_pct:98,rank:5},
-  {iso3:'AUS',name:'Australia',     region:'EAP', income:'High', composite:82.1,tier:'FRONTIER', macro:83,policy:85,digital:82,human:69,infra:84,sustain:76,fdi_b:59.0, gdp_b:1688, pop_m:26, internet_pct:91,rank:6},
-  {iso3:'SWE',name:'Sweden',        region:'ECA', income:'High', composite:81.9,tier:'FRONTIER', macro:84,policy:89,digital:85,human:71,infra:82,sustain:79,fdi_b:12.4, gdp_b:590,  pop_m:10, internet_pct:97,rank:7},
-  {iso3:'FIN',name:'Finland',       region:'ECA', income:'High', composite:81.4,tier:'FRONTIER', macro:83,policy:90,digital:85,human:72,infra:80,sustain:78,fdi_b:5.8,  gdp_b:306,  pop_m:6,  internet_pct:95,rank:8},
-  {iso3:'CAN',name:'Canada',        region:'NAM', income:'High', composite:81.1,tier:'FRONTIER', macro:82,policy:85,digital:83,human:71,infra:83,sustain:75,fdi_b:48.0, gdp_b:2140, pop_m:39, internet_pct:93,rank:9},
-  {iso3:'ARE',name:'UAE',           region:'MENA',income:'High', composite:80.0,tier:'FRONTIER', macro:82,policy:78,digital:84,human:54,infra:92,sustain:53,fdi_b:30.7, gdp_b:504,  pop_m:10, internet_pct:99,rank:10},
-  {iso3:'GBR',name:'United Kingdom',region:'ECA', income:'High', composite:78.5,tier:'HIGH',     macro:80,policy:84,digital:82,human:71,infra:80,sustain:72,fdi_b:52.0, gdp_b:3079, pop_m:67, internet_pct:96,rank:11},
-  {iso3:'DEU',name:'Germany',       region:'ECA', income:'High', composite:78.1,tier:'HIGH',     macro:81,policy:86,digital:78,human:70,infra:84,sustain:77,fdi_b:35.4, gdp_b:4430, pop_m:84, internet_pct:91,rank:12},
-  {iso3:'JPN',name:'Japan',         region:'EAP', income:'High', composite:77.4,tier:'HIGH',     macro:79,policy:83,digital:80,human:68,infra:86,sustain:70,fdi_b:30.1, gdp_b:4213, pop_m:124,internet_pct:94,rank:13},
-  {iso3:'NLD',name:'Netherlands',   region:'ECA', income:'High', composite:77.2,tier:'HIGH',     macro:80,policy:84,digital:80,human:68,infra:84,sustain:72,fdi_b:92.0, gdp_b:1081, pop_m:18, internet_pct:96,rank:14},
-  {iso3:'FRA',name:'France',        region:'ECA', income:'High', composite:76.1,tier:'HIGH',     macro:78,policy:82,digital:80,human:69,infra:80,sustain:70,fdi_b:28.0, gdp_b:2924, pop_m:68, internet_pct:85,rank:15},
-  {iso3:'KOR',name:'South Korea',   region:'EAP', income:'High', composite:75.8,tier:'HIGH',     macro:78,policy:80,digital:84,human:70,infra:82,sustain:60,fdi_b:18.0, gdp_b:1710, pop_m:52, internet_pct:97,rank:16},
-  {iso3:'IRL',name:'Ireland',       region:'ECA', income:'High', composite:75.2,tier:'HIGH',     macro:82,policy:84,digital:78,human:66,infra:76,sustain:68,fdi_b:94.0, gdp_b:529,  pop_m:5,  internet_pct:92,rank:17},
-  {iso3:'ISR',name:'Israel',        region:'MENA',income:'High', composite:74.8,tier:'HIGH',     macro:76,policy:78,digital:82,human:72,infra:78,sustain:64,fdi_b:16.2, gdp_b:522,  pop_m:9,  internet_pct:90,rank:18},
-  {iso3:'QAT',name:'Qatar',         region:'MENA',income:'High', composite:72.4,tier:'HIGH',     macro:78,policy:72,digital:76,human:52,infra:84,sustain:56,fdi_b:5.8,  gdp_b:236,  pop_m:3,  internet_pct:99,rank:19},
-  {iso3:'SAU',name:'Saudi Arabia',  region:'MENA',income:'High', composite:68.1,tier:'HIGH',     macro:74,policy:62,digital:72,human:48,infra:76,sustain:50,fdi_b:28.3, gdp_b:1069, pop_m:36, internet_pct:97,rank:22},
-  {iso3:'CHN',name:'China',         region:'EAP', income:'UMI',  composite:64.2,tier:'MEDIUM',   macro:68,policy:55,digital:72,human:62,infra:78,sustain:44,fdi_b:163.0,gdp_b:17795,pop_m:1410,internet_pct:75,rank:28},
-  {iso3:'MYS',name:'Malaysia',      region:'EAP', income:'UMI',  composite:66.4,tier:'MEDIUM',   macro:68,policy:65,digital:68,human:58,infra:72,sustain:54,fdi_b:14.0, gdp_b:430,  pop_m:33, internet_pct:90,rank:26},
-  {iso3:'IND',name:'India',         region:'SAS', income:'LMI',  composite:62.3,tier:'MEDIUM',   macro:68,policy:56,digital:59,human:69,infra:65,sustain:38,fdi_b:71.0, gdp_b:3730, pop_m:1430,internet_pct:55,rank:35},
-  {iso3:'THA',name:'Thailand',      region:'EAP', income:'UMI',  composite:61.8,tier:'MEDIUM',   macro:64,policy:60,digital:62,human:56,infra:66,sustain:54,fdi_b:9.4,  gdp_b:545,  pop_m:71, internet_pct:88,rank:37},
-  {iso3:'VNM',name:'Vietnam',       region:'EAP', income:'LMI',  composite:58.2,tier:'MEDIUM',   macro:62,policy:58,digital:55,human:52,infra:58,sustain:48,fdi_b:18.1, gdp_b:430,  pop_m:98, internet_pct:79,rank:52},
-  {iso3:'IDN',name:'Indonesia',     region:'EAP', income:'LMI',  composite:57.1,tier:'MEDIUM',   macro:60,policy:56,digital:54,human:52,infra:58,sustain:52,fdi_b:22.0, gdp_b:1371, pop_m:277,internet_pct:77,rank:55},
-  {iso3:'MEX',name:'Mexico',        region:'LAC', income:'UMI',  composite:54.0,tier:'MEDIUM',   macro:56,policy:52,digital:54,human:52,infra:56,sustain:46,fdi_b:36.0, gdp_b:1328, pop_m:131,internet_pct:76,rank:64},
-  {iso3:'BRA',name:'Brazil',        region:'LAC', income:'UMI',  composite:54.2,tier:'MEDIUM',   macro:56,policy:52,digital:56,human:55,infra:54,sustain:46,fdi_b:65.0, gdp_b:2130, pop_m:215,internet_pct:81,rank:63},
-  {iso3:'TUR',name:'Turkey',        region:'ECA', income:'UMI',  composite:51.8,tier:'MEDIUM',   macro:54,policy:46,digital:56,human:54,infra:58,sustain:44,fdi_b:12.0, gdp_b:1108, pop_m:85, internet_pct:82,rank:72},
-  {iso3:'EGY',name:'Egypt',         region:'MENA',income:'LMI',  composite:52.4,tier:'MEDIUM',   macro:55,policy:48,digital:52,human:48,infra:58,sustain:42,fdi_b:9.8,  gdp_b:395,  pop_m:105,internet_pct:74,rank:69},
-  {iso3:'MAR',name:'Morocco',       region:'MENA',income:'LMI',  composite:54.8,tier:'MEDIUM',   macro:56,policy:54,digital:52,human:46,infra:60,sustain:50,fdi_b:3.2,  gdp_b:146,  pop_m:37, internet_pct:88,rank:61},
-  {iso3:'POL',name:'Poland',        region:'ECA', income:'High', composite:62.0,tier:'MEDIUM',   macro:64,policy:64,digital:64,human:62,infra:64,sustain:52,fdi_b:20.0, gdp_b:750,  pop_m:38, internet_pct:87,rank:36},
-  {iso3:'ZAF',name:'South Africa',  region:'SSA', income:'UMI',  composite:51.3,tier:'MEDIUM',   macro:52,policy:54,digital:52,human:46,infra:50,sustain:52,fdi_b:5.2,  gdp_b:373,  pop_m:60, internet_pct:72,rank:73},
-  {iso3:'KEN',name:'Kenya',         region:'SSA', income:'LMI',  composite:51.3,tier:'MEDIUM',   macro:52,policy:50,digital:54,human:48,infra:48,sustain:52,fdi_b:1.2,  gdp_b:118,  pop_m:55, internet_pct:42,rank:74},
-  {iso3:'NGA',name:'Nigeria',       region:'SSA', income:'LMI',  composite:42.1,tier:'EMERGING', macro:46,policy:36,digital:42,human:40,infra:36,sustain:36,fdi_b:4.1,  gdp_b:477,  pop_m:218,internet_pct:55,rank:128},
+const GFR_DATA = [
+  { r:1,  iso3:'SGP', name:'Singapore',     flag:'🇸🇬', score:100.0, ETR:98.2, ICT:97.5, TCM:96.8, DTF:95.4, SGT:94.2, GRP:93.8, tier:'FRONTIER', chg:+2,  region:'Asia-Pacific' },
+  { r:2,  iso3:'CHE', name:'Switzerland',   flag:'🇨🇭', score:98.4,  ETR:96.5, ICT:95.8, TCM:95.2, DTF:94.1, SGT:93.5, GRP:92.9, tier:'FRONTIER', chg:-1,  region:'Europe' },
+  { r:3,  iso3:'USA', name:'United States', flag:'🇺🇸', score:97.2,  ETR:95.8, ICT:98.9, TCM:94.5, DTF:96.2, SGT:92.8, GRP:91.5, tier:'FRONTIER', chg:0,   region:'Americas' },
+  { r:4,  iso3:'DEU', name:'Germany',       flag:'🇩🇪', score:95.8,  ETR:94.2, ICT:93.8, TCM:94.1, DTF:93.5, SGT:92.1, GRP:91.8, tier:'FRONTIER', chg:0,   region:'Europe' },
+  { r:5,  iso3:'ARE', name:'UAE',           flag:'🇦🇪', score:94.2,  ETR:93.5, ICT:92.8, TCM:93.1, DTF:92.5, SGT:91.8, GRP:90.5, tier:'FRONTIER', chg:+3,  region:'Middle East' },
+  { r:6,  iso3:'SWE', name:'Sweden',        flag:'🇸🇪', score:93.8,  ETR:92.8, ICT:93.5, TCM:92.1, DTF:91.8, SGT:92.5, GRP:91.2, tier:'FRONTIER', chg:+1,  region:'Europe' },
+  { r:7,  iso3:'CAN', name:'Canada',        flag:'🇨🇦', score:92.5,  ETR:91.8, ICT:92.1, TCM:91.5, DTF:92.8, SGT:91.2, GRP:90.8, tier:'FRONTIER', chg:0,   region:'Americas' },
+  { r:8,  iso3:'NLD', name:'Netherlands',   flag:'🇳🇱', score:91.8,  ETR:91.2, ICT:91.5, TCM:92.5, DTF:91.2, SGT:90.8, GRP:90.2, tier:'FRONTIER', chg:+1,  region:'Europe' },
+  { r:9,  iso3:'GBR', name:'UK',            flag:'🇬🇧', score:91.2,  ETR:90.8, ICT:91.8, TCM:91.2, DTF:90.5, SGT:90.2, GRP:89.8, tier:'FRONTIER', chg:-1,  region:'Europe' },
+  { r:10, iso3:'JPN', name:'Japan',         flag:'🇯🇵', score:90.5,  ETR:90.2, ICT:91.2, TCM:89.8, DTF:90.8, SGT:89.5, GRP:89.2, tier:'FRONTIER', chg:0,   region:'Asia-Pacific' },
+  { r:11, iso3:'KOR', name:'South Korea',   flag:'🇰🇷', score:89.8,  ETR:89.5, ICT:90.2, TCM:89.1, DTF:90.5, SGT:88.8, GRP:88.5, tier:'HIGH',     chg:+2,  region:'Asia-Pacific' },
+  { r:12, iso3:'FRA', name:'France',        flag:'🇫🇷', score:89.2,  ETR:89.1, ICT:88.8, TCM:89.5, DTF:88.9, SGT:88.2, GRP:87.8, tier:'HIGH',     chg:-1,  region:'Europe' },
+  { r:13, iso3:'AUS', name:'Australia',     flag:'🇦🇺', score:88.5,  ETR:88.2, ICT:88.5, TCM:88.1, DTF:88.8, SGT:87.9, GRP:87.5, tier:'HIGH',     chg:+1,  region:'Asia-Pacific' },
+  { r:14, iso3:'SAU', name:'Saudi Arabia',  flag:'🇸🇦', score:86.2,  ETR:85.8, ICT:84.5, TCM:86.1, DTF:84.8, SGT:83.5, GRP:82.9, tier:'HIGH',     chg:+8,  region:'Middle East' },
+  { r:15, iso3:'IND', name:'India',         flag:'🇮🇳', score:82.1,  ETR:81.5, ICT:80.8, TCM:82.5, DTF:79.8, SGT:78.5, GRP:77.9, tier:'HIGH',     chg:+4,  region:'South Asia' },
+  { r:16, iso3:'VNM', name:'Vietnam',       flag:'🇻🇳', score:79.4,  ETR:78.8, ICT:77.5, TCM:79.2, DTF:76.5, SGT:75.2, GRP:74.8, tier:'HIGH',     chg:+6,  region:'Asia-Pacific' },
+  { r:17, iso3:'POL', name:'Poland',        flag:'🇵🇱', score:82.5,  ETR:82.1, ICT:81.2, TCM:82.8, DTF:81.5, SGT:80.8, GRP:80.2, tier:'HIGH',     chg:+5,  region:'Europe' },
+  { r:18, iso3:'ZAF', name:'South Africa',  flag:'🇿🇦', score:62.4,  ETR:62.1, ICT:61.5, TCM:63.2, DTF:60.8, SGT:59.5, GRP:58.9, tier:'MEDIUM',   chg:+1,  region:'Africa' },
+  { r:19, iso3:'MAR', name:'Morocco',       flag:'🇲🇦', score:59.8,  ETR:59.5, ICT:58.8, TCM:60.2, DTF:57.5, SGT:56.8, GRP:56.2, tier:'MEDIUM',   chg:+2,  region:'Africa' },
+  { r:20, iso3:'EGY', name:'Egypt',         flag:'🇪🇬', score:58.2,  ETR:57.9, ICT:56.5, TCM:58.8, DTF:55.2, SGT:54.5, GRP:53.9, tier:'MEDIUM',   chg:+3,  region:'Africa' },
 ];
 
-const REGIONS = ['All','EAP','ECA','MENA','SAS','LAC','SSA','NAM'];
+const TIER_C: Record<string,string> = {
+  FRONTIER:'#0A3D62', HIGH:'#1B6CA8', MEDIUM:'#74BB65', DEVELOPING:'#696969'
+};
+const TIER_BG: Record<string,string> = {
+  FRONTIER:'rgba(10,61,98,0.1)', HIGH:'rgba(27,108,168,0.1)', MEDIUM:'rgba(116,187,101,0.12)', DEVELOPING:'rgba(105,105,105,0.1)'
+};
+
+const KEY_INSIGHTS = [
+  'Asia-Pacific dominates top 10 with 6 economies, averaging 18% growth in future readiness indicators since 2020.',
+  'GCC countries show strongest improvement: UAE (+12%), Saudi Arabia (+15%), Qatar (+8%) in economic resilience and competitiveness.',
+  'Digital infrastructure remains the strongest differentiator between top 20 and lower-ranked economies, with a 42% average score gap.',
+  'Small economies (<5M population) outperform larger peers in adaptability, scoring 18% higher on average in future readiness metrics.',
+];
+
+const TOP_BY_REGION = [
+  { region:'Americas',     entries:[{n:'🇺🇸 USA',r:3},{n:'🇨🇦 Canada',r:7},{n:'🇧🇷 Brazil',r:24}] },
+  { region:'Europe',       entries:[{n:'🇨🇭 Switzerland',r:2},{n:'🇩🇪 Germany',r:4},{n:'🇸🇪 Sweden',r:6}] },
+  { region:'Asia-Pacific', entries:[{n:'🇸🇬 Singapore',r:1},{n:'🇯🇵 Japan',r:10},{n:'🇰🇷 Korea',r:12}] },
+  { region:'Middle East',  entries:[{n:'🇦🇪 UAE',r:5},{n:'🇸🇦 Saudi Arabia',r:15},{n:'🇶🇦 Qatar',r:22}] },
+  { region:'Africa',       entries:[{n:'🇿🇦 South Africa',r:38},{n:'🇲🇦 Morocco',r:45},{n:'🇪🇬 Egypt',r:52}] },
+];
 
 export default function GFRPage() {
+  const [tab,     setTab]     = useState<'results'|'ranking'|'profile'|'comparison'|'methodology'>('results');
+  const [year,    setYear]    = useState('2026');
+  const [region,  setRegion]  = useState('All Regions');
+  const [tier,    setTier]    = useState('ALL');
   const [search,  setSearch]  = useState('');
-  const [region,  setRegion]  = useState('All');
-  const [tier,    setTier]    = useState('');
-  const [income,  setIncome]  = useState('');
-  const [selected,setSelected]= useState<any>(GFR_ALL[0]);
-  const [showDetail,setShowDetail]=useState(false);
-  const [sortKey, setSortKey] = useState<string>('rank');
+  const [profile, setProfile] = useState(GFR_DATA[4]); // UAE default
+  const [compare, setCompare] = useState<typeof GFR_DATA>([GFR_DATA[4], GFR_DATA[0], GFR_DATA[3]]);
+  const [showTop, setShowTop] = useState(10);
 
-  const filtered = useMemo(()=>GFR_ALL.filter(e=>
-    (!search || e.name.toLowerCase().includes(search.toLowerCase()) || e.iso3.includes(search.toUpperCase())) &&
-    (region==='All' || e.region===region) &&
-    (!tier   || e.tier===tier) &&
-    (!income || e.income===income)
-  ).sort((a,b)=> sortKey==='rank' ? a.rank-b.rank : (b as any)[sortKey]-(a as any)[sortKey]),[search,region,tier,income,sortKey]);
+  const filtered = GFR_DATA.filter(e => {
+    const mr = region === 'All Regions' || e.region === region;
+    const mt = tier === 'ALL' || e.tier === tier;
+    const ms = !search || e.name.toLowerCase().includes(search.toLowerCase());
+    return mr && mt && ms;
+  });
 
-  const tc = TIER_CONFIG[selected?.tier as keyof typeof TIER_CONFIG] || TIER_CONFIG.DEVELOPING;
-  const pf = selected ? propFactors(selected) : null;
-
-  function TrendArrow({iso3,current}:{iso3:string;current:number}) {
-    const prev = Q4_2025[iso3];
-    if (!prev) return null;
-    const diff = current - prev;
-    if (Math.abs(diff) < 0.2) return <span className="text-slate-400 text-xs">→</span>;
-    return diff > 0
-      ? <span className="text-emerald-500 text-xs font-bold">↑{diff.toFixed(1)}</span>
-      : <span className="text-red-400 text-xs font-bold">↓{Math.abs(diff).toFixed(1)}</span>;
-  }
+  const TABS = [
+    {id:'results',     label:'Results & Key Findings'},
+    {id:'ranking',     label:'The Ranking'},
+    {id:'profile',     label:'Country Profile'},
+    {id:'comparison',  label:'Comparison'},
+    {id:'methodology', label:'Methodology & Framework'},
+  ];
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Hero */}
-      <section className="gfm-hero text-white px-6 py-12">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">Global Intelligence</div>
-          <h1 className="text-4xl font-extrabold mb-3">Global Future Readiness Rankings</h1>
-          <p className="text-white/70 mb-5">215 economies · 6 core dimensions · 6 proprietary factors · Q1 2026</p>
-          <div className="flex gap-6">
-            {[['#1 SGP','88.5 pts'],['215','Economies'],['40+','Indicators'],['Q1 2026','Updated']].map(([v,l])=>(
-              <div key={l}>
-                <div className="stat-number text-xl font-bold text-white">{v}</div>
-                <div className="text-white/50 text-xs">{l}</div>
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+
+      {/* Page header */}
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px 0'}}>
+        <div style={{maxWidth:'1400px',margin:'0 auto'}}>
+          <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'20px',lineHeight:'1.2'}}>
+            Global Investment Future Readiness &<br/>Competitiveness Ranking
+          </h1>
+          {/* Filters */}
+          <div style={{display:'flex',gap:'10px',flexWrap:'wrap',marginBottom:'20px'}}>
+            {[
+              ['Year', year, setYear, ['2026','2025','2024','2023']],
+              ['Region', region, setRegion, REGIONS],
+            ].map(([label,val,setter,opts]:[any,any,any,any]) => (
+              <div key={label} style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                <label style={{fontSize:'12px',color:'rgba(226,242,223,0.7)',fontWeight:600}}>{label}:</label>
+                <select value={val} onChange={e=>setter(e.target.value)}
+                  style={{padding:'5px 10px',borderRadius:'6px',border:'none',fontSize:'13px',
+                    background:'rgba(255,255,255,0.15)',color:'white',cursor:'pointer'}}>
+                  {opts.map((o:string) => <option key={o} style={{background:'#0A3D62'}}>{o}</option>)}
+                </select>
               </div>
+            ))}
+          </div>
+          {/* Tabs */}
+          <div style={{display:'flex',gap:'0',overflowX:'auto'}}>
+            {TABS.map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id as any)}
+                style={{
+                  padding:'12px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
+                  whiteSpace:'nowrap',borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
+                  background:'transparent',color:tab===t.id?'white':'rgba(226,242,223,0.6)',
+                  transition:'all 0.2s',
+                }}>
+                {t.label}
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Methodology note */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-screen-xl mx-auto">
-          <details className="group">
-            <summary className="cursor-pointer flex items-center gap-2 text-sm font-bold text-deep select-none list-none">
-              <span className="text-primary">📐</span> Methodology
-              <span className="text-slate-400 font-normal text-xs ml-2">Click to expand</span>
-              <span className="ml-auto text-slate-400 group-open:rotate-180 transition-transform text-xs">▼</span>
-            </summary>
-            <div className="mt-4 grid md:grid-cols-2 gap-6 text-sm text-slate-600">
-              <div>
-                <div className="font-bold text-deep mb-2">Core Dimensions</div>
-                <p className="text-xs leading-relaxed mb-3">The GFR measures 215 economies across 6 core dimensions: Economic Resilience, Innovation Capacity, Trade & Capital Mobility, Digital & Technological, Sustainable Growth, and Governance & Policy.</p>
-                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                  <div className="font-bold text-xs text-primary mb-1">Composite Formula</div>
-                  <code className="text-xs text-blue-800">GFR = Macro×0.20 + Policy×0.18 + Digital×0.15 + Human×0.15 + Infra×0.15 + Sustain×0.17</code>
-                </div>
+      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'28px 24px'}}>
+
+        {/* TAB 1: RESULTS */}
+        {tab==='results' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'24px'}}>
+            {/* Top performers */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
+              <div className="gfm-card" style={{padding:'24px'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>🏆 Top Global Ranking</div>
+                {GFR_DATA.slice(0,5).map(e=>(
+                  <div key={e.iso3} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(10,61,98,0.06)'}}>
+                    <span style={{fontSize:'13px',fontWeight:800,color:'#74BB65',minWidth:'20px',fontFamily:'monospace'}}>{e.r}.</span>
+                    <span style={{fontSize:'18px'}}>{e.flag}</span>
+                    <span style={{flex:1,fontSize:'14px',fontWeight:600,color:'#0A3D62'}}>{e.name}</span>
+                    <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{e.score.toFixed(1)}</span>
+                  </div>
+                ))}
               </div>
-              <div>
-                <div className="font-bold text-deep mb-2">Proprietary Factors (Full Manual)</div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[['IRES','Investment Resilience Score'],['IMS','Investment Momentum Score'],['SCI','Signal Confidence Index'],['FZII','Free Zone Intensity Index'],['PAI','Policy Attractiveness Index'],['GCI','Greenfield Confidence Index']].map(([k,v])=>(
-                    <div key={k} className="text-xs"><span className="font-bold text-primary font-mono">{k}</span> <span className="text-slate-500">{v}</span></div>
-                  ))}
-                </div>
-                <p className="text-xs text-slate-400 mt-2">Each dimension combines sub-indicators from World Bank, IMF, UNCTAD, OECD. Scores normalised 0–100. +20 years historical data provides trend context.</p>
+              <div className="gfm-card" style={{padding:'24px'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>📈 Top Performance (Most Improved)</div>
+                {[...GFR_DATA].sort((a,b)=>b.chg-a.chg).slice(0,5).map(e=>(
+                  <div key={e.iso3} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(10,61,98,0.06)'}}>
+                    <span style={{fontSize:'18px'}}>{e.flag}</span>
+                    <span style={{flex:1,fontSize:'14px',fontWeight:600,color:'#0A3D62'}}>{e.name}</span>
+                    <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>+{e.chg}</span>
+                    <span style={{fontSize:'13px',color:'#696969',fontFamily:'monospace'}}>{e.score.toFixed(1)}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </details>
-        </div>
-      </div>
 
-      {/* Filter bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 sticky top-14 z-30">
-        <div className="max-w-screen-xl mx-auto flex flex-wrap gap-2 items-center">
-          <div className="flex gap-1">
-            {REGIONS.map(r=>(
-              <button key={r} onClick={()=>setRegion(r)}
-                className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${region===r?'bg-primary text-white':'text-slate-500 hover:bg-slate-100'}`}>
-                {r}
-              </button>
-            ))}
-          </div>
-          <select value={tier} onChange={e=>setTier(e.target.value)}
-            className="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 font-medium text-slate-600 focus:border-primary focus:outline-none">
-            <option value="">All Tiers</option>
-            {['FRONTIER','HIGH','MEDIUM','EMERGING','DEVELOPING'].map(t=><option key={t}>{t}</option>)}
-          </select>
-          <select value={income} onChange={e=>setIncome(e.target.value)}
-            className="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 font-medium text-slate-600 focus:border-primary focus:outline-none">
-            <option value="">All Income Groups</option>
-            {['High','UMI','LMI','LI'].map(i=><option key={i}>{i}</option>)}
-          </select>
-          <input value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="Search country or ISO3…"
-            className="ml-auto text-xs border border-slate-200 rounded-md px-3 py-1.5 w-40 focus:outline-none focus:border-primary"/>
-          <div className="flex items-center gap-2">
-            <button onClick={()=>exportGFR(filtered)} className="gfm-btn-outline text-xs py-1.5">Export CSV</button>
-          </div>
-          <span className="text-xs text-slate-400 font-mono">{filtered.length} / 215</span>
-        </div>
-      </div>
-
-      <div className="max-w-screen-xl mx-auto px-6 py-5 flex gap-5">
-        {/* Rankings table */}
-        <div className="flex-1 overflow-x-auto">
-          <table className="w-full gfm-table">
-            <thead>
-              <tr>
-                {[['rank','Rank'],['composite','Score'],['name','Economy'],['region','Region'],['tier','Tier'],
-                  ['macro','Macro'],['policy','Policy'],['digital','Digital'],['human','Human'],['infra','Infra'],['sustain','Sustain'],
-                  ['IRES','IRES'],['IMS','IMS'],['SCI','SCI'],['fdi_b','FDI']
-                ].map(([k,h])=>(
-                  <th key={k} className="cursor-pointer hover:text-primary" onClick={()=>setSortKey(k)}>{h}{sortKey===k?' ▲':''}</th>
+            {/* By region */}
+            <div className="gfm-card" style={{padding:'24px'}}>
+              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>🌍 Top Ranking by Region</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr)',gap:'12px'}}>
+                {TOP_BY_REGION.map(rg=>(
+                  <div key={rg.region} style={{padding:'12px',borderRadius:'8px',background:'rgba(10,61,98,0.03)'}}>
+                    <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px'}}>{rg.region}</div>
+                    {rg.entries.map(e=>(
+                      <div key={e.n} style={{fontSize:'12px',color:'#696969',padding:'2px 0'}}>
+                        <span style={{fontWeight:600,color:'#0A3D62'}}>#{e.r}</span> {e.n}
+                      </div>
+                    ))}
+                  </div>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(e=>{
-                const t = TIER_CONFIG[e.tier as keyof typeof TIER_CONFIG]||TIER_CONFIG.DEVELOPING;
-                const pf = propFactors(e);
-                const prev = Q4_2025[e.iso3];
-                const diff = prev ? e.composite-prev : 0;
-                return (
-                  <tr key={e.iso3} onClick={()=>{setSelected(e);setShowDetail(true);}} className="cursor-pointer">
-                    <td className="font-mono font-bold text-slate-400 text-center">#{e.rank}</td>
-                    <td>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-deep font-mono">{e.composite}</span>
-                        {prev && Math.abs(diff)>=0.2 && (
-                          <span className={`text-xs font-bold ${diff>0?'text-emerald-500':'text-red-400'}`}>
-                            {diff>0?'↑':'↓'}{Math.abs(diff).toFixed(1)}
+              </div>
+            </div>
+
+            {/* Dimension leaders - 8 cards */}
+            <div>
+              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Top Global Ranking by Dimension & Factor</div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+                {DIMS.map(dim=>(
+                  <div key={dim} className="gfm-card" style={{padding:'16px'}}>
+                    <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px'}}>
+                      {dim} — {dim==='ETR'?'Economic Resilience':dim==='ICT'?'Innovation Capacity':dim==='TCM'?'Trade & Capital':dim==='DTF'?'Digital & Tech':dim==='SGT'?'Sustainable Growth':'Governance & Policy'}
+                    </div>
+                    {[...GFR_DATA].sort((a,b)=>b[dim as keyof typeof a]-a[dim as keyof typeof a]).slice(0,5).map((e,i)=>(
+                      <div key={e.iso3} style={{display:'flex',gap:'6px',padding:'3px 0',fontSize:'11px'}}>
+                        <span style={{color:'#74BB65',fontWeight:700,minWidth:'12px'}}>{i+1}</span>
+                        <span>{e.flag}</span>
+                        <span style={{color:'#0A3D62',fontWeight:600,flex:1}}>{e.iso3}</span>
+                        <span style={{color:'#696969',fontFamily:'monospace'}}>{(e[dim as keyof typeof e] as number).toFixed(1)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Key insights */}
+            <div className="gfm-card" style={{padding:'24px'}}>
+              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Key Insights & Analytics</div>
+              <ul style={{listStyle:'none',padding:0,margin:0}}>
+                {KEY_INSIGHTS.map((ins,i)=>(
+                  <li key={i} style={{display:'flex',gap:'10px',padding:'8px 0',borderBottom:i<KEY_INSIGHTS.length-1?'1px solid rgba(10,61,98,0.05)':'none'}}>
+                    <span style={{color:'#74BB65',flexShrink:0}}>•</span>
+                    <span style={{fontSize:'13px',color:'#696969',lineHeight:'1.6'}}>{ins}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: RANKING TABLE */}
+        {tab==='ranking' && (
+          <PreviewGate feature="full_profile">
+            <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+              {/* Controls */}
+              <div style={{display:'flex',gap:'12px',alignItems:'center',flexWrap:'wrap'}}>
+                <input value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="🔍 Search economy…"
+                  style={{padding:'8px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
+                    fontSize:'13px',background:'white',color:'#000',outline:'none'}}/>
+                <div style={{display:'flex',gap:'4px'}}>
+                  {TIERS.map(t=>(
+                    <button key={t} onClick={()=>setTier(t)}
+                      style={{padding:'6px 12px',borderRadius:'6px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:700,
+                        background:tier===t?TIER_C[t]||'#0A3D62':'rgba(10,61,98,0.06)',
+                        color:tier===t?'white':'#0A3D62',}}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <div style={{display:'flex',gap:'6px',marginLeft:'auto'}}>
+                  {[10,20,50].map(n=>(
+                    <button key={n} onClick={()=>setShowTop(n)}
+                      style={{padding:'5px 10px',borderRadius:'5px',border:'none',cursor:'pointer',fontSize:'12px',
+                        background:showTop===n?'#0A3D62':'rgba(10,61,98,0.06)',
+                        color:showTop===n?'white':'#0A3D62',fontWeight:600}}>
+                      Top {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="gfm-card" style={{overflow:'auto'}}>
+                <table className="gfm-table" style={{minWidth:'800px'}}>
+                  <thead><tr>
+                    <th>Rank</th><th>Economy</th><th>Score</th>
+                    {DIMS.map(d=><th key={d}>{d}</th>)}
+                    <th>Tier</th><th>vs 2025</th>
+                  </tr></thead>
+                  <tbody>
+                    {filtered.slice(0,showTop).map(e=>(
+                      <tr key={e.iso3} onClick={()=>{setProfile(e);setTab('profile');}} style={{cursor:'pointer'}}>
+                        <td style={{fontWeight:800,fontFamily:'monospace',color:'#0A3D62'}}>#{e.r}</td>
+                        <td>
+                          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                            <span style={{fontSize:'18px'}}>{e.flag}</span>
+                            <span style={{fontWeight:600,color:'#000'}}>{e.name}</span>
+                          </div>
+                        </td>
+                        <td style={{fontWeight:800,fontFamily:'monospace',fontSize:'15px',color:'#0A3D62'}}>{e.score.toFixed(1)}</td>
+                        {DIMS.map(d=>(
+                          <td key={d} style={{fontFamily:'monospace',fontSize:'12px',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</td>
+                        ))}
+                        <td>
+                          <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'12px',
+                            background:TIER_BG[e.tier],color:TIER_C[e.tier]}}>
+                            {e.tier}
                           </span>
-                        )}
-                      </div>
-                      <div className="h-1 bg-slate-100 rounded-full mt-0.5 w-16">
-                        <div className="h-full rounded-full" style={{width:`${e.composite}%`,background:t.color}}/>
-                      </div>
-                    </td>
-                    <td>
-                      <a href={`/country/${e.iso3}`} onClick={ev=>ev.stopPropagation()} className="font-semibold text-deep text-xs group-hover:text-primary hover:underline">{e.name}</a>
-                      <div className="text-slate-400 text-xs font-mono">{e.iso3}</div>
-                    </td>
-                    <td className="text-slate-500">{e.region}</td>
-                    <td><span className={`gfm-badge ${t.bg} ${t.text} ${t.border}`}>{e.tier}</span></td>
-                    {[e.macro,e.policy,e.digital,e.human,e.infra,e.sustain].map((v,i)=>(
-                      <td key={i} className="text-center font-mono text-slate-600">{v}</td>
+                        </td>
+                        <td style={{fontFamily:'monospace',fontSize:'13px',fontWeight:700,
+                          color:e.chg>0?'#74BB65':e.chg<0?'#E57373':'#696969'}}>
+                          {e.chg>0?`▲+${e.chg}`:e.chg<0?`▼${e.chg}`:'▬ 0'}
+                        </td>
+                      </tr>
                     ))}
-                    {[pf.IRES,pf.IMS,pf.SCI].map((v,i)=>(
-                      <td key={i} className="text-center font-mono font-bold" style={{color:'var(--primary)'}}>{v}</td>
-                    ))}
-                    <td className="text-center font-mono font-bold text-primary">${e.fdi_b}B</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Side detail panel */}
-        {selected && (
-          <div className="w-72 flex-shrink-0 space-y-3">
-            <div className="gfm-card p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <div className="text-xl font-extrabold text-deep">{selected.name}</div>
-                  <div className="font-mono text-slate-400 text-xs">{selected.iso3}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-3xl font-extrabold font-mono" style={{color:'var(--primary)'}}>{selected.composite}</div>
-                  <div className="text-xs text-slate-400">#{selected.rank} / 215</div>
-                </div>
+                  </tbody>
+                </table>
               </div>
-              <span className={`gfm-badge ${tc.bg} ${tc.text} ${tc.border} mb-4 inline-block`}>{selected.tier}</span>
-              
-              {/* 6 dimensions */}
-              <div className="space-y-2 mb-4">
-                {[['Macro',selected.macro],['Policy',selected.policy],['Digital',selected.digital],
-                  ['Human',selected.human],['Infra',selected.infra],['Sustain',selected.sustain]].map(([l,v])=>(
-                  <div key={String(l)}>
-                    <div className="flex justify-between text-xs mb-0.5">
-                      <span className="text-slate-500">{l}</span>
-                      <span className="font-bold font-mono" style={{color:'var(--primary)'}}>{v}</span>
-                    </div>
-                    <div className="gfm-progress">
-                      <div className="gfm-progress-fill" style={{width:`${v}%`}}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p style={{fontSize:'12px',color:'#696969',textAlign:'center'}}>
+                Showing {Math.min(filtered.length,showTop)} of 215 economies. Click any row for full country profile.
+              </p>
+            </div>
+          </PreviewGate>
+        )}
 
-              {/* Proprietary factors */}
-              {pf && (
-                <div className="bg-blue-50 rounded-xl p-3 border border-blue-200 mb-4">
-                  <div className="text-xs font-bold text-primary mb-2 uppercase tracking-wide">Proprietary Factors</div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {Object.entries(pf).map(([k,v])=>(
-                      <div key={k} className="flex justify-between text-xs">
-                        <span className="font-mono font-bold text-blue-700">{k}</span>
-                        <span className="font-mono text-slate-600">{v}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Economic snapshot */}
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {[['GDP',`$${selected.gdp_b>=1000?`${(selected.gdp_b/1000).toFixed(1)}T`:`${selected.gdp_b}B`}`],
-                  ['FDI',`$${selected.fdi_b}B`],
-                  ['Pop.',`${selected.pop_m}M`],
-                  ['Internet',`${selected.internet_pct}%`]].map(([l,v])=>(
-                  <div key={l} className="bg-surface rounded-lg p-2 text-center">
-                    <div className="text-xs text-slate-400">{l}</div>
-                    <div className="font-bold text-xs text-deep font-mono">{v}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={()=>window.location.href='/subscription'} className="flex-1 gfm-btn-primary text-xs py-2">
-                  Full GFR Report — 10 FIC
+        {/* TAB 3: COUNTRY PROFILE */}
+        {tab==='profile' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            {/* Selector */}
+            <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+              {GFR_DATA.slice(0,10).map(e=>(
+                <button key={e.iso3} onClick={()=>setProfile(e)}
+                  style={{padding:'7px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
+                    cursor:'pointer',fontSize:'13px',fontWeight:600,transition:'all 0.15s',
+                    background:profile.iso3===e.iso3?'#0A3D62':'white',
+                    color:profile.iso3===e.iso3?'white':'#0A3D62'}}>
+                  {e.flag} {e.iso3}
                 </button>
+              ))}
+            </div>
+
+            {/* Profile card */}
+            <div className="gfm-card" style={{padding:'28px'}}>
+              <div style={{display:'flex',alignItems:'flex-start',gap:'20px',marginBottom:'24px',flexWrap:'wrap'}}>
+                <div style={{fontSize:'64px'}}>{profile.flag}</div>
+                <div style={{flex:1}}>
+                  <h2 style={{fontSize:'24px',fontWeight:800,color:'#0A3D62',marginBottom:'4px'}}>{profile.name}</h2>
+                  <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
+                    <div>
+                      <span style={{fontSize:'32px',fontWeight:900,color:'#74BB65',fontFamily:'monospace'}}>#{profile.r}</span>
+                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>Global Rank</span>
+                    </div>
+                    <div>
+                      <span style={{fontSize:'32px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{profile.score.toFixed(1)}</span>
+                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>GFR Score</span>
+                    </div>
+                    <div>
+                      <span style={{fontSize:'20px',fontWeight:700,color:profile.chg>0?'#74BB65':'#E57373',fontFamily:'monospace'}}>
+                        {profile.chg>0?`▲ +${profile.chg}`:profile.chg<0?`▼ ${profile.chg}`:'▬ 0'}
+                      </span>
+                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>vs 2025</span>
+                    </div>
+                    <span style={{padding:'5px 14px',borderRadius:'20px',fontSize:'12px',fontWeight:700,
+                      background:TIER_BG[profile.tier],color:TIER_C[profile.tier]}}>
+                      {profile.tier}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dimension bars */}
+              <div style={{marginBottom:'20px'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Dimension Scores</div>
+                {DIMS.map(dim=>{
+                  const val = profile[dim as keyof typeof profile] as number;
+                  const dimName = dim==='ETR'?'Economic Resilience':dim==='ICT'?'Innovation Capacity':dim==='TCM'?'Trade & Capital':dim==='DTF'?'Digital & Tech':dim==='SGT'?'Sustainable Growth':'Governance & Policy';
+                  return (
+                    <div key={dim} style={{marginBottom:'10px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
+                        <div style={{fontSize:'12px',color:'#696969'}}><b style={{color:'#0A3D62'}}>{dim}</b> — {dimName}</div>
+                        <span style={{fontSize:'13px',fontWeight:700,fontFamily:'monospace',color:'#0A3D62'}}>{val.toFixed(1)}</span>
+                      </div>
+                      <div style={{height:'8px',borderRadius:'4px',background:'rgba(10,61,98,0.08)'}}>
+                        <div style={{height:'100%',borderRadius:'4px',width:`${val}%`,background:'linear-gradient(90deg,#74BB65,#0A3D62)',transition:'width 0.5s ease'}}/>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
-      </div>
 
-      {/* Historical trends note */}
-      <div className="bg-white border-t border-slate-200 px-6 py-3 text-center text-xs text-slate-400">
-        Trend arrows compare Q1 2026 vs Q4 2025 · Scores normalised 0–100 · Proprietary factors detailed in methodology manual · Source: IMF, World Bank, UNCTAD, OECD, IEA, Yale EPI
+        {/* TAB 4: COMPARISON */}
+        {tab==='comparison' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
+              <span style={{fontSize:'13px',fontWeight:600,color:'#696969'}}>Selected:</span>
+              {compare.map(e=>(
+                <span key={e.iso3} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',
+                  borderRadius:'6px',background:'rgba(10,61,98,0.08)',fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>
+                  {e.flag} {e.iso3}
+                  <button onClick={()=>setCompare(compare.filter(x=>x.iso3!==e.iso3))}
+                    style={{border:'none',background:'transparent',cursor:'pointer',color:'#E57373',fontSize:'14px',lineHeight:1}}>×</button>
+                </span>
+              ))}
+              {compare.length < 5 && (
+                <select onChange={e=>{
+                  const found = GFR_DATA.find(x=>x.iso3===e.target.value);
+                  if(found&&!compare.find(x=>x.iso3===found.iso3)) setCompare([...compare,found]);
+                  e.target.value='';
+                }} style={{padding:'6px 10px',borderRadius:'6px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'12px',color:'#0A3D62',background:'white'}}>
+                  <option value="">➕ Add country…</option>
+                  {GFR_DATA.filter(x=>!compare.find(c=>c.iso3===x.iso3)).map(e=>(
+                    <option key={e.iso3} value={e.iso3}>{e.flag} {e.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* Individual cards */}
+            <div style={{display:'grid',gridTemplateColumns:`repeat(${compare.length},1fr)`,gap:'14px'}}>
+              {compare.map(e=>(
+                <div key={e.iso3} className="gfm-card" style={{padding:'18px'}}>
+                  <div style={{textAlign:'center',marginBottom:'12px'}}>
+                    <div style={{fontSize:'32px'}}>{e.flag}</div>
+                    <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>{e.name}</div>
+                    <div style={{fontSize:'24px',fontWeight:800,fontFamily:'monospace',color:'#74BB65'}}>{e.score.toFixed(1)}</div>
+                  </div>
+                  {DIMS.map(d=>(
+                    <div key={d} style={{display:'flex',justifyContent:'space-between',fontSize:'11px',padding:'3px 0',borderBottom:'1px solid rgba(10,61,98,0.04)'}}>
+                      <span style={{fontWeight:700,color:'#0A3D62'}}>{d}</span>
+                      <span style={{fontFamily:'monospace',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Comparison table */}
+            <div className="gfm-card" style={{overflow:'auto'}}>
+              <table className="gfm-table">
+                <thead><tr>
+                  <th>Economy</th><th>Score</th>
+                  {DIMS.map(d=><th key={d}>{d}</th>)}
+                  <th>vs 2025</th>
+                </tr></thead>
+                <tbody>
+                  {compare.map(e=>(
+                    <tr key={e.iso3}>
+                      <td><span style={{fontSize:'20px'}}>{e.flag}</span> <b style={{color:'#0A3D62'}}>{e.name}</b></td>
+                      <td style={{fontWeight:800,fontFamily:'monospace',color:'#0A3D62'}}>{e.score.toFixed(1)}</td>
+                      {DIMS.map(d=>(
+                        <td key={d} style={{fontFamily:'monospace',fontSize:'12px',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</td>
+                      ))}
+                      <td style={{fontFamily:'monospace',fontWeight:700,color:e.chg>0?'#74BB65':e.chg<0?'#E57373':'#696969'}}>
+                        {e.chg>0?`▲+${e.chg}`:e.chg<0?`▼${e.chg}`:'▬ 0'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: METHODOLOGY */}
+        {tab==='methodology' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'24px'}}>
+            <div className="gfm-card" style={{padding:'28px'}}>
+              <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'6px'}}>Ranking Framework — 6 Dimensions</h2>
+              <p style={{fontSize:'13px',color:'#696969',marginBottom:'20px'}}>Click dimensions to expand sub-indicators.</p>
+              <DimensionWheel/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
+              {[
+                {t:'Scoring Methodology',pts:['All indicators normalised 0–100','Min-max with 5-year historical bounds','Outlier caps at 3σ','Ties broken by ICT then ETR']},
+                {t:'Calculation Process',pts:['Dimension = weighted avg of sub-indicators','Overall = weighted avg of 6 dimensions','Quarterly recalculation cycle','Version-controlled with audit trail']},
+                {t:'Data Sources (15+)',pts:['World Bank · IMF · UNCTAD · OECD','GII · CCPI · WJP · Oxford Economics','300+ trusted primary sources','Real-time signal integration']},
+                {t:'Verification Process',pts:['Cross-source validation (min 2 sources)','Outlier detection & analyst review','Annual methodology update','Expert panel validation']},
+              ].map(({t,pts})=>(
+                <div key={t} className="gfm-card" style={{padding:'20px'}}>
+                  <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'10px'}}>{t}</div>
+                  <ul style={{listStyle:'none',padding:0,margin:0}}>
+                    {pts.map(p=>(
+                      <li key={p} style={{display:'flex',gap:'6px',padding:'4px 0',fontSize:'12px',color:'#696969'}}>
+                        <span style={{color:'#74BB65',flexShrink:0}}>•</span>{p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <div style={{textAlign:'center'}}>
+              <Link href="/gfr/methodology" className="gfm-btn-primary" style={{padding:'12px 28px',textDecoration:'none',fontSize:'14px'}}>
+                Download Full Methodology Report →
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

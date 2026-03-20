@@ -1,76 +1,63 @@
 'use client';
-import { useState, useMemo } from 'react';
-import { exportCSV, exportPrintHTML } from '@/lib/export';
+import PreviewGate from '@/components/PreviewGate';
+import { useState, useEffect } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/shared';
 
-const GFR_DATA: Record<string,{name:string;composite:number;macro:number;policy:number;digital:number;human:number;infra:number;sustain:number;tier:string}> = {
-  SGP:{name:'Singapore',   composite:88.5,macro:87,policy:91,digital:87,human:63,infra:94,sustain:62,tier:'FRONTIER'},
-  CHE:{name:'Switzerland', composite:87.5,macro:87,policy:88,digital:86,human:70,infra:90,sustain:78,tier:'FRONTIER'},
-  USA:{name:'United States',composite:84.5,macro:89,policy:83,digital:91,human:74,infra:86,sustain:68,tier:'FRONTIER'},
-  NOR:{name:'Norway',      composite:83.2,macro:88,policy:90,digital:84,human:71,infra:85,sustain:82,tier:'FRONTIER'},
-  AUS:{name:'Australia',   composite:82.1,macro:83,policy:85,digital:82,human:69,infra:84,sustain:76,tier:'FRONTIER'},
-  ARE:{name:'UAE',         composite:80.0,macro:82,policy:78,digital:84,human:54,infra:92,sustain:53,tier:'FRONTIER'},
-  GBR:{name:'UK',          composite:78.5,macro:80,policy:84,digital:82,human:71,infra:80,sustain:72,tier:'HIGH'},
-  DEU:{name:'Germany',     composite:78.1,macro:81,policy:86,digital:78,human:70,infra:84,sustain:77,tier:'HIGH'},
-  JPN:{name:'Japan',       composite:77.4,macro:79,policy:83,digital:80,human:68,infra:86,sustain:70,tier:'HIGH'},
-  SAU:{name:'Saudi Arabia',composite:68.1,macro:74,policy:62,digital:72,human:48,infra:76,sustain:50,tier:'HIGH'},
-  CHN:{name:'China',       composite:64.2,macro:68,policy:55,digital:72,human:62,infra:78,sustain:44,tier:'MEDIUM'},
-  IND:{name:'India',       composite:62.3,macro:68,policy:56,digital:59,human:69,infra:65,sustain:38,tier:'MEDIUM'},
-  BRA:{name:'Brazil',      composite:54.2,macro:56,policy:52,digital:56,human:55,infra:54,sustain:46,tier:'MEDIUM'},
-  NGA:{name:'Nigeria',     composite:42.1,macro:46,policy:36,digital:42,human:40,infra:36,sustain:36,tier:'EMERGING'},
-  EGY:{name:'Egypt',       composite:52.4,macro:55,policy:48,digital:52,human:48,infra:58,sustain:42,tier:'MEDIUM'},
-  VNM:{name:'Vietnam',     composite:58.2,macro:62,policy:58,digital:55,human:52,infra:58,sustain:48,tier:'MEDIUM'},
-  IDN:{name:'Indonesia',   composite:57.1,macro:60,policy:56,digital:54,human:52,infra:58,sustain:52,tier:'MEDIUM'},
-  ZAF:{name:'South Africa',composite:51.3,macro:52,policy:54,digital:52,human:46,infra:50,sustain:52,tier:'MEDIUM'},
-};
-const DIMS = ['macro','policy','digital','human','infra','sustain'];
-const DIM_LABELS = ['Macro','Policy','Digital','Human','Infra','Sustain'];
-const TIER_COLORS: Record<string,string> = {FRONTIER:'#7C3AED',HIGH:'#0A66C2',MEDIUM:'#D97706',EMERGING:'#EA580C',DEVELOPING:'#6B7280'};
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
-function RadarChart({economies,data}:{economies:string[];data:typeof GFR_DATA}) {
-  const cx=160, cy=150, R=110;
-  const N = DIMS.length;
-  const PALETTE = ['#0A66C2','#059669','#D97706','#7C3AED','#EF4444'];
+const ECONOMIES = [
+  {iso3:'SGP',name:'Singapore',    flag:'🇸🇬',color:'#0A3D62',scores:{macro:89,policy:92,digital:94,human:88,infra:91,sustain:82}},
+  {iso3:'ARE',name:'UAE',          flag:'🇦🇪',color:'#74BB65',scores:{macro:83,policy:85,digital:88,human:75,infra:87,sustain:72}},
+  {iso3:'USA',name:'USA',          flag:'🇺🇸',color:'#74BB65',scores:{macro:88,policy:84,digital:90,human:86,infra:85,sustain:76}},
+  {iso3:'DEU',name:'Germany',      flag:'🇩🇪',color:'#696969',scores:{macro:80,policy:84,digital:80,human:84,infra:82,sustain:80}},
+  {iso3:'IND',name:'India',        flag:'🇮🇳',color:'#22c55e',scores:{macro:62,policy:60,digital:58,human:55,infra:54,sustain:52}},
+  {iso3:'SAU',name:'Saudi Arabia', flag:'🇸🇦',color:'#0A66C2',scores:{macro:76,policy:74,digital:72,human:68,infra:75,sustain:65}},
+  {iso3:'AUS',name:'Australia',    flag:'🇦🇺',color:'#0A3D62',scores:{macro:84,policy:86,digital:84,human:86,infra:83,sustain:78}},
+  {iso3:'VNM',name:'Vietnam',      flag:'🇻🇳',color:'#22c55e',scores:{macro:59,policy:56,digital:54,human:60,infra:56,sustain:48}},
+];
 
-  function toXY(dimIdx:number, val:number) {
-    const angle = (dimIdx/N)*2*Math.PI - Math.PI/2;
-    const r = (val/100)*R;
-    return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
-  }
+const DIMS = ['macro','policy','digital','human','infra','sustain'] as const;
+const DIM_LABELS: Record<string,string> = {macro:'Macro',policy:'Policy',digital:'Digital',human:'Human',infra:'Infra',sustain:'Sustain'};
 
-  // Axis lines + labels
-  const axes = DIMS.map((_,i)=>{
-    const angle=(i/N)*2*Math.PI-Math.PI/2;
-    return {x1:cx,y1:cy,x2:cx+R*Math.cos(angle),y2:cy+R*Math.sin(angle),lx:cx+(R+18)*Math.cos(angle),ly:cy+(R+18)*Math.sin(angle),label:DIM_LABELS[i]};
-  });
-
-  // Grid rings
-  const rings = [25,50,75,100].map(r=>{
-    const pts=DIMS.map((_,i)=>{
-      const angle=(i/N)*2*Math.PI-Math.PI/2;
-      const rr=(r/100)*R;
-      return `${cx+rr*Math.cos(angle)},${cy+rr*Math.sin(angle)}`;
-    }).join(' ');
-    return {pts,r};
-  });
+function RadarChart({ selected, allEco }: { selected: string[]; allEco: typeof ECONOMIES }) {
+  const cx=180, cy=180, R=150, N=DIMS.length;
+  const angle=(i:number) => (i/N)*Math.PI*2 - Math.PI/2;
+  const pt=(r:number, i:number) => [cx+r*Math.cos(angle(i)), cy+r*Math.sin(angle(i))];
 
   return (
-    <svg viewBox="0 0 320 300" className="w-full max-w-xs mx-auto">
-      {rings.map(({pts,r})=><polygon key={r} points={pts} fill="none" stroke="#E2E8F0" strokeWidth="0.5"/>)}
-      {axes.map((a,i)=>(
-        <g key={i}>
-          <line x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} stroke="#E2E8F0" strokeWidth="0.5"/>
-          <text x={a.lx} y={a.ly} fontSize="10" textAnchor="middle" dominantBaseline="middle" fill="#94A3B8" fontWeight="600">{a.label}</text>
-        </g>
+    <svg viewBox="0 0 360 360" className="w-full max-w-sm mx-auto">
+      {/* Grid rings */}
+      {[20,40,60,80,100].map(v=>(
+        <polygon key={v} fill="none" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"
+          points={DIMS.map((_,i)=>{const [x,y]=pt((v/100)*R,i);return `${x},${y}`;}).join(' ')}/>
       ))}
-      {economies.slice(0,5).map((iso,ei)=>{
-        const eco=data[iso]; if(!eco) return null;
-        const vals=[eco.macro,eco.policy,eco.digital,eco.human,eco.infra,eco.sustain];
-        const pts=vals.map((v,i)=>{const {x,y}=toXY(i,v);return `${x.toFixed(1)},${y.toFixed(1)}`;}).join(' ');
-        const col=PALETTE[ei];
-        return(
-          <g key={iso}>
-            <polygon points={pts} fill={col} fillOpacity="0.1" stroke={col} strokeWidth="1.5"/>
-            {vals.map((v,i)=>{const {x,y}=toXY(i,v);return <circle key={i} cx={x} cy={y} r={3} fill={col}/>;})}
+      {/* Axes */}
+      {DIMS.map((_,i)=>{
+        const [x,y]=pt(R,i);
+        const [lx,ly]=pt(R+18,i);
+        const d = DIMS[i];
+        return (
+          <g key={i}>
+            <line x1={cx} y1={cy} x2={x} y2={y} stroke="rgba(10,61,98,0.2)" strokeWidth="0.5"/>
+            <text x={lx} y={ly+4} textAnchor="middle" fontSize="10" fill="#696969">{DIM_LABELS[d]}</text>
+          </g>
+        );
+      })}
+      {/* Data polygons */}
+      {selected.map(iso3=>{
+        const eco = allEco.find(e=>e.iso3===iso3);
+        if (!eco) return null;
+        const pts = DIMS.map((d,i)=>{const [x,y]=pt((eco.scores[d]/100)*R,i);return `${x},${y}`;}).join(' ');
+        return (
+          <g key={iso3}>
+            <polygon points={pts} fill={eco.color} fillOpacity="0.15" stroke={eco.color} strokeWidth="2"/>
+            {DIMS.map((d,i)=>{
+              const [x,y]=pt((eco.scores[d]/100)*R,i);
+              return <circle key={d} cx={x} cy={y} r="3" fill={eco.color}/>;
+            })}
           </g>
         );
       })}
@@ -79,128 +66,106 @@ function RadarChart({economies,data}:{economies:string[];data:typeof GFR_DATA}) 
 }
 
 export default function BenchmarkingPage() {
-  const [ecos,   setEcos]   = useState(['ARE','SGP','SAU','IND','DEU']);
-  const [adding, setAdding] = useState('');
-  const PALETTE = ['#0A66C2','#059669','#D97706','#7C3AED','#EF4444'];
+  const [selected, setSelected] = useState(['SGP','ARE','USA']);
 
-  function addEco(iso:string) { if(iso&&!ecos.includes(iso)&&GFR_DATA[iso]&&ecos.length<5){setEcos(e=>[...e,iso]);setAdding('');} }
-  function removeEco(iso:string) { if(ecos.length>2)setEcos(e=>e.filter(x=>x!==iso)); }
+  function toggle(iso3: string) {
+    if (selected.includes(iso3)) { if (selected.length>1) setSelected(s=>s.filter(x=>x!==iso3)); }
+    else if (selected.length < 5) setSelected(s=>[...s,iso3]);
+  }
 
-  const tableData = useMemo(()=>ecos.map(iso=>{const d=GFR_DATA[iso];return{iso,...d};}), [ecos]);
+  const selEcos = ECONOMIES.filter(e=>selected.includes(e.iso3));
 
   return (
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-12">
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-10">
         <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">Comparative Analysis</div>
-          <h1 className="text-4xl font-extrabold mb-2">Economy Benchmarking</h1>
-          <p className="text-white/70">Compare up to 5 economies across all GFR dimensions. Radar + table view.</p>
+          <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Comparative Intelligence</div>
+          <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Economy Benchmarking</h1>
+          <p className="text-sm mt-1" style={{color:'#696969'}}>Select up to 5 economies · 6 GFR dimensions · SVG radar chart</p>
         </div>
       </section>
 
-      {/* Economy selector */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3">
-        <div className="max-w-screen-xl mx-auto flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-bold text-slate-400 mr-1">ECONOMIES:</span>
-          {ecos.map((iso,i)=>{
-            const d=GFR_DATA[iso]; if(!d) return null;
-            return(
-              <div key={iso} className="flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full border text-xs font-semibold" style={{borderColor:PALETTE[i],color:PALETTE[i],background:`${PALETTE[i]}10`}}>
-                <span>{iso}</span>
-                {ecos.length>2&&<button onClick={()=>removeEco(iso)} className="opacity-60 hover:opacity-100 font-bold ml-0.5">×</button>}
-              </div>
-            );
-          })}
-          {ecos.length<5&&(
-            <select value={adding} onChange={e=>{setAdding(e.target.value);addEco(e.target.value);}}
-              className="text-xs border border-dashed border-primary rounded-full px-2.5 py-1 text-primary focus:outline-none cursor-pointer">
-              <option value="">+ Add economy</option>
-              {Object.keys(GFR_DATA).filter(k=>!ecos.includes(k)).map(k=><option key={k}>{k}</option>)}
-            </select>
-          )}
-          <div className="ml-auto flex gap-2">
-            <button onClick={()=>exportCSV(tableData.map(d=>({ISO:d.iso,Economy:d.name,Composite:d.composite,Macro:d.macro,Policy:d.policy,Digital:d.digital,Human:d.human,Infra:d.infra,Sustain:d.sustain,Tier:d.tier})),'GFM_Benchmarking')}
-              className="gfm-btn-outline text-xs py-1.5">Export CSV</button>
-            <button onClick={()=>exportPrintHTML('GFM Benchmarking — '+ecos.join(' vs '), `<p>${ecos.join(', ')}</p>`)}
-              className="gfm-btn-outline text-xs py-1.5">Print</button>
-          </div>
+      <div className="max-w-screen-xl mx-auto px-6 py-5">
+        {/* Economy selector */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {ECONOMIES.map(e=>(
+            <button key={e.iso3} onClick={()=>toggle(e.iso3)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold border transition-all"
+              style={selected.includes(e.iso3)
+                ?{background:`${e.color}20`,borderColor:e.color,color:'#0A3D62'}
+                :{borderColor:'rgba(10,61,98,0.2)',color:'#696969'}}>
+              <span>{e.flag}</span><span>{e.name}</span>
+              {selected.includes(e.iso3) && <span style={{color:e.color}}>●</span>}
+            </button>
+          ))}
         </div>
-      </div>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-6">
-        <div className="grid md:grid-cols-2 gap-6 mb-6">
-          {/* Radar chart */}
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-deep text-sm mb-3">Radar Comparison</div>
-            <RadarChart economies={ecos} data={GFR_DATA}/>
-            <div className="flex flex-wrap gap-2 justify-center mt-2">
-              {ecos.map((iso,i)=>(
-                <div key={iso} className="flex items-center gap-1.5 text-xs font-semibold" style={{color:PALETTE[i]}}>
-                  <div className="w-3 h-0.5 rounded" style={{background:PALETTE[i]}}/>
-                  {iso}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Radar */}
+          <div className="gfm-card p-6">
+            <div className="font-extrabold text-sm mb-4" style={{color:'#0A3D62'}}>Radar Comparison</div>
+            <RadarChart selected={selected} allEco={ECONOMIES}/>
+            <div className="flex flex-wrap gap-3 justify-center mt-4">
+              {selEcos.map(e=>(
+                <div key={e.iso3} className="flex items-center gap-1.5 text-xs">
+                  <div className="w-3 h-3 rounded-full" style={{background:e.color}}/>
+                  <span style={{color:'#696969'}}>{e.flag} {e.name}</span>
                 </div>
               ))}
             </div>
           </div>
-          {/* Score bars */}
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-deep text-sm mb-4">Composite GFR Score</div>
-            {tableData.map((e,i)=>(
-              <div key={e.iso} className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="font-bold text-deep">{e.iso} — {e.name}</span>
-                  <span className="font-extrabold font-mono" style={{color:PALETTE[i]}}>{e.composite}</span>
-                </div>
-                <div className="gfm-progress">
-                  <div className="gfm-progress-fill" style={{width:`${e.composite}%`,background:PALETTE[i]}}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Full comparison table */}
-        <div className="gfm-card overflow-x-auto">
-          <table className="w-full gfm-table">
-            <thead>
-              <tr>
-                <th>Economy</th>
-                <th className="text-center">GFR</th>
-                <th className="text-center">Tier</th>
-                {DIM_LABELS.map(d=><th key={d} className="text-center">{d}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((e,i)=>{
-                const tc=TIER_COLORS[e.tier]||'#6B7280';
-                return(
-                  <tr key={e.iso}>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{background:PALETTE[i]}}/>
-                        <div><div className="font-bold text-deep text-xs">{e.name}</div><div className="text-slate-400 text-xs font-mono">{e.iso}</div></div>
-                      </div>
-                    </td>
-                    <td className="text-center font-extrabold font-mono text-lg" style={{color:PALETTE[i]}}>{e.composite}</td>
-                    <td className="text-center"><span className="text-xs font-bold px-2 py-0.5 rounded-full text-white" style={{background:tc}}>{e.tier}</span></td>
-                    {DIMS.map(d=>(
-                      <td key={d} className="text-center">
-                        <div className="font-mono text-xs font-semibold text-slate-600">{(e as any)[d]}</div>
-                        <div className="h-1 bg-slate-100 rounded-full mt-0.5 mx-auto w-10">
-                          <div className="h-full rounded-full" style={{width:`${(e as any)[d]}%`,background:PALETTE[i]}}/>
-                        </div>
-                      </td>
+          {/* Dimension table */}
+          <div className="gfm-card overflow-hidden">
+            <div className="px-5 py-3 border-b font-extrabold text-sm" style={{borderBottomColor:'rgba(10,61,98,0.1)',color:'#0A3D62'}}>Dimension Scores</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b" style={{borderBottomColor:'rgba(10,61,98,0.08)'}}>
+                    <th className="text-left px-4 py-2 font-bold" style={{color:'#696969'}}>Dimension</th>
+                    {selEcos.map(e=>(
+                      <th key={e.iso3} className="text-center px-3 py-2 font-bold" style={{color:e.color}}>{e.flag} {e.iso3}</th>
                     ))}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {DIMS.map(d=>(
+                    <tr key={d} className="border-b" style={{borderBottomColor:'rgba(10,61,98,0.05)'}}>
+                      <td className="px-4 py-2.5 font-semibold capitalize" style={{color:'#696969'}}>{DIM_LABELS[d]}</td>
+                      {selEcos.map(e=>{
+                        const v = e.scores[d];
+                        const best = Math.max(...selEcos.map(x=>x.scores[d]));
+                        return (
+                          <td key={e.iso3} className="px-3 py-2.5 text-center">
+                            <span className="font-extrabold font-data" style={{color:v===best?e.color:'#696969'}}>{v}</span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr style={{borderTop:'1px solid rgba(10,61,98,0.15)'}}>
+                    <td className="px-4 py-3 font-extrabold text-sm" style={{color:'#0A3D62'}}>GFR Composite</td>
+                    {selEcos.map(e=>{
+                      const W=[0.20,0.18,0.15,0.15,0.15,0.17];
+                      const gfr = DIMS.reduce((a,d,i)=>a+e.scores[d]*W[i],0);
+                      const best = Math.max(...selEcos.map(x=>DIMS.reduce((a,d,i)=>a+x.scores[d]*W[i],0)));
+                      return (
+                        <td key={e.iso3} className="px-3 py-3 text-center font-extrabold font-data" style={{color:Math.abs(gfr-best)<0.1?'#0A3D62':'#74BB65'}}>
+                          {gfr.toFixed(1)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-
-        <div className="mt-4 flex gap-3">
-          <button onClick={()=>window.location.href='/subscription'} className="gfm-btn-primary px-6 py-2.5">Generate Benchmark Report — 15 FIC</button>
-          <button className="gfm-btn-outline px-6 py-2.5">+ Compare Historical</button>
+        <div className="flex gap-3 mt-5">
+          <Link href="/gfr"             className="gfm-btn-primary text-sm py-2 px-5">Full GFR Rankings →</Link>
+          <Link href="/gfr/methodology" className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#696969'}}>Methodology</Link>
         </div>
       </div>
     </div>

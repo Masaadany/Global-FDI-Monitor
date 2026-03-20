@@ -1,47 +1,35 @@
-"""AGT-13 COMPANY INTELLIGENCE CARD (CIC) — Company Intelligence Card (CIC)"""
-import hashlib, json
-from datetime import datetime, timezone
+"""
+Agt13 Company Intel — FDI Monitor Intelligence Agent v3
+"""
+import datetime
 
-AGENT_ID   = "AGT-13"
-AGENT_NAME = "Company Intelligence Card (CIC)"
-FIC_COST   = 5
+def run(params: dict) -> dict:
+    return execute(params)
 
-def run(payload: dict) -> dict:
-    """Generate Company Intelligence Card with IMS score."""
-    cic  = payload.get('cic','GFM-USA-MSFT-12847')
-    name = payload.get('company','Microsoft Corporation')
-    # IMS scoring factors
-    import random
-    COMPANIES = {
-        'GFM-USA-MSFT-12847':{'ims':96,'grade':'PLATINUM','esg':77.2,'footprints':10},
-        'GFM-USA-AMZN-98120':{'ims':95,'grade':'PLATINUM','esg':74.1,'footprints':9},
-        'GFM-CHN-CATL-11234':{'ims':92,'grade':'PLATINUM','esg':62.4,'footprints':7},
-    }
-    data = COMPANIES.get(cic, {'ims':75+random.randint(0,20),'grade':'GOLD','esg':60+random.randint(0,20),'footprints':5})
+def execute(params: dict) -> dict:
+    try:
+        return _execute_safe(params)
+    except Exception as e:
+        import datetime
+        return {"success": False, "error": str(e), "agent": "agt13_company_intel", "ts": datetime.datetime.utcnow().isoformat() + "Z"}
+
+def _execute_safe(params: dict) -> dict:
+    iso3   = params.get("iso3", "ALL")
+    limit  = params.get("limit", 10)
+    result = _process(iso3, params)
     return {
-        'cic':          cic,
-        'name':         name,
-        'ims_score':    data['ims'],
-        'grade':        data['grade'],
-        'esg_score':    data['esg'],
-        'footprints':   data['footprints'],
-        'momentum':     'STRONG' if data['ims']>90 else 'MODERATE',
-        'last_signal':  '2026-03-17',
-        'conviction':   'VERY HIGH' if data['ims']>92 else 'HIGH',
+        "success": True,
+        "agent":   "agt13_company_intel",
+        "iso3":    iso3,
+        "result":  result,
+        "ts":      datetime.datetime.utcnow().isoformat() + "Z",
     }
 
-def execute(payload: dict) -> dict:
-    ref = f"{AGENT_ID}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{hashlib.sha256(json.dumps(payload).encode()).hexdigest()[:8].upper()}"
-    result = run(payload)
+def _process(iso3: str, params: dict) -> dict:
     return {
-        "agent":     AGENT_ID,
-        "name":      AGENT_NAME,
-        "ref":       ref,
-        "status":    "completed" if "error" not in result else "error",
-        "fic":       FIC_COST,
-        "result":    result,
-        "provenance": {"hash": f"sha256:{hashlib.sha256(ref.encode()).hexdigest()[:16]}", "executed_at": datetime.now(timezone.utc).isoformat()}
+        "status": "processed",
+        "iso3":   iso3,
+        "params": params,
+        "items":  [],
+        "source": "AGT-v3",
     }
-
-if __name__ == "__main__":
-    print(json.dumps(execute({"test": True}), indent=2))

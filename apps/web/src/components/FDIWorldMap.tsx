@@ -1,163 +1,132 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
+import Link from 'next/link';
 
-// Simplified world map using country centroids for bubble placement
-const COUNTRY_POSITIONS: Record<string,[number,number]> = {
-  // [lon, lat] → converted to SVG x,y
-  USA:[-100,38],CAN:[-96,56],MEX:[-102,24],BRA:[-51,-10],ARG:[-65,-34],
-  CHL:[-71,-30],COL:[-74,4],PER:[-76,-10],VEN:[-66,8],ECU:[-78,-2],
-  GBR:[-2,54],FRA:[2,46],DEU:[10,51],ITA:[12,42],ESP:[-4,40],
-  PRT:[-8,39],NLD:[5,52],BEL:[4,51],CHE:[8,47],AUT:[14,47],
-  POL:[20,52],CZE:[16,50],HUN:[19,47],ROU:[25,46],BGR:[25,43],
-  NOR:[10,62],SWE:[18,60],DNK:[10,56],FIN:[26,64],GRC:[22,39],
-  TUR:[35,39],RUS:[60,60],UKR:[32,49],KAZ:[67,48],UZB:[63,41],
-  SAU:[45,25],ARE:[54,24],QAT:[51,25],KWT:[48,29],OMN:[57,22],
-  BHR:[50,26],JOR:[36,31],ISR:[35,32],LBN:[36,34],EGY:[30,27],
-  MAR:[6,32],TUN:[9,34],DZA:[2,28],LBY:[17,27],NGA:[8,10],
-  GHA:[-2,8],KEN:[38,-1],ETH:[40,9],ZAF:[25,-29],TZA:[34,-6],
-  UGA:[32,1],RWA:[30,-2],MZQ:[35,-18],ANG:[18,-12],CMR:[12,6],
-  IND:[78,20],CHN:[104,35],JPN:[138,36],KOR:[128,37],TWN:[121,24],
-  HKG:[114,22],SGP:[104,1],MYS:[108,4],IDN:[117,-2],PHL:[122,13],
-  THA:[101,15],VNM:[108,16],MMR:[96,17],BGD:[90,24],PAK:[70,30],
-  LKA:[81,8],NPL:[84,28],AFG:[67,33],IRN:[53,33],IRQ:[44,33],
-  AUS:[134,-26],NZL:[172,-42],FJI:[178,-18],PNG:[145,-6],
-  ZMB:[28,-15],ZWE:[30,-20],BWA:[24,-22],NAM:[18,-22],MWI:[34,-14],
-};
+type Signal = { iso3: string; lat: number; lon: number; grade: string; capex_m: number; company: string };
 
-// Convert lon/lat to SVG coords (mercator approximation)
-function toSVG(lon: number, lat: number, W=800, H=450): [number,number] {
-  const x = (lon + 180) / 360 * W;
-  const latRad = lat * Math.PI / 180;
-  const mercN  = Math.log(Math.tan(Math.PI/4 + latRad/2));
-  const y      = H/2 - (mercN * H / (2 * Math.PI));
-  return [Math.round(x), Math.round(y)];
-}
-
-// Simplified continent paths
-const CONTINENTS = [
-  {name:'North America',color:'#1e3a5f',d:'M 40,60 L 220,50 L 250,130 L 200,200 L 130,210 L 60,170 Z'},
-  {name:'South America',color:'#1e3a5f',d:'M 150,220 L 230,215 L 250,310 L 200,390 L 150,380 L 130,310 Z'},
-  {name:'Europe',       color:'#1e3a5f',d:'M 310,45 L 420,40 L 440,100 L 400,130 L 310,120 Z'},
-  {name:'Africa',       color:'#1e3a5f',d:'M 310,135 L 420,130 L 435,260 L 390,350 L 330,340 L 305,240 Z'},
-  {name:'Asia',         color:'#1e3a5f',d:'M 425,40 L 680,35 L 710,180 L 620,240 L 490,220 L 420,130 Z'},
-  {name:'SE Asia',      color:'#1e3a5f',d:'M 590,195 L 660,190 L 665,250 L 600,255 Z'},
-  {name:'Australia',   color:'#1e3a5f',d:'M 600,290 L 720,280 L 730,370 L 610,375 Z'},
+const HOTSPOTS: Signal[] = [
+  {iso3:'ARE',lat:24.4, lon:54.4, grade:'PLATINUM', capex_m:850,  company:'Microsoft'},
+  {iso3:'SAU',lat:24.7, lon:46.7, grade:'PLATINUM', capex_m:980,  company:'ACWA Power'},
+  {iso3:'IND',lat:20.6, lon:78.9, grade:'PLATINUM', capex_m:1100, company:'NVIDIA'},
+  {iso3:'IDN',lat:-0.8, lon:113.9,grade:'PLATINUM', capex_m:3200, company:'CATL'},
+  {iso3:'VNM',lat:14.1, lon:108.3,grade:'PLATINUM', capex_m:2100, company:'Samsung SDI'},
+  {iso3:'SGP',lat:1.3,  lon:103.8,grade:'GOLD',     capex_m:620,  company:'Google Cloud'},
+  {iso3:'EGY',lat:26.8, lon:30.8, grade:'GOLD',     capex_m:890,  company:'TotalEnergies'},
+  {iso3:'MAR',lat:31.8, lon:-7.1, grade:'GOLD',     capex_m:380,  company:'Renault'},
+  {iso3:'DEU',lat:51.2, lon:10.4, grade:'GOLD',     capex_m:340,  company:'Siemens'},
+  {iso3:'USA',lat:37.1, lon:-95.7,grade:'PLATINUM', capex_m:2400, company:'Multiple'},
 ];
 
-const FDI_DATA: Record<string,{fdi_b:number;grade:'PLATINUM'|'GOLD'|'SILVER'|'BRONZE';name:string}> = {
-  USA:{fdi_b:285,grade:'PLATINUM',name:'United States'},
-  CHN:{fdi_b:163,grade:'PLATINUM',name:'China'},
-  SGP:{fdi_b:141,grade:'PLATINUM',name:'Singapore'},
-  IRL:{fdi_b:94, grade:'PLATINUM',name:'Ireland'},
-  NLD:{fdi_b:92, grade:'GOLD',    name:'Netherlands'},
-  IND:{fdi_b:71, grade:'GOLD',    name:'India'},
-  BRA:{fdi_b:65, grade:'GOLD',    name:'Brazil'},
-  AUS:{fdi_b:59, grade:'GOLD',    name:'Australia'},
-  DEU:{fdi_b:35, grade:'GOLD',    name:'Germany'},
-  ARE:{fdi_b:30, grade:'PLATINUM',name:'UAE'},
-  JPN:{fdi_b:30, grade:'GOLD',    name:'Japan'},
-  GBR:{fdi_b:52, grade:'GOLD',    name:'United Kingdom'},
-  SAU:{fdi_b:28, grade:'GOLD',    name:'Saudi Arabia'},
-  FRA:{fdi_b:28, grade:'SILVER',  name:'France'},
-  KOR:{fdi_b:18, grade:'SILVER',  name:'South Korea'},
-  VNM:{fdi_b:18, grade:'GOLD',    name:'Vietnam'},
-  MEX:{fdi_b:36, grade:'SILVER',  name:'Mexico'},
-  IDN:{fdi_b:22, grade:'GOLD',    name:'Indonesia'},
-  EGY:{fdi_b:9,  grade:'SILVER',  name:'Egypt'},
-  NGA:{fdi_b:4,  grade:'SILVER',  name:'Nigeria'},
-  MAR:{fdi_b:3,  grade:'SILVER',  name:'Morocco'},
-  KEN:{fdi_b:1,  grade:'BRONZE',  name:'Kenya'},
-  ZAF:{fdi_b:5,  grade:'SILVER',  name:'South Africa'},
-  QAT:{fdi_b:5,  grade:'SILVER',  name:'Qatar'},
-};
+const GRADE_COLORS: Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#696969'};
 
-const GRADE_COLORS: Record<string,string> = {
-  PLATINUM:'#f59e0b',GOLD:'#10b981',SILVER:'#3b82f6',BRONZE:'#6b7280'
-};
+// Equirectangular projection
+function project(lat: number, lon: number, w: number, h: number): [number,number] {
+  const x = ((lon + 180) / 360) * w;
+  const y = ((90 - lat) / 180) * h;
+  return [x, y];
+}
 
-type Metric = 'fdi_b';
-
-export default function FDIWorldMap() {
-  const [hovered, setHovered] = useState<string|null>(null);
-  const [filter,  setFilter]  = useState<string>('');
-  const W=800, H=450;
-
-  const bubbles = useMemo(() => Object.entries(COUNTRY_POSITIONS).map(([iso3,[lon,lat]]) => {
-    const [x,y] = toSVG(lon,lat,W,H);
-    const data   = FDI_DATA[iso3];
-    if (!data) return null;
-    const r = Math.max(4, Math.min(28, Math.sqrt(data.fdi_b) * 1.6));
-    return { iso3, x, y, r, ...data };
-  }).filter(Boolean), [W,H]);
-
-  const totalFDI = Object.values(FDI_DATA).reduce((s,d)=>s+d.fdi_b,0);
+export default function FDIWorldMap({ signals = HOTSPOTS }: { signals?: Signal[] }) {
+  const [hovered, setHovered] = useState<Signal|null>(null);
+  const W = 800; const H = 400;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-        <div>
-          <div className="font-black text-sm text-[#0A2540]">FDI World Map — 2025</div>
-          <div className="text-xs text-slate-400">Total: ${totalFDI.toFixed(0)}B · Bubble size ∝ FDI volume</div>
+    <div className="gfm-card overflow-hidden" style={{position:'relative'}}>
+      <div className="px-4 py-3 border-b flex items-center justify-between" style={{borderBottomColor:'rgba(10,61,98,0.1)'}}>
+        <div className="flex items-center gap-2">
+          <span className="live-dot"/>
+          <span className="text-xs font-extrabold uppercase tracking-widest" style={{color:'#696969'}}>Global FDI Signal Map</span>
         </div>
-        <div className="flex gap-2">
-          {Object.entries(GRADE_COLORS).map(([g,c])=>(
-            <button key={g} onClick={()=>setFilter(filter===g?'':g)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all ${filter===g?'text-white':'text-slate-500 border-slate-200'}`}
-              style={filter===g?{background:c,borderColor:c}:{}}>
-              <div className="w-2 h-2 rounded-full" style={{background:c}}/>
-              {g}
-            </button>
+        <div className="flex gap-3 text-xs">
+          {Object.entries(GRADE_COLORS).slice(0,3).map(([g,c])=>(
+            <span key={g} className="flex items-center gap-1"><span style={{color:c,fontSize:16}}>●</span>{g}</span>
           ))}
         </div>
       </div>
 
-      <div className="relative">
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full"
-          style={{background:'radial-gradient(ellipse at 50% 50%, #f0f4f8 0%, #e2e8f0 100%)'}}>
-          {/* Ocean */}
-          <rect width={W} height={H} fill="#dbeafe" opacity="0.3"/>
-          {/* Continents */}
-          {CONTINENTS.map(c=>(
-            <path key={c.name} d={c.d} fill={c.color} stroke="#334155" strokeWidth="0.5" opacity="0.9"/>
-          ))}
-          {/* Graticule */}
+      <div style={{position:'relative',background:'radial-gradient(ellipse at 50% 40%, #0F3538 0%, #0F0A0A 100%)'}}>
+        <svg role="img" aria-label="FDI World Map — global investment flow visualization" viewBox={`0 0 ${W} ${H}`} className="w-full" style={{opacity:0.9}}>
+          {/* Ocean background */}
+          <rect width={W} height={H} fill="#0F1A1C"/>
+          {/* Latitude grid */}
           {[-60,-30,0,30,60].map(lat=>{
-            const [,y]=toSVG(0,lat,W,H);
-            return <line key={lat} x1={0} y1={y} x2={W} y2={y} stroke="#cbd5e1" strokeWidth="0.3" strokeDasharray="4,4"/>;
+            const [,y]=project(lat,0,W,H);
+            return <line key={lat} x1={0} y1={y} x2={W} y2={y} stroke="rgba(10,61,98,0.06)" strokeWidth={0.5}/>;
           })}
+          {/* Longitude grid */}
           {[-120,-60,0,60,120].map(lon=>{
-            const [x]=toSVG(lon,0,W,H);
-            return <line key={lon} x1={x} y1={0} x2={x} y2={H} stroke="#cbd5e1" strokeWidth="0.3" strokeDasharray="4,4"/>;
+            const [x]=project(0,lon,W,H);
+            return <line key={lon} x1={x} y1={0} x2={x} y2={H} stroke="rgba(10,61,98,0.06)" strokeWidth={0.5}/>;
           })}
-          {/* FDI bubbles */}
-          {bubbles.filter(b=>!filter||b!.grade===filter).map(b=>{
-            if(!b) return null;
-            const isHov = hovered === b.iso3;
-            const col   = GRADE_COLORS[b.grade];
+
+          {/* Stylized continents (simplified) */}
+          {/* North America */}
+          <path d="M 70,90 L 160,80 L 180,110 L 170,160 L 140,180 L 100,170 L 70,140 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* South America */}
+          <path d="M 140,220 L 180,210 L 190,270 L 165,320 L 140,310 L 125,260 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* Europe */}
+          <path d="M 340,75 L 390,70 L 400,90 L 380,110 L 350,105 L 335,90 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* Africa */}
+          <path d="M 350,130 L 395,125 L 410,180 L 400,250 L 365,280 L 335,245 L 325,180 L 340,145 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* Middle East */}
+          <path d="M 410,130 L 455,125 L 465,155 L 440,165 L 415,160 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* Asia */}
+          <path d="M 455,70 L 630,65 L 650,90 L 640,140 L 600,155 L 550,150 L 490,130 L 460,105 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* South/SE Asia */}
+          <path d="M 520,160 L 580,155 L 595,185 L 570,200 L 530,190 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+          {/* Australia */}
+          <path d="M 570,240 L 650,235 L 665,280 L 640,310 L 590,305 L 565,270 Z" fill="#0F2021" stroke="rgba(10,61,98,0.15)" strokeWidth="0.5"/>
+
+          {/* Investment flow arcs */}
+          {[
+            {from:[440,140],to:[540,175],color:'#74BB65'},
+            {from:[160,120],to:[440,140],color:'#74BB65'},
+            {from:[160,120],to:[530,170],color:'#0A3D62'},
+          ].map((arc,i)=>{
+            const mx=(arc.from[0]+arc.to[0])/2;
+            const my=Math.min(arc.from[1],arc.to[1])-40;
             return (
-              <g key={b.iso3} onMouseEnter={()=>setHovered(b.iso3)} onMouseLeave={()=>setHovered(null)}
-                style={{cursor:'pointer'}}>
-                {isHov && <circle cx={b.x} cy={b.y} r={b.r*1.6} fill={col} opacity="0.15"/>}
-                <circle cx={b.x} cy={b.y} r={b.r} fill={col} opacity="0.85" stroke="white" strokeWidth="0.8"/>
-                {b.r > 10 && (
-                  <text x={b.x} y={b.y+3} textAnchor="middle" fontSize="7" fill="white" fontWeight="700">{b.iso3}</text>
-                )}
-                {isHov && (
-                  <g>
-                    <rect x={b.x+b.r+2} y={b.y-16} width={90} height={34} rx={4} fill="#0f172a" opacity="0.92"/>
-                    <text x={b.x+b.r+6} y={b.y-3}  fontSize="9" fill={col}   fontWeight="700">{b.name}</text>
-                    <text x={b.x+b.r+6} y={b.y+10}  fontSize="10" fill="white" fontWeight="900">${b.fdi_b}B FDI</text>
-                  </g>
-                )}
+              <path key={i} d={`M${arc.from[0]},${arc.from[1]} Q${mx},${my} ${arc.to[0]},${arc.to[1]}`}
+                fill="none" stroke={arc.color} strokeWidth={1} strokeDasharray="4 3" opacity={0.4}/>
+            );
+          })}
+
+          {/* Signal hotspots */}
+          {signals.map((s,i)=>{
+            const [x,y] = project(s.lat, s.lon, W, H);
+            const c = GRADE_COLORS[s.grade] || '#696969';
+            const isHov = hovered?.iso3 === s.iso3;
+            return (
+              <g key={i} style={{cursor:'pointer'}}
+                onMouseEnter={()=>setHovered(s)} onMouseLeave={()=>setHovered(null)}>
+                <circle cx={x} cy={y} r={isHov?12:8} fill={c} opacity={0.15}/>
+                <circle cx={x} cy={y} r={isHov?6:4} fill={c} opacity={0.9}>
+                  <animate attributeName="r" values={`${isHov?6:4};${isHov?8:6};${isHov?6:4}`} dur={`${1.5+i*0.2}s`} repeatCount="indefinite"/>
+                  <animate attributeName="opacity" values="0.9;0.5;0.9" dur={`${1.5+i*0.2}s`} repeatCount="indefinite"/>
+                </circle>
               </g>
             );
           })}
         </svg>
+
+        {/* Tooltip */}
+        {hovered && (
+          <div className="absolute top-3 right-3 p-3 rounded-xl z-10 pointer-events-none"
+               style={{background:'rgba(10,61,98,0.04)0.95)',border:`1px solid ${GRADE_COLORS[hovered.grade]}40`,minWidth:160}}>
+            <div className="text-xs font-extrabold mb-0.5" style={{color:GRADE_COLORS[hovered.grade]}}>{hovered.grade}</div>
+            <div className="text-sm font-bold" style={{color:'#0A3D62'}}>{hovered.company}</div>
+            <div className="text-xs" style={{color:'#696969'}}>{hovered.iso3} · ${hovered.capex_m}M</div>
+          </div>
+        )}
+
+        {/* Bottom legend */}
+        <div className="absolute bottom-2 left-3 text-xs" style={{color:'#696969'}}>
+          {signals.length} active signals · Click any hotspot for details
+        </div>
       </div>
 
-      <div className="flex justify-between px-5 py-2 border-t border-slate-100 text-xs text-slate-400">
-        <span>Source: UNCTAD WIR 2025 · GFM Intelligence</span>
-        <span>{bubbles.filter(b=>b&&(!filter||b.grade===filter)).length} economies shown</span>
+      <div className="px-4 py-2 border-t text-center" style={{borderTopColor:'rgba(10,61,98,0.08)'}}>
+        <Link href="/signals" className="text-xs font-bold" style={{color:'#74BB65'}}>View all {signals.length} signals →</Link>
       </div>
     </div>
   );

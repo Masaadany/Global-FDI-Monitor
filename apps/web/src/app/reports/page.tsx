@@ -1,163 +1,184 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { exportCSV } from '@/lib/export';
+import { useState, useEffect } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
+
 const REPORT_TYPES = [
-  {code:'MIB', name:'Market Intelligence Brief',    fic:5,  pages:'8-12', icon:'⚡',time:45},
-  {code:'CEGP',name:'Country Economic Profile',     fic:20, pages:'24-32',icon:'🌍',time:90},
-  {code:'ICR', name:'Investment Climate Report',    fic:18, pages:'20-28',icon:'📜',time:75},
-  {code:'SPOR',name:'Sector Potential Report',      fic:22, pages:'28-36',icon:'📈',time:90},
-  {code:'TIR', name:'Target Investor Report',      fic:18, pages:'18-24',icon:'🎯',time:80},
-  {code:'SBP', name:'Strategic Briefing Paper',    fic:15, pages:'12-18',icon:'📋',time:60},
-  {code:'SER', name:'Signal Enrichment Report',    fic:12, pages:'10-16',icon:'🔍',time:50},
-  {code:'SIR', name:'Sector Intelligence Report',  fic:14, pages:'16-22',icon:'🏭',time:65},
-  {code:'RQBR',name:'Regulatory & Policy Brief',   fic:16, pages:'14-20',icon:'⚖️',time:70},
-  {code:'FCGR',name:'Flagship Country GFR',        fic:25, pages:'40-56',icon:'🏆',time:120},
+  { id:'MIB',  name:'Market Intelligence Brief',           credits:5,  pages:'5–8',   icon:'📋', cat:'Signal', desc:'Focused brief on 3–5 active signals in a specified economy or sector. SCI scores, company overview, timeline.' },
+  { id:'SER',  name:'Sector & Economy Report',             credits:8,  pages:'12–15', icon:'📊', cat:'Sector', desc:'Deep analysis of a single investment sector in a target economy. Growth drivers, regulatory environment, top investors.' },
+  { id:'ICR',  name:'Investment Climate Report',           credits:18, pages:'15–20', icon:'🌍', cat:'Economy',desc:'Full investment climate assessment: GFR dimensions, signal landscape, policy framework, incentives, and risk matrix.' },
+  { id:'TIR',  name:'Targeted Investment Report',          credits:20, pages:'18–22', icon:'🎯', cat:'Deal',   desc:'Investor-specific report combining company intelligence, target economy GFR, and deal feasibility analysis.' },
+  { id:'CEGP', name:'Country Economic Growth Profile',     credits:12, pages:'12–15', icon:'📈', cat:'Economy',desc:'Five-year economic trajectory, FDI inflow history, sector composition, and 2030 growth projections.' },
+  { id:'RQBR', name:'Regional Quarterly Brief',            credits:15, pages:'10–14', icon:'🌏', cat:'Regional',desc:'Quarterly intelligence bulletin covering top 10 signals, GFR movers, and thematic analysis for a specific region.' },
+  { id:'SPOR', name:'Sector Opportunity Report',           credits:22, pages:'15–18', icon:'⚡', cat:'Sector', desc:'Investment opportunity mapping for a target sector across 10–15 economies. Corridor analysis and optimal entry points.' },
+  { id:'FCGR', name:'Flagship GFR Report',                 credits:25, pages:'30–40', icon:'🏆', cat:'Flagship',desc:'Annual comprehensive GFR analysis. All 215 economies, all 6 dimensions, full rankings, tier analysis, and 12-month outlook.' },
+  { id:'PMP',  name:'Mission Planning Dossier',            credits:30, pages:'35–45', icon:'🗺', cat:'Mission',desc:'Full mission planning package: target economies, matched companies, corridor intelligence, Intelligence matrix, and recommended outreach sequence.' },
+  { id:'CRP',  name:'Custom Report',                       credits:35, pages:'Custom',icon:'✏️', cat:'Custom', desc:'Bespoke report configured to your specification. Scope, economy selection, sector focus, and output format agreed with the data team.' },
 ];
-const ECONOMIES = ['UAE','Saudi Arabia','India','Singapore','Egypt','Vietnam','Indonesia','Germany','Nigeria','Morocco','Brazil','Turkey'];
-const SECTORS   = [['J','ICT'],['D','Energy'],['K','Finance'],['C','Manufacturing'],['B','Mining'],['H','Logistics']];
 
-type JobStatus='idle'|'queued'|'collecting'|'analysing'|'verifying'|'compiling'|'ready'|'error';
-interface Job{id:string;ref:string;type:string;economy:string;fic:number;status:JobStatus;progress:number;startedAt:number;}
-const FLOW: JobStatus[]=['queued','collecting','analysing','verifying','compiling','ready'];
-const STATUS_LABEL: Record<JobStatus,string>={idle:'Waiting',queued:'Queued',collecting:'Collecting data…',analysing:'AI analysis…',verifying:'Z3 verification…',compiling:'Compiling…',ready:'Ready',error:'Error'};
-const STATUS_COLOR: Record<JobStatus,string>={idle:'text-slate-400',queued:'text-blue-500',collecting:'text-violet-600',analysing:'text-amber-600',verifying:'text-emerald-600',compiling:'text-blue-600',ready:'text-emerald-700',error:'text-red-500'};
+const CAT_COLORS: Record<string,string> = {Signal:'#74BB65',Sector:'#74BB65',Economy:'#0A3D62',Deal:'#22c55e',Regional:'#696969',Flagship:'#0A3D62',Mission:'#0A66C2',Custom:'#696969'};
 
-function genRef(type:string,economy:string){
-  const iso=economy.slice(0,3).toUpperCase().replace(/ /g,'');
-  const dt=new Date().toISOString().slice(0,10).replace(/-/g,'');
-  return `FCR-${type}-${iso}-${dt}-${Math.floor(Math.random()*9000+1000)}`;
-}
+const DEMO_GENERATED = [
+  { ref:'GFM-RPT-ARE-ICR-2026-001', type:'ICR', title:'UAE Investment Climate Report Q1 2026', pages:18, date:'2026-03-15', sha:'a1b2c3d4e5f6' },
+  { ref:'GFM-RPT-MIB-MSFT-2026-001', type:'MIB', title:'Microsoft UAE Greenfield Signal Brief', pages:7, date:'2026-03-12', sha:'b2c3d4e5f6a1' },
+];
 
 export default function ReportsPage() {
-  const [type,     setType]      = useState(REPORT_TYPES[0]);
-  const [economy,  setEconomy]   = useState('UAE');
-  const [sector,   setSector]    = useState('J');
-  const [jobs,     setJobs]      = useState<Job[]>([]);
-  const [generating,setGenerating]=useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const [activeTab, setActiveTab] = useState<'generate'|'library'>('generate');
+  const [selected,  setSelected]  = useState<string|null>(null);
+  const [catF,      setCatF]      = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [generated, setGenerated] = useState(DEMO_GENERATED);
 
-  useEffect(()=>{
-    timerRef.current=setInterval(()=>{
-      setJobs(prev=>prev.map(j=>{
-        if(j.status==='ready'||j.status==='error') return j;
-        const elapsed=(Date.now()-j.startedAt)/1000;
-        const progress=Math.min(98,(elapsed/j.fic)*100*2);
-        const idx=Math.min(FLOW.length-2,Math.floor((elapsed/(j.fic/4))));
-        const status=progress>=98?'ready':FLOW[idx]||'collecting';
-        return{...j,progress,status};
-      }));
-    },600);
-    return ()=>clearInterval(timerRef.current);
-  },[]);
+  const cats = [...new Set(REPORT_TYPES.map(r=>r.cat))];
+  const filtered = catF ? REPORT_TYPES.filter(r=>r.cat===catF) : REPORT_TYPES;
 
-  async function generate(){
-    setGenerating(true);
-    const ref=genRef(type.code,economy);
-    const job:Job={id:`j${Date.now()}`,ref,type:type.code,economy,fic:type.fic,status:'queued',progress:0,startedAt:Date.now()};
-    try{
-      const token=typeof window!=='undefined'?localStorage.getItem('gfm_token'):null;
-      await fetch(`${API}/api/v1/reports/generate`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token||''}`},body:JSON.stringify({type:type.code,economy,sector})});
-    }catch{}
-    setJobs(prev=>[job,...prev]);
-    setGenerating(false);
+  async function generateReport() {
+    if (!selected) return;
+    setLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('gfm_token')||'') : '';
+      const r = await fetch(`${API}/api/v1/reports/generate`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body: JSON.stringify({ report_type: selected }),
+      });
+      const d = await r.json();
+      if (d.status === 402) { alert('Subscription required to generate reports.'); return; }
+      if (d.data?.ref) { setGenerated(prev=>[d.data,...prev]); setActiveTab('library'); }
+    } catch { alert('Generation failed. Please try again.'); }
+    finally { setLoading(false); }
   }
 
-  return(
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-12">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">AI Intelligence</div>
-          <h1 className="text-4xl font-extrabold mb-2">Custom Intelligence Reports</h1>
-          <p className="text-white/70">10 AI-powered report types · Z3 verified · SHA-256 provenance · 45–120 seconds</p>
-        </div>
-      </section>
-
-      <div className="max-w-screen-xl mx-auto px-6 py-6 grid md:grid-cols-3 gap-5">
-        {/* Left: type grid + queue */}
-        <div className="md:col-span-2 space-y-4">
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-deep text-sm mb-3">Select Report Type</div>
-            <div className="grid grid-cols-2 gap-2">
-              {REPORT_TYPES.map(rt=>(
-                <div key={rt.code} onClick={()=>setType(rt)}
-                  className={`p-3 rounded-xl border cursor-pointer transition-all ${type.code===rt.code?'border-primary bg-primary-light':'border-slate-100 hover:border-primary-light'}`}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">{rt.icon}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-extrabold text-slate-400">{rt.code}</div>
-                      <div className="text-xs font-bold text-deep leading-tight truncate">{rt.name}</div>
-                    </div>
-                    <span className="text-xs font-extrabold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded flex-shrink-0">{rt.fic} FIC</span>
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-400"><span>{rt.pages} pp</span><span>~{rt.time}s</span></div>
-                </div>
-              ))}
-            </div>
+  return (
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-10">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex flex-wrap justify-between gap-4 items-end">
+          <div>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Intelligence Reports</div>
+            <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Report Generation</h1>
+            <p className="text-sm mt-1" style={{color:'#696969'}}>10 report types · AI-powered · PDF only · Dynamic watermarks · Subscription required</p>
           </div>
-
-          {/* Queue */}
-          {jobs.length>0&&(
-            <div className="gfm-card p-5">
-              <div className="font-extrabold text-deep text-sm mb-3">Report Queue ({jobs.length})</div>
-              <div className="space-y-3">
-                {jobs.map(j=>(
-                  <div key={j.id} className={`p-3 rounded-xl border ${j.status==='ready'?'border-emerald-200 bg-emerald-50':j.status==='error'?'border-red-200 bg-red-50':'border-slate-100'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div><div className="text-xs font-bold text-deep">{j.type} — {j.economy}</div><div className="text-xs font-mono text-slate-300">{j.ref}</div></div>
-                      <div className={`text-xs font-bold ${STATUS_COLOR[j.status]}`}>{STATUS_LABEL[j.status]}</div>
-                    </div>
-                    {j.status!=='ready'&&j.status!=='error'&&(
-                      <div className="gfm-progress"><div className="gfm-progress-fill" style={{width:`${j.progress}%`,transition:'width 0.5s'}}/></div>
-                    )}
-                    {j.status==='ready'&&(
-                      <button className="mt-2 w-full bg-emerald-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-emerald-500">↓ Download PDF</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Right: generator */}
-        <div className="space-y-4">
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-deep mb-4">Generate Report</div>
-            <div className="bg-primary-light rounded-xl p-4 border border-blue-200 mb-4 flex items-center gap-2">
-              <span className="text-2xl">{type.icon}</span>
-              <div><div className="font-extrabold text-sm text-deep">{type.name}</div><div className="text-xs text-primary">{type.pages} pages · {type.fic} FIC · ~{type.time}s</div></div>
-            </div>
-            <div className="space-y-3 mb-4">
-              <div><label className="text-xs font-bold text-slate-500 block mb-1.5">Economy</label>
-                <select value={economy} onChange={e=>setEconomy(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary">
-                  {ECONOMIES.map(e=><option key={e}>{e}</option>)}
-                </select>
-              </div>
-              <div><label className="text-xs font-bold text-slate-500 block mb-1.5">Sector</label>
-                <select value={sector} onChange={e=>setSector(e.target.value)} className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-primary">
-                  {SECTORS.map(([c,n])=><option key={c} value={c}>ISIC {c} — {n}</option>)}
-                </select>
-              </div>
-            </div>
-            <button onClick={generate} disabled={generating}
-              className={`w-full gfm-btn-primary py-3.5 rounded-xl ${generating?'opacity-50':''}`}>
-              {generating?<span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Queuing…</span>:`Generate — ${type.fic} FIC`}
-            </button>
-            <p className="text-xs text-slate-400 text-center mt-2">Z3 verified · SHA-256 provenance</p>
-          </div>
-          <div className="gfm-card p-4">
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Generation Pipeline</div>
-            {(['collecting','analysing','verifying','compiling','ready'] as JobStatus[]).map((s,i)=>(
-              <div key={s} className="flex items-center gap-2 py-1 text-xs">
-                <span className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-extrabold flex-shrink-0"
-                  style={{background:['#8b5cf6','#f59e0b','#059669','#0A66C2','#059669'][i]}}>{i+1}</span>
-                <span className={STATUS_COLOR[s]}>{STATUS_LABEL[s]}</span>
+          <div className="flex gap-5">
+            {[['10','Report Types'],['5–45','Pages'],['PDF','Format Only'],['Watermarked','Security']].map(([v,l])=>(
+              <div key={l} className="text-center">
+                <div className="text-xl font-extrabold font-data" style={{color:'#74BB65'}}>{v}</div>
+                <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Tabs */}
+      <div className="sticky top-16 z-30 flex gap-0 border-b px-6" style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
+        <button onClick={()=>setActiveTab('generate')} className={`dash-tab ${activeTab==='generate'?'active':''}`}>📋 Generate Report</button>
+        <button onClick={()=>setActiveTab('library')}  className={`dash-tab ${activeTab==='library'?'active':''}`}>📚 My Reports ({generated.length})</button>
+      </div>
+
+      <div className="max-w-screen-xl mx-auto px-6 py-5">
+        {activeTab === 'generate' && (
+          <PreviewGate feature="reports">
+            <div className="space-y-5">
+              {/* Category filter */}
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={()=>setCatF('')}
+                  className="text-xs px-3 py-1.5 rounded-lg font-bold border transition-all"
+                  style={!catF?{background:'#74BB65',color:'#E2F2DF',borderColor:'#74BB65'}:{borderColor:'rgba(10,61,98,0.2)',color:'#696969'}}>
+                  All Types
+                </button>
+                {cats.map(c=>(
+                  <button key={c} onClick={()=>setCatF(c)}
+                    className="text-xs px-3 py-1.5 rounded-lg font-bold border transition-all"
+                    style={catF===c?{background:CAT_COLORS[c],color:'#E2F2DF',borderColor:CAT_COLORS[c]}:{borderColor:'rgba(10,61,98,0.2)',color:'#696969'}}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+
+              {/* Report type grid */}
+              <div className="grid md:grid-cols-2 gap-4">
+                {filtered.map(rt=>(
+                  <div key={rt.id}
+                    onClick={()=>setSelected(s=>s===rt.id?null:rt.id)}
+                    className={`gfm-card p-5 cursor-pointer transition-all ${selected===rt.id?'border-2':''}`}
+                    style={selected===rt.id?{borderColor:'#74BB65',background:'rgba(116,187,101,0.04)'}:{}}>
+                    <div className="flex items-start gap-3 mb-2">
+                      <span className="text-2xl flex-shrink-0">{rt.icon}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                          <span className="font-extrabold text-sm" style={{color:'#0A3D62'}}>{rt.name}</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded" style={{background:`${CAT_COLORS[rt.cat]}15`,color:CAT_COLORS[rt.cat]}}>{rt.id}</span>
+                        </div>
+                        <div className="flex gap-3 text-xs mb-1" style={{color:'#696969'}}>
+                          <span>📄 {rt.pages} pages</span>
+                          <span>💳 {rt.credits} credits</span>
+                        </div>
+                        <p className="text-xs leading-relaxed" style={{color:'#696969'}}>{rt.desc}</p>
+                      </div>
+                      {selected===rt.id && <span style={{color:'#74BB65',flexShrink:0}}>●</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selected && (
+                <div className="gfm-card p-5 flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <div className="font-extrabold text-sm" style={{color:'#0A3D62'}}>
+                      Selected: {REPORT_TYPES.find(r=>r.id===selected)?.name}
+                    </div>
+                    <div className="text-xs mt-0.5" style={{color:'#696969'}}>
+                      {REPORT_TYPES.find(r=>r.id===selected)?.credits} credits · {REPORT_TYPES.find(r=>r.id===selected)?.pages} pages · PDF format
+                    </div>
+                  </div>
+                  <button onClick={generateReport} disabled={loading}
+                    className={`gfm-btn-primary px-8 py-2.5 text-sm ${loading?'opacity-70':''}`}>
+                    {loading ? <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Generating…</span> : 'Generate PDF Report →'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </PreviewGate>
+        )}
+
+        {activeTab === 'library' && (
+          <PreviewGate feature="downloads">
+            <div>
+              {generated.length === 0 ? (
+                <div className="text-center py-16" style={{color:'#696969'}}>
+                  <div className="text-4xl mb-3">📚</div>
+                  <div className="font-extrabold mb-2" style={{color:'#696969'}}>No reports generated yet</div>
+                  <button onClick={()=>setActiveTab('generate')} className="gfm-btn-primary text-sm px-5 py-2.5">Generate First Report</button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {generated.map(r=>(
+                    <div key={r.ref} className="gfm-card p-5 flex items-center gap-4 flex-wrap">
+                      <div className="text-2xl flex-shrink-0">📄</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-sm mb-0.5" style={{color:'#0A3D62'}}>{r.title}</div>
+                        <div className="flex gap-3 text-xs flex-wrap" style={{color:'#696969'}}>
+                          <span>{r.type}</span><span>·</span><span>{r.pages} pages</span><span>·</span><span>{r.date}</span>
+                          <span>·</span><span className="font-data">SHA: {r.sha}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button className="text-xs font-bold px-3 py-1.5 rounded-lg" style={{background:'rgba(116,187,101,0.1)',color:'#74BB65'}}>Download PDF</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </PreviewGate>
+        )}
       </div>
     </div>
   );

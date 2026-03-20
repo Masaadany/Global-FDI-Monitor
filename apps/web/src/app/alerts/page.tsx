@@ -1,96 +1,87 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { fetchWithAuth } from '@/lib/shared';
-
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
 
 const DEMO_ALERTS = [
-  { id:'a1', type:'signal',  priority:'HIGH',   title:'PLATINUM Signal: Microsoft → UAE',     body:'$850M Cloud Region confirmed. SCI 91.2', read:false, created_at:'2026-03-17T12:00:00Z' },
-  { id:'a2', type:'signal',  priority:'HIGH',   title:'PLATINUM Signal: CATL → Indonesia',    body:'$3.2B Battery Gigafactory committed',     read:false, created_at:'2026-03-17T10:00:00Z' },
-  { id:'a3', type:'report',  priority:'MEDIUM', title:'Report Ready: UAE Market Brief',        body:'FCR-MIB-ARE-20260317-4821 — Download now', read:false, created_at:'2026-03-17T09:00:00Z' },
-  { id:'a4', type:'fic',     priority:'LOW',    title:'FIC Balance: 3 credits remaining',      body:'Top up to continue generating reports',   read:true,  created_at:'2026-03-16T18:00:00Z' },
-  { id:'a5', type:'signal',  priority:'MEDIUM', title:'GOLD Signal: Siemens Energy → Egypt',  body:'$340M Wind JV confirmed',                 read:true,  created_at:'2026-03-16T14:00:00Z' },
+  { id:1, type:'SIGNAL',    priority:'HIGH',   flag:'🇦🇪', title:'New PLATINUM signal: Microsoft UAE',              body:'$850M greenfield ICT investment confirmed · SCI 96.2 · Z3 verified',               time:'2 min ago', read:false },
+  { id:2, type:'GFR',       priority:'HIGH',   flag:'🇦🇪', title:'UAE GFR rises to 80.0 (+4.2)',                   body:'UAE advances to FRONTIER tier for Q1 2026. Digital and Infrastructure dimensions lead.',time:'1h ago',  read:false },
+  { id:3, type:'SIGNAL',    priority:'MEDIUM', flag:'🇮🇩', title:'New PLATINUM signal: CATL Indonesia',            body:'$3.2B battery manufacturing greenfield · APAC corridor · SCI 94.8',                time:'3h ago',  read:false },
+  { id:4, type:'REPORT',    priority:'MEDIUM', flag:'📋',  title:'Your ICR report is ready',                       body:'Egypt Investment Climate Report (ICR) has been generated. Download from Reports.',   time:'5h ago',  read:true  },
+  { id:5, type:'POLICY',    priority:'LOW',    flag:'🌍',  title:'New FDI incentive: Saudi SAGIA announcement',    body:'SAGIA announces new fast-track FDI licensing for tech sector investors.',              time:'8h ago',  read:true  },
+  { id:6, type:'SIGNAL',    priority:'MEDIUM', flag:'🇻🇳', title:'New PLATINUM signal: Samsung SDI Vietnam',       body:'$2.1B EV battery greenfield · Northern provinces · SCI 92.6',                       time:'12h ago', read:true  },
 ];
 
-const PRIORITY_CFG: Record<string,{dot:string;bg:string;text:string}> = {
-  HIGH:  {dot:'bg-red-500',  bg:'bg-red-50',  text:'text-red-700'},
-  MEDIUM:{dot:'bg-amber-500',bg:'bg-amber-50',text:'text-amber-700'},
-  LOW:   {dot:'bg-slate-300',bg:'bg-slate-50',text:'text-slate-500'},
-};
-const TYPE_ICON: Record<string,string> = { signal:'📡', report:'📋', fic:'⭐', system:'🔔' };
+const PRIORITY_C: Record<string,string> = {HIGH:'#EF4444',MEDIUM:'#74BB65',LOW:'#696969'};
+const TYPE_C: Record<string,string>     = {SIGNAL:'#74BB65',GFR:'#0A3D62',REPORT:'#22c55e',POLICY:'#696969'};
 
 export default function AlertsPage() {
-  const [alerts,  setAlerts]  = useState(DEMO_ALERTS);
-  const [loading, setLoading] = useState(true);
-  const [filter,  setFilter]  = useState('');
+  const [alerts, setAlerts] = useState(DEMO_ALERTS);
+  const [filter, setFilter] = useState('');
 
-  useEffect(() => {
-    fetchWithAuth(`${API}/api/v1/alerts`).then(r=>r.json())
-      .then(d => { if (d.data?.alerts?.length) setAlerts(d.data.alerts); })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  const unread = alerts.filter(a=>!a.read).length;
 
-  async function markRead(id: string) {
-    setAlerts(a => a.map(x => x.id===id ? {...x,read:true} : x));
-    await fetchWithAuth(`${API}/api/v1/alerts/${id}/read`, { method:'POST' }).catch(()=>{});
-  }
+  function markAllRead() { setAlerts(p=>p.map(a=>({...a,read:true}))); }
+  function markRead(id: number) { setAlerts(p=>p.map(a=>a.id===id?{...a,read:true}:a)); }
+  function dismiss(id: number) { setAlerts(p=>p.filter(a=>a.id!==id)); }
 
-  const shown = alerts.filter(a => !filter || a.type===filter);
-  const unread = alerts.filter(a => !a.read).length;
+  const filtered = filter ? alerts.filter(a=>a.type===filter) : alerts;
 
   return (
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-10">
-        <div className="max-w-3xl mx-auto relative z-10 flex items-center justify-between">
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-8">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex items-center justify-between flex-wrap gap-4">
           <div>
-            <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-2">Intelligence Alerts</div>
-            <h1 className="text-3xl font-extrabold">Alerts</h1>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-1" style={{color:'#74BB65'}}>Intelligence</div>
+            <h1 className="text-2xl font-extrabold flex items-center gap-2" style={{color:'#0A3D62'}}>
+              Alerts
+              {unread > 0 && <span className="text-sm font-extrabold px-2 py-0.5 rounded-full" style={{background:'#EF4444',color:'#fff'}}>{unread}</span>}
+            </h1>
           </div>
           {unread > 0 && (
-            <div className="bg-white/20 rounded-xl px-4 py-2 text-center">
-              <div className="text-2xl font-extrabold text-white">{unread}</div>
-              <div className="text-xs text-white/60">Unread</div>
-            </div>
+            <button onClick={markAllRead} className="text-xs font-bold" style={{color:'#696969'}}>Mark all read</button>
           )}
         </div>
       </section>
 
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-3">
-        <div className="flex gap-2 flex-wrap">
-          {['','signal','report','fic'].map(f => (
-            <button key={f} onClick={()=>setFilter(f)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${filter===f?'bg-primary text-white border-primary':'border-slate-200 text-slate-500 hover:border-primary'}`}>
-              {f || 'All'} {f && TYPE_ICON[f]}
-            </button>
-          ))}
-          <button onClick={()=>setAlerts(a=>a.map(x=>({...x,read:true})))} className="ml-auto text-xs text-primary hover:underline font-semibold">Mark all read</button>
-        </div>
+      <div className="sticky top-16 z-30 border-b px-6 py-2 flex gap-2 flex-wrap"
+        style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
+        {['','SIGNAL','GFR','REPORT','POLICY'].map(t=>(
+          <button key={t} onClick={()=>setFilter(t)}
+            className="text-xs px-3 py-1.5 rounded-lg font-bold border transition-all"
+            style={filter===t?{background:TYPE_C[t]||'#74BB65',color:'#E2F2DF',borderColor:TYPE_C[t]||'#74BB65'}:{borderColor:'rgba(10,61,98,0.2)',color:'#696969'}}>
+            {t||'All'}{!t&&unread>0?` (${unread})`:''}
+          </button>
+        ))}
+      </div>
 
-        {loading ? (
-          <div className="text-center py-10 text-slate-400">Loading alerts…</div>
-        ) : shown.map(alert => {
-          const cfg = PRIORITY_CFG[alert.priority] || PRIORITY_CFG.LOW;
-          return (
-            <div key={alert.id} onClick={()=>markRead(alert.id)}
-              className={`gfm-card p-4 cursor-pointer ${alert.read?'opacity-60':''} hover:border-primary transition-all`}>
-              <div className="flex items-start gap-3">
-                <div className="relative flex-shrink-0">
-                  <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-base">{TYPE_ICON[alert.type]||'🔔'}</div>
-                  {!alert.read && <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 ${cfg.dot} rounded-full border-2 border-white`}/>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="font-bold text-sm text-deep">{alert.title}</div>
-                    <span className={`text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${cfg.bg} ${cfg.text}`}>{alert.priority}</span>
-                  </div>
-                  <div className="text-xs text-slate-500 mt-0.5">{alert.body}</div>
-                  <div className="text-xs text-slate-300 mt-1">{new Date(alert.created_at).toLocaleString()}</div>
-                </div>
+      <div className="max-w-screen-xl mx-auto px-6 py-4 space-y-2">
+        {filtered.map(a=>(
+          <div key={a.id}
+            className={`gfm-card p-4 flex items-start gap-3 transition-all ${!a.read?'border-l-2':''}`}
+            style={!a.read?{borderLeftColor:PRIORITY_C[a.priority]}:{}}>
+            <span className="text-xl flex-shrink-0 mt-0.5">{a.flag}</span>
+            <div className="flex-1 min-w-0" onClick={()=>markRead(a.id)} style={{cursor:'pointer'}}>
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{background:`${TYPE_C[a.type]}15`,color:TYPE_C[a.type]}}>{a.type}</span>
+                <span className="text-xs font-bold" style={{color:PRIORITY_C[a.priority]}}>{a.priority}</span>
+                <span className="text-xs" style={{color:'#696969'}}>{a.time}</span>
+                {!a.read && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:'#EF4444'}}/>}
               </div>
+              <div className="font-bold text-sm mb-1" style={{color:'#0A3D62'}}>{a.title}</div>
+              <p className="text-xs" style={{color:'#696969'}}>{a.body}</p>
             </div>
-          );
-        })}
+            <button onClick={()=>dismiss(a.id)} className="flex-shrink-0 text-sm mt-0.5" style={{color:'#696969'}} aria-label="Dismiss alert">✕</button>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="text-center py-16" style={{color:'#696969'}}>
+            <div className="text-4xl mb-3">🔔</div>
+            <div className="font-extrabold" style={{color:'#696969'}}>No alerts</div>
+          </div>
+        )}
       </div>
     </div>
   );

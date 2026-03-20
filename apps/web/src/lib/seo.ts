@@ -53,3 +53,18 @@ export const PAGE_META = {
   demo:      generateMetadata({ title: 'Platform Demo', description: 'Preview GFM live — signals, maps, and analytics. No login required.', path: '/demo' }),
   pricing:   generateMetadata({ title: 'Pricing', description: 'Professional FDI intelligence from $799/month. 3-day free trial included.', path: '/pricing' }),
 };
+
+export const OG_IMAGE = {
+  url:    'https://fdimonitor.org/og-image.png',
+  width:  1200,
+  height: 630,
+  alt:    'Global FDI Monitor — Real-Time FDI Intelligence',
+};
+
+export const SITE_CONFIG = {
+  name:        'Global FDI Monitor',
+  url:         'https://fdimonitor.org',
+  description: 'The world\'s first fully integrated FDI intelligence platform. 215 economies, real-time signals, GFR rankings.',
+  twitter:     '@fdimonitor',
+  locale:      'en_US',
+};

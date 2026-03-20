@@ -1,163 +1,156 @@
 'use client';
-import { useState } from 'react';
-import { exportCSV } from '@/lib/export';
+import PreviewGate from '@/components/PreviewGate';
+import { useState, useEffect } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/shared';
 
-const CORRIDORS = [
-  {id:'C01',from:'UAE',   to:'India',      flag1:'🇦🇪',flag2:'🇮🇳',fdi_b:4.2, growth:18.4,trend:'UP',  grade:'PLATINUM',type:'Technology + Finance',signals:12,rank:1,
-   hist:[2.1,2.8,3.4,3.8,4.2],desc:'Driven by UAE sovereign funds in Indian tech startups, digital infrastructure, and Tata-UAE manufacturing partnerships.'},
-  {id:'C02',from:'USA',   to:'UAE',        flag1:'🇺🇸',flag2:'🇦🇪',fdi_b:5.8, growth:22.1,trend:'UP',  grade:'PLATINUM',type:'Technology + Finance',signals:18,rank:2,
-   hist:[2.8,3.4,4.0,5.0,5.8],desc:'Microsoft, AWS, Google, and BlackRock expanding UAE presence. ADGM positioning as regional financial hub.'},
-  {id:'C03',from:'China', to:'Indonesia',  flag1:'🇨🇳',flag2:'🇮🇩',fdi_b:6.8, growth:28.4,trend:'UP',  grade:'PLATINUM',type:'Manufacturing + EV',signals:14,rank:3,
-   hist:[3.2,4.1,5.0,5.8,6.8],desc:'CATL, BYD, and battery supply chain anchoring in Kalimantan and Java. Nickel processing upstream integration.'},
-  {id:'C04',from:'Germany',to:'India',     flag1:'🇩🇪',flag2:'🇮🇳',fdi_b:3.4, growth:14.2,trend:'UP',  grade:'GOLD',   type:'Manufacturing + Engineering',signals:9,rank:4,
-   hist:[1.8,2.2,2.8,3.1,3.4],desc:'Siemens, BASF, and Bosch expanding manufacturing. Green hydrogen partnership with NTPC announced.'},
-  {id:'C05',from:'Saudi Arabia',to:'Egypt',flag1:'🇸🇦',flag2:'🇪🇬',fdi_b:2.8, growth:32.1,trend:'UP',  grade:'GOLD',   type:'Energy + Infra',signals:8,rank:5,
-   hist:[0.8,1.2,1.6,2.2,2.8],desc:'ACWA Power wind farms, NEOM-Egypt transit corridor, and Saudi tourism infrastructure investments.'},
-  {id:'C06',from:'Japan', to:'Vietnam',    flag1:'🇯🇵',flag2:'🇻🇳',fdi_b:4.2, growth:9.4, trend:'UP',  grade:'GOLD',   type:'Manufacturing',signals:11,rank:6,
-   hist:[2.8,3.2,3.6,3.9,4.2],desc:'Toyota, Sony, Honda supply chain deepening. Semiconductor packaging investment surge post-China+1 shift.'},
-  {id:'C07',from:'UK',    to:'India',      flag1:'🇬🇧',flag2:'🇮🇳',fdi_b:1.8, growth:8.2, trend:'FLAT',grade:'SILVER', type:'Finance + Tech',signals:6,rank:7,
-   hist:[1.0,1.2,1.5,1.6,1.8],desc:'City of London capital flows. HSBC, Standard Chartered, and Vodafone expansion in digital finance.'},
-  {id:'C08',from:'Korea', to:'Vietnam',    flag1:'🇰🇷',flag2:'🇻🇳',fdi_b:5.4, growth:6.8, trend:'FLAT',grade:'GOLD',   type:'Electronics + Manufacturing',signals:10,rank:8,
-   hist:[3.8,4.2,4.6,5.0,5.4],desc:'Samsung, LG, and SK Hynix dominating electronics manufacturing. Semiconductor ecosystem maturation.'},
+const API = process.env.NEXT_PUBLIC_API_URL || '';
+
+const DEMO_CORRIDORS = [
+  { id:'usa-uk',   from:'🇺🇸 USA',   to:'🇬🇧 UK',          fdi_bn:48.2, growth:4,  trend:[38,40,42,44,45,48], sectors:'Finance · Tech'         },
+  { id:'usa-ire',  from:'🇺🇸 USA',   to:'🇮🇪 Ireland',      fdi_bn:38.4, growth:7,  trend:[28,30,32,35,36,38], sectors:'Tech · Finance'          },
+  { id:'cn-asean', from:'🇨🇳 China', to:'🌏 ASEAN Hub',      fdi_bn:32.1, growth:18, trend:[18,20,23,26,28,32], sectors:'Manufacturing · Logistics'},
+  { id:'us-sg',    from:'🇺🇸 USA',   to:'🇸🇬 Singapore',    fdi_bn:24.8, growth:6,  trend:[18,19,21,22,23,25], sectors:'Finance · ICT'           },
+  { id:'eu-uae',   from:'🇪🇺 EU',    to:'🇦🇪 UAE',          fdi_bn:22.4, growth:22, trend:[12,14,16,18,20,22], sectors:'Finance · Energy'        },
+  { id:'us-ind',   from:'🇺🇸 USA',   to:'🇮🇳 India',        fdi_bn:19.6, growth:12, trend:[12,13,15,17,18,20], sectors:'Tech · Healthcare'       },
+  { id:'gcc-asia', from:'🌙 GCC',    to:'🌏 Asia',          fdi_bn:18.2, growth:28, trend:[8,10,12,14,16,18],  sectors:'Energy · Finance'        },
+  { id:'uk-ind',   from:'🇬🇧 UK',    to:'🇮🇳 India',        fdi_bn:14.8, growth:9,  trend:[10,11,12,13,14,15], sectors:'Finance · Pharma'        },
+  { id:'jp-viet',  from:'🇯🇵 Japan', to:'🇻🇳 Vietnam',      fdi_bn:12.4, growth:14, trend:[7,8,9,10,11,12],   sectors:'Manufacturing · Tech'    },
+  { id:'ger-pol',  from:'🇩🇪 Germany',to:'🇵🇱 Poland',      fdi_bn:11.2, growth:8,  trend:[7,8,9,10,10,11],   sectors:'Automotive · Manufacturing'},
 ];
 
-const GRADE_CFG: Record<string,{bg:string;text:string;border:string;dot:string}> = {
-  PLATINUM:{bg:'bg-amber-50',text:'text-amber-800',border:'border-amber-200',dot:'#D97706'},
-  GOLD:    {bg:'bg-emerald-50',text:'text-emerald-800',border:'border-emerald-200',dot:'#059669'},
-  SILVER:  {bg:'bg-blue-50',text:'text-blue-800',border:'border-blue-200',dot:'#2563EB'},
-};
-const TREND_ICON: Record<string,string>  = {UP:'↑', FLAT:'→', DOWN:'↓'};
-const TREND_COLOR: Record<string,string> = {UP:'text-emerald-600', FLAT:'text-slate-400', DOWN:'text-red-500'};
+const YEARS = ['2020','2021','2022','2023','2024','2025'];
 
-function Sparkline({data, color}: {data:number[]; color:string}) {
-  const max = Math.max(...data), min = Math.min(...data)*0.85;
-  const W=80, H=28;
-  const pts = data.map((v,i)=>`${(i/(data.length-1)*W).toFixed(1)},${(H-(v-min)/(max-min)*H*0.9+2).toFixed(1)}`).join(' ');
-  const area= `0,${H} ${pts} ${W},${H}`;
+function MiniBar({ trend, color }: { trend: number[]; color: string }) {
+  const max = Math.max(...trend);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-20 h-7">
-      <polygon points={area} fill={color} opacity="0.12"/>
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8"/>
-      <circle cx={(data.length-1)*W/(data.length-1)} cy={H-(data[data.length-1]-min)/(max-min)*H*0.9+2} r={2.5} fill={color}/>
-    </svg>
+    <div className="flex items-end gap-0.5 h-10">
+      {trend.map((v,i)=>(
+        <div key={i} className="flex-1 rounded-sm transition-all" style={{height:`${(v/max)*100}%`,background:i===trend.length-1?color:`${color}60`,minHeight:3}}/>
+      ))}
+    </div>
   );
 }
 
-export default function CorridorPage() {
-  const [selected, setSelected] = useState<string|null>(null);
-  const [filter,   setFilter]   = useState('');
-  const [sort,     setSort]     = useState<'fdi_b'|'growth'|'rank'>('rank');
+export default function CorridorIntelligencePage() {
+  const [corridors, setCorridors] = useState(DEMO_CORRIDORS);
+  const [selected,  setSelected]  = useState('usa-uk');
 
-  const filtered = [...CORRIDORS]
-    .filter(c => !filter || c.grade === filter)
-    .sort((a, b) => sort==='rank' ? a.rank-b.rank : b[sort]-a[sort]);
+  useEffect(() => {
+    fetchWithAuth(`${API}/api/v1/corridors`).then(r=>r.json())
+      .then(d=>{ const c=d.data?.corridors||d.corridors; if(c?.length) setCorridors(c); }).catch(()=>{});
+  }, []);
 
-  const totalFDI = CORRIDORS.reduce((s,c)=>s+c.fdi_b,0);
+  const active = corridors.find(c=>c.id===selected) || corridors[0];
 
   return (
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-12">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">Bilateral Intelligence</div>
-          <h1 className="text-4xl font-extrabold mb-2">Corridor Intelligence</h1>
-          <p className="text-white/70">Bilateral investment flow analysis · Trend tracking · Signal density by corridor</p>
-          <div className="flex gap-6 mt-4">
-            {[['8','Active corridors'],['$'+totalFDI.toFixed(0)+'B','Total monitored FDI'],['92','Average signals/quarter']].map(([v,l])=>(
-              <div key={l}><div className="stat-number text-xl font-bold text-white">{v}</div><div className="text-white/40 text-xs">{l}</div></div>
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-10">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex flex-wrap justify-between gap-4 items-end">
+          <div>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Bilateral Intelligence</div>
+            <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Corridor Intelligence</h1>
+            <p className="text-sm mt-1" style={{color:'#696969'}}>Top 10 bilateral FDI corridors · 5-year historical trends · Sector breakdown</p>
+          </div>
+          <div className="flex gap-5">
+            {[['10','Corridors'],['$232B','Total Flow'],['2020–2025','Coverage'],['5yr','Trend Data']].map(([v,l])=>(
+              <div key={l} className="text-center">
+                <div className="text-xl font-extrabold font-data" style={{color:'#74BB65'}}>{v}</div>
+                <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Filter bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3">
-        <div className="max-w-screen-xl mx-auto flex flex-wrap gap-2 items-center">
-          {['','PLATINUM','GOLD','SILVER'].map(g=>(
-            <button key={g} onClick={()=>setFilter(g)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${filter===g?'bg-primary text-white':'border border-slate-200 text-slate-500 hover:border-primary'}`}>
-              {g||'All Grades'}
+      <div className="max-w-screen-xl mx-auto px-6 py-5 grid lg:grid-cols-3 gap-5">
+        {/* Corridor list */}
+        <div className="space-y-2">
+          {corridors.map((c,i)=>(
+            <button key={c.id} onClick={()=>setSelected(c.id)}
+              className={`w-full gfm-card p-4 text-left transition-all ${selected===c.id?'border-radiance/40':''}`}
+              style={selected===c.id?{borderColor:'rgba(116,187,101,0.3)',background:'rgba(116,187,101,0.04)'}:{}}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold font-data" style={{color:'#696969'}}>#{i+1}</span>
+                  <span className="text-sm font-bold" style={{color:'#0A3D62'}}>{c.from} → {c.to}</span>
+                </div>
+                <span className="text-xs font-extrabold font-data" style={{color:'#74BB65'}}>${c.fdi_bn}B</span>
+              </div>
+              <div className="flex items-end justify-between gap-3">
+                <MiniBar trend={c.trend} color={selected===c.id?'#74BB65':'#696969'}/>
+                <span className="text-xs font-bold flex-shrink-0" style={{color:'#22c55e'}}>▲{c.growth}%</span>
+              </div>
             </button>
           ))}
-          <div className="flex gap-1 ml-3">
-            {[['rank','Rank'],['fdi_b','FDI'],['growth','Growth']].map(([k,l])=>(
-              <button key={k} onClick={()=>setSort(k as any)}
-                className={`px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all ${sort===k?'bg-deep text-white':'text-slate-500 hover:bg-slate-100'}`}>{l}</button>
-            ))}
-          </div>
-          <button onClick={()=>exportCSV(filtered.map(c=>({From:c.from,To:c.to,'FDI $B':c.fdi_b,'Growth%':c.growth,Grade:c.grade,Signals:c.signals})),'GFM_Corridors')}
-            className="ml-auto gfm-btn-outline text-xs py-1.5">Export CSV</button>
         </div>
-      </div>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-5 space-y-3">
-        {filtered.map(c => {
-          const gc  = GRADE_CFG[c.grade] || GRADE_CFG.SILVER;
-          const sel = selected === c.id;
-          return (
-            <div key={c.id} onClick={()=>setSelected(sel?null:c.id)}
-              className={`gfm-card cursor-pointer ${sel?'border-primary ring-2 ring-primary ring-offset-1':''}`}>
-              <div className="flex items-center gap-4 p-4">
-                {/* Rank */}
-                <div className="text-2xl font-extrabold text-slate-200 font-mono w-8 text-center flex-shrink-0">#{c.rank}</div>
-                {/* Flags + route */}
-                <div className="flex items-center gap-2 flex-shrink-0 min-w-36">
-                  <span className="text-2xl">{c.flag1}</span>
-                  <div className="text-center">
-                    <div className="text-xs font-bold text-slate-700">{c.from}</div>
-                    <div className="text-slate-300 text-xs">→</div>
-                    <div className="text-xs font-bold text-slate-700">{c.to}</div>
+        {/* Detail panel */}
+        <div className="lg:col-span-2 space-y-4">
+          {active && (
+            <>
+              <div className="gfm-card p-6">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+                  <div>
+                    <h2 className="text-xl font-extrabold mb-1" style={{color:'#0A3D62'}}>{active.from} → {active.to}</h2>
+                    <div className="text-sm" style={{color:'#696969'}}>{active.sectors}</div>
                   </div>
-                  <span className="text-2xl">{c.flag2}</span>
-                </div>
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="font-bold text-sm text-deep">{c.from} → {c.to}</span>
-                    <span className={`gfm-badge ${gc.bg} ${gc.text} ${gc.border}`}>{c.grade}</span>
-                    <span className="text-xs text-slate-400">{c.type}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                    <span className="font-extrabold text-deep font-mono">${c.fdi_b}B</span>
-                    <span className={`font-bold ${TREND_COLOR[c.trend]}`}>{TREND_ICON[c.trend]} {c.growth}% YoY</span>
-                    <span className="text-slate-300">|</span>
-                    <span>{c.signals} signals</span>
+                  <div className="flex gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-extrabold font-data" style={{color:'#74BB65'}}>${active.fdi_bn}B</div>
+                      <div className="text-xs" style={{color:'#696969'}}>2025 FDI Flow</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-extrabold font-data" style={{color:'#22c55e'}}>+{active.growth}%</div>
+                      <div className="text-xs" style={{color:'#696969'}}>YoY Growth</div>
+                    </div>
                   </div>
                 </div>
-                {/* Sparkline */}
-                <div className="flex-shrink-0">
-                  <Sparkline data={c.hist} color={gc.dot}/>
-                  <div className="text-xs text-slate-300 text-center mt-0.5">2021 → 2025</div>
+
+                {/* Full bar chart */}
+                <div className="mt-4">
+                  <div className="flex items-end gap-2 h-32">
+                    {active.trend.map((v,i)=>{
+                      const max = Math.max(...active.trend);
+                      const pct = (v/max)*100;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                          <span className="text-xs font-data" style={{color:'#696969'}}>${v}B</span>
+                          <div className="w-full rounded-t-lg transition-all" style={{height:`${pct}%`,background:i===active.trend.length-1?'#74BB65':'rgba(116,187,101,0.4)',minHeight:8}}/>
+                          <span className="text-xs" style={{color:'#696969'}}>{YEARS[i]}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
-              {/* Expanded detail */}
-              {sel && (
-                <div className="border-t border-slate-100 p-5 bg-surface space-y-4">
-                  <p className="text-sm text-slate-600 leading-relaxed">{c.desc}</p>
-                  {/* Historical data table */}
-                  <div>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">5-Year Historical FDI ($B)</div>
-                    <div className="flex gap-3 overflow-x-auto">
-                      {[2021,2022,2023,2024,2025].map((yr,i)=>(
-                        <div key={yr} className="text-center min-w-12">
-                          <div className="h-16 flex items-end justify-center mb-1">
-                            <div className="w-8 rounded-t-md transition-all" style={{height:`${(c.hist[i]/Math.max(...c.hist))*100}%`,background:gc.dot,opacity:0.7+(i*0.06)}}/>
-                          </div>
-                          <div className="text-xs font-mono font-bold text-slate-600">${c.hist[i]}</div>
-                          <div className="text-xs text-slate-400">{yr}</div>
+              {/* Sector breakdown */}
+              <div className="gfm-card p-5">
+                <div className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>Sector Composition</div>
+                <div className="space-y-2">
+                  {active.sectors.split(' · ').map((s,i,arr)=>{
+                    const pct = Math.round((1/(i+1))*(100/arr.length)*2.5+30);
+                    const c = ['#74BB65','#74BB65','#0A3D62'][i]||'#696969';
+                    return (
+                      <div key={s} className="flex items-center gap-3">
+                        <span className="text-sm w-36 flex-shrink-0" style={{color:'#696969'}}>{s}</span>
+                        <div className="flex-1 bg-white/5 rounded-full h-2">
+                          <div className="h-2 rounded-full" style={{width:`${pct}%`,background:c}}/>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>window.location.href='/subscription'} className="gfm-btn-primary text-xs py-1.5 px-5">Corridor Brief — 5 FIC</button>
-                    <button className="gfm-btn-outline text-xs py-1.5 px-4">+ Watchlist</button>
-                  </div>
+                        <span className="text-xs font-extrabold font-data" style={{color:c}}>{pct}%</span>
+                      </div>
+                    );
+                  })}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

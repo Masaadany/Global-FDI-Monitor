@@ -1,54 +1,79 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRealTimeSignals } from '@/lib/useRealTimeSignals';
+import { useState, useEffect, useRef } from 'react';
 
-const STATIC_SIGNALS = [
-  '📡 PLATINUM — Microsoft → UAE $850M Cloud Region Confirmed',
-  '⚡ PLATINUM — Amazon AWS → Saudi Arabia $5.3B Expansion Announced',
-  '🏆 GFR Update — UAE +4.2pts · Largest quarterly gain in history',
-  '🟢 GOLD — Siemens Energy → Egypt $340M Wind JV Confirmed',
-  '⚡ PLATINUM — CATL → Indonesia $3.2B Battery Gigafactory Committed',
-  '📡 GOLD — Vestas Wind → India $420M Renewable Factory Announced',
-  '🌍 MENA FDI — Q1 2026 hits 5-year high at $88B (UNCTAD)',
-  '🟡 GOLD — NVIDIA → Singapore $4.4B AI Supercomputer Announced',
-  '📊 GFR Rank #1 — SGP 88.5pts · #2 CHE 87.5pts · #3 USA 84.5pts',
-  '🔮 Forecast — Global FDI projected $4.2T by 2028 (GFM)',
-  '⚡ PLATINUM — ACWA Power → Morocco $1.1B Atlantic Wind Confirmed',
-  '🟢 GOLD — Google → UAE $1B Cloud Region Announced',
+const DEMO_TICKS = [
+  { cic:'GFM-ARE-MSFT-2026-PL01', company:'Microsoft',     eco:'UAE',          grade:'PLATINUM', capex_m:850  },
+  { cic:'GFM-IDN-CATL-2026-PL02', company:'CATL',          eco:'Indonesia',    grade:'PLATINUM', capex_m:3200 },
+  { cic:'GFM-IND-NVDA-2026-PL03', company:'NVIDIA',        eco:'India',        grade:'PLATINUM', capex_m:1100 },
+  { cic:'GFM-SAU-ACWA-2026-GD04', company:'ACWA Power',    eco:'Saudi Arabia', grade:'GOLD',     capex_m:980  },
+  { cic:'GFM-VNM-SAMS-2026-PL05', company:'Samsung SDI',   eco:'Vietnam',      grade:'PLATINUM', capex_m:2100 },
+  { cic:'GFM-ARE-AMZN-2026-GD06', company:'Amazon AWS',    eco:'UAE',          grade:'GOLD',     capex_m:420  },
+  { cic:'GFM-EGY-TOTE-2026-GD07', company:'TotalEnergies', eco:'Egypt',        grade:'GOLD',     capex_m:890  },
+  { cic:'GFM-SGP-GOOG-2026-GD08', company:'Google Cloud',  eco:'Singapore',    grade:'GOLD',     capex_m:620  },
 ];
 
-const GRADE_COLOR: Record<string,string> = {PLATINUM:'text-amber-400',GOLD:'text-emerald-400',SILVER:'text-blue-400'};
+const GRADE_COLORS: Record<string,string> = { PLATINUM:'#0A3D62', GOLD:'#74BB65', SILVER:'#696969', BRONZE:'#696969' };
 
 export default function LiveTicker() {
-  const { signals, connected } = useRealTimeSignals(5);
-  const [items, setItems] = useState(STATIC_SIGNALS);
+  const [signals, setSignals] = useState(DEMO_TICKS);
+  const [offset,  setOffset]  = useState(0);
+  const wsRef = useRef<WebSocket|null>(null);
+  const rafRef = useRef<number>(0);
+  const lastTs = useRef(Date.now());
 
   useEffect(() => {
-    if (signals.length > 0) {
-      const liveItems = signals.slice(0, 6).map((s: any) =>
-        `📡 ${s.grade} — ${s.company} → ${s.economy} $${s.capex_m}M ${s.signal_type}`
-      );
-      setItems([...liveItems, ...STATIC_SIGNALS].slice(0, 16));
+    // Smooth scroll animation
+    function tick() {
+      const now = Date.now();
+      const delta = now - lastTs.current;
+      lastTs.current = now;
+      setOffset(prev => {
+        const next = prev + delta * 0.04; // px per ms
+        return next > signals.length * 220 ? 0 : next;
+      });
+      rafRef.current = requestAnimationFrame(tick);
     }
-  }, [signals]);
+    rafRef.current = requestAnimationFrame(tick);
 
-  const doubled = [...items, ...items];
+    // WebSocket for real signals
+    try {
+      const ws = new WebSocket(process.env.NEXT_PUBLIC_WS_URL || 'wss://api.fdimonitor.org/ws');
+      ws.onmessage = e => {
+        const d = JSON.parse(e.data);
+        if (d.signals?.length) setSignals(prev => [...d.signals.slice(0, 4), ...prev.slice(0, 4)]);
+      };
+      wsRef.current = ws;
+    } catch {}
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      wsRef.current?.close();
+    };
+  }, [signals.length]);
+
+  const doubled = [...signals, ...signals]; // infinite loop
 
   return (
-    <div className="bg-deep border-b border-white/10 overflow-hidden relative" style={{height:'32px'}}>
-      <div className="flex items-center h-full">
-        {/* Live badge */}
-        <div className="flex-shrink-0 flex items-center gap-1.5 px-4 h-full border-r border-white/10 bg-black/20 z-10">
-          <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-400 live-dot' : 'bg-slate-500'}`}/>
-          <span className="text-xs font-bold text-emerald-400 tracking-widest">LIVE</span>
+    <div role="marquee" aria-label="Live FDI signal ticker" className="overflow-hidden relative" style={{background:'rgba(240,248,238,0.9)',borderBottom:'1px solid rgba(10,61,98,0.1)'}}>
+      <div className="flex items-center gap-3 px-4 py-2">
+        <div className="flex items-center gap-1.5 flex-shrink-0 pr-3" style={{borderRight:'1px solid rgba(10,61,98,0.15)'}}>
+          <span className="live-dot"/>
+          <span className="text-xs font-extrabold uppercase tracking-widest" style={{color:'#74BB65'}}>LIVE</span>
         </div>
-        {/* Scrolling ticker */}
         <div className="flex-1 overflow-hidden">
-          <div className="flex whitespace-nowrap animate-ticker">
-            {doubled.map((item, i) => (
-              <span key={i} className="inline-flex items-center text-xs text-white/70 mr-12 hover:text-white transition-colors cursor-default">
-                {item}
-              </span>
+          <div className="flex gap-6 whitespace-nowrap transition-none"
+               style={{transform:`translateX(-${offset % (signals.length * 220)}px)`, transition:'none'}}>
+            {doubled.map((s, i) => (
+              <div key={`${s.cic}-${i}`} className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-xs font-extrabold px-1.5 py-0.5 rounded text-midnight"
+                      style={{background: GRADE_COLORS[s.grade] || '#696969', fontSize: 9}}>
+                  {s.grade.slice(0,2)}
+                </span>
+                <span className="text-xs font-bold" style={{color:'#0A3D62'}}>{s.company}</span>
+                <span className="text-xs" style={{color:'#696969'}}>{s.eco}</span>
+                <span className="text-xs font-extrabold font-data" style={{color:'#74BB65'}}>${s.capex_m}M</span>
+                <span className="text-xs" style={{color:'rgba(10,61,98,0.3)'}}>·</span>
+              </div>
             ))}
           </div>
         </div>

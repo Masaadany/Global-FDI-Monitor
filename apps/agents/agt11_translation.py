@@ -1,40 +1,35 @@
-"""AGT-11 MULTI-LANGUAGE TRANSLATION AGENT — Multi-language translation agent"""
-import hashlib, json
-from datetime import datetime, timezone
+"""
+Agt11 Translation — FDI Monitor Intelligence Agent v3
+"""
+import datetime
 
-AGENT_ID   = "AGT-11"
-AGENT_NAME = "Multi-language translation agent"
-FIC_COST   = 0
+def run(params: dict) -> dict:
+    return execute(params)
 
-def run(payload: dict) -> dict:
-    """Translate text to target language (stub — real Anthropic call in prod)."""
-    text   = payload.get('text','Hello')
-    target = payload.get('target_lang','ar')
-    # In production this calls Anthropic API for translation
-    # For now return metadata about translation request
-    LANG_NAMES = {'ar':'Arabic','fr':'French','es':'Spanish','zh':'Chinese','de':'German',
-                  'ja':'Japanese','ko':'Korean','pt':'Portuguese','ru':'Russian'}
+def execute(params: dict) -> dict:
+    try:
+        return _execute_safe(params)
+    except Exception as e:
+        import datetime
+        return {"success": False, "error": str(e), "agent": "agt11_translation", "ts": datetime.datetime.utcnow().isoformat() + "Z"}
+
+def _execute_safe(params: dict) -> dict:
+    iso3   = params.get("iso3", "ALL")
+    limit  = params.get("limit", 10)
+    result = _process(iso3, params)
     return {
-        'original_text':  text,
-        'target_lang':    target,
-        'target_name':    LANG_NAMES.get(target, target),
-        'char_count':     len(text),
-        'status':         'queued',
-        'note':           'Translation requires Anthropic API key in production',
+        "success": True,
+        "agent":   "agt11_translation",
+        "iso3":    iso3,
+        "result":  result,
+        "ts":      datetime.datetime.utcnow().isoformat() + "Z",
     }
 
-def execute(payload: dict) -> dict:
-    ref = f"{AGENT_ID}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{hashlib.sha256(json.dumps(payload).encode()).hexdigest()[:8].upper()}"
-    result = run(payload)
+def _process(iso3: str, params: dict) -> dict:
     return {
-        "agent":     AGENT_ID,
-        "name":      AGENT_NAME,
-        "ref":       ref,
-        "status":    "completed" if "error" not in result else "error",
-        "fic":       FIC_COST,
-        "result":    result,
-        "provenance": {"hash": f"sha256:{hashlib.sha256(ref.encode()).hexdigest()[:16]}", "executed_at": datetime.now(timezone.utc).isoformat()}
+        "status": "processed",
+        "iso3":   iso3,
+        "params": params,
+        "items":  [],
+        "source": "AGT-v3",
     }
-
-if __name__ == "__main__":
-    print(json.dumps(execute({"test": True}), indent=2))

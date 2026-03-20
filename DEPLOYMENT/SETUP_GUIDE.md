@@ -1,79 +1,136 @@
-# Global FDI Monitor — Complete Setup Guide
-**v18 · March 2026 · fdimonitor.org**
+# Global FDI Monitor — Complete Setup & Deployment Guide
+**v3.0 | March 2026 | Forecasta Ltd, DIFC Dubai UAE**
 
-## Architecture
-
-```
-fdimonitor.org (GitHub Pages)
-         ↓
-api.fdimonitor.org (Azure Container Apps — Node.js API)
-         ↓
-fdi-db-prod-fdimahmoud (Azure PostgreSQL v16)
-fdi-cache-prod         (Azure Redis)
-         ↓
-melsaadany/gfm-agents:latest (Agent service port 8080)
-melsaadany/gfm-api:latest    (API service port 3001)
-```
+---
 
 ## Prerequisites
-- Docker Desktop
-- Node.js 20+
-- Python 3.12+
-- Azure CLI (az)
-- GitHub account with push access to masaadany/Global-FDI-Monitor
 
-## 1. Local Development
+| Tool | Version | Purpose |
+|------|---------|---------|
+| Node.js | ≥20 LTS | Frontend build + API runtime |
+| Python | ≥3.12 | Pipeline, agents, tests |
+| Docker | ≥24 | Container builds |
+| Azure CLI | ≥2.50 | Cloud deployment |
+| Git | any | Source control |
+
+---
+
+## 1. Clone & Install
 
 ```bash
-# Clone + install
-git clone https://github.com/masaadany/Global-FDI-Monitor
-cd "Global-FDI-Monitor"
-cp .env.example .env
+git clone https://github.com/Masaadany/Global-FDI-Monitor.git
+cd Global-FDI-Monitor
 
-# Start all services
-docker compose up -d db redis
+# Frontend
+cd apps/web && npm ci && cd ../..
 
-# API
-cd apps/api && npm install && node server.js
-
-# Web
-cd apps/web && npm install && npm run dev
-
-# Pipeline (optional)
-cd apps/pipeline && pip install -r requirements.txt --break-system-packages
-python collectors/master_pipeline.py
-
-# Agents (optional)
-AGENT_SERVER_MODE=true python apps/agents/super_agent.py
+# Run tests
+python3 -m pytest apps/pipeline/tests/ -q
 ```
 
-## 2. Database Migration
+---
+
+## 2. Environment Variables
+
+Create `apps/api/.env`:
+```env
+# Required
+JWT_SECRET=<32+ char random string>
+DATABASE_URL=postgresql://fdiuser:Ash@#2020@fdi-db-prod-fdimahmoud.postgres.database.azure.com:5432/gfm?sslmode=require
+REDIS_URL=rediss://:zsAQ2PmnVMirDuHLUsy84Nl9MsrGwsCDVAzCaGFF2ks=@fdi-cache-prod.redis.cache.windows.net:6380
+
+# Payments (Stripe)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Email (Resend)
+RESEND_API_KEY=re_...
+
+# AI (Anthropic)
+ANTHROPIC_API_KEY=sk-ant-...
+
+# App
+APP_URL=https://fdimonitor.org
+PORT=3001
+NODE_ENV=production
+```
+
+Create `apps/web/.env.local`:
+```env
+NEXT_PUBLIC_API_URL=https://api.fdimonitor.org
+NEXT_PUBLIC_WS_URL=wss://api.fdimonitor.org/ws
+NEXT_PUBLIC_PREVIEW_PASSWORD=GFM2026PREVIEW
+```
+
+---
+
+## 3. Database Setup
 
 ```bash
-export DATABASE_URL="postgresql://fdiuser:Ash@#2020@localhost:5432/gfm"
+# Run migrations (creates all 28 tables across 5 schemas)
 node DEPLOYMENT/migrate.js
+
+# Schemas created:
+# auth (users, organisations, sessions, api_keys)
+# intelligence (signals, gfr_scores, company_profiles, economies, publications)
+# pipeline (deals, watchlists)
+# notifications (alerts, preferences)
+# billing (fic_transactions, subscriptions, webhook_events)
 ```
 
-## 3. Production Deploy
+---
 
-### Frontend (GitHub Pages)
+## 4. Local Development
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Services:
+# db      → PostgreSQL 16 on :5432
+# redis   → Redis 7 on :6379
+# api     → Node.js API on :3001
+# web     → Next.js dev on :3000
+# agents  → Python agents on :8080
+# pipeline → Data collectors (runs once)
+
+# Frontend only
+cd apps/web && npm run dev
+
+# API only
+cd apps/api && node server.js
+```
+
+---
+
+## 5. Production Deployment
+
+### 5a. Frontend (GitHub Pages)
 ```bash
 cd apps/web
 npm run build
 git add . && git commit -m "deploy" && git push origin main
+# GitHub Actions auto-deploys to fdimonitor.org
 ```
 
-### API (Azure Container Apps)
+### 5b. API Docker Build
 ```bash
 docker build -t melsaadany/gfm-api:latest apps/api/
 docker push melsaadany/gfm-api:latest
+```
+
+### 5c. Azure Container App Update
+```bash
 az containerapp update \
   --name fdi-backend-api \
   --resource-group fdi-monitor-prod \
   --image melsaadany/gfm-api:latest
+
+# Verify deployment
+curl https://api.fdimonitor.org/api/v1/health
 ```
 
-### Agents (Azure Container Apps)
+### 5d. Agents Deploy
 ```bash
 docker build -t melsaadany/gfm-agents:latest apps/agents/
 docker push melsaadany/gfm-agents:latest
@@ -83,63 +140,83 @@ az containerapp update \
   --image melsaadany/gfm-agents:latest
 ```
 
-## 4. Infrastructure (Bicep)
+---
+
+## 6. GitHub Secrets Required
+
+| Secret | Description |
+|--------|-------------|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `AZURE_CREDENTIALS` | `az ad sp create-for-rbac --sdk-auth` JSON |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `PREVIEW_PASSWORD` | Password for preview gate |
+
+---
+
+## 7. Azure Infrastructure (Bicep)
 
 ```bash
-cd DEPLOYMENT/bicep
-az deployment group create \
-  --resource-group fdi-monitor-prod \
-  --template-file main.bicep \
-  --parameters @main.parameters.json
+# Deploy infrastructure from scratch
+az deployment sub create \
+  --location uaenorth \
+  --template-file DEPLOYMENT/bicep/main.bicep \
+  --parameters @DEPLOYMENT/bicep/main.parameters.json
 ```
 
-## 5. Environment Variables
+Key resources created:
+- Container Apps Environment (UAE North)
+- PostgreSQL Flexible Server v16
+- Redis Cache 1GB
+- Container Registry (optional — using Docker Hub)
+- DNS zone for api.fdimonitor.org
 
-| Variable | Description | Example |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://fdiuser:...@host/gfm` |
-| `REDIS_URL` | Redis connection string | `rediss://:key@host:6380` |
-| `JWT_SECRET` | JWT signing secret (min 32 chars) | `gfm-prod-secret-...` |
-| `STRIPE_SECRET_KEY` | Stripe API key | `sk_live_...` |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret | `whsec_...` |
-| `ANTHROPIC_API_KEY` | Anthropic API (for agents) | `sk-ant-...` |
-| `RESEND_API_KEY` | Email delivery | `re_...` |
-| `NEXT_PUBLIC_API_URL` | Frontend API URL | `https://api.fdimonitor.org` |
-| `NEXT_PUBLIC_PREVIEW_PASSWORD` | Preview gate password | `GFM2026PREVIEW` |
+---
 
-## 6. Platform Credentials
+## 8. Health Verification
 
-| Service | URL |
-|---|---|
-| Frontend | https://fdimonitor.org (password: `GFM2026PREVIEW`) |
-| API | https://api.fdimonitor.org |
-| Azure Portal | portal.azure.com → fdi-monitor-prod |
-| GitHub | github.com/masaadany/Global-FDI-Monitor |
-| Docker Hub | hub.docker.com/u/melsaadany |
+```bash
+# API health
+curl https://api.fdimonitor.org/api/v1/health | jq
 
-## 7. Post-Deploy Checklist
+# Expected response:
+# { "status": "ok", "db": "connected", "redis": "connected", "ws_clients": N }
 
-- [ ] `node DEPLOYMENT/migrate.js` — apply DB migrations
-- [ ] Visit https://fdimonitor.org/api/v1/health — confirm `{"status":"ok"}`
-- [ ] Visit https://fdimonitor.org — enter preview password
-- [ ] Test register → onboarding → dashboard flow
-- [ ] Test signal generation: /signals
-- [ ] Test FIC purchase: /fic → Stripe sandbox
-- [ ] Test report generation: /reports → Generate → polling
-- [ ] Test WebSocket: /analytics → Live Feed
+# Run test suite
+python3 -m pytest apps/pipeline/tests/ -q --no-header
+# Expected: 253 passed
 
-## 8. Monthly Cost (~$77/month)
+# Check static pages
+curl -I https://fdimonitor.org/signals
+# Expected: HTTP/2 200
+```
 
-| Service | Cost |
-|---|---|
-| Azure Container Apps (API + Agents) | $23 |
-| Azure PostgreSQL Flex | $18 |
-| Azure Redis Cache | $16 |
-| GitHub Pages | $0 |
-| Anthropic API | $15 |
-| Misc (domain, DNS, monitoring) | $5 |
-| **Total** | **$77** |
+---
 
-## 9. Support
+## 9. Monitoring & Operations
 
-Email: info@fdimonitor.org | +971 50 286 7070
+| Task | Command |
+|------|---------|
+| View API logs | `az containerapp logs show --name fdi-backend-api --resource-group fdi-monitor-prod` |
+| Flush Redis | POST `https://api.fdimonitor.org/api/v1/internal/cache_flush` (admin token) |
+| Trigger GFR refresh | POST `https://api.fdimonitor.org/api/v1/internal/gfr_refresh` (admin token) |
+| Check agent status | GET `https://[agents-url]:8080/health` |
+| DB backup | Azure Portal → PostgreSQL → Backup (automated daily, 7-day retention) |
+
+---
+
+## 10. Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| Build fails: `use client` error | Ensure `'use client';` is first line of file |
+| 502 from API | Check Container App min replicas ≥ 1; check logs |
+| DB connection timeout | Verify Azure PostgreSQL firewall allows Container App outbound IP |
+| JWT errors after redeploy | Ensure `JWT_SECRET` env var matches across deployments |
+| FIC not deducting | Check `billing.fic_transactions` table; verify JWT in request |
+| Stripe webhook 400 | Verify `STRIPE_WEBHOOK_SECRET` matches Stripe dashboard |
+| Redis NOAUTH | Ensure `REDIS_URL` includes password; check port 6380 (SSL) |
+
+---
+
+*© 2026 Forecasta Ltd · DIFC, Dubai, UAE · info@fdimonitor.org*

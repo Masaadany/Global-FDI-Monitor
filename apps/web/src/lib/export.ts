@@ -1,112 +1,142 @@
 /**
- * GFM Export Utilities
- * CSV, JSON, Print, GFR, Signals, Pipeline
+ * GFM Export Library
+ * 7 export functions for signals, GFR, pipeline, and country profiles.
  */
 
-export function exportCSV(rows: Record<string,any>[], filename: string): void {
-  if (!rows || rows.length === 0) return;
-  const headers = Object.keys(rows[0]);
-  const escape  = (v: any) => {
-    const s = String(v ?? '').replace(/"/g, '""');
-    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
-  };
-  const csv = [headers.join(','), ...rows.map(r => headers.map(h => escape(r[h])).join(','))].join('\n');
-  _download(csv, `${filename}_${_ts()}.csv`, 'text/csv;charset=utf-8;');
+// ── CSV Export ─────────────────────────────────────────────────────────────
+export function exportCSV(data: Record<string, unknown>[], filename: string): void {
+  if (!data.length) return;
+  const headers = Object.keys(data[0]);
+  const rows    = data.map(row =>
+    headers.map(h => {
+      const val = row[h];
+      if (val === null || val === undefined) return '';
+      if (typeof val === 'string' && (val.includes(',') || val.includes('"')))
+        return `"${val.replace(/"/g, '""')}"`;
+      return String(val);
+    }).join(',')
+  );
+  const csv     = [headers.join(','), ...rows].join('\n');
+  downloadFile(csv, `${filename}.csv`, 'text/csv;charset=utf-8');
 }
 
-export function exportJSON(data: any, filename: string): void {
+// ── JSON Export ───────────────────────────────────────────────────────────
+export function exportJSON(data: unknown, filename: string): void {
   const json = JSON.stringify(data, null, 2);
-  _download(json, `${filename}_${_ts()}.json`, 'application/json');
+  downloadFile(json, `${filename}.json`, 'application/json');
 }
 
-export function exportPrintHTML(title: string, html: string): void {
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
-    <style>body{font-family:Inter,sans-serif;max-width:800px;margin:40px auto;padding:20px;color:#1e293b}
-    h1{color:#0A2540}table{width:100%;border-collapse:collapse}th,td{border:1px solid #e2e8f0;padding:8px;text-align:left}
-    th{background:#f8fafc;font-size:11px;text-transform:uppercase}@media print{@page{margin:20mm}}</style></head>
-    <body><h1>${title}</h1><p style="color:#64748B;font-size:12px">Generated: ${new Date().toLocaleString()} · Global FDI Monitor · fdimonitor.org</p>
-    ${html}</body></html>`);
-  win.document.close();
-  win.print();
+// ── GFR Export ────────────────────────────────────────────────────────────
+export function exportGFR(rankings: Record<string, unknown>[], quarter: string = 'Q1-2026'): void {
+  const data = rankings.map(r => ({
+    Rank:           r.rank,
+    ISO3:           r.iso3,
+    Economy:        r.economy || r.economy_name,
+    'GFR Score':    r.gfr_composite,
+    Tier:           r.tier,
+    'Macro':        r.macro_score,
+    'Policy':       r.policy_score,
+    'Digital':      r.digital_score,
+    'Human':        r.human_score,
+    'Infrastructure': r.infra_score,
+    'Sustainability': r.sustain_score,
+    Quarter:        quarter,
+  }));
+  exportCSV(data, `GFM_GFR_Rankings_${quarter.replace('-','_')}`);
 }
 
-export function exportGFR(rankings: any[]): void {
-  exportCSV(rankings.map(r => ({
-    'Rank':        r.rank || '',
-    'ISO3':        r.iso3,
-    'Economy':     r.name,
-    'Region':      r.region,
-    'Tier':        r.tier,
-    'Composite':   r.composite,
-    'Macro':       r.macro,
-    'Policy':      r.policy,
-    'Digital':     r.digital,
-    'Human':       r.human,
-    'Infrastructure': r.infra,
-    'Sustainability': r.sustain,
-    'FDI $B':      r.fdi_b,
-    'GDP $B':      r.gdp_b,
-  })), 'GFM_GFR_Rankings');
+// ── Signals Export ────────────────────────────────────────────────────────
+export function exportSignals(signals: Record<string, unknown>[], format: 'csv' | 'json' = 'csv'): void {
+  const data = signals.map(s => ({
+    'Reference Code':  s.reference_code,
+    Company:           s.company,
+    Economy:           s.economy,
+    ISO3:              s.iso3,
+    Sector:            s.sector,
+    'Signal Type':     s.signal_type,
+    'CapEx (USD M)':   s.capex_m,
+    'SCI Score':       s.sci_score,
+    Grade:             s.grade,
+    Conviction:        s.conviction,
+    'Source':          s.source_tier || 'T1',
+    'Verified':        s.verified ? 'Yes' : 'Pending',
+    'Created At':      s.created_at,
+  }));
+  const filename = `GFM_Signals_${new Date().toISOString().slice(0,10)}`;
+  format === 'json' ? exportJSON(data, filename) : exportCSV(data, filename);
 }
 
-export function exportSignals(signals: any[]): void {
-  exportCSV(signals.map(s => ({
-    'Reference Code':  s.id || s.reference_code || '',
-    'Grade':           s.grade,
-    'Company':         s.company,
-    'HQ':              s.hq || '',
-    'Economy':         s.economy,
-    'ISO3':            s.iso3 || '',
-    'Sector':          s.sector_name || s.sector || '',
-    'CapEx (USD)':     s.capex_usd || (s.capex_m ? s.capex_m * 1e6 : ''),
-    'CapEx ($M)':      s.capex_m || (s.capex_usd ? s.capex_usd/1e6 : ''),
-    'Signal Type':     s.signal_type || '',
-    'Status':          s.status || '',
-    'SCI Score':       s.sci_score || '',
-    'Source':          s.source || '',
-    'Date':            s.signal_date || s.date || '',
-    'Provenance Hash': s.provenance_hash || s.provenance?.hash || '',
-    'Source Tier':     s.source_tier || s.provenance?.tier || '',
-  })), 'GFM_FDI_Signals');
+// ── Pipeline Export ───────────────────────────────────────────────────────
+export function exportPipeline(deals: Record<string, unknown>[]): void {
+  const data = deals.map(d => ({
+    ID:            d.id,
+    Company:       d.company,
+    Economy:       d.economy,
+    ISO3:          d.iso3,
+    Sector:        d.sector,
+    'CapEx (M)':   d.capex_m,
+    Stage:         d.stage,
+    Owner:         d.owner,
+    Notes:         d.notes,
+    'Created At':  d.created_at,
+    'Updated At':  d.updated_at,
+  }));
+  exportCSV(data, `GFM_Pipeline_${new Date().toISOString().slice(0,10)}`);
 }
 
-export function exportPipeline(deals: any[]): void {
-  exportCSV(deals.map(d => ({
-    'Deal ID':      d.id,
-    'Company':      d.company,
-    'HQ':           d.hq || '',
-    'Economy':      d.economy || d.iso3 || '',
-    'ISO3':         d.iso3 || '',
-    'Sector':       d.sector || '',
-    'CapEx $M':     d.capex_m || '',
-    'Stage':        d.stage,
-    'Probability%': d.probability || '',
-    'Contact':      d.contact || '',
-    'Days in Stage':d.days || '',
-    'Grade':        d.grade || '',
-    'Notes':        d.notes || '',
-  })), 'GFM_Investment_Pipeline');
+// ── Country Profile Export ────────────────────────────────────────────────
+export function exportCountryProfile(profile: Record<string, unknown>, iso3: string): void {
+  const data = {
+    economy: {
+      iso3,
+      name:      profile.name || profile.economy_name,
+      gfr_score: profile.gfr_composite,
+      tier:      profile.tier,
+      rank:      profile.rank,
+    },
+    dimensions: {
+      macro:          profile.macro_score,
+      policy:         profile.policy_score,
+      digital:        profile.digital_score,
+      human:          profile.human_score,
+      infrastructure: profile.infra_score,
+      sustainability: profile.sustain_score,
+    },
+    signals_count: profile.signals_count || 0,
+    generated_at:  new Date().toISOString(),
+    source:        'Global FDI Monitor — fdimonitor.org',
+  };
+  exportJSON(data, `GFM_Country_${iso3}_${new Date().toISOString().slice(0,10)}`);
 }
 
-export function exportCountryProfile(eco: any): void {
-  exportJSON({
-    iso3:         eco.iso3,
-    name:         eco.name,
-    gfr:          eco.gfr,
-    tier:         eco.tier,
-    fdi_inflows:  eco.fdi_inflows,
-    top_sources:  eco.top_sources,
-    top_sectors:  eco.top_sectors,
-    generated_at: new Date().toISOString(),
-    source:       'Global FDI Monitor · fdimonitor.org',
-    reference:    `GFM-CPROFILE-${eco.iso3}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}`,
-  }, `GFM_Country_${eco.iso3}`);
+// ── Print HTML Export ─────────────────────────────────────────────────────
+export function exportPrintHTML(title: string, content: string, subtitle?: string): void {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>${title} — GFM Intelligence</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 32px; color: #0A2540; }
+  h1   { font-size: 28px; color: #0A2540; border-bottom: 3px solid #0A66C2; padding-bottom: 12px; }
+  h2   { font-size: 18px; color: #0A66C2; margin-top: 28px; }
+  p    { line-height: 1.7; color: #64748B; }
+  .meta { color: #94A3B8; font-size: 12px; margin-bottom: 24px; }
+  @media print { body { padding: 16px; } }
+</style>
+</head>
+<body>
+  <div class="meta">Global FDI Monitor · fdimonitor.org · Generated: ${new Date().toLocaleString()}</div>
+  <h1>${title}</h1>
+  ${subtitle ? `<h2>${subtitle}</h2>` : ''}
+  ${content}
+</body>
+</html>`;
+  downloadFile(html, `GFM_${title.replace(/\s+/g,'_')}.html`, 'text/html;charset=utf-8');
 }
 
-// ── Private helpers ────────────────────────────────────────────────────────
-function _download(content: string, filename: string, mimeType: string): void {
+// ── Helper ────────────────────────────────────────────────────────────────
+function downloadFile(content: string, filename: string, mimeType: string): void {
   if (typeof window === 'undefined') return;
   const blob = new Blob([content], { type: mimeType });
   const url  = URL.createObjectURL(blob);
@@ -117,8 +147,4 @@ function _download(content: string, filename: string, mimeType: string): void {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-function _ts(): string {
-  return new Date().toISOString().slice(0,10);
 }

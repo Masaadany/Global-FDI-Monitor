@@ -1,147 +1,120 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+const CATEGORIES = ['All','Annual Report','Quarterly Brief','Sector Analysis','Economy Profile','Research Paper','Policy Note'];
 
 const PUBS = [
-  {id:'FNL-WK-2026-11',type:'WEEKLY', grade:'FREE',        date:'2026-03-17',pages:12,signals:12,color:'#0A66C2',
-   title:'GFM Intelligence Digest — Week 11, 2026',
-   summary:'MENA FDI hits 5-year high. India insurance liberalised. ASEAN supply chain acceleration.',
-   highlights:['UAE GFR +4.2pts record gain','India insurance 100% FDI','CATL Indonesia $3.2B','12 PLATINUM signals']},
-  {id:'FPB-MON-2026-03',type:'MONTHLY',grade:'PROFESSIONAL',date:'2026-03-01',pages:68,signals:48,color:'#0A2540',
-   title:'Global FDI Intelligence Report — March 2026',
-   summary:'Comprehensive monthly intelligence. Q1 2026 GFR update, 48 featured signals, sector deep-dives.',
-   highlights:['Q1 2026 GFR full update','ICT sector: $1.84T global','MENA outlook 2026–2028','Top 50 PLATINUM signals']},
-  {id:'FGR-Q1-2026',   type:'GFR',    grade:'PROFESSIONAL',date:'2026-03-15',pages:48,signals:0, color:'#7C3AED',
-   title:'Global Future Readiness Rankings — Q1 2026',
-   summary:'Full Q1 2026 GFR rankings for all 215 economies across 6 core dimensions and 6 proprietary factors.',
-   highlights:['UAE record +4.2pt gain','Singapore retains #1 (88.5)','New FRONTIER entrants','All 215 profiles']},
-  {id:'FNL-WK-2026-10',type:'WEEKLY', grade:'FREE',        date:'2026-03-10',pages:11,signals:9, color:'#0A66C2',
-   title:'GFM Intelligence Digest — Week 10, 2026',
-   summary:'CATL Indonesia confirmed. Databricks Singapore HQ. Nigeria tech hub signal.',
-   highlights:['CATL Indonesia committed','Databricks Singapore','Korea-Vietnam $28B','Nigeria tech emerging']},
-  {id:'FPB-MON-2026-02',type:'MONTHLY',grade:'PROFESSIONAL',date:'2026-02-01',pages:64,signals:42,color:'#0A2540',
-   title:'Global FDI Intelligence Report — February 2026',
-   summary:'2025 FDI year-end recap. Top 20 destinations. Clean energy supercycle. AfCFTA implications.',
-   highlights:['2025 FDI: $1.8T record','Clean energy supercycle','Top 20 destinations','AfCFTA corridors']},
-  {id:'FPB-QTR-2025-Q4',type:'QUARTERLY',grade:'PROFESSIONAL',date:'2026-01-15',pages:88,signals:120,color:'#059669',
-   title:'Q4 2025 Global FDI Intelligence Quarterly',
-   summary:'Q4 2025 analysis: 120 signals, GFR retrospective, 2026 outlook.',
-   highlights:['Q4 2025 archive','2026 FDI: $1.9T projected','Sector performance','10 economies to watch']},
-  {id:'FNL-WK-2026-09',type:'WEEKLY', grade:'FREE',        date:'2026-03-03',pages:10,signals:8, color:'#0A66C2',
-   title:'GFM Intelligence Digest — Week 9, 2026',
-   summary:'EU FDI screening tightened for AI assets. AfCFTA implications. CEE nearshoring surge.',
-   highlights:['EU AI screening','AfCFTA FDI implications','CEE nearshoring $22B','India pharma record']},
-  {id:'FPB-SPE-2025-EV',type:'SPECIAL', grade:'PROFESSIONAL',date:'2025-12-01',pages:52,signals:28,color:'#D97706',
-   title:'EV Supply Chain Intelligence Report — 2025',
-   summary:'EV supply chain FDI: battery, charging, manufacturing across 40 countries.',
-   highlights:['Battery gigafactory map','Charging FDI','Lithium-cobalt chains','Policy 2026']},
+  { ref:'GFM-PUB-2026-Q1-001', title:'Global FDI Outlook Q1 2026',             cat:'Quarterly Brief',  date:'2026-03-01', pages:48, regions:['Global'],         icon:'🌍' },
+  { ref:'GFM-PUB-2026-ANN-001', title:'FDI Monitor Annual Report 2025',         cat:'Annual Report',    date:'2026-01-15', pages:124,regions:['Global'],         icon:'📊' },
+  { ref:'GFM-PUB-2026-SEC-004', title:'ICT Sector FDI Opportunity Report',      cat:'Sector Analysis',  date:'2026-02-20', pages:36, regions:['Asia-Pacific'],    icon:'💻' },
+  { ref:'GFM-PUB-2026-ECO-012', title:'UAE Investment Climate 2026',            cat:'Economy Profile',  date:'2026-02-10', pages:28, regions:['MENA'],            icon:'🇦🇪' },
+  { ref:'GFM-PUB-2026-RES-002', title:'Greenfield FDI Trends Post-2025',        cat:'Research Paper',   date:'2026-01-28', pages:52, regions:['Global'],         icon:'🔬' },
+  { ref:'GFM-PUB-2026-SEC-005', title:'Energy Transition FDI Report',           cat:'Sector Analysis',  date:'2026-03-08', pages:42, regions:['MENA','Europe'],   icon:'⚡' },
+  { ref:'GFM-PUB-2026-POL-003', title:'FDI Policy Monitor — ASEAN',            cat:'Policy Note',      date:'2026-02-28', pages:18, regions:['Asia-Pacific'],    icon:'📋' },
+  { ref:'GFM-PUB-2026-ECO-015', title:'Saudi Vision 2030 FDI Progress Report', cat:'Economy Profile',  date:'2026-03-12', pages:32, regions:['MENA'],            icon:'🇸🇦' },
+  { ref:'GFM-PUB-2026-QBR-002', title:'MENA FDI Brief Q1 2026',               cat:'Quarterly Brief',  date:'2026-03-15', pages:24, regions:['MENA'],            icon:'📈' },
+  { ref:'GFM-PUB-2025-ANN-002', title:'FDI Monitor Annual Report 2024',        cat:'Annual Report',    date:'2025-01-20', pages:118,regions:['Global'],         icon:'📊' },
 ];
 
-const TYPE_CONFIG: Record<string,{bg:string;text:string}> = {
-  WEEKLY:   {bg:'bg-blue-100',   text:'text-blue-700'},
-  MONTHLY:  {bg:'bg-slate-100',  text:'text-slate-700'},
-  GFR:      {bg:'bg-violet-100', text:'text-violet-700'},
-  QUARTERLY:{bg:'bg-emerald-100',text:'text-emerald-700'},
-  SPECIAL:  {bg:'bg-amber-100',  text:'text-amber-700'},
+const CAT_C: Record<string,string> = {
+  'Annual Report':'#0A3D62','Quarterly Brief':'#74BB65','Sector Analysis':'#74BB65',
+  'Economy Profile':'#22c55e','Research Paper':'#696969','Policy Note':'#696969'
 };
 
 export default function PublicationsPage() {
-  const [filter, setFilter] = useState('');
-  const [dlg,    setDlg]    = useState<string|null>(null);
+  const [cat,    setCat]    = useState('All');
+  const [search, setSearch] = useState('');
 
-  const shown = PUBS.filter(p => !filter || p.type === filter);
-
-  async function dl(pub: typeof PUBS[0]) {
-    setDlg(pub.id);
-    await new Promise(r => setTimeout(r, 900));
-    if (pub.grade !== 'FREE') { window.location.href = '/subscription'; setDlg(null); return; }
-    // Free download
-    const blob = new Blob([JSON.stringify({reference:pub.id,title:pub.title,date:pub.date,highlights:pub.highlights}, null, 2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `GFM_${pub.id}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    setDlg(null);
-  }
+  const filtered = PUBS.filter(p => {
+    const mc = cat === 'All' || p.cat === cat;
+    const ms = !search || p.title.toLowerCase().includes(search.toLowerCase()) ||
+               p.regions.some(r => r.toLowerCase().includes(search.toLowerCase()));
+    return mc && ms;
+  });
 
   return (
-    <div className="min-h-screen bg-surface">
-      {/* Hero */}
-      <section className="gfm-hero text-white px-6 py-12">
-        <div className="max-w-5xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">Publications Library</div>
-          <h1 className="text-4xl font-extrabold mb-2">Intelligence Publications</h1>
-          <p className="text-white/70">Weekly digests · Monthly reports · Quarterly GFR · Special editions</p>
-          <div className="flex gap-6 mt-5">
-            {[['FREE', PUBS.filter(p=>p.grade==='FREE').length, 'text-emerald-300'],
-              ['PRO',  PUBS.filter(p=>p.grade==='PROFESSIONAL').length, 'text-amber-300'],
-              [String(PUBS.reduce((s,p)=>s+p.pages,0))+' pp', 'Total pages', 'text-blue-300']].map(([v,l,c])=>(
-              <div key={String(l)}>
-                <span className={`stat-number text-xl font-bold ${c}`}>{v}</span>
-                <span className="text-white/50 text-xs ml-1.5">{l}</span>
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+      <section className="gfm-hero px-6 py-10">
+        <div className="max-w-screen-xl mx-auto relative z-10 flex flex-wrap justify-between gap-4 items-end">
+          <div>
+            <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Intelligence Library</div>
+            <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Publications</h1>
+            <p className="text-sm mt-1" style={{color:'#696969'}}>Quarterly briefs · Annual reports · Sector analysis · Economy profiles · Research</p>
+          </div>
+          <div className="flex gap-5">
+            {[['10','Reports'],['6','Categories'],['2026','Latest'],['Open Access','Select']].map(([v,l])=>(
+              <div key={l} className="text-center">
+                <div className="text-xl font-extrabold font-data" style={{color:'#74BB65'}}>{v}</div>
+                <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* Filters */}
-        <div className="flex gap-2 mb-7 flex-wrap">
-          {[['','All Types'],['WEEKLY','Weekly'],['MONTHLY','Monthly'],['GFR','GFR Reports'],['QUARTERLY','Quarterly'],['SPECIAL','Special']].map(([v,l])=>(
-            <button key={v} onClick={()=>setFilter(v)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${filter===v?'text-white':'bg-white border border-slate-200 text-slate-500 hover:border-primary'}`}
-              style={filter===v?{background:'var(--primary)'}:{}}>
-              {l}
+      {/* Filter bar */}
+      <div className="sticky top-16 z-30 border-b px-6 py-2.5 flex flex-wrap gap-2 items-center"
+        style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
+        <input value={search} onChange={e=>setSearch(e.target.value)}
+          className="text-sm px-3 py-1.5 rounded-xl min-w-52"
+          placeholder="🔍 Search publications…"
+          aria-label="Search publications"/>
+        <div className="flex gap-1 flex-wrap">
+          {CATEGORIES.map(c=>(
+            <button key={c} onClick={()=>setCat(c)}
+              className="text-xs px-2.5 py-1.5 rounded-lg font-bold border transition-all"
+              style={cat===c?{background:CAT_C[c]||'#74BB65',color:'#E2F2DF',borderColor:CAT_C[c]||'#74BB65'}
+                           :{borderColor:'rgba(10,61,98,0.2)',color:'#696969'}}>
+              {c}
             </button>
           ))}
         </div>
+        <span className="ml-auto text-xs" style={{color:'#696969'}}>{filtered.length} publications</span>
+      </div>
 
-        {/* Cover grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-          {shown.map(pub => {
-            const tc  = TYPE_CONFIG[pub.type] || TYPE_CONFIG.MONTHLY;
-            const isFree = pub.grade === 'FREE';
-            return (
-              <div key={pub.id} className="gfm-card overflow-hidden cursor-pointer group" onClick={()=>dl(pub)}>
-                {/* Cover */}
-                <div className="aspect-[3/4] flex flex-col p-4 relative overflow-hidden"
-                  style={{background:`linear-gradient(145deg, ${pub.color}ee, ${pub.color}88)`}}>
-                  <div className="absolute inset-0 opacity-10">
-                    {[0,1,2,3,4,5].map(i=><div key={i} className="absolute w-full h-px bg-white" style={{top:`${(i+1)*16}%`}}/>)}
+      <div className="max-w-screen-xl mx-auto px-6 py-5">
+        <PreviewGate feature="downloads">
+          <div className="space-y-3">
+            {filtered.map(pub=>(
+              <div key={pub.ref} className="gfm-card p-5 flex items-center gap-4 flex-wrap">
+                <span className="text-3xl flex-shrink-0">{pub.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span className="font-extrabold text-sm" style={{color:'#0A3D62'}}>{pub.title}</span>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded"
+                      style={{background:`${CAT_C[pub.cat]||'#74BB65'}18`,color:CAT_C[pub.cat]||'#74BB65'}}>
+                      {pub.cat}
+                    </span>
                   </div>
-                  <div className="relative z-10 flex flex-col h-full">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tc.bg} ${tc.text}`}>{pub.type}</span>
-                      {!isFree && <span className="text-xs font-bold bg-amber-400 text-white px-1.5 py-0.5 rounded">PRO</span>}
-                    </div>
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl text-white">
-                        {pub.type==='GFR'?'🏆':pub.type==='QUARTERLY'?'📊':pub.type==='SPECIAL'?'⚡':'📰'}
-                      </div>
-                    </div>
-                    <div className="text-white/70 text-xs font-mono mt-auto">{pub.date}</div>
+                  <div className="flex gap-3 text-xs flex-wrap" style={{color:'#696969'}}>
+                    <span>{pub.date}</span>
+                    <span>·</span>
+                    <span>{pub.pages} pages</span>
+                    <span>·</span>
+                    <span>{pub.regions.join(', ')}</span>
+                    <span>·</span>
+                    <span className="font-data">{pub.ref}</span>
                   </div>
                 </div>
-                {/* Info */}
-                <div className="p-3">
-                  <div className="font-bold text-xs text-deep leading-tight mb-1 line-clamp-2 group-hover:text-primary transition-colors">{pub.title}</div>
-                  <div className="text-xs text-slate-400 mb-2">{pub.pages} pages{pub.signals>0?` · ${pub.signals} signals`:''}</div>
-                  <button disabled={dlg===pub.id}
-                    className={`w-full text-xs font-bold py-1.5 rounded-lg transition-all ${
-                      isFree?'bg-primary text-white hover:bg-primary-dark':'bg-deep text-white hover:opacity-90'
-                    } ${dlg===pub.id?'opacity-50':''}`}>
-                    {dlg===pub.id ? '…' : isFree ? '↓ Download Free' : '↓ Pro — 5 FIC'}
-                  </button>
-                </div>
+                <button className="text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
+                  style={{background:'rgba(116,187,101,0.1)',color:'#74BB65',border:'1px solid rgba(116,187,101,0.2)'}}>
+                  Download PDF
+                </button>
               </div>
-            );
-          })}
-        </div>
-
-        <div className="flex gap-3 mt-8 justify-center">
-          <a href="/contact?type=data&message=Subscribe%20to%20publications" className="gfm-btn-outline text-sm px-6 py-2.5">Subscribe to Updates</a>
-          <a href="/subscription" className="gfm-btn-primary text-sm px-6 py-2.5">Upgrade for Full Access</a>
-        </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className="text-center py-12" style={{color:'#696969'}}>
+                <div className="text-4xl mb-3">📚</div>
+                <div className="font-extrabold" style={{color:'#696969'}}>No publications found</div>
+              </div>
+            )}
+          </div>
+        </PreviewGate>
       </div>
     </div>
   );

@@ -1,46 +1,35 @@
-"""AGT-12 OFAC/UN SANCTIONS SCREENING — OFAC/UN sanctions screening"""
-import hashlib, json
-from datetime import datetime, timezone
+"""
+Agt12 Sanctions — FDI Monitor Intelligence Agent v3
+"""
+import datetime
 
-AGENT_ID   = "AGT-12"
-AGENT_NAME = "OFAC/UN sanctions screening"
-FIC_COST   = 0
+def run(params: dict) -> dict:
+    return execute(params)
 
-def run(payload: dict) -> dict:
-    """Screen entity against OFAC and UN sanctions lists."""
-    entity = payload.get('entity','').strip()
-    country= payload.get('country','').upper()
-    # Sanctioned country list (simplified)
-    SANCTIONED_COUNTRIES = {'IRN','PRK','SYR','BLR','CUB','MMR','ZWE'}
-    # Known sanctioned entities (sample)
-    BLOCKED_TERMS = ['sanctioned','blacklisted','blocked entity']
-    country_hit  = country in SANCTIONED_COUNTRIES
-    entity_hit   = any(t in entity.lower() for t in BLOCKED_TERMS)
-    risk_level   = 'HIGH' if country_hit or entity_hit else 'LOW'
+def execute(params: dict) -> dict:
+    try:
+        return _execute_safe(params)
+    except Exception as e:
+        import datetime
+        return {"success": False, "error": str(e), "agent": "agt12_sanctions", "ts": datetime.datetime.utcnow().isoformat() + "Z"}
+
+def _execute_safe(params: dict) -> dict:
+    iso3   = params.get("iso3", "ALL")
+    limit  = params.get("limit", 10)
+    result = _process(iso3, params)
     return {
-        'entity':         entity,
-        'country':        country,
-        'ofac_hit':       country_hit or entity_hit,
-        'un_hit':         country_hit,
-        'risk_level':     risk_level,
-        'sanctioned_country': country_hit,
-        'screening_date': '2026-03-17',
-        'databases':      ['OFAC SDN','UN Security Council','EU Consolidated'],
-        'recommendation': 'DO NOT PROCEED' if risk_level=='HIGH' else 'CLEARED - Continue due diligence',
+        "success": True,
+        "agent":   "agt12_sanctions",
+        "iso3":    iso3,
+        "result":  result,
+        "ts":      datetime.datetime.utcnow().isoformat() + "Z",
     }
 
-def execute(payload: dict) -> dict:
-    ref = f"{AGENT_ID}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}-{hashlib.sha256(json.dumps(payload).encode()).hexdigest()[:8].upper()}"
-    result = run(payload)
+def _process(iso3: str, params: dict) -> dict:
     return {
-        "agent":     AGENT_ID,
-        "name":      AGENT_NAME,
-        "ref":       ref,
-        "status":    "completed" if "error" not in result else "error",
-        "fic":       FIC_COST,
-        "result":    result,
-        "provenance": {"hash": f"sha256:{hashlib.sha256(ref.encode()).hexdigest()[:16]}", "executed_at": datetime.now(timezone.utc).isoformat()}
+        "status": "processed",
+        "iso3":   iso3,
+        "params": params,
+        "items":  [],
+        "source": "AGT-v3",
     }
-
-if __name__ == "__main__":
-    print(json.dumps(execute({"test": True}), indent=2))

@@ -1,194 +1,252 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { exportCSV } from '@/lib/export';
+import { useState } from 'react';
+import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+type Scenario = 'optimistic'|'base'|'stress';
 
-const ECONOMIES = ['ARE','SAU','IND','SGP','VNM','IDN','DEU','EGY','NGA','CHN'];
-const HORIZONS  = ['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'];
+const FORECAST_METRICS = [
+  {label:'Global FDI 2050',  val:'$9.2T',  sub:'▲114% vs 2025',         color:'#0A3D62'},
+  {label:'Technology FDI',   val:'$3.8T',  sub:'▲72% · 41% of total',   color:'#74BB65'},
+  {label:'Renewable Energy', val:'$2.2T',  sub:'▲68% · 24% of total',   color:'#1B6CA8'},
+  {label:'Asia-Pacific',     val:'$3.1T',  sub:'▲22% CAGR',             color:'#0A3D62'},
+  {label:'MENA',             val:'$1.4T',  sub:'▲18% CAGR',             color:'#74BB65'},
+  {label:'Europe',           val:'$2.4T',  sub:'▲5% CAGR',              color:'#1B6CA8'},
+  {label:'North America',    val:'$2.2T',  sub:'▲6% CAGR',              color:'#696969'},
+  {label:'Latin America',    val:'$890B',  sub:'▲8% CAGR',              color:'#9E9E9E'},
+];
 
-const FORECAST_DB: Record<string,{base:number[];opt:number[];stress:number[];cagr:number;name:string}> = {
-  ARE:{name:'UAE',       base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34],cagr:5.2},
-  SAU:{name:'Saudi Arabia',base:[24,26,28,30,32,35,37,39,41],opt:[26,29,32,35,38,42,45,48,52],stress:[20,22,23,25,26,27,28,29,30],cagr:6.8},
-  IND:{name:'India',     base:[65,68,70,71,72,73,74,75,76],opt:[70,74,78,81,83,85,86,87,88],stress:[55,58,60,61,62,63,64,64,65],cagr:2.2},
-  SGP:{name:'Singapore', base:[138,141,144,148,152,156,160,164,168],opt:[145,150,156,162,168,175,182,189,196],stress:[125,128,130,132,134,136,138,140,142],cagr:2.5},
-  VNM:{name:'Vietnam',   base:[15,17,18,19,20,21,22,23,24],opt:[17,19,21,23,25,27,29,31,33],stress:[12,13,14,15,15,16,17,17,18],cagr:6.0},
-  IDN:{name:'Indonesia', base:[20,21,22,23,24,26,28,30,32],opt:[22,24,26,28,30,33,36,40,44],stress:[17,18,19,20,21,22,23,24,25],cagr:6.0},
-  DEU:{name:'Germany',   base:[33,34,35,36,37,38,40,42,44],opt:[36,38,40,42,44,48,52,56,60],stress:[28,29,30,31,32,33,34,35,36],cagr:3.7},
-  EGY:{name:'Egypt',     base:[8.8,9.4,10,10.8,11.4,12.2,13.2,14.2,15.2],opt:[9.4,10.2,11.2,12.2,13.2,14.5,16,17.5,19.2],stress:[7.8,8.2,8.6,9,9.4,9.8,10.2,10.6,11],cagr:8.1},
-  NGA:{name:'Nigeria',   base:[3.8,4.1,4.4,4.8,5.2,5.8,6.4,7,7.8],opt:[4.2,4.8,5.4,6.1,6.8,7.8,8.8,9.8,11],stress:[3.2,3.4,3.6,3.8,4,4.2,4.4,4.6,4.8],cagr:9.4},
-  CHN:{name:'China',     base:[155,158,161,165,168,172,176,180,184],opt:[162,167,172,178,184,190,196,202,208],stress:[140,142,144,146,148,150,152,154,156],cagr:2.2},
+const TOP10_2050 = [
+  {r:1, flag:'🇺🇸', name:'USA',         fdi:'$1.6T'},
+  {r:2, flag:'🇨🇳', name:'China',       fdi:'$1.4T'},
+  {r:3, flag:'🇩🇪', name:'Germany',     fdi:'$980B'},
+  {r:4, flag:'🇬🇧', name:'UK',          fdi:'$920B'},
+  {r:5, flag:'🇦🇪', name:'UAE',         fdi:'$890B'},
+  {r:6, flag:'🇸🇬', name:'Singapore',   fdi:'$820B'},
+  {r:7, flag:'🇯🇵', name:'Japan',       fdi:'$780B'},
+  {r:8, flag:'🇫🇷', name:'France',      fdi:'$750B'},
+  {r:9, flag:'🇮🇳', name:'India',       fdi:'$720B'},
+  {r:10,flag:'🇨🇦', name:'Canada',      fdi:'$680B'},
+];
+
+const SCENARIOS: Record<Scenario,{title:string,sub:string,fdi2050:string,techGrowth:string,renewGrowth:string,apacCagr:string,prob:number,color:string}> = {
+  optimistic: {title:'Optimistic Scenario',sub:'"Accelerated Global Growth"',fdi2050:'$10.8T',techGrowth:'+85%',renewGrowth:'+78%',apacCagr:'+28%',prob:25,color:'#74BB65'},
+  base:       {title:'Base Case Scenario', sub:'"Moderate Growth Continuation"',fdi2050:'$9.2T',techGrowth:'+72%',renewGrowth:'+68%',apacCagr:'+22%',prob:60,color:'#0A3D62'},
+  stress:     {title:'Stress Scenario',    sub:'"Geopolitical Fragmentation"',fdi2050:'$6.8T',techGrowth:'+28%',renewGrowth:'+22%',apacCagr:'+12%',prob:15,color:'#E57373'},
 };
 
-function ForecastChart({ data, eco }: { data: typeof FORECAST_DB['ARE']; eco: string }) {
-  const all = [...data.base, ...data.opt, ...data.stress];
-  const maxV = Math.max(...all) * 1.08;
-  const minV = Math.min(...all) * 0.88;
-  const W = 560, H = 180, padL = 50, padR = 16, padT = 12, padB = 32;
+const YEARS   = [2025,2030,2035,2040,2045,2050];
+const BASE_FDI = [4.3, 5.2, 6.4, 7.5, 8.3, 9.2];
 
-  function px(i: number, v: number) {
-    return {
-      x: padL + i * (W - padL - padR) / (HORIZONS.length - 1),
-      y: padT + (H - padT - padB) * (1 - (v - minV) / (maxV - minV))
-    };
-  }
-  function makePath(vals: number[]) {
-    return vals.map((v, i) => { const p = px(i, v); return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ');
-  }
-  function makeArea(hi: number[], lo: number[]) {
-    const fwd = hi.map((v, i) => { const p = px(i, v); return `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ');
-    const bwd = [...lo].reverse().map((v, i) => { const p = px(lo.length - 1 - i, v); return `L${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(' ');
-    return `${fwd} ${bwd} Z`;
-  }
-
+function ForecastChart({scenario}: {scenario:Scenario}) {
+  const mult = scenario==='optimistic'?1.18:scenario==='stress'?0.74:1;
+  const data = BASE_FDI.map(v=>+(v*mult).toFixed(1));
+  const max  = Math.max(...data) * 1.1;
+  const W=500, H=180, pad=40;
+  const pts  = data.map((v,i)=>[pad+i*(W-pad*2)/5, H-pad-(v/max)*(H-pad*2)] as [number,number]);
+  const path = `M${pts.map(([x,y])=>`${x},${y}`).join(' L')}`;
+  const area = `M${pts[0][0]},${H-pad} L${path.slice(1)} L${pts[pts.length-1][0]},${H-pad} Z`;
+  const c    = SCENARIOS[scenario].color;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-      {[0, 0.33, 0.66, 1].map(t => {
-        const y = padT + (H - padT - padB) * t;
-        const v = (maxV - t * (maxV - minV)).toFixed(0);
-        return (
-          <g key={t}>
-            <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="#E2E8F0" strokeWidth="0.5" />
-            <text x={padL - 4} y={y + 3.5} fontSize="8" fill="#94A3B8" textAnchor="end">${v}B</text>
-          </g>
-        );
-      })}
-      {/* Confidence band */}
-      <path d={makeArea(data.opt, data.stress)} fill="#0A66C215" />
-      {/* Lines */}
-      <path d={makePath(data.opt)}    fill="none" stroke="#059669" strokeWidth="1.5" strokeDasharray="5,3" />
-      <path d={makePath(data.base)}   fill="none" stroke="#0A66C2" strokeWidth="2.5" />
-      <path d={makePath(data.stress)} fill="none" stroke="#EF4444" strokeWidth="1.5" strokeDasharray="3,4" />
-      {/* Base dots */}
-      {data.base.map((v, i) => {
-        const p = px(i, v);
-        return <circle key={i} cx={p.x} cy={p.y} r={3} fill="#0A66C2" />;
-      })}
-      {/* X labels */}
-      {HORIZONS.map((h, i) => {
-        const { x } = px(i, data.base[0]);
-        return <text key={h} x={x} y={H - padB + 14} fontSize="7.5" fill="#94A3B8" textAnchor="middle">{h}</text>;
-      })}
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="FDI forecast chart">
+      <defs><linearGradient id={`g${scenario}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={c} stopOpacity="0.25"/><stop offset="100%" stopColor={c} stopOpacity="0"/></linearGradient></defs>
+      <path d={area} fill={`url(#g${scenario})`}/>
+      <path d={`M${path.slice(1)}`} stroke={c} strokeWidth="2.5" fill="none" strokeLinejoin="round"/>
+      {pts.map(([x,y],i)=>(
+        <g key={i}>
+          <circle cx={x} cy={y} r="4" fill={c}/>
+          <text x={x} y={y-10} textAnchor="middle" fontSize="11" fill={c} fontWeight="600">${data[i]}T</text>
+          <text x={x} y={H-8} textAnchor="middle" fontSize="10" fill="#696969">{YEARS[i]}</text>
+        </g>
+      ))}
+      <line x1={pad} y1={pad} x2={pad} y2={H-pad} stroke="rgba(10,61,98,0.15)" strokeWidth="1"/>
+      <line x1={pad} y1={H-pad} x2={W-pad} y2={H-pad} stroke="rgba(10,61,98,0.15)" strokeWidth="1"/>
     </svg>
   );
 }
 
 export default function ForecastPage() {
-  const [eco,    setEco]    = useState('ARE');
-  const [data,   setData]   = useState(FORECAST_DB.ARE);
-  const [loading,setLoading]= useState(false);
+  const [tab,      setTab]      = useState<'foresight'|'scenario'>('foresight');
+  const [scenario, setScenario] = useState<Scenario>('base');
+  const [gdp,      setGdp]      = useState(2.8);
+  const [techAdopt,setTechAdopt]= useState(60);
+  const [energyTr, setEnergyTr] = useState(50);
+  const [ran,      setRan]      = useState(false);
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(`${API}/api/v1/forecast?economy=${eco}`)
-      .then(r => r.json())
-      .then(d => { if (d.success && d.data) { /* use API data when available */ } })
-      .catch(() => {})
-      .finally(() => { setData(FORECAST_DB[eco] || FORECAST_DB.ARE); setLoading(false); });
-  }, [eco]);
-
-  const cur  = data.base[data.base.length - 1];
-  const init = data.base[0];
-  const diff = ((cur - init) / init * 100).toFixed(1);
+  const customFDI   = +(9.2 * (1+(gdp-2)/100*0.8) * (1+techAdopt/100*0.3) * (1+energyTr/100*0.2)).toFixed(1);
+  const customTech  = +(3.8 * (1+techAdopt/100*0.4)).toFixed(1);
+  const customRenew = +(2.2 * (1+energyTr/100*0.5)).toFixed(1);
 
   return (
-    <div className="min-h-screen bg-surface">
-      <section className="gfm-hero text-white px-6 py-12">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-bold text-blue-300 uppercase tracking-widest mb-3">AI-Powered Projections</div>
-          <h1 className="text-4xl font-extrabold mb-2">Forecast &amp; Outlook</h1>
-          <p className="text-white/70">FDI projections 2025–2030 · Bayesian VAR + Prophet ensemble · 3-scenario Monte Carlo</p>
+    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+      <NavBar/>
+      <TrialBanner/>
+
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px 0'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto'}}>
+          <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>Foresight & Scenario Planning · 2050</h1>
+          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'20px',fontSize:'14px'}}>
+            Probabilistic FDI forecasts · Optimistic / Base / Stress scenarios · What-if analysis
+          </p>
+          <div style={{display:'flex',gap:'0'}}>
+            {[{id:'foresight',label:'Foresight 2050'},{id:'scenario',label:'Scenario Planning'}].map(t=>(
+              <button key={t.id} onClick={()=>setTab(t.id as any)}
+                style={{padding:'12px 24px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
+                  borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
+                  background:'transparent',color:tab===t.id?'white':'rgba(226,242,223,0.6)'}}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Executive brief */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-screen-xl mx-auto">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-3.5">
-            <div className="text-xs font-bold text-primary uppercase tracking-wide mb-1">Executive Brief</div>
-            <p className="text-sm text-blue-800 leading-relaxed">
-              Global FDI is projected to reach <strong>$4.2T by 2028</strong>, driven by Technology (+45%) and Renewable Energy (+32%). Asia-Pacific leads with 18% CAGR; MENA at 15%. Key risks: geopolitical fragmentation, interest rate trajectory, and supply chain reconfiguration.
-            </p>
-          </div>
-        </div>
-      </div>
+      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'28px 24px'}}>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-6">
-        {/* Key findings */}
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {[
-            {icon:'💻',title:'Technology FDI',v:'+45% by 2028',sub:'$1.8T total opportunity',c:'text-primary'},
-            {icon:'⚡',title:'Renewable Energy',v:'+32% by 2028',sub:'$890B green investment',c:'text-emerald-600'},
-            {icon:'🌏',title:'Asia-Pacific',v:'+18% CAGR',sub:'5 new unicorn economies',c:'text-violet-600'},
-          ].map(k=>(
-            <div key={k.title} className="gfm-card p-5">
-              <div className="text-3xl mb-3">{k.icon}</div>
-              <div className="font-extrabold text-deep mb-1">{k.title}</div>
-              <div className={`text-2xl font-extrabold font-mono ${k.c}`}>{k.v}</div>
-              <div className="text-xs text-slate-400 mt-1">{k.sub}</div>
+        {tab==='foresight' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            {/* Executive brief */}
+            <div className="gfm-card" style={{padding:'24px',borderLeft:'4px solid #74BB65'}}>
+              <div style={{fontSize:'12px',fontWeight:700,color:'#74BB65',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'8px'}}>Executive Brief</div>
+              <p style={{fontSize:'15px',color:'#0A3D62',lineHeight:'1.7',fontWeight:500}}>
+                Global FDI is projected to reach <b>$9.2T</b> by 2050, growing at <b>5.8% CAGR</b> from 2025. Technology (+72%) and Renewable Energy (+68%) will account for 65% of total investment growth. Asia-Pacific leads with 22% CAGR, followed by MENA at 18%, driven by sovereign wealth diversification and green transition.
+              </p>
             </div>
-          ))}
-        </div>
 
-        {/* Economy selector + chart */}
-        <div className="gfm-card p-5 mb-5">
-          <div className="flex flex-wrap items-center gap-3 mb-5">
-            <div className="font-extrabold text-deep">FDI Forecast by Economy</div>
-            <div className="flex flex-wrap gap-1.5">
-              {ECONOMIES.map(e=>(
-                <button key={e} onClick={()=>setEco(e)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${eco===e?'bg-primary text-white':'border border-slate-200 text-slate-500 hover:border-primary'}`}>
-                  {e}
-                </button>
+            {/* Key metrics */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+              {FORECAST_METRICS.map(m=>(
+                <div key={m.label} className="gfm-card" style={{padding:'18px',textAlign:'center'}}>
+                  <div style={{fontSize:'22px',fontWeight:800,color:m.color,fontFamily:'monospace',marginBottom:'4px'}}>{m.val}</div>
+                  <div style={{fontSize:'11px',color:'#696969',marginBottom:'4px'}}>{m.label}</div>
+                  <div style={{fontSize:'10px',fontWeight:700,color:'#74BB65'}}>{m.sub}</div>
+                </div>
               ))}
             </div>
-            <div className="ml-auto flex items-center gap-3">
-              <div className="text-right">
-                <div className="font-extrabold text-primary font-mono text-lg">{data.cagr}% CAGR</div>
-                <div className="text-xs text-slate-400">2025–2030</div>
+
+            {/* Timeline chart */}
+            <div className="gfm-card" style={{padding:'24px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
+                <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>FDI Forecast Timeline · 2025–2050 (Base Case, $T)</div>
+                <div style={{display:'flex',gap:'6px'}}>
+                  {(['base','optimistic','stress'] as Scenario[]).map(s=>(
+                    <button key={s} onClick={()=>setScenario(s)}
+                      style={{padding:'5px 12px',borderRadius:'6px',border:'none',fontSize:'11px',fontWeight:700,cursor:'pointer',
+                        background:scenario===s?SCENARIOS[s].color:'rgba(10,61,98,0.06)',
+                        color:scenario===s?'white':'#0A3D62'}}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button onClick={()=>exportCSV(HORIZONS.map((h,i)=>({Horizon:h,Baseline:data.base[i],Optimistic:data.opt[i],Stress:data.stress[i]})),`GFM_Forecast_${eco}`)}
-                className="gfm-btn-outline text-xs py-1.5">Export CSV</button>
+              <ForecastChart scenario={scenario}/>
+            </div>
+
+            {/* Top 10 by 2050 */}
+            <PreviewGate feature="full_profile">
+              <div className="gfm-card" style={{padding:'24px'}}>
+                <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>Top 10 Economies by FDI 2050 (Base Case)</div>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px'}}>
+                  {TOP10_2050.map(e=>(
+                    <div key={e.r} style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px',
+                      borderRadius:'8px',background:'rgba(10,61,98,0.03)'}}>
+                      <span style={{fontSize:'13px',fontWeight:800,color:'#74BB65',minWidth:'24px',fontFamily:'monospace'}}>#{e.r}</span>
+                      <span style={{fontSize:'20px'}}>{e.flag}</span>
+                      <span style={{flex:1,fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{e.name}</span>
+                      <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{e.fdi}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PreviewGate>
+          </div>
+        )}
+
+        {tab==='scenario' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            {/* 3 scenario cards */}
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
+              {(Object.entries(SCENARIOS) as [Scenario,typeof SCENARIOS[Scenario]][]).map(([key,sc])=>(
+                <div key={key} className="gfm-card" style={{padding:'22px',
+                  borderTop:`4px solid ${sc.color}`,
+                  border:scenario===key?`2px solid ${sc.color}`:'1px solid rgba(10,61,98,0.08)'}}>
+                  <div style={{fontSize:'13px',fontWeight:700,color:sc.color,marginBottom:'3px'}}>{sc.title}</div>
+                  <div style={{fontSize:'11px',color:'#696969',marginBottom:'14px',fontStyle:'italic'}}>{sc.sub}</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:'6px',marginBottom:'14px'}}>
+                    {[['Global FDI 2050',sc.fdi2050],['Technology Growth',sc.techGrowth],['Renewable Growth',sc.renewGrowth],['Asia-Pacific CAGR',sc.apacCagr]].map(([l,v])=>(
+                      <div key={l} style={{display:'flex',justifyContent:'space-between',fontSize:'12px'}}>
+                        <span style={{color:'#696969'}}>{l}</span>
+                        <span style={{fontWeight:700,color:sc.color,fontFamily:'monospace'}}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                    <div style={{height:'6px',flex:1,borderRadius:'3px',background:'rgba(10,61,98,0.08)'}}>
+                      <div style={{height:'100%',borderRadius:'3px',width:`${sc.prob}%`,background:sc.color}}/>
+                    </div>
+                    <span style={{fontSize:'11px',fontWeight:700,color:sc.color,minWidth:'30px'}}>{sc.prob}%</span>
+                  </div>
+                  <div style={{fontSize:'10px',color:'#696969',marginTop:'2px'}}>Probability</div>
+                </div>
+              ))}
+            </div>
+
+            {/* What-if analysis */}
+            <div className="gfm-card" style={{padding:'28px'}}>
+              <h3 style={{fontSize:'15px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>What-If Analysis · Create Your Custom Scenario</h3>
+              <p style={{fontSize:'12px',color:'#696969',marginBottom:'20px'}}>Adjust parameters to model your own 2050 FDI projection.</p>
+              <div style={{display:'flex',flexDirection:'column',gap:'16px',marginBottom:'20px'}}>
+                {[
+                  {label:'Global GDP Growth',min:-2,max:6,step:0.1,val:gdp,set:setGdp,unit:'%',left:'−2%',right:'+6%'},
+                  {label:'Technology Adoption Rate',min:0,max:100,step:5,val:techAdopt,set:setTechAdopt,unit:'%',left:'Slow',right:'Fast'},
+                  {label:'Energy Transition Speed',min:0,max:100,step:5,val:energyTr,set:setEnergyTr,unit:'%',left:'Slow',right:'Fast'},
+                ].map(({label,min,max,step,val,set,unit,left,right})=>(
+                  <div key={label}>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
+                      <span style={{fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{label}</span>
+                      <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>{typeof val==='number'?val.toFixed(1):val}{unit}</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                      <span style={{fontSize:'10px',color:'#696969',minWidth:'28px'}}>{left}</span>
+                      <input type="range" min={min} max={max} step={step} value={val}
+                        onChange={e=>set(+e.target.value)}
+                        style={{flex:1,accentColor:'#74BB65'}}/>
+                      <span style={{fontSize:'10px',color:'#696969',minWidth:'28px',textAlign:'right'}}>{right}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex',gap:'10px',marginBottom:ran?'16px':'0'}}>
+                <button onClick={()=>setRan(true)} className="gfm-btn-primary" style={{padding:'10px 24px',fontSize:'14px'}}>Run Scenario →</button>
+                <button onClick={()=>{setGdp(2.8);setTechAdopt(60);setEnergyTr(50);setRan(false);}}
+                  style={{padding:'10px 20px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'8px',
+                    background:'transparent',cursor:'pointer',fontSize:'14px',color:'#696969'}}>Reset</button>
+              </div>
+              {ran && (
+                <div style={{padding:'18px',borderRadius:'12px',background:'rgba(116,187,101,0.08)',border:'1px solid rgba(116,187,101,0.2)'}}>
+                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Your Custom Scenario Results · 2050</div>
+                  <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
+                    {[
+                      {l:'Global FDI',v:`$${customFDI}T`},
+                      {l:'Technology',v:`$${customTech}T`},
+                      {l:'Renewable',v:`$${customRenew}T`},
+                    ].map(({l,v})=>(
+                      <div key={l} style={{textAlign:'center'}}>
+                        <div style={{fontSize:'22px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                        <div style={{fontSize:'11px',color:'#696969'}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{marginTop:'10px',fontSize:'12px',color:'#696969'}}>
+                    Top Winners: <b style={{color:'#0A3D62'}}>🇦🇪 UAE (+{+(28*(energyTr/50)).toFixed(0)}%)</b> · <b style={{color:'#0A3D62'}}>🇮🇳 India (+{+(32*(techAdopt/60)).toFixed(0)}%)</b> · <b style={{color:'#0A3D62'}}>🇸🇬 Singapore (+{+(22*(gdp/2.8)).toFixed(0)}%)</b>
+                  </div>
+                  <button className="gfm-btn-primary" style={{marginTop:'12px',padding:'8px 18px',fontSize:'12px'}}>Export Scenario Report</button>
+                </div>
+              )}
             </div>
           </div>
-          {loading ? <div className="h-44 bg-slate-100 rounded-xl animate-pulse"/> : <ForecastChart data={data} eco={eco}/>}
-          <div className="flex items-center gap-5 mt-3 text-xs text-slate-500 justify-center">
-            <span className="flex items-center gap-1.5"><div className="w-5 h-0.5 bg-emerald-500"/> Optimistic</span>
-            <span className="flex items-center gap-1.5"><div className="w-5 h-1 bg-primary rounded"/> Base Case</span>
-            <span className="flex items-center gap-1.5"><div className="w-5 h-0.5 bg-red-500"/> Stress</span>
-            <span className="ml-4 text-slate-300">Model: Bayesian VAR + Prophet Ensemble</span>
-          </div>
-        </div>
-
-        {/* Scenario cards */}
-        <div className="grid md:grid-cols-3 gap-4">
-          {[
-            {label:'Optimistic', prob:25, fdi2030:`$${data.opt[8].toFixed(0)}B`, color:'text-emerald-600', bg:'bg-emerald-50 border-emerald-200',
-             conds:['Accelerated policy reform','AI investment supercycle','Geopolitical stabilisation']},
-            {label:'Base Case',  prob:60, fdi2030:`$${data.base[8].toFixed(0)}B`,color:'text-primary',     bg:'bg-primary-light border-blue-200',
-             conds:['Moderate policy progress','Steady technology FDI','Contained geopolitical risk']},
-            {label:'Stress',     prob:15, fdi2030:`$${data.stress[8].toFixed(0)}B`,color:'text-red-600',   bg:'bg-red-50 border-red-200',
-             conds:['Trade fragmentation','Interest rate shock','Political instability']},
-          ].map(s=>(
-            <div key={s.label} className={`rounded-xl border p-5 ${s.bg}`}>
-              <div className="flex justify-between items-start mb-3">
-                <div className="font-extrabold text-deep">{s.label}</div>
-                <div className={`gfm-badge ${s.bg} ${s.color} border-current`}>P{s.prob}%</div>
-              </div>
-              <div className={`text-3xl font-extrabold font-mono ${s.color} mb-1`}>{s.fdi2030}</div>
-              <div className="text-xs text-slate-400 mb-3">FDI by 2030</div>
-              <ul className="space-y-1">
-                {s.conds.map(c=><li key={c} className="text-xs text-slate-600 flex items-start gap-1.5"><span className={s.color}>•</span>{c}</li>)}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex gap-3 mt-5">
-          <button onClick={()=>window.location.href='/subscription'} className="gfm-btn-primary px-6 py-2.5">Generate Forecast Report — 12 FIC</button>
-          <button onClick={()=>exportCSV(HORIZONS.map((h,i)=>({Horizon:h,Baseline:data.base[i],Optimistic:data.opt[i],Stress:data.stress[i]})),`GFM_Forecast_${eco}`)}
-            className="gfm-btn-outline px-6 py-2.5">Download Data</button>
-        </div>
+        )}
       </div>
     </div>
   );

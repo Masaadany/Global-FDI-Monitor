@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 40" fill="none">
+  <!-- FDI large left -->
+  <text
+    x="0" y="34"
+    font-family="Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"
+    font-size="34"
+    font-weight="900"
+    fill="#FAFAF0"
+    letter-spacing="-1"
+  >FDI</text>
+  <!-- MONITOR small right, vertically centred -->
+  <text
+    x="84" y="30"
+    font-family="Inter,-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"
+    font-size="10"
+    font-weight="500"
+    fill="#87A19E"
+    letter-spacing="4"
+  >MONITOR</text>
+</svg>

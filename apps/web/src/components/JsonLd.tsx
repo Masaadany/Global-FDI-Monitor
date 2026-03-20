@@ -1,70 +1,51 @@
-/**
- * JSON-LD Structured Data for GFM pages
- * Improves search engine understanding of the platform.
- */
+export default function JsonLd({ type = 'Organization' }: { type?: string }) {
+  const BASE = 'https://fdimonitor.org';
 
-export function OrganizationJsonLd() {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "Global FDI Monitor",
-    "alternateName": "GFM",
-    "url": "https://fdimonitor.org",
-    "logo": "https://fdimonitor.org/favicon.svg",
-    "description": "World's first fully integrated FDI intelligence platform. 215 economies, real-time signals, GFR rankings.",
-    "foundingDate": "2024",
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "email": "contact@fdimonitor.org",
-      "contactType": "customer service"
+  const schemas: Record<string, object> = {
+    Organization: {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'FDI Monitor',
+      alternateName: 'Global FDI Monitor',
+      url: BASE,
+      logo: `${BASE}/logo.svg`,
+      description: 'Global FDI intelligence platform: 215 economies, real-time signals, GFR rankings, AI reports.',
+      foundingDate: '2018',
+      address: { '@type':'PostalAddress', addressLocality:'Dubai', addressCountry:'AE', addressRegion:'DIFC' },
+      contactPoint: { '@type':'ContactPoint', email:'info@fdimonitor.org', contactType:'customer support' },
+      sameAs: ['https://twitter.com/fdimonitor','https://linkedin.com/company/fdi-monitor'],
     },
-    "sameAs": [
-      "https://twitter.com/fdimonitor",
-      "https://linkedin.com/company/fdimonitor"
-    ]
-  };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}/>;
-}
-
-export function SoftwareAppJsonLd() {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "Global FDI Monitor",
-    "applicationCategory": "BusinessApplication",
-    "operatingSystem": "Web",
-    "url": "https://fdimonitor.org",
-    "description": "FDI intelligence platform — live signals, GFR rankings, AI reports across 215 economies",
-    "offers": {
-      "@type": "Offer",
-      "price": "899",
-      "priceCurrency": "USD",
-      "priceSpecification": {
-        "@type": "RecurringCharges",
-        "billingDuration": "P1M"
-      }
+    WebSite: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'FDI Monitor',
+      url: BASE,
+      description: 'From data to investment decisions. Global FDI intelligence for investment professionals.',
+      potentialAction: { '@type':'SearchAction', target:`${BASE}/signals?q={search_term_string}`, 'query-input':'required name=search_term_string' },
     },
-    "featureList": [
-      "Real-time FDI signals",
-      "GFR Rankings 215 economies",
-      "AI-powered custom reports",
-      "Mission planning",
-      "FDI forecasts 2025-2030",
-      "Investment pipeline management"
-    ]
+    SoftwareApplication: {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'FDI Monitor',
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      url: BASE,
+      offers: {
+        '@type': 'Offer',
+        price: '799',
+        priceCurrency: 'USD',
+        priceSpecification: { '@type':'UnitPriceSpecification', price:799, priceCurrency:'USD', unitText:'MONTH' },
+      },
+      featureList: ['Real-time FDI signals','GFR rankings for 215 economies','AI-generated intelligence reports','Foresight & scenario planning to 2050','Investment mission planning'],
+    },
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}/>;
-}
 
-export function FAQJsonLd({ faqs }: { faqs: Array<{ q: string; a: string }> }) {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": faqs.map(({ q, a }) => ({
-      "@type": "Question",
-      "name": q,
-      "acceptedAnswer": { "@type": "Answer", "text": a }
-    }))
-  };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}/>;
+  const schema = schemas[type] || schemas.Organization;
+
+  return (  // structured data — no visible aria needed
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
 }

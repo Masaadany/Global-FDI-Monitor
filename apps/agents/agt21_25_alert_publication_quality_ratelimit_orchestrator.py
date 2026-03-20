@@ -687,3 +687,8 @@ def execute(payload: dict) -> dict:
 if __name__ == "__main__":
     import json
     print(json.dumps(execute({"test": True}), indent=2))
+
+
+def run(payload: dict) -> dict:
+    """Standard GFM agent run interface."""
+    return execute(payload).get('result', {'status': 'completed', 'module': __name__})

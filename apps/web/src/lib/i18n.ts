@@ -68,3 +68,6 @@ export const LOCALE_PATHS: Record<string, string> = {
   en: '/',
   ar: '/ar',
 };
+
+export const DEFAULT_LOCALE = 'en';
+export const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];

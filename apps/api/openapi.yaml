@@ -1,11 +1,13 @@
 openapi: 3.1.0
 info:
   title: Global FDI Monitor API
-  version: 3.0.0
   description: |
-    REST API for the Global FDI Monitor platform.
-    215 economies · 50 AI agents · Real-time signals · GFR rankings.
+    The GFM API provides real-time FDI intelligence across 215 economies.
+    Authentication uses JWT Bearer tokens obtained from /auth/login.
+    FIC credits are consumed for premium operations.
+  version: 3.0.0
   contact:
+    name: GFM Support
     email: api@fdimonitor.org
     url: https://fdimonitor.org
   license:
@@ -13,10 +15,10 @@ info:
     url: https://fdimonitor.org/terms
 
 servers:
-  - url: https://fdi-backend-api.gentleglacier-ae9701ca.uaenorth.azurecontainerapps.io
-    description: Production (Azure UAE North)
+  - url: https://api.fdimonitor.org
+    description: Production
   - url: http://localhost:3001
-    description: Local development
+    description: Development
 
 security:
   - BearerAuth: []
@@ -28,63 +30,39 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
-    Error:
-      type: object
-      properties:
-        success: { type: boolean, example: false }
-        error:
-          type: object
-          properties:
-            code:    { type: string }
-            message: { type: string }
     Signal:
       type: object
       properties:
-        id:          { type: string, example: MSS-GFS-ARE-20260317-0001 }
-        grade:       { type: string, enum: [PLATINUM, GOLD, SILVER, BRONZE] }
-        company:     { type: string }
-        economy:     { type: string }
-        iso3:        { type: string, maxLength: 3 }
-        sector:      { type: string, maxLength: 1, description: ISIC sector code }
-        capex_usd:   { type: integer }
-        sci_score:   { type: number, minimum: 0, maximum: 100 }
-        signal_type: { type: string, enum: [Greenfield, Expansion, M&A, JV, Platform, Committed] }
-        status:      { type: string, enum: [CONFIRMED, ANNOUNCED, RUMOURED, COMPLETED] }
-        signal_date: { type: string, format: date }
+        reference_code: { type: string, example: "MSS-J-ARE-20260317-0001" }
+        company:        { type: string, example: "Microsoft Corporation" }
+        economy:        { type: string, example: "United Arab Emirates" }
+        iso3:           { type: string, example: "ARE" }
+        sector:         { type: string, example: "J" }
+        signal_type:    { type: string, enum: [Greenfield, Expansion, JV, M&A, Reinvestment] }
+        capex_m:        { type: number, example: 850 }
+        sci_score:      { type: number, example: 91.2 }
+        grade:          { type: string, enum: [PLATINUM, GOLD, SILVER, BRONZE] }
+        provenance:     { type: object, properties: { hash: { type: string }, source: { type: string } } }
     GFRScore:
       type: object
       properties:
-        iso3:      { type: string }
-        quarter:   { type: string, example: Q1 2026 }
-        composite: { type: number }
-        tier:      { type: string, enum: [FRONTIER, HIGH, MEDIUM, EMERGING, DEVELOPING] }
-        rank:      { type: integer }
-        macro:     { type: integer }
-        policy:    { type: integer }
-        digital:   { type: integer }
-        human:     { type: integer }
-        infra:     { type: integer }
-        sustain:   { type: integer }
-    Economy:
+        iso3:           { type: string, example: "ARE" }
+        economy:        { type: string, example: "United Arab Emirates" }
+        gfr_composite:  { type: number, example: 80.0 }
+        tier:           { type: string, enum: [FRONTIER, HIGH, MEDIUM, DEVELOPING, EMERGING] }
+        rank:           { type: integer, example: 6 }
+        macro_score:    { type: number }
+        policy_score:   { type: number }
+        digital_score:  { type: number }
+        human_score:    { type: number }
+        infra_score:    { type: number }
+        sustain_score:  { type: number }
+    ErrorResponse:
       type: object
       properties:
-        iso3:         { type: string }
-        name:         { type: string }
-        region:       { type: string }
-        income_group: { type: string }
-        gdp_usd_b:    { type: number }
-        fdi_inflows_b:{ type: number }
-        population_m: { type: number }
-    Provenance:
-      type: object
-      properties:
-        source_name:        { type: string }
-        source_url:         { type: string, format: uri }
-        source_tier:        { type: string }
-        retrieved_at:       { type: string, format: date-time }
-        verification_hash:  { type: string }
-        reference_code:     { type: string }
-        completeness:       { type: number, minimum: 0, maximum: 1 }
+        error:   { type: string }
+        message: { type: string }
+        code:    { type: string }
 
 paths:
   /api/v1/health:
@@ -92,25 +70,21 @@ paths:
       summary: Health check
       security: []
       responses:
-        "200":
-          description: System health
+        '200':
+          description: Service healthy
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      status:  { type: string }
-                      version: { type: string }
-                      mode:    { type: string }
-                      db:      { type: string }
-                      redis:   { type: string }
+                  status: { type: string, example: ok }
+                  db:     { type: string }
+                  redis:  { type: string }
+                  ws_clients: { type: integer }
 
   /api/v1/auth/register:
     post:
-      summary: Register new organisation
+      summary: Register new account (starts free trial)
       security: []
       requestBody:
         required: true
@@ -118,23 +92,16 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required: [email, password, full_name, organisation]
               properties:
-                email:     { type: string, format: email }
-                password:  { type: string, minLength: 8 }
-                full_name: { type: string }
-                org_name:  { type: string }
-                org_type:  { type: string }
-                country:   { type: string }
-      responses:
-        "200":
-          description: Registration successful — returns JWT tokens
-        "409":
-          description: Email already registered
+                email:        { type: string, format: email }
+                password:     { type: string, minLength: 8 }
+                full_name:    { type: string }
+                organisation: { type: string }
 
   /api/v1/auth/login:
     post:
-      summary: Authenticate user
+      summary: Authenticate and get JWT tokens
       security: []
       requestBody:
         required: true
@@ -147,21 +114,8 @@ paths:
                 email:    { type: string }
                 password: { type: string }
       responses:
-        "200": { description: Login successful }
-        "401": { description: Invalid credentials }
-
-  /api/v1/signals:
-    get:
-      summary: List FDI signals
-      parameters:
-        - { name: grade,   in: query, schema: { type: string } }
-        - { name: iso3,    in: query, schema: { type: string } }
-        - { name: sector,  in: query, schema: { type: string } }
-        - { name: from,    in: query, schema: { type: integer, default: 0 } }
-        - { name: size,    in: query, schema: { type: integer, default: 20 } }
-      responses:
-        "200":
-          description: Signal list with metadata
+        '200':
+          description: Authentication successful
           content:
             application/json:
               schema:
@@ -170,17 +124,54 @@ paths:
                   data:
                     type: object
                     properties:
-                      signals: { type: array, items: { $ref: '#/components/schemas/Signal' } }
+                      access_token:  { type: string }
+                      refresh_token: { type: string }
+                      user:          { type: object }
+
+  /api/v1/signals:
+    get:
+      summary: List FDI signals (real-time)
+      description: Returns signals sorted by SCI score. Grade filter supports PLATINUM, GOLD, SILVER, BRONZE.
+      parameters:
+        - name: iso3   
+          in: query
+          schema: { type: string, example: "ARE" }
+        - name: sector 
+          in: query
+          schema: { type: string, example: "J" }
+        - name: grade  
+          in: query
+          schema: { type: string, enum: [PLATINUM, GOLD, SILVER, BRONZE] }
+        - name: size   
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200':
+          description: Signal list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      signals: { type: array, items: { '$ref': '#/components/schemas/Signal' } }
                       total:   { type: integer }
 
   /api/v1/gfr:
     get:
-      summary: GFR Rankings — all 215 economies
+      summary: Get GFR rankings for all 215 economies
       parameters:
-        - { name: quarter, in: query, schema: { type: string, default: "Q1 2026" } }
+        - name: quarter
+          in: query
+          schema: { type: string, example: "Q1-2026" }
+        - name: tier
+          in: query
+          schema: { type: string }
       responses:
-        "200":
-          description: Full GFR rankings
+        '200':
+          description: GFR rankings
           content:
             application/json:
               schema:
@@ -189,77 +180,165 @@ paths:
                   data:
                     type: object
                     properties:
-                      rankings: { type: array, items: { $ref: '#/components/schemas/GFRScore' } }
-                      total:    { type: integer }
-                      quarter:  { type: string }
+                      rankings: { type: array, items: { '$ref': '#/components/schemas/GFRScore' } }
 
-  /api/v1/economies:
+  /api/v1/gfr/{iso3}:
     get:
-      summary: List economies
+      summary: Get GFR profile for a single economy
       parameters:
-        - { name: region, in: query, schema: { type: string } }
-        - { name: income, in: query, schema: { type: string } }
-      responses:
-        "200":
-          description: Economy list
+        - name: iso3
+          in: path
+          required: true
+          schema: { type: string, example: "ARE" }
 
   /api/v1/reports/generate:
     post:
-      summary: Generate custom report (deducts FIC)
+      summary: Generate an AI intelligence report (consumes FIC)
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [type, economy]
+              required: [report_type, parameters]
               properties:
-                type:    { type: string, enum: [CEGP,MIB,ICR,SPOR,TIR,SBP,SER,SIR,RQBR,FCGR] }
-                economy: { type: string }
-                sector:  { type: string }
+                report_type: { type: string, enum: [MIB, ICR, CEGP, FCGR, TIR, SBP, SER, SIR, RQBR, SPOR] }
+                parameters:  { type: object }
       responses:
-        "200": { description: Report generated with reference code }
-        "402": { description: Insufficient FIC balance }
+        '200':
+          description: Report generation initiated
+        '402':
+          description: Insufficient FIC credits
+          content:
+            application/json:
+              schema: { '$ref': '#/components/schemas/ErrorResponse' }
 
-  /api/v1/forecast:
+  /api/v1/billing/fic:
     get:
-      summary: FDI forecasts — 9 horizons
-      parameters:
-        - { name: economy,   in: query, schema: { type: string, default: ARE } }
-        - { name: indicator, in: query, schema: { type: string } }
+      summary: Get FIC credit balance for authenticated organisation
       responses:
-        "200": { description: Forecast scenarios }
-
-  /api/v1/billing/checkout:
-    post:
-      summary: Create Stripe checkout session
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [plan]
-              properties:
-                plan:       { type: string, enum: [professional_monthly,professional_annual,enterprise,fic_50,fic_100,fic_500] }
-                return_url: { type: string }
-                cancel_url: { type: string }
-      responses:
-        "200":
-          description: Checkout session created
+        '200':
+          description: FIC balance
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  data:
-                    type: object
-                    properties:
-                      session_id:   { type: string }
-                      checkout_url: { type: string, format: uri }
+                  data: { type: object, properties: { fic_balance: { type: integer } } }
 
-  /api/v1/metrics:
-    get:
-      summary: System metrics and uptime
+  /api/v1/billing/fic/topup:
+    post:
+      summary: Purchase FIC credits (Stripe checkout)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pack_id]
+              properties:
+                pack_id: { type: string, enum: [fic_50, fic_100, fic_500] }
       responses:
-        "200": { description: Runtime metrics }
+        '200':
+          description: Checkout URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: object, properties: { checkout_url: { type: string } } }
+
+  /api/v1/companies:
+    get:
+      summary: Company database with IMS scores
+      parameters:
+        - { name: sector, in: query, schema: { type: string } }
+        - { name: size, in: query, schema: { type: integer, default: 20 } }
+      responses:
+        '200': { description: Company list }
+
+  /api/v1/forecast:
+    get:
+      summary: FDI forecast to 2030 (Bayesian VAR + Prophet)
+      description: Consumes 12 FIC credits
+      parameters:
+        - { name: iso3, in: query, schema: { type: string, example: ARE } }
+        - { name: horizon, in: query, schema: { type: integer, default: 6 } }
+      responses:
+        '200': { description: Forecast time series with P10/P50/P90 }
+        '402': { description: Insufficient FIC credits }
+
+  /api/v1/scenarios:
+    get:
+      summary: Scenario planning results
+      responses:
+        '200': { description: Scenario list }
+    post:
+      summary: Run Monte Carlo simulation (8 FIC)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                iso3:    { type: string }
+                gdp:     { type: number }
+                n_simulations: { type: integer, default: 1000 }
+      responses:
+        '200': { description: Simulation results with P10/P50/P90 }
+
+  /api/v1/publications:
+    get:
+      summary: Publications library (5 FIC per download)
+      responses:
+        '200': { description: Publications list }
+
+  /api/v1/pipeline/deals:
+    get:
+      summary: Investment pipeline CRM
+      responses:
+        '200': { description: Deal list }
+    post:
+      summary: Add deal to pipeline
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [company, economy, stage]
+              properties:
+                company: { type: string }
+                economy: { type: string }
+                stage:   { type: string, enum: [prospect, qualifying, proposal, negotiation, closed_won, closed_lost] }
+      responses:
+        '201': { description: Deal created }
+
+  /api/v1/benchmarking:
+    get:
+      summary: Compare up to 5 economies across all GFR dimensions
+      parameters:
+        - name: isos
+          in: query
+          description: Comma-separated ISO3 codes (max 5)
+          schema: { type: string, example: 'ARE,SAU,IND,SGP,DEU' }
+      responses:
+        '200': { description: Benchmarking comparison data }
+
+  /api/v1/corridors:
+    get:
+      summary: Bilateral FDI corridor analysis
+      parameters:
+        - { name: from, in: query, schema: { type: string, example: USA } }
+        - { name: to,   in: query, schema: { type: string, example: ARE } }
+      responses:
+        '200': { description: Corridor data with 5-year historical }
+
+  /api/v1/search:
+    get:
+      summary: Global search across all data types
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Search results }

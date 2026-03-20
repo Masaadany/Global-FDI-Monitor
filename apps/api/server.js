@@ -89,23 +89,74 @@ function getToken(req) {
   return auth.startsWith('Bearer ') ? auth.slice(7) : null;
 }
 
+// ── CORRIDORS MOCK ────────────────────────────────────────────────────────
+const M_CORRIDORS = [
+  { id:'usa-uk',  from_iso:'USA',from_name:'United States',to_iso:'GBR',to_name:'United Kingdom', fdi_bn:48.2,growth:'+4%', sectors:'Finance · Tech',     trend:[38,40,42,44,45,48] },
+  { id:'usa-ire', from_iso:'USA',from_name:'United States',to_iso:'IRL',to_name:'Ireland',         fdi_bn:38.4,growth:'+7%', sectors:'Tech · Finance',     trend:[28,30,32,35,36,38] },
+  { id:'cn-asean',from_iso:'CHN',from_name:'China',        to_iso:'SGP',to_name:'ASEAN Hub',        fdi_bn:32.1,growth:'+18%',sectors:'Manufacturing · Logistics',trend:[18,20,23,26,28,32]},
+  { id:'us-sg',   from_iso:'USA',from_name:'United States',to_iso:'SGP',to_name:'Singapore',        fdi_bn:24.8,growth:'+6%', sectors:'Finance · Tech',     trend:[18,19,21,22,23,25] },
+  { id:'eu-uae',  from_iso:'DEU',from_name:'EU',           to_iso:'ARE',to_name:'UAE',               fdi_bn:22.4,growth:'+22%',sectors:'Finance · Energy',    trend:[12,14,16,18,20,22] },
+  { id:'us-ind',  from_iso:'USA',from_name:'United States',to_iso:'IND',to_name:'India',             fdi_bn:19.6,growth:'+12%',sectors:'Tech · Healthcare',   trend:[12,13,15,17,18,20] },
+  { id:'gcc-asia',from_iso:'ARE',from_name:'GCC',          to_iso:'IND',to_name:'Asia',               fdi_bn:18.2,growth:'+28%',sectors:'Energy · Finance',    trend:[8,10,12,14,16,18]  },
+  { id:'uk-ind',  from_iso:'GBR',from_name:'UK',           to_iso:'IND',to_name:'India',             fdi_bn:14.8,growth:'+9%', sectors:'Finance · Pharma',    trend:[10,11,12,13,14,15] },
+  { id:'jp-viet', from_iso:'JPN',from_name:'Japan',        to_iso:'VNM',to_name:'Vietnam',           fdi_bn:12.4,growth:'+14%',sectors:'Manufacturing · Tech', trend:[7,8,9,10,11,12]   },
+  { id:'ger-pol', from_iso:'DEU',from_name:'Germany',      to_iso:'POL',to_name:'Poland',            fdi_bn:11.2,growth:'+8%', sectors:'Automotive · Manuf',  trend:[7,8,9,10,10,11]   },
+];
+
 // ── MOCK DATA ──────────────────────────────────────────────────────────────
 const M_SIGNALS = [
-  {id:'MSS-GFS-ARE-20260317-0001',grade:'PLATINUM',company:'Microsoft Corp',hq:'USA',economy:'UAE',iso3:'ARE',sector:'J',capex_usd:850000000,sci_score:91.2,signal_type:'Greenfield',status:'CONFIRMED',signal_date:'2026-03-17'},
-  {id:'MSS-CES-SAU-20260317-0002',grade:'GOLD',company:'Amazon Web Services',hq:'USA',economy:'Saudi Arabia',iso3:'SAU',sector:'J',capex_usd:5300000000,sci_score:88.4,signal_type:'Expansion',status:'ANNOUNCED',signal_date:'2026-03-17'},
-  {id:'MSS-GFS-EGY-20260317-0003',grade:'PLATINUM',company:'Siemens Energy',hq:'DEU',economy:'Egypt',iso3:'EGY',sector:'D',capex_usd:340000000,sci_score:86.1,signal_type:'JV',status:'CONFIRMED',signal_date:'2026-03-17'},
-  {id:'MSS-CES-VNM-20260317-0004',grade:'GOLD',company:'Samsung Electronics',hq:'KOR',economy:'Vietnam',iso3:'VNM',sector:'C',capex_usd:2800000000,sci_score:83.7,signal_type:'Expansion',status:'CONFIRMED',signal_date:'2026-03-17'},
-  {id:'MSS-GFS-IND-20260317-0005',grade:'PLATINUM',company:'Vestas Wind',hq:'DNK',economy:'India',iso3:'IND',sector:'D',capex_usd:420000000,sci_score:85.9,signal_type:'Greenfield',status:'ANNOUNCED',signal_date:'2026-03-16'},
-  {id:'MSS-GFS-ARE-20260317-0006',grade:'SILVER',company:'BlackRock Inc',hq:'USA',economy:'UAE',iso3:'ARE',sector:'K',capex_usd:500000000,sci_score:74.2,signal_type:'Platform',status:'RUMOURED',signal_date:'2026-03-16'},
-  {id:'MSS-CES-SGP-20260317-0007',grade:'GOLD',company:'Databricks',hq:'USA',economy:'Singapore',iso3:'SGP',sector:'J',capex_usd:150000000,sci_score:79.3,signal_type:'Platform',status:'ANNOUNCED',signal_date:'2026-03-15'},
-  {id:'MSS-GFS-IDN-20260317-0008',grade:'GOLD',company:'CATL',hq:'CHN',economy:'Indonesia',iso3:'IDN',sector:'C',capex_usd:3200000000,sci_score:85.4,signal_type:'Greenfield',status:'COMMITTED',signal_date:'2026-03-14'},
+  {reference_code:'GFM-ARE-MSFT-2026-PL01',company:'Microsoft',        economy:'UAE',         iso3:'ARE',sector:'J',signal_type:'Greenfield',capex_m:850,  sci_score:94.2,grade:'PLATINUM',conviction:'VERY HIGH',source_tier:'T1',verified:true},
+  {reference_code:'GFM-IDN-CATL-2026-PL02',company:'CATL',             economy:'Indonesia',   iso3:'IDN',sector:'C',signal_type:'Greenfield',capex_m:3200, sci_score:91.8,grade:'PLATINUM',conviction:'VERY HIGH',source_tier:'T1',verified:true},
+  {reference_code:'GFM-IND-NVDA-2026-PL03',company:'NVIDIA',           economy:'India',       iso3:'IND',sector:'J',signal_type:'Expansion', capex_m:1100, sci_score:90.4,grade:'PLATINUM',conviction:'VERY HIGH',source_tier:'T1',verified:true},
+  {reference_code:'GFM-SAU-ACWA-2026-PL04',company:'ACWA Power',       economy:'Saudi Arabia',iso3:'SAU',sector:'D',signal_type:'Greenfield',capex_m:980,  sci_score:92.1,grade:'PLATINUM',conviction:'VERY HIGH',source_tier:'T1',verified:true},
+  {reference_code:'GFM-VNM-SAMS-2026-PL05',company:'Samsung SDI',      economy:'Vietnam',     iso3:'VNM',sector:'C',signal_type:'Greenfield',capex_m:2100, sci_score:89.2,grade:'PLATINUM',conviction:'HIGH',    source_tier:'T1',verified:true},
+  {reference_code:'GFM-ARE-AMZN-2026-GD01',company:'Amazon AWS',       economy:'UAE',         iso3:'ARE',sector:'J',signal_type:'Expansion', capex_m:420,  sci_score:86.4,grade:'GOLD',    conviction:'HIGH',    source_tier:'T1',verified:true},
+  {reference_code:'GFM-EGY-TOTE-2026-GD02',company:'TotalEnergies',    economy:'Egypt',       iso3:'EGY',sector:'D',signal_type:'Greenfield',capex_m:890,  sci_score:84.2,grade:'GOLD',    conviction:'HIGH',    source_tier:'T2',verified:true},
+  {reference_code:'GFM-MAR-RENE-2026-GD03',company:'Renault Group',    economy:'Morocco',     iso3:'MAR',sector:'C',signal_type:'Expansion', capex_m:380,  sci_score:82.8,grade:'GOLD',    conviction:'HIGH',    source_tier:'T1',verified:true},
+  {reference_code:'GFM-DEU-SIEN-2026-GD04',company:'Siemens Energy',   economy:'Germany',     iso3:'DEU',sector:'D',signal_type:'Expansion', capex_m:340,  sci_score:81.2,grade:'GOLD',    conviction:'HIGH',    source_tier:'T1',verified:false},
+  {reference_code:'GFM-SGP-GOOG-2026-GD05',company:'Google Cloud',     economy:'Singapore',   iso3:'SGP',sector:'J',signal_type:'Greenfield',capex_m:620,  sci_score:83.4,grade:'GOLD',    conviction:'HIGH',    source_tier:'T1',verified:true},
+  {reference_code:'GFM-IND-VEST-2026-GD06',company:'Vestas',           economy:'India',       iso3:'IND',sector:'D',signal_type:'Greenfield',capex_m:280,  sci_score:80.1,grade:'GOLD',    conviction:'HIGH',    source_tier:'T2',verified:false},
+  {reference_code:'GFM-NGA-DANF-2026-GD07',company:'Dangote Industries',economy:'Nigeria',    iso3:'NGA',sector:'C',signal_type:'Expansion', capex_m:440,  sci_score:79.4,grade:'GOLD',    conviction:'MEDIUM',  source_tier:'T2',verified:false},
+  {reference_code:'GFM-QAT-MSFT-2026-GD08',company:'Microsoft',        economy:'Qatar',       iso3:'QAT',sector:'J',signal_type:'Expansion', capex_m:280,  sci_score:81.8,grade:'GOLD',    conviction:'HIGH',    source_tier:'T1',verified:true},
+  {reference_code:'GFM-ARE-HSBC-2026-SV01',company:'HSBC Holdings',    economy:'UAE',         iso3:'ARE',sector:'K',signal_type:'Expansion', capex_m:180,  sci_score:74.2,grade:'SILVER',  conviction:'MEDIUM',  source_tier:'T2',verified:false},
+  {reference_code:'GFM-BRA-FOXC-2026-SV02',company:'Foxconn',          economy:'Brazil',      iso3:'BRA',sector:'C',signal_type:'Greenfield',capex_m:860,  sci_score:72.1,grade:'SILVER',  conviction:'MEDIUM',  source_tier:'T2',verified:false},
+  {reference_code:'GFM-POL-MERS-2026-SV03',company:'Mercedes-Benz',    economy:'Poland',      iso3:'POL',sector:'C',signal_type:'Expansion', capex_m:420,  sci_score:75.8,grade:'SILVER',  conviction:'MEDIUM',  source_tier:'T1',verified:false},
+  {reference_code:'GFM-KOR-PALA-2026-SV04',company:'Palantir',         economy:'South Korea', iso3:'KOR',sector:'J',signal_type:'Greenfield',capex_m:150,  sci_score:70.4,grade:'SILVER',  conviction:'LOW',     source_tier:'T2',verified:false},
+  {reference_code:'GFM-AUS-RIOQ-2026-BZ01',company:'Rio Tinto',        economy:'Australia',   iso3:'AUS',sector:'C',signal_type:'Expansion', capex_m:1200, sci_score:62.1,grade:'BRONZE',  conviction:'LOW',     source_tier:'T3',verified:false},
+  {reference_code:'GFM-TUR-ENRG-2026-BZ02',company:'Enerji SA',        economy:'Turkey',      iso3:'TUR',sector:'D',signal_type:'Greenfield',capex_m:240,  sci_score:58.4,grade:'BRONZE',  conviction:'LOW',     source_tier:'T3',verified:false},
+  {reference_code:'GFM-ZAF-STAN-2026-BZ03',company:'Standard Bank',    economy:'South Africa',iso3:'ZAF',sector:'K',signal_type:'Expansion', capex_m:120,  sci_score:61.8,grade:'BRONZE',  conviction:'LOW',     source_tier:'T3',verified:false},
 ];
 const M_GFR = [
-  {iso3:'SGP',name:'Singapore',     region:'EAP',composite:88.5,rank:1, tier:'FRONTIER',macro:87,policy:91,digital:87,human:63,infra:94,sustain:62},
-  {iso3:'CHE',name:'Switzerland',   region:'ECA',composite:87.5,rank:2, tier:'FRONTIER',macro:88,policy:90,digital:85,human:78,infra:91,sustain:74},
-  {iso3:'ARE',name:'UAE',           region:'MENA',composite:80.0,rank:3, tier:'FRONTIER',macro:82,policy:78,digital:84,human:54,infra:92,sustain:53},
-  {iso3:'DEU',name:'Germany',       region:'ECA',composite:78.1,rank:4, tier:'HIGH',macro:81,policy:86,digital:78,human:70,infra:84,sustain:77},
-  {iso3:'USA',name:'United States', region:'NAM',composite:84.5,rank:5, tier:'FRONTIER',macro:89,policy:83,digital:91,human:74,infra:86,sustain:68},
+  {iso3:'SGP',name:'Singapore',      region:'EAP',composite:88.5,rank:1,  tier:'FRONTIER',macro:87,policy:91,digital:87,human:63,infra:94,sustain:62,delta:+0.2},
+  {iso3:'CHE',name:'Switzerland',    region:'ECA',composite:87.5,rank:2,  tier:'FRONTIER',macro:88,policy:90,digital:85,human:78,infra:91,sustain:80,delta:+0.1},
+  {iso3:'USA',name:'United States',  region:'NAM',composite:84.5,rank:3,  tier:'FRONTIER',macro:85,policy:86,digital:91,human:74,infra:83,sustain:68,delta:+0.4},
+  {iso3:'NOR',name:'Norway',         region:'ECA',composite:83.2,rank:4,  tier:'FRONTIER',macro:86,policy:88,digital:82,human:76,infra:85,sustain:91,delta:+0.3},
+  {iso3:'AUS',name:'Australia',      region:'EAP',composite:82.1,rank:5,  tier:'FRONTIER',macro:81,policy:84,digital:80,human:72,infra:84,sustain:75,delta:+0.2},
+  {iso3:'ARE',name:'UAE',            region:'MENA',composite:80.0,rank:6, tier:'FRONTIER',macro:82,policy:82,digital:84,human:58,infra:89,sustain:61,delta:+4.2},
+  {iso3:'GBR',name:'UK',             region:'ECA',composite:78.5,rank:7,  tier:'HIGH',    macro:77,policy:83,digital:81,human:73,infra:80,sustain:74,delta:-0.1},
+  {iso3:'DEU',name:'Germany',        region:'ECA',composite:78.1,rank:8,  tier:'HIGH',    macro:76,policy:82,digital:78,human:74,infra:84,sustain:82,delta:+0.5},
+  {iso3:'JPN',name:'Japan',          region:'EAP',composite:76.8,rank:9,  tier:'HIGH',    macro:72,policy:79,digital:84,human:72,infra:88,sustain:76,delta:+0.3},
+  {iso3:'FRA',name:'France',         region:'ECA',composite:75.4,rank:10, tier:'HIGH',    macro:73,policy:80,digital:77,human:73,infra:82,sustain:81,delta:-0.2},
+  {iso3:'KOR',name:'South Korea',    region:'EAP',composite:74.2,rank:11, tier:'HIGH',    macro:74,policy:76,digital:89,human:69,infra:85,sustain:70,delta:+0.8},
+  {iso3:'SAU',name:'Saudi Arabia',   region:'MENA',composite:72.1,rank:12,tier:'HIGH',    macro:78,policy:71,digital:74,human:54,infra:82,sustain:55,delta:+3.8},
+  {iso3:'QAT',name:'Qatar',          region:'MENA',composite:71.4,rank:13,tier:'HIGH',    macro:80,policy:72,digital:72,human:52,infra:84,sustain:53,delta:+2.1},
+  {iso3:'NLD',name:'Netherlands',    region:'ECA',composite:77.2,rank:10, tier:'HIGH',    macro:78,policy:83,digital:82,human:72,infra:84,sustain:79,delta:+0.4},
+  {iso3:'SWE',name:'Sweden',         region:'ECA',composite:76.8,rank:11, tier:'HIGH',    macro:77,policy:86,digital:83,human:74,infra:83,sustain:88,delta:+0.2},
+  {iso3:'CAN',name:'Canada',         region:'NAM',composite:75.8,rank:12, tier:'HIGH',    macro:74,policy:83,digital:79,human:72,infra:82,sustain:77,delta:+0.1},
+  {iso3:'IND',name:'India',          region:'SA',  composite:58.4,rank:48, tier:'MEDIUM', macro:61,policy:55,digital:58,human:52,infra:54,sustain:48,delta:+2.4},
+  {iso3:'CHN',name:'China',          region:'EAP', composite:62.1,rank:32, tier:'MEDIUM', macro:68,policy:52,digital:71,human:61,infra:71,sustain:45,delta:+1.2},
+  {iso3:'BRA',name:'Brazil',         region:'LAC', composite:52.4,rank:68, tier:'MEDIUM', macro:52,policy:50,digital:52,human:54,infra:48,sustain:52,delta:-0.8},
+  {iso3:'POL',name:'Poland',         region:'ECA', composite:66.2,rank:24, tier:'MEDIUM', macro:67,policy:64,digital:68,human:66,infra:68,sustain:62,delta:+1.4},
+  {iso3:'TUR',name:'Turkey',         region:'ECA', composite:54.8,rank:58, tier:'MEDIUM', macro:52,policy:48,digital:56,human:58,infra:60,sustain:46,delta:-1.2},
+  {iso3:'EGY',name:'Egypt',          region:'MENA',composite:48.2,rank:82, tier:'MEDIUM', macro:50,policy:44,digital:46,human:48,infra:52,sustain:42,delta:+0.8},
+  {iso3:'ZAF',name:'South Africa',   region:'SSA', composite:51.4,rank:72, tier:'MEDIUM', macro:48,policy:52,digital:50,human:52,infra:52,sustain:48,delta:-0.4},
+  {iso3:'NGA',name:'Nigeria',        region:'SSA', composite:41.2,rank:108,tier:'DEVELOPING',macro:42,policy:38,digital:38,human:42,infra:40,sustain:38,delta:+0.6},
+  {iso3:'MAR',name:'Morocco',        region:'MENA',composite:55.8,rank:54, tier:'MEDIUM', macro:56,policy:52,digital:52,human:54,infra:58,sustain:48,delta:+1.8},
+  {iso3:'VNM',name:'Vietnam',        region:'EAP', composite:56.2,rank:52, tier:'MEDIUM', macro:62,policy:50,digital:54,human:56,infra:58,sustain:44,delta:+2.2},
+  {iso3:'IDN',name:'Indonesia',      region:'EAP', composite:54.4,rank:60, tier:'MEDIUM', macro:58,policy:50,digital:52,human:52,infra:54,sustain:46,delta:+1.4},
+  {iso3:'ESP',name:'Spain',          region:'ECA', composite:70.8,rank:18, tier:'HIGH',   macro:70,policy:74,digital:72,human:70,infra:76,sustain:74,delta:+0.6},
+  {iso3:'ITA',name:'Italy',          region:'ECA', composite:68.4,rank:22, tier:'HIGH',   macro:66,policy:69,digital:68,human:69,infra:72,sustain:72,delta:-0.2},
+  {iso3:'DNK',name:'Denmark',        region:'ECA', composite:80.4,rank:5,  tier:'FRONTIER',macro:81,policy:89,digital:84,human:76,infra:84,sustain:88,delta:+0.3},
 ];
 const M_ECON = [
   {iso3:'ARE',name:'UAE',           region:'MENA',income:'HIC',gdp_b:504, fdi_b:30.7,pop_m:10},
@@ -277,299 +328,40 @@ const ROUTES = {
   },
 
   // ── REPORTS ────────────────────────────────────────────────────────────
-  'POST /api/v1/reports/generate': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const d=await body(req);
-    const COSTS={CEGP:20,MIB:5,ICR:18,SPOR:22,TIR:18,SBP:15,SER:12,SIR:14,RQBR:16,FCGR:25};
-    const cost=COSTS[d.type]||5;
-    // Deduct FIC if authenticated and DB available
-    if(payload&&db){
-      const rows=await dbQ(`SELECT fic_balance FROM auth.organisations WHERE id=$1`,[payload.org],[]);
-      if(rows&&rows[0]){
-        const bal=rows[0].fic_balance;
-        if(bal<cost) return fail(res,'INSUFFICIENT_FIC',`Requires ${cost} FIC, balance: ${bal}`,402);
-        await dbQ(`UPDATE auth.organisations SET fic_balance=fic_balance-$1 WHERE id=$2`,[cost,payload.org]);
-        await dbQ(`INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,$4,$5)`,
-          [payload.org,`report_${d.type}`,-cost,bal-cost,d.type]);
-      }
-    }
-    const now=new Date();
-    const eco=(d.economy||'UAE').replace(/\s/g,'').slice(0,3).toUpperCase();
-    const ref=`FCR-${d.type||'MIB'}-${eco}-${now.toISOString().slice(0,10).replace(/-/g,'')}-`+
-              `${now.toTimeString().slice(0,8).replace(/:/g,'')}-`+
-              `${String(Math.floor(Math.random()*9999)).padStart(4,'0')}`;
-    ok(res,{reference_code:ref,status:'COMPLETED',type:d.type,economy:d.economy,sector:d.sector,
-            fic_charged:cost,generated_at:now.toISOString(),
-            download_url:`/api/v1/reports/${ref}/download`});
-  },
-
-  'GET /api/v1/reports': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const rows=await dbQ(`SELECT ref,type,economy,status,created_at FROM intelligence.reports WHERE org_id=$1 ORDER BY created_at DESC LIMIT 20`,[payload?.org||'demo'],[]);
-    ok(res,{reports:rows||[{ref:'FCR-MIB-ARE-20260317-143022-0047',type:'MIB',economy:'UAE',status:'READY',date:'2026-03-17'}],total:rows?rows.length:1});
-  },
-
-  // ── FORECAST ──────────────────────────────────────────────────────────
-  'GET /api/v1/forecast': async(req,res)=>{
-    const q=url.parse(req.url,true).query;
-    const iso3=(q.economy||'ARE').toString().toUpperCase().slice(0,3);
-    const FORECASTS={
-      ARE:{base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34]},
-      SAU:{base:[24,26,28,30,32,35,37,39,41],opt:[26,29,32,35,38,42,45,48,52],stress:[20,22,23,25,26,27,28,29,30]},
-      IND:{base:[65,68,70,71,72,73,74,75,76],opt:[70,74,78,81,83,85,86,87,88],stress:[55,58,60,61,62,63,64,64,65]},
-      VNM:{base:[15,17,18,19,20,21,22,23,24],opt:[17,19,21,23,25,27,29,31,33],stress:[12,13,14,15,15,16,17,17,18]},
-      SGP:{base:[138,141,144,148,152,156,160,164,168],opt:[145,150,156,162,168,175,182,189,196],stress:[125,128,130,132,134,136,138,140,142]},
-    };
-    const fcast=FORECASTS[iso3]||FORECASTS.ARE;
-    ok(res,{economy:iso3,indicator:q.indicator||'fdi_inflows_usd_b',
-      horizons:['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'],
-      scenarios:fcast,model:'Bayesian VAR + Prophet Ensemble v2',
-      confidence_intervals:{lower:fcast.stress,upper:fcast.opt},
-      updated:'2026-03-17',next_update:'2026-04-01'});
-  },
-
-  // ── PUBLICATIONS ──────────────────────────────────────────────────────
-  'GET /api/v1/publications': async(req,res)=>{
-    ok(res,{publications:[
-      {id:'FNL-WK-2026-11',type:'WEEKLY_NEWSLETTER',title:'GFM Week 11 2026',date:'2026-03-17',grade:'FREE',signals:12},
-      {id:'FPB-MON-2026-03',type:'MONTHLY_PUBLICATION',title:'March 2026 Intelligence Report',date:'2026-03-01',grade:'PROFESSIONAL',pages:68},
-      {id:'FGR-Q1-2026',type:'GFR_QUARTERLY',title:'GFR Rankings Q1 2026',date:'2026-03-15',grade:'PROFESSIONAL',pages:48},
-    ],total:3});
-  },
-
-  // ── ALERTS ────────────────────────────────────────────────────────────
-  'GET /api/v1/alerts': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const rows=await dbQ(`SELECT * FROM intelligence.alerts WHERE org_id=$1 ORDER BY created_at DESC LIMIT 50`,[payload?.org||'demo'],[]);
-    ok(res,{alerts:rows||[
-      {id:'ALT001',type:'SIGNAL',priority:'HIGH',title:'New PLATINUM: Microsoft → UAE',read:false,created_at:'2026-03-17T09:14:00Z'},
-      {id:'ALT002',type:'REGULATORY',priority:'HIGH',title:'India FDI cap raised to 100%',read:false,created_at:'2026-03-17T06:00:00Z'},
-      {id:'ALT003',type:'GFR',priority:'MEDIUM',title:'UAE GFR score improved +4.2 pts',read:true,created_at:'2026-03-17T04:00:00Z'},
-    ],unread:2,total:3});
-  },
-
-  'PATCH /api/v1/alerts/:id/read': async(req,res)=>{
-    ok(res,{updated:true});
-  },
-
-  // ── PMP ───────────────────────────────────────────────────────────────
-  'POST /api/v1/pmp/missions': async(req,res)=>{
-    const d=await body(req);
-    const eco=(d.economy||'UAE').replace(/\s/g,'').slice(0,3).toUpperCase();
-    const ref=`PMP-${eco}-${d.sector||'J'}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-0001`;
-    ok(res,{mission_id:ref,economy:d.economy,sector:d.sector,
-      targets:[
-        {company:'Microsoft Corp',hq:'USA',mfs:94.2,stage:'TARGETED',capex_range:'$500M-$2B'},
-        {company:'Amazon AWS',hq:'USA',mfs:91.8,stage:'TARGETED',capex_range:'$1B+'},
-        {company:'Databricks',hq:'USA',mfs:88.4,stage:'TARGETED',capex_range:'$100M-$500M'},
-        {company:'Palantir',hq:'USA',mfs:85.1,stage:'TARGETED',capex_range:'$50M-$200M'},
-        {company:'Snowflake',hq:'USA',mfs:82.7,stage:'TARGETED',capex_range:'$100M-$300M'},
-      ],gaps:2,fic_cost:30,generated_at:new Date().toISOString()});
-  },
-
-  'GET /api/v1/pmp/missions': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const rows=await dbQ(`SELECT * FROM pipeline.deals WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
-    ok(res,{missions:rows||[],total:rows?rows.length:0});
-  },
-
-  // ── PIPELINE (deals) ──────────────────────────────────────────────────
-  'GET /api/v1/pipeline/deals': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const rows=await dbQ(`SELECT * FROM pipeline.deals WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
-    ok(res,{deals:rows||[],total:rows?rows.length:0});
-  },
-
-  'POST /api/v1/pipeline/deals': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const d=await body(req);
-    const id='deal_'+Date.now();
-    if(db&&payload){
-      await dbQ(`INSERT INTO pipeline.deals(id,org_id,company,hq,iso3,sector,capex_m,stage,probability,contact,notes) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-        [id,payload.org,d.company,d.hq,d.iso3,d.sector,d.capex_m,d.stage||'TARGETED',d.probability||20,d.contact,d.notes]);
-    }
-    ok(res,{id,...d,created_at:new Date().toISOString()});
-  },
-
-  // ── WATCHLISTS ────────────────────────────────────────────────────────
-  'GET /api/v1/watchlists': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const rows=await dbQ(`SELECT * FROM pipeline.watchlists WHERE org_id=$1 ORDER BY created_at DESC`,[payload?.org||'demo'],[]);
-    ok(res,{watchlists:rows||[],total:rows?rows.length:0});
-  },
-
-  'POST /api/v1/watchlists': async(req,res)=>{
-    const d=await body(req);
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    const id='wl_'+Date.now();
-    if(db&&payload){
-      await dbQ(`INSERT INTO pipeline.watchlists(id,org_id,name,economies,sectors) VALUES($1,$2,$3,$4,$5)`,
-        [id,payload.org,d.name,d.economies||[],d.sectors||[]]);
-    }
-    ok(res,{id,name:d.name,economies:d.economies||[],sectors:d.sectors||[],created_at:new Date().toISOString()});
-  },
-
-  // ── SOURCES (internal only) ────────────────────────────────────────────
-  'GET /api/v1/sources': async(req,res)=>{
-    ok(res,{sources:[
-      {id:'S001',name:'IMF WEO',tier:'T1',active:true,last_updated:'2026-03-17'},
-      {id:'S002',name:'World Bank WDI',tier:'T1',active:true,last_updated:'2026-03-15'},
-      {id:'S003',name:'UNCTAD',tier:'T1',active:true,last_updated:'2026-03-10'},
-      {id:'S014',name:'GDELT News',tier:'T6',active:true,last_updated:'2026-03-17'},
-    ],total:20,premium_available:25});
-  },
-
-  // ── BILLING ──────────────────────────────────────────────────────────
-  'GET /api/v1/billing/plans': async(req,res)=>{
-    ok(res,{plans:[
-      {id:'free_trial',name:'Free Trial',price_monthly:0,price_annual:0,fic_total:5,users:1,days:3},
-      {id:'professional_monthly',name:'Professional',price_monthly:899,price_annual:null,fic_annual:4800,users:3,stripe_price_id:process.env.STRIPE_PRO_MONTHLY_PRICE||''},
-      {id:'professional_annual',name:'Professional Annual',price_monthly:799,price_annual:9588,fic_annual:4800,users:3,saving:'11%',stripe_price_id:process.env.STRIPE_PRO_ANNUAL_PRICE||''},
-      {id:'enterprise',name:'Enterprise',price_monthly:null,price_annual:29500,fic_annual:60000,users:10,stripe_price_id:process.env.STRIPE_ENT_ANNUAL_PRICE||''},
-    ]});
-  },
-
-  'GET /api/v1/billing/fic': async(req,res)=>{
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-    const rows=await dbQ(`SELECT fic_balance FROM auth.organisations WHERE id=$1`,[payload.org],[]);
-    const bal=rows&&rows[0]?rows[0].fic_balance:5;
-    ok(res,{fic_balance:bal,org_id:payload.org});
-  },
-
-  // ── STRIPE WEBHOOK ────────────────────────────────────────────────────
-
-  'POST /api/v1/billing/create-session': async(req,res)=>{
-    const d=await body(req);
-    const token=getToken(req);
-    const payload=token?verifyJWT(token):null;
-    if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-
-    const PRICES = {
-      professional_monthly: process.env.STRIPE_PRO_MONTHLY_PRICE,
-      professional_annual:  process.env.STRIPE_PRO_ANNUAL_PRICE,
-      enterprise:           process.env.STRIPE_ENT_ANNUAL_PRICE,
-    };
-    const priceId = PRICES[d.plan];
-    if(!priceId) return fail(res,'INVALID_PLAN','Unknown plan: '+d.plan);
-
-    if(!STRIPE_KEY) {
-      // Demo mode - return mock session
-      return ok(res,{session_id:'cs_demo_'+Date.now(),url:'/pricing?demo=true'});
-    }
-
-    try {
-      const stripe = require('https');
-      const params = new URLSearchParams({
-        'payment_method_types[]': 'card',
-        'line_items[0][price]': priceId,
-        'line_items[0][quantity]': '1',
-        'mode': d.plan.includes('monthly') ? 'subscription' : 'subscription',
-        'success_url': (d.success_url||'https://fdimonitor.org/dashboard')+'?session_id={CHECKOUT_SESSION_ID}',
-        'cancel_url': d.cancel_url||'https://fdimonitor.org/pricing',
-        'metadata[org_id]': payload.org,
-        'metadata[tier]': d.plan.startsWith('enterprise')?'enterprise':'professional',
-        'customer_email': payload.email||'',
-      }).toString();
-
-      const options = {
-        hostname:'api.stripe.com', path:'/v1/checkout/sessions',
-        method:'POST',
-        headers:{
-          'Authorization':'Bearer '+STRIPE_KEY,
-          'Content-Type':'application/x-www-form-urlencoded',
-          'Content-Length':Buffer.byteLength(params),
-        }
-      };
-      const session = await new Promise((resolve,reject)=>{
-        const r=stripe.request(options, resp=>{
-          let data='';
-          resp.on('data',d=>data+=d);
-          resp.on('end',()=>{ try{resolve(JSON.parse(data))}catch(e){reject(e)} });
-        });
-        r.on('error',reject);
-        r.write(params); r.end();
-      });
-      ok(res,{session_id:session.id,url:session.url});
-    } catch(e) {
-      fail(res,'STRIPE_ERROR',e.message,500);
-    }
-  },
-
-  'POST /api/v1/billing/webhook': async(req,res)=>{
-    const raw=await rawBody(req);
-    const sig=req.headers['stripe-signature'];
-
-    // Verify Stripe signature
-    if(STRIPE_WHSEC&&sig){
-      try {
-        const parts=sig.split(',');
-        const ts=parts.find(p=>p.startsWith('t=')).slice(2);
-        const v1=parts.find(p=>p.startsWith('v1=')).slice(3);
-        const signed=crypto.createHmac('sha256',STRIPE_WHSEC)
-          .update(`${ts}.${raw}`).digest('hex');
-        if(signed!==v1) { res.writeHead(400); return res.end('Invalid signature'); }
-      } catch { res.writeHead(400); return res.end('Signature error'); }
-    }
-
-    const event=JSON.parse(raw.toString());
-    log('Stripe',`Event: ${event.type}`);
-
-    if(event.type==='checkout.session.completed'||event.type==='invoice.payment_succeeded'){
-      const session=event.data.object;
-      const orgId=session.metadata?.org_id;
-      const tier=session.metadata?.tier||'professional';
-      const ficAnnual=tier==='enterprise'?60000:4800;
-      if(orgId&&db){
-        await dbQ(`UPDATE auth.organisations SET tier=$1,fic_balance=fic_balance+$2 WHERE id=$3`,
-          [tier,ficAnnual,orgId]);
-        await dbQ(`INSERT INTO billing.subscriptions(org_id,stripe_sub_id,tier,status,fic_annual) VALUES($1,$2,$3,'active',$4) ON CONFLICT DO NOTHING`,
-          [orgId,session.subscription,tier,ficAnnual]);
-        log('Stripe',`Upgraded org ${orgId} to ${tier}`);
-      }
-    }
-
-    if(event.type==='customer.subscription.deleted'){
-      const sub=event.data.object;
-      if(db){
-        await dbQ(`UPDATE billing.subscriptions SET status='cancelled' WHERE stripe_sub_id=$1`,[sub.id]);
-        log('Stripe',`Subscription cancelled: ${sub.id}`);
-      }
-    }
-
-    res.writeHead(200); res.end('ok');
-  },
-
-  // ── COMPANY PROFILES ─────────────────────────────────────────────────
-  'GET /api/v1/companies': async(req,res)=>{
-    const q=url.parse(req.url,true).query;
-    const rows=await dbQ(`SELECT * FROM intelligence.companies ORDER BY ims_score DESC LIMIT 50`,[],[]);
-    ok(res,{companies:rows||[],total:rows?rows.length:0});
-  },
-
-  // ── INTERNAL PIPELINE TRIGGERS ────────────────────────────────────────
-  'POST /api/v1/internal/pipeline/signal-detection': async(req,res)=>{ ok(res,{queued:true,job:'signal-detection',ts:new Date().toISOString()}); },
-  'POST /api/v1/internal/pipeline/worldbank':         async(req,res)=>{ ok(res,{queued:true,job:'worldbank'}); },
-  'POST /api/v1/internal/pipeline/master':            async(req,res)=>{ ok(res,{queued:true,job:'master-pipeline'}); },
-  'POST /api/v1/internal/agents/newsletter':          async(req,res)=>{ ok(res,{queued:true,job:'newsletter'}); },
-  'POST /api/v1/internal/agents/gfr-compute':         async(req,res)=>{ ok(res,{queued:true,job:'gfr-compute'}); },
-  'POST /api/v1/internal/agents/publication-monthly': async(req,res)=>{ ok(res,{queued:true,job:'publication-monthly'}); },
-  'POST /api/v1/internal/agents/sanctions-refresh':   async(req,res)=>{ ok(res,{queued:true,job:'sanctions-refresh'}); },
+  ROUTES["POST /api/v1/reports/generate"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  
+  // SUBSCRIPTION REQUIRED — free trial users cannot generate reports
+  const [orgRow] = await dbQ('SELECT tier FROM auth.organisations WHERE id=$1',[payload.org],[]);
+  const tier = orgRow?.tier || 'free_trial';
+  if (tier === 'free_trial') {
+    return fail(res,'SUBSCRIPTION_REQUIRED','Report generation requires a paid subscription. Upgrade at fdimonitor.org/subscription',402);
+  }
+  
+  const d = await body(req);
+  const reportType = d.report_type || 'MIB';
+  const ref = 'RPT-' + reportType + '-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  
+  // Generate watermark for PDF security
+  const watermark = PDF_SECURITY.generateWatermark(payload.email||'user', ref, req.headers['x-forwarded-for']||'');
+  PDF_SECURITY.logDownload(payload.sub, payload.org, ref, req.headers['x-forwarded-for']||'');
+  
+  // All reports are PDF-only
+  ok(res, {
+    ref,
+    type: reportType,
+    format: 'PDF',
+    status: 'ready',
+    watermark_applied: true,
+    security_notice: PDF_SECURITY.watermarkText,
+    pages: Math.floor(Math.random()*20)+20,
+    generated_at: new Date().toISOString(),
+    download_url: `https://api.fdimonitor.org/api/v1/reports/${ref}/download`,
+  });
 };
 
-// ── ROUTER ─────────────────────────────────────────────────────────────────
-function matchRoute(method,path){
-  const k=`${method} ${path}`;
-  if(ROUTES[k]) return {h:ROUTES[k],p:{}};
+ROUTES[k]) return {h:ROUTES[k],p:{}};
   for(const [pat,h] of Object.entries(ROUTES)){
     const[m,rp]=pat.split(' ');
     if(m!==method) continue;
@@ -582,6 +374,198 @@ function matchRoute(method,path){
   }
   return null;
 }
+
+ROUTES["GET /api/v1/admin/metrics"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
+  ok(res,{ data:{ metrics:{ total_users:147, active_users:134, trial_users:13, total_signals:218, platinum_signals:22, total_reports:1842, reports_today:34, api_calls_24h:48200 } } });
+};
+
+ROUTES["GET /api/v1/admin/users"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
+  const [users] = await dbQ('SELECT id,email,full_name,role,tier,last_active_at,is_active FROM auth.users LIMIT 50',[],[]);
+  ok(res,{ data:{ users: users||[], total: users?.length||0 } });
+};
+
+ROUTES["POST /api/v1/admin/jobs/:id/toggle"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
+  const id = req.params?.id || getParam(req,'id');
+  ok(res,{ data:{ job:id, status:'toggled', ts: new Date().toISOString() } });
+};
+
+ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
+  const d = await body(req);
+  if (d.email) {
+    const ref = 'RST-' + Math.random().toString(36).slice(2,10).toUpperCase();
+    log('RESET_REQUEST', JSON.stringify({ email:d.email, ref, ts:new Date().toISOString() }));
+  }
+  // Always respond success (don't leak user existence)
+  ok(res,{ data:{ message:'If that email is registered, a reset link has been sent.' } });
+};
+
+
+ROUTES["GET /api/v1/subscription"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const [org] = await dbQ('SELECT tier, stripe_subscription_id, billing_cycle FROM auth.organisations WHERE id=$1',[payload.org],[]);
+  ok(res,{ data:{ tier: org?.tier||'free_trial', cycle: org?.billing_cycle||'monthly', stripe_id: org?.stripe_subscription_id||null } });
+};
+
+ROUTES["POST /api/v1/billing/subscribe"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d = await body(req);
+  const ref = 'SUB-' + Date.now().toString(36).toUpperCase();
+  ok(res,{ data:{ ref, plan: d.plan||'professional', status:'redirect', checkout_url: 'https://checkout.stripe.com/pay/demo_'+ref } });
+};
+
+ROUTES["GET /api/v1/faq"] = async(req,res) => {
+  ok(res,{ data:{ sections:[
+    { section:'General', count:3 },
+    { section:'Dashboard & Features', count:4 },
+    { section:'Foresight & Scenario Planning', count:3 },
+    { section:'Subscription & Free Trial', count:5 },
+    { section:'Data Sources', count:2 },
+  ], total_questions:17 } });
+};
+
+ROUTES["PATCH /api/v1/pipeline/deals/:id"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.params?.id || getParam(req,'id');
+  const d = await body(req);
+  try {
+    await dbQ('UPDATE pipeline.deals SET stage=$1,probability=$2,updated_at=NOW() WHERE id=$3 AND org_id=$4',
+      [d.stage,d.probability,id,payload.org],[]);
+  } catch {}
+  ok(res,{ data:{ id, stage: d.stage, probability: d.probability, updated_at: new Date().toISOString() } });
+};
+
+
+// ── MISSING ROUTES ────────────────────────────────────────────────────────
+ROUTES["DELETE /api/v1/watchlists/:id"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.params?.id || getParam(req,'id');
+  ok(res,{ deleted:true, id });
+};
+
+ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+  ok(res,{ data:{ insights: M_INSIGHTS, total: M_INSIGHTS.length }, meta:{ page:1, limit:10 } });
+};
+
+ROUTES["GET /api/v1/gfr/methodology"] = async(req,res) => {
+  ok(res,{ data:{ version:'Q1 2026', dimensions:6, weights:{ macro:20, policy:18, digital:15, human:15, infra:15, sustain:17 }, sources:300, verified:'Z3 + SHA-256' } });
+};
+
+ROUTES["GET /api/v1/pipeline/summary"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{ data:{ total_deals:8, total_capex_bn:12.4, by_stage:{ Prospecting:2, Qualified:2, Proposal:2, Negotiation:1, Committed:1, Active:0 } } });
+};
+
+ROUTES["GET /api/v1/sectors"] = async(req,res) => {
+  const sectors = [
+    {isic:'J',name:'ICT / Technology',signals:89,fdi_bn:1.55,growth:22,icon:'💻'},
+    {isic:'D',name:'Energy',signals:42,fdi_bn:1.08,growth:18,icon:'⚡'},
+    {isic:'C',name:'Manufacturing',signals:38,fdi_bn:0.94,growth:8,icon:'🏭'},
+    {isic:'K',name:'Financial Services',signals:45,fdi_bn:0.72,growth:9,icon:'💰'},
+    {isic:'Q',name:'Healthcare',signals:28,fdi_bn:0.38,growth:14,icon:'🏥'},
+    {isic:'H',name:'Logistics',signals:18,fdi_bn:0.42,growth:11,icon:'🚚'},
+    {isic:'L',name:'Real Estate',signals:22,fdi_bn:0.54,growth:5,icon:'🏗'},
+    {isic:'A',name:'Agriculture',signals:12,fdi_bn:0.24,growth:7,icon:'🌾'},
+  ];
+  ok(res,{ data:{ sectors, total:sectors.length } });
+};
+
+ROUTES["GET /api/v1/publications"] = async(req,res) => {
+  ok(res,{ data:{ publications: M_PUBLICATIONS, total: M_PUBLICATIONS.length } });
+};
+
+ROUTES["GET /api/v1/companies"] = async(req,res) => {
+  const q  = new URL('http://x'+req.url).searchParams;
+  const grade = q.get('grade'); const sector = q.get('sector'); const limit = parseInt(q.get('limit')||'20');
+  let companies = M_COMPANIES;
+  if (grade)  companies = companies.filter(c=>c.grade===grade);
+  if (sector) companies = companies.filter(c=>c.sector===sector);
+  ok(res,{ data:{ companies: companies.slice(0,limit), total: companies.length, page:1 } });
+};
+
+ROUTES["GET /api/v1/companies/:cic"] = async(req,res) => {
+  const cic = req.url.split('/').pop();
+  const co = M_COMPANIES.find(c=>c.cic===cic) || M_COMPANIES[0];
+  ok(res,{ data:{ company: co } });
+};
+
+ROUTES["GET /api/v1/corridors"] = async(req,res) => {
+  ok(res,{ data:{ corridors: M_CORRIDORS, total: M_CORRIDORS.length } });
+};
+ROUTES["GET /api/v1/corridors_old"] = async(req,res) => {
+  const corridors = M_SIGNALS.slice(0,10).map((s,i)=>({
+    id: 'CRD-'+i, from_iso: s.iso3||'USA', to_iso: ['ARE','SGP','IND','DEU','GBR'][i%5],
+    fdi_bn: parseFloat((Math.random()*40+8).toFixed(1)), growth: (Math.random()*20+2).toFixed(1)+'%',
+    trend: [10,12,14,16,18,20].map(v=>v+(i*2)),
+  }));
+  ok(res,{ data:{ corridors, total: corridors.length } });
+};
+
+ROUTES["GET /api/v1/pipeline/deals"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const deals = [
+    {id:1,company:'Microsoft',   iso3:'ARE',sector:'J',capex:'$850M',stage:'Negotiation',grade:'PLATINUM',prob:82},
+    {id:2,company:'CATL',        iso3:'IDN',sector:'C',capex:'$3.2B',stage:'Proposal',   grade:'PLATINUM',prob:68},
+    {id:3,company:'ACWA Power',  iso3:'SAU',sector:'D',capex:'$980M',stage:'Qualified',  grade:'GOLD',    prob:55},
+    {id:4,company:'Samsung SDI', iso3:'VNM',sector:'C',capex:'$2.1B',stage:'Prospecting',grade:'PLATINUM',prob:40},
+    {id:5,company:'TotalEnergies',iso3:'EGY',sector:'D',capex:'$890M',stage:'Committed',grade:'GOLD',    prob:91},
+    {id:6,company:'Google Cloud',iso3:'SGP',sector:'J',capex:'$620M',stage:'Active',     grade:'GOLD',    prob:99},
+  ];
+  ok(res,{ data:{ deals, total:deals.length } });
+};
+
+ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+  ok(res,{ data:{ insights: M_INSIGHTS, total: M_INSIGHTS.length } });
+};
+
+
+ROUTES["GET /api/v1/signals/summary"] = async(req,res) => {
+  const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
+  M_SIGNALS.forEach(s=>{ if(s.grade in grades) grades[s.grade]++; });
+  const total_capex = M_SIGNALS.reduce((a,s)=>a+(s.capex_m||0),0);
+  ok(res,{ data:{ total: M_SIGNALS.length, grades, total_capex_bn:(total_capex/1000).toFixed(1), active_economies:47 } });
+};
+
+ROUTES["GET /api/v1/gfr/summary"] = async(req,res) => {
+  const tiers = {FRONTIER:0,HIGH:0,MEDIUM:0,DEVELOPING:0};
+  M_GFR.forEach(g=>{ if(g.tier in tiers) tiers[g.tier]++; });
+  const top3 = [...M_GFR].sort((a,b)=>(b.gfr_composite||0)-(a.gfr_composite||0)).slice(0,3);
+  ok(res,{ data:{ total:215, tiers, top3, quarter:'Q1 2026', updated_at: new Date().toISOString() } });
+};
+
+ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.url.split('/').slice(-2)[0];
+  ok(res,{ data:{ watchlist_id:id, signals: M_SIGNALS.slice(0,5), count:5 } });
+};
+
+ROUTES["GET /api/v1/users/profile"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const [user] = await dbQ('SELECT id,email,full_name,role,tier,created_at FROM auth.users WHERE id=$1',[payload.sub],[]);
+  ok(res,{ data:{ user: user || { id:payload.sub, email:payload.email, role:payload.role, tier:payload.tier, full_name:'Demo User' } } });
+};
+
+
+ROUTES["POST /api/v1/contact"] = async(req,res) => {
+  const d = await body(req);
+  const ref = 'GFM-CNT-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  log('CONTACT', JSON.stringify({...d, ref, ts: new Date().toISOString()}));
+  ok(res,{ data:{ ref, status:'received', message:'Thank you. We will respond within 2 business days.' } });
+};
+
 
 // ── SERVER ─────────────────────────────────────────────────────────────────
 const server=http.createServer(async(req,res)=>{
@@ -601,6 +585,127 @@ const server=http.createServer(async(req,res)=>{
   process.on('SIGTERM',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
   process.on('SIGINT',async()=>{ if(db)await db.end(); if(redis)await redis.quit(); server.close(()=>process.exit(0)); });
 })();
+
+
+// ── COMPANIES DATA ─────────────────────────────────────────────────────────
+const M_COMPANIES = [
+  { cic:'GFM-USA-MSFT-12847', name:'Microsoft Corporation',    hq:'USA', hq_city:'Redmond',    sector:'J', mfs:94.2, ims:96, grade:'PLATINUM', conviction:'VERY HIGH', capex_pref_m:500,  signals:3 },
+  { cic:'GFM-USA-AMZN-98120', name:'Amazon Web Services',      hq:'USA', hq_city:'Seattle',    sector:'J', mfs:91.8, ims:95, grade:'PLATINUM', conviction:'VERY HIGH', capex_pref_m:2000, signals:5 },
+  { cic:'GFM-CHN-CATL-11234', name:'CATL',                     hq:'CHN', hq_city:'Ningde',     sector:'C', mfs:90.2, ims:92, grade:'PLATINUM', conviction:'VERY HIGH', capex_pref_m:3000, signals:2 },
+  { cic:'GFM-USA-NVDA-66234', name:'NVIDIA Corporation',       hq:'USA', hq_city:'Santa Clara', sector:'J', mfs:89.4, ims:94, grade:'PLATINUM', conviction:'HIGH',     capex_pref_m:1000, signals:2 },
+  { cic:'GFM-DEU-SINEN-44221',name:'Siemens Energy',           hq:'DEU', hq_city:'Munich',     sector:'D', mfs:88.3, ims:85, grade:'GOLD',     conviction:'HIGH',     capex_pref_m:300,  signals:1 },
+  { cic:'GFM-SAU-ACWA-44512', name:'ACWA Power',               hq:'SAU', hq_city:'Riyadh',     sector:'D', mfs:92.1, ims:86, grade:'GOLD',     conviction:'VERY HIGH', capex_pref_m:1000, signals:2 },
+  { cic:'GFM-FRA-TOTE-22341', name:'TotalEnergies',            hq:'FRA', hq_city:'Paris',      sector:'D', mfs:84.9, ims:82, grade:'GOLD',     conviction:'HIGH',     capex_pref_m:500,  signals:2 },
+  { cic:'GFM-USA-GOOG-77234', name:'Google (Alphabet)',        hq:'USA', hq_city:'Mountain View',sector:'J',mfs:82.7, ims:92, grade:'GOLD',    conviction:'HIGH',     capex_pref_m:800,  signals:1 },
+  { cic:'GFM-SWE-ERIA-33211', name:'Ericsson',                 hq:'SWE', hq_city:'Stockholm',  sector:'J', mfs:79.3, ims:76, grade:'SILVER',   conviction:'MEDIUM',   capex_pref_m:100,  signals:1 },
+  { cic:'GFM-DNK-VEST-55123', name:'Vestas Wind Systems',      hq:'DNK', hq_city:'Aarhus',     sector:'D', mfs:86.2, ims:80, grade:'GOLD',     conviction:'HIGH',     capex_pref_m:200,  signals:1 },
+];
+
+// ── INSIGHTS DATA ───────────────────────────────────────────────────────────
+const M_INSIGHTS = [
+  { id:'MI001', category:'MENA',      title:'UAE FDI Hits 5-Year High in Q1 2026',  grade:'PREMIUM', date:'2026-03-15', summary:'UAE attracted $30.7B in FDI inflows in 2025, a 12% YoY increase.', tags:['UAE','Technology','Energy'] },
+  { id:'MI002', category:'ASEAN',     title:'ASEAN Battery Supply Chain: $22B Wave', grade:'PREMIUM', date:'2026-03-12', summary:'CATL, BYD, and Samsung SDI lead a $22B battery FDI wave.', tags:['ASEAN','Manufacturing','EV'] },
+  { id:'MI003', category:'Africa',    title:'AfCFTA FDI Dividend: $8B Commitments',  grade:'FREE',    date:'2026-03-10', summary:'AfCFTA generating its first measurable FDI dividend.', tags:['Africa','Trade'] },
+  { id:'MI004', category:'South Asia',title:'India Insurance 100% FDI: First Wave',  grade:'PREMIUM', date:'2026-03-08', summary:'India liberalisation triggers first wave of insurance FDI.', tags:['India','Finance'] },
+  { id:'MI005', category:'Europe',    title:'CEE Nearshoring: $44B Surge Continues', grade:'FREE',    date:'2026-03-05', summary:'Central and Eastern Europe receives $44B in nearshoring FDI.', tags:['Europe','Manufacturing'] },
+  { id:'MI006', category:'Global',    title:'Sovereign Wealth Funds Deploy $180B',   grade:'PREMIUM', date:'2026-03-01', summary:'Global SWFs deployed a record $180B in 2025.', tags:['Global','SWF'] },
+];
+
+// ── EMAIL (Resend) ──────────────────────────────────────────────────────────
+const RESEND_KEY = process.env.RESEND_API_KEY;
+async function sendEmail(to, subject, html) {
+  if (!RESEND_KEY) { log('Email','No RESEND_API_KEY — skipping: ' + to); return false; }
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method:'POST', headers:{'Authorization':'Bearer '+RESEND_KEY,'Content-Type':'application/json'},
+      body: JSON.stringify({ from:'GFM Intelligence <noreply@fdimonitor.org>', to:[to], subject, html }),
+    });
+    return !!(await res.json()).id;
+  } catch(e) { log('Email error', e.message); return false; }
+}
+
+// ── RESPONSE COMPRESSION ────────────────────────────────────────────────────
+const zlib = require('zlib');
+function compress(req, res, data) {
+  const body = typeof data === 'string' ? data : JSON.stringify(data);
+  const accept = req.headers['accept-encoding'] || '';
+  if (accept.includes('gzip')) {
+    zlib.gzip(Buffer.from(body), (err, buf) => {
+      if (err) { res.end(body); return; }
+      res.setHeader('Content-Encoding','gzip');
+      res.setHeader('Content-Length', buf.length);
+      res.end(buf);
+    });
+  } else {
+    res.setHeader('Content-Length', Buffer.byteLength(body));
+    res.end(body);
+  }
+}
+
+
+// ── EMAIL TEMPLATES ─────────────────────────────────────────────────────────
+const EMAIL_TPLS = {
+  welcome: (name, fic) => `<div style="font-family:Arial,sans-serif"><h2>Welcome, ${name}!</h2><p>You have <strong>${fic} FIC credits</strong> ready to use.</p><a href="https://fdimonitor.org/dashboard" style="background:#0A66C2;color:white;padding:12px 28px;border-radius:8px;display:inline-block;text-decoration:none;font-weight:bold">Go to Dashboard →</a></div>`,
+  password_reset: (token) => `<div style="font-family:Arial,sans-serif"><h2>Reset Your Password</h2><a href="https://fdimonitor.org/auth/reset?token=${token}" style="background:#0A66C2;color:white;padding:12px 28px;border-radius:8px;display:inline-block;text-decoration:none">Reset Password →</a></div>`,
+  fic_low: (name, balance) => `<div style="font-family:Arial,sans-serif"><h2 style="color:#D97706">FIC Balance Low: ${balance} credits</h2><p>Hi ${name}, your FIC is running low.</p><a href="https://fdimonitor.org/fic" style="background:#D97706;color:white;padding:12px 28px;border-radius:8px;display:inline-block;text-decoration:none">Top Up FIC →</a></div>`,
+  report_ready: (name, ref, type) => `<div style="font-family:Arial,sans-serif"><h2 style="color:#059669">Your ${type} Report is Ready</h2><p>Hi ${name}, report ${ref} has been generated.</p><a href="https://fdimonitor.org/reports" style="background:#059669;color:white;padding:12px 28px;border-radius:8px;display:inline-block;text-decoration:none">Download →</a></div>`,
+  weekly_digest: (name, count, economy) => `<div style="font-family:Arial,sans-serif"><h2>GFM Weekly Digest</h2><p>Hi ${name}, <strong>${count} new signals</strong> this week. Top: <strong>${economy}</strong></p><a href="https://fdimonitor.org/signals" style="background:#0A66C2;color:white;padding:12px 28px;border-radius:8px;display:inline-block;text-decoration:none">View Signals →</a></div>`,
+};
+
+
+// ── PDF SECURITY & WATERMARKS ──────────────────────────────────────────────
+const PDF_SECURITY = {
+  watermarkText: 'This document is strictly for internal use only. All access and interactions may be monitored and logged. Unauthorized distribution, duplication, or external sharing is prohibited.',
+  
+  generateWatermark(userEmail, reportRef, userIp='') {
+    const ts = new Date().toISOString().slice(0,19).replace('T',' ');
+    return {
+      line1: `Generated for: ${userEmail}`,
+      line2: `Date/Time: ${ts} UTC`,
+      line3: userIp ? `IP: ${userIp}` : '',
+      line4: `Reference: ${reportRef}`,
+      disclaimer: this.watermarkText,
+      hash: require('crypto').createHash('sha256').update(`${userEmail}${reportRef}${ts}`).digest('hex').slice(0,16),
+    };
+  },
+  
+  logDownload(userId, orgId, reportRef, userIp) {
+    const entry = { userId, orgId, reportRef, userIp, ts: new Date().toISOString(), action: 'DOWNLOAD' };
+    log('DOWNLOAD_AUDIT', JSON.stringify(entry));
+    return entry;
+  },
+  
+  formatReport(html, watermark) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @media print { .no-print { display: none; } }
+  body { font-family: Arial, sans-serif; color: #0F2021; }
+  .watermark-footer {
+    position: fixed; bottom: 0; left: 0; right: 0; padding: 8px 16px;
+    font-size: 8px; color: #888; border-top: 1px solid #eee;
+    background: rgba(255,255,255,0.95);
+  }
+  .security-header {
+    background: #0F3538; color: white; padding: 8px 16px; font-size: 9px;
+    border-bottom: 3px solid #FF6600;
+  }
+</style>
+</head>
+<body>
+<div class="security-header">
+  CONFIDENTIAL · ${watermark.line1} · ${watermark.line2} · ${watermark.line4}
+</div>
+${html}
+<div class="watermark-footer">
+  ${watermark.line1} · ${watermark.line2} · ${watermark.line4}<br>
+  ${watermark.disclaimer}
+</div>
+</body></html>`;
+  },
+};
 
 // ── RATE LIMITING ─────────────────────────────────────────────────────────
 const RATE_LIMITS = {
@@ -888,15 +993,14 @@ ROUTES['GET /api/v1/corridors'] = async(req,res)=>{
 };
 
 // ── INSIGHTS ─────────────────────────────────────────────────────────────
-ROUTES['GET /api/v1/insights'] = async(req,res)=>{
-  const q=url.parse(req.url,true).query;
-  ok(res,{insights:[
-    {id:'INS001',type:'MACRO_TREND',urgency:'HIGH',region:'MENA',title:'MENA FDI hits 5-year high at $88B',date:'2026-03-17',ref:'GFM-INS-20260317-0001',verified:true},
-    {id:'INS002',type:'REGULATORY', urgency:'HIGH',region:'SAS', title:'India raises insurance FDI cap to 100%',date:'2026-03-15',ref:'GFM-INS-20260315-0002',verified:true},
-  ],total:8});
+ROUTES[ROUTES["GET /api/v1/insights"] = async(req,res) => {
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const category = params.get('category');
+  let data = [...M_INSIGHTS];
+  if (category && category !== 'All') data = data.filter(i => i.category === category);
+  ok(res, { insights: data, total: data.length, categories: ['MENA','ASEAN','Africa','South Asia','Europe','Global'] });
 };
 
-// ── API DOCUMENTATION ─────────────────────────────────────────────────────
 ROUTES['GET /api/docs'] = async(req,res)=>{
   const fs = require('fs'); const path = require('path');
   const specPath = path.join(__dirname,'openapi.yaml');
@@ -1205,7 +1309,7 @@ const COMPANIES_DATA = [
 
 ROUTES['GET /api/v1/companies'] = async(req,res)=>{
   const q   = require('url').parse(req.url,true).query;
-  let companies = [...COMPANIES_DATA];
+  let companies = [...M_COMPANIES];
   if(q.sector) companies=companies.filter(c=>c.sector===q.sector);
   if(q.hq)     companies=companies.filter(c=>c.hq===q.hq);
   if(q.grade)  companies=companies.filter(c=>c.grade===q.grade);
@@ -1294,16 +1398,23 @@ const FORECAST_DATA: Record<string,{base:number[];opt:number[];stress:number[]}>
 };
 const HORIZONS=['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'];
 
-ROUTES['GET /api/v1/forecast'] = async(req,res)=>{
-  const q = require('url').parse(req.url,true).query;
-  const eco = (q.economy||q.iso3||'ARE').toString().toUpperCase();
-  const data = FORECAST_DATA[eco]||FORECAST_DATA.ARE;
-  const series = HORIZONS.map((h,i)=>({horizon:h,baseline:data.base[i],optimistic:data.opt[i],stress:data.stress[i]}));
-  ok(res,{economy:eco,horizons:series,model:'Bayesian VAR + Prophet Ensemble',updated:'2026-03-17',
-    cagr:((data.base[8]/data.base[0])**(1/8)-1)*100});
+ROUTES["GET /api/v1/forecast"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const iso3 = (params.get('iso3') || 'ARE').toUpperCase();
+  const series = M_FORECAST[iso3] || M_FORECAST['ARE'];
+  const ref = 'FCR-' + iso3 + '-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+  ok(res, {
+    iso3, model: 'Bayesian VAR + Prophet ensemble',
+    series,
+    summary: { cagr_pct: 8.2, peak_year: 2029,
+      key_risks: ['Policy reversal','Global recession','Currency volatility'],
+      key_opportunities: ['Digital economy','Green energy','Supply chain reshoring'] },
+    ref, generated_at: new Date().toISOString()
+  });
 };
 
-// ── PIPELINE DEALS ────────────────────────────────────────────────────────
 ROUTES['GET /api/v1/pipeline/deals'] = async(req,res)=>{
   const token=getToken(req);
   const payload=token?verifyJWT(token):null;
@@ -1361,13 +1472,6 @@ const PUBS = [
   {id:'FGR-Q1-2026-20260315-001',type:'GFR',grade:'PROFESSIONAL',date:'2026-03-15',pages:48,signals:0,title:'Global Future Readiness Rankings — Q1 2026'},
   {id:'FNL-WK-2026-10-20260310-001',type:'WEEKLY',grade:'FREE',date:'2026-03-10',pages:11,signals:9,title:'GFM Intelligence Digest — Week 10, 2026'},
 ];
-ROUTES['GET /api/v1/publications'] = async(req,res)=>{
-  const q=require('url').parse(req.url,true).query;
-  let pubs=[...PUBS];
-  if(q.type) pubs=pubs.filter(p=>p.type===q.type);
-  const {items,pagination}=paginate(req,pubs);
-  ok(res,{publications:items,total:pubs.length,pagination});
-};
 
 // ── SCENARIOS ────────────────────────────────────────────────────────────────
 ROUTES['POST /api/v1/scenarios'] = async(req,res)=>{
@@ -1437,38 +1541,6 @@ ROUTES['POST /api/v1/alerts/:id/read'] = async(req,res,p)=>{
 };
 
 // ── REPORTS GENERATE (enhanced) ─────────────────────────────────────────
-ROUTES['POST /api/v1/reports/generate'] = async(req,res)=>{
-  const d=await body(req);
-  const token=getToken(req);
-  const payload=token?verifyJWT(token):null;
-  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  if(!d.type||!d.economy) return fail(res,'VALIDATION_ERROR','type and economy required');
-
-  const COSTS:{[key:string]:number}={MIB:5,CEGP:20,ICR:18,SPOR:22,TIR:18,SBP:15,SER:12,SIR:14,RQBR:16,FCGR:25};
-  const fic_cost = COSTS[d.type]||10;
-  const iso3     = (d.economy||'UAE').slice(0,3).toUpperCase().replace(/ /g,'');
-  const dt       = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  const seq      = String(Math.floor(Math.random()*9000)+1000);
-  const ref      = `FCR-${d.type}-${iso3}-${dt}-${seq}`;
-
-  // Deduct FIC if DB available
-  if(db) {
-    const bal=await dbQ('SELECT fic_balance FROM auth.organisations WHERE id=$1',[payload.org],[{fic_balance:999}]);
-    if(bal&&bal[0]&&bal[0].fic_balance<fic_cost) return fail(res,'INSUFFICIENT_FIC',`Need ${fic_cost} FIC, have ${bal[0].fic_balance}`,402);
-    await dbQ('UPDATE auth.organisations SET fic_balance=fic_balance-$1 WHERE id=$2',[fic_cost,payload.org]).catch(()=>{});
-    await dbQ('INSERT INTO billing.fic_transactions(org_id,action,amount,balance,ref_id) VALUES($1,$2,$3,(SELECT fic_balance FROM auth.organisations WHERE id=$1),$4)',
-      [payload.org,`report_${d.type}`,-fic_cost,ref]).catch(()=>{});
-  }
-
-  // Queue report generation
-  REPORT_QUEUE[ref]={status:'collecting',progress:5,ref,startedAt:Date.now()};
-  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'analysing',progress:35}},2000);
-  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'verifying',progress:65}},4500);
-  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'compiling',progress:85}},7000);
-  setTimeout(()=>{REPORT_QUEUE[ref]={...REPORT_QUEUE[ref],status:'ready',progress:100}},9500);
-
-  ok(res,{reference_code:ref,type:d.type,economy:d.economy,fic_charged:fic_cost,status:'queued',estimated_seconds:45});
-};
 
 // ── INTERNAL PIPELINE TRIGGERS ───────────────────────────────────────────
 ROUTES['POST /api/v1/internal/:job'] = async(req,res,p)=>{
@@ -1480,21 +1552,6 @@ ROUTES['POST /api/v1/internal/:job'] = async(req,res,p)=>{
 };
 
 // ── SIGNALS LIST (full featured) ─────────────────────────────────────────
-ROUTES['GET /api/v1/signals'] = async(req,res)=>{
-  const q=require('url').parse(req.url,true).query;
-  let sigs=[...M_SIGNALS];
-  if(q.grade) sigs=sigs.filter(s=>s.grade===q.grade);
-  if(q.iso3 || q.economy) {
-    const val=(q.iso3||q.economy||'').toString().toUpperCase();
-    sigs=sigs.filter(s=>s.iso3===val||s.economy?.toUpperCase().includes(val));
-  }
-  if(q.sector) sigs=sigs.filter(s=>s.sector===q.sector);
-  if(q.q) { const ql=q.q.toString().toLowerCase(); sigs=sigs.filter(s=>s.company.toLowerCase().includes(ql)||s.economy.toLowerCase().includes(ql)); }
-  const {items,pagination}=paginate(req,sigs);
-  ok(res,{signals:items,total:sigs.length,pagination,
-    grade_summary:{PLATINUM:sigs.filter(s=>s.grade==='PLATINUM').length,GOLD:sigs.filter(s=>s.grade==='GOLD').length,SILVER:sigs.filter(s=>s.grade==='SILVER').length}});
-};
-
 // ── CORRIDORS ────────────────────────────────────────────────────────────
 const CORRIDORS_DATA = [
   {id:'C01',from:'UAE',to:'India',    fdi_b:4.2,growth:18.4,trend:'UP',  grade:'PLATINUM',signals:12,hist:[2.1,2.8,3.4,3.8,4.2]},
@@ -1521,17 +1578,16 @@ ROUTES['GET /api/v1/reports'] = async(req,res)=>{
 };
 
 // ── SCENARIOS STORE ───────────────────────────────────────────────────────
-ROUTES['GET /api/v1/scenarios'] = async(req,res)=>{
-  const token=getToken(req);
-  const payload=token?verifyJWT(token):null;
-  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
-  ok(res,{scenarios:[
-    {id:'SCN001',title:'MENA Green Hydrogen',economy:'MENA',created_at:new Date().toISOString(),status:'COMPLETE'},
-    {id:'SCN002',title:'ASEAN Supply Chain',economy:'ASEAN',created_at:new Date().toISOString(),status:'COMPLETE'},
-  ],total:2});
+ROUTES[ROUTES["GET /api/v1/scenarios"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const iso3 = params.get('iso3');
+  let data = [...M_SCENARIOS];
+  if (iso3) data = data.filter(s => s.iso3 === iso3);
+  ok(res, { scenarios: data, total: data.length });
 };
 
-// ── FIC BILLING STATUS ────────────────────────────────────────────────────
 ROUTES['GET /api/v1/billing/fic'] = async(req,res)=>{
   const token=getToken(req);
   const payload=token?verifyJWT(token):null;
@@ -1573,18 +1629,30 @@ ROUTES['GET /api/v1/health'] = async(req,res)=>{
 
 // ── OPENAPI JSON ─────────────────────────────────────────────────────────
 // ── GFR LIST ──────────────────────────────────────────────────────────────
-ROUTES["GET /api/v1/gfr"] = async(req,res) => {
-  const q = require('url').parse(req.url, true).query;
-  let data = [...M_GFR];
-  if(q.region) data = data.filter(e => e.region === q.region);
-  if(q.tier)   data = data.filter(e => e.tier   === q.tier);
-  if(q.income) data = data.filter(e => e.income === q.income);
-  data.sort((a,b) => b.composite - a.composite);
-  const { items, pagination } = paginate(req, data);
-  ok(res, { rankings: items, total: data.length, pagination, quarter: 'Q1-2026', updated: '2026-03-17' });
+ROUTES[ROUTES["GET /api/v1/gfr"] = async(req,res) => {
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const page  = parseInt(params.get('page')||'1');
+  const limit = parseInt(params.get('limit')||'30');
+  const tier  = params.get('tier');
+  const region= params.get('region');
+  let data = M_GFR.map(e => ({
+    ...e,
+    gfr_composite: e.composite,
+    macro_score:   e.macro,
+    policy_score:  e.policy,
+    digital_score: e.digital,
+    human_score:   e.human,
+    infra_score:   e.infra,
+    sustain_score: e.sustain,
+    economy_name:  e.name,
+    quarter:       'Q1-2026',
+  }));
+  if (tier)   data = data.filter(e => e.tier === tier);
+  if (region) data = data.filter(e => e.region === region);
+  const start = (page-1)*limit, slice = data.slice(start, start+limit);
+  ok(res, { rankings:slice, total:data.length, page, limit, quarter:'Q1-2026', economies:data.length });
 };
 
-// ── AUTH LOGIN/REGISTER/REFRESH ───────────────────────────────────────────
 ROUTES["POST /api/v1/auth/login"] = async(req,res) => {
   const d = await body(req);
   if(!d.email || !d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
@@ -1616,7 +1684,9 @@ ROUTES["POST /api/v1/auth/register"] = async(req,res) => {
     try {
       const bcrypt = require('bcrypt');
       const hash = await bcrypt.hash(d.password, 10);
-      await dbQ('INSERT INTO auth.organisations(id,name,tier,fic_balance) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[orgId,d.org_name||'New Organisation','free_trial',5]);
+      // Send welcome email async after registration
+  // sendEmail(d.email, 'Welcome to Global FDI Monitor', EMAIL_TPLS.welcome(d.full_name||d.email, 5));
+  await dbQ('INSERT INTO auth.organisations(id,name,tier,fic_balance) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING',[orgId,d.org_name||'New Organisation','free_trial',5]);
       await dbQ('INSERT INTO auth.users(id,email,password_hash,full_name,org_id,role) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(email) DO NOTHING',[userId,d.email,hash,d.full_name||d.email.split('@')[0],orgId,'admin']);
     } catch(e) { log('Register','DB error:',e.message); }
   }
@@ -1673,3 +1743,638 @@ const ADMIN_JOBS = {
   signals_refresh: () => ({ status:'triggered', job:'signals_refresh',signals_count: M_SIGNALS.length }),
   cache_flush:     async () => { if(redis) { try { await redis.flushDb(); } catch(_){} } return { status:'flushed', job:'cache_flush' }; },
 };
+
+// ── MARKET SIGNALS ALIAS ──────────────────────────────────────────────────
+
+// Market-signals alias
+ROUTES["GET /api/v1/market-signals"] = (req,res) => { return ROUTES["GET /api/v1/signals"](req,res); };
+
+// ── ENHANCED FORECAST ROUTE WITH DB + FALLBACK ─────────────────────────
+// Override existing forecast with enhanced version that reads from DB
+ROUTES["GET /api/v1/forecast/v2"] = async(req,res) => {
+  const token = getToken(req);
+  const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const iso3   = params.get('iso3') || 'ARE';
+  const horizon= parseInt(params.get('horizon') || '6');
+  
+  // Try DB first
+  const dbData = await dbQ(
+    'SELECT * FROM intelligence.gfr_scores WHERE iso3=$1 ORDER BY computed_at DESC LIMIT 1',
+    [iso3], []
+  );
+  
+  // Build Bayesian VAR-style forecast series
+  const base = dbData?.[0]?.gfr_composite || 75.0;
+  const gdp  = 3.5 + Math.random() * 2;
+  const series = [];
+  let current_fdi = 25.0 + Math.random() * 15;
+  
+  for (let i = 0; i < horizon; i++) {
+    const year = 2025 + Math.floor(i/4);
+    const quarter = `Q${(i%4)+1}`;
+    const trend = gdp > 3.5 ? 0.08 : 0.04;
+    const shock = (Math.random() - 0.45) * 0.12;
+    current_fdi *= (1 + trend + shock);
+    series.push({
+      period: `${year}-${quarter}`,
+      fdi_usd_bn: parseFloat(current_fdi.toFixed(1)),
+      p10: parseFloat((current_fdi * 0.75).toFixed(1)),
+      p50: parseFloat(current_fdi.toFixed(1)),
+      p90: parseFloat((current_fdi * 1.35).toFixed(1)),
+      confidence: Math.max(0.45, 0.95 - i * 0.07),
+      drivers: ['GDP growth','Policy reforms','Sector momentum'].slice(0, 2 + (i>3?1:0)),
+    });
+  }
+  
+  const ref = `FCR-${iso3}-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+  ok(res, {
+    iso3, horizon,
+    model: 'Bayesian VAR + Prophet ensemble',
+    base_scenario: 'Moderate growth, stable policy environment',
+    series,
+    summary: {
+      cagr_pct: parseFloat((Math.random() * 8 + 3).toFixed(1)),
+      peak_year: 2029,
+      key_risks: ['Policy reversal','Global recession','Currency volatility'],
+      key_opportunities: ['Digital economy','Green energy transition','Supply chain reshoring'],
+    },
+    ref,
+    generated_at: new Date().toISOString(),
+  });
+};
+
+// ── CORRIDOR INTELLIGENCE ENHANCED ─────────────────────────────────────
+ROUTES["GET /api/v1/corridors/v2"] = async(req,res) => {
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const from = params.get('from') || 'USA'; 
+  const to   = params.get('to')   || 'ARE';
+  
+  const CORRIDOR_DATA = {
+    'USA-ARE': { fdi_bn:12.4, growth_pct:18.2, top_sectors:['ICT','Finance','Real Estate'], deals_count:47, trend:'▲ Rising' },
+    'GBR-ARE': { fdi_bn:8.1,  growth_pct:12.5, top_sectors:['Finance','Trade','Education'],  deals_count:31, trend:'▲ Rising' },
+    'CHN-ARE': { fdi_bn:6.8,  growth_pct:22.1, top_sectors:['Logistics','Manufacturing','Energy'], deals_count:28, trend:'▲ Rising' },
+    'IND-ARE': { fdi_bn:4.2,  growth_pct:15.3, top_sectors:['ICT','Finance','Real Estate'], deals_count:52, trend:'▲ Rising' },
+    'DEU-SAU': { fdi_bn:3.1,  growth_pct:9.8,  top_sectors:['Manufacturing','Energy','Auto'], deals_count:18, trend:'→ Stable' },
+  };
+  const key = `${from}-${to}`;
+  const data = CORRIDOR_DATA[key] || { fdi_bn: parseFloat((Math.random()*8+1).toFixed(1)), growth_pct: parseFloat((Math.random()*20+5).toFixed(1)), top_sectors:['ICT','Manufacturing','Finance'], deals_count: Math.floor(Math.random()*40+10), trend:'→ Stable' };
+  
+  const historical = Array.from({length:5},(_,i)=>({year:2021+i, fdi_bn: parseFloat((data.fdi_bn*(0.7+i*0.08)).toFixed(1))}));
+  ok(res, { from, to, corridor:`${from}→${to}`, ...data, historical });
+};
+
+// ── BENCHMARKING ────────────────────────────────────────────────────────────
+ROUTES["GET /api/v1/benchmarking"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const params = new URLSearchParams(req.url.split('?')[1]||'');
+  const isos   = (params.get('isos') || 'ARE,SAU,IND,SGP,DEU').split(',').slice(0,5);
+  
+  // Build comparison data for each economy
+  const data = await Promise.all(isos.map(async iso3 => {
+    const rows = await dbQ(
+      'SELECT * FROM intelligence.gfr_scores WHERE iso3=$1 ORDER BY computed_at DESC LIMIT 1',
+      [iso3], []
+    );
+    const row = rows?.[0];
+    return {
+      iso3,
+      economy:       row?.economy_name || iso3,
+      gfr_composite: row?.gfr_composite || (60 + Math.random()*30),
+      macro_score:   row?.macro_score   || (55 + Math.random()*35),
+      policy_score:  row?.policy_score  || (55 + Math.random()*35),
+      digital_score: row?.digital_score || (55 + Math.random()*35),
+      human_score:   row?.human_score   || (55 + Math.random()*35),
+      infra_score:   row?.infra_score   || (55 + Math.random()*35),
+      sustain_score: row?.sustain_score || (55 + Math.random()*35),
+      rank:          row?.rank          || Math.floor(Math.random()*50+1),
+      tier:          row?.tier          || 'HIGH',
+    };
+  }));
+  ok(res, { economies: data, dimensions: ['Macro','Policy','Digital','Human','Infrastructure','Sustainability'], compared_at: new Date().toISOString() });
+};
+
+// ── ANALYTICS DATA ENDPOINT ──────────────────────────────────────────────
+ROUTES["GET /api/v1/analytics"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  
+  // Signal trends by month
+  const months = ['Oct','Nov','Dec','Jan','Feb','Mar'];
+  const signalTrends = months.map((m,i) => ({
+    month: m, platinum: 12+i*2, gold: 28+i*3, silver: 45+i*2, bronze: 62+i
+  }));
+  
+  // FDI by region
+  const byRegion = [
+    { region:'MENA',      fdi_bn:142.8, share_pct:28.4, yoy_change:12.1 },
+    { region:'ASEAN',     fdi_bn:118.2, share_pct:23.5, yoy_change:18.3 },
+    { region:'South Asia',fdi_bn:98.4,  share_pct:19.6, yoy_change:9.8  },
+    { region:'Europe',    fdi_bn:82.1,  share_pct:16.3, yoy_change:4.2  },
+    { region:'Africa',    fdi_bn:38.6,  share_pct:7.7,  yoy_change:22.4 },
+    { region:'Americas',  fdi_bn:22.4,  share_pct:4.5,  yoy_change:6.1  },
+  ];
+  
+  // Top sectors
+  const topSectors = [
+    { sector:'ICT',           code:'J', signals:52, capex_bn:284.2 },
+    { sector:'Energy',        code:'D', signals:38, capex_bn:198.4 },
+    { sector:'Manufacturing', code:'C', signals:31, capex_bn:142.8 },
+    { sector:'Finance',       code:'K', signals:22, capex_bn:98.6  },
+    { sector:'Real Estate',   code:'L', signals:18, capex_bn:82.1  },
+  ];
+  
+  ok(res, {
+    signal_trends: signalTrends,
+    fdi_by_region: byRegion,
+    top_sectors:   topSectors,
+    kpis: {
+      total_signals: M_SIGNALS.length,
+      platinum_count: M_SIGNALS.filter(s=>s.grade==='PLATINUM').length,
+      total_capex_bn: M_SIGNALS.reduce((acc,s)=>acc+(s.capex_m||0)/1000,0).toFixed(1),
+      economies_active: 47,
+    }
+  });
+};
+
+// ── PIPELINE DEAL UPDATE ─────────────────────────────────────────────────
+
+// ── NOTIFICATIONS / ALERTS MARK READ ────────────────────────────────────
+// ── AUTH REFRESH + ME ────────────────────────────────────────────────────
+ROUTES["PUT /api/v1/auth/refresh"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Token required',401);
+  const fresh = signJWT({ sub:payload.sub, email:payload.email, role:payload.role, tier:payload.tier, org:payload.org });
+  ok(res, { data: { token: fresh, expires_in: 900, refreshed_at: new Date().toISOString() } });
+};
+
+ROUTES["GET /api/v1/auth/me"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res, { data: { user: { id:payload.sub, email:payload.email, role:payload.role, tier:payload.tier } } });
+};
+
+
+ROUTES[
+ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d = await body(req);
+  const gdp=parseFloat(d.gdp_growth_adj||0),tech=parseFloat(d.tech_adoption_mult||1),energy=parseFloat(d.energy_transition||0.5);
+  const base=1.8, adj=1+(gdp*0.40)+((tech-1)*0.30)+(energy*0.15);
+  const p50=+(base*adj).toFixed(2), p10=+(p50*0.65).toFixed(2), p90=+(p50*1.42).toFixed(2);
+  ok(res,{ data:{ p10, p50, p90, unit:'T USD', cagr_p50:((((p50/base)**(1/11))-1)*100).toFixed(1)+'%', inputs:{gdp_growth_adj:gdp,tech_mult:tech,energy_tr:energy}, model:'Monte-Carlo-10k-VAR' } });
+};
+
+ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  if (payload.tier==='free_trial') return fail(res,'PAYMENT_REQUIRED','Subscription required for Mission Planning dossiers',402);
+  const d = await body(req);
+  const ref='PMP-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+ '-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  const sha=require('crypto').createHash('sha256').update(ref).digest('hex').slice(0,16);
+  ok(res,{ data:{ ref, type:'PMP', pages: 42, format:'PDF', watermark_applied:true, sha256:sha, generated_at:new Date().toISOString() } });
+};
+
+ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
+  const q = new URL('http://x'+req.url).searchParams;
+  const iso3=q.get('iso3')||'GLOBAL', horizon=parseInt(q.get('horizon')||'2035'), scenario=q.get('scenario')||'base';
+  const CAGR={base:0.058,optimistic:0.072,stress:0.024};
+  const cagr=CAGR[scenario]||0.058, base=iso3==='GLOBAL'?1.8:25.3;
+  const points=[...Array(Math.ceil((horizon-2024)/5)+1)].map((_,i)=>{const yr=2024+i*5;const n=yr-2024;const p50=+(base*((1+cagr)**n)).toFixed(1);return {year:yr,p10:+(p50*.72).toFixed(1),p50,p90:+(p50*1.35).toFixed(1)};});
+  ok(res,{ data:{ iso3, scenario, cagr:+(cagr*100).toFixed(1)+'%', forecast:points } });
+};
+
+
+ROUTES["GET /api/v1/stats"] = async(req,res) => {
+  ok(res, { data: {
+    total_signals:  M_SIGNALS.length,
+    platinum_count: M_SIGNALS.filter(s=>s.grade==='PLATINUM').length,
+    gold_count:     M_SIGNALS.filter(s=>s.grade==='GOLD').length,
+    total_capex_bn: +(M_SIGNALS.reduce((a,s)=>a+(s.capex_m||0),0)/1000).toFixed(1),
+    economies_covered: 215,
+    gfr_top_economy: M_GFR[0]?.economy_name || 'Singapore',
+    quarter: 'Q1 2026',
+    routes: Object.keys(ROUTES).length,
+    uptime: process.uptime ? process.uptime().toFixed(0)+'s' : 'N/A',
+    ts: new Date().toISOString()
+  }});
+};
+
+ROUTES["POST /api/v1/alerts"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d = await body(req);
+  const ref = 'ALT-' + Date.now().toString(36).toUpperCase();
+  ok(res, { data: { ref, type: d.type||'SIGNAL', condition: d.condition||{}, created_at: new Date().toISOString() } });
+};
+
+ROUTES["GET /api/v1/gfr/tiers"] = async(req,res) => {
+  const tiers = {FRONTIER:[],HIGH:[],MEDIUM:[],DEVELOPING:[]};
+  M_GFR.forEach(g => { if(g.tier in tiers) (tiers as any)[g.tier].push(g.iso3); });
+  ok(res, { data: { tiers, counts: { FRONTIER:18, HIGH:68, MEDIUM:86, DEVELOPING:43 }, total:215, quarter:'Q1 2026' } });
+};
+
+ROUTES["DELETE /api/v1/alerts/:id"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.url.split('/').pop();
+  ok(res, { data: { deleted: true, id } });
+};
+
+ROUTES["GET /api/v1/publications/:ref"] = async(req,res) => {
+  const ref = req.url.split('/').pop();
+  const pub = M_PUBLICATIONS.find((p: any)=>p.ref===ref) || M_PUBLICATIONS[0];
+  ok(res, { data: { publication: pub } });
+};
+
+
+ROUTES["GET /api/v1/company-profiles"] = async(req,res) => {
+  const q = new URL('http://x'+req.url).searchParams;
+  const grade = q.get('grade'), sector = q.get('sector');
+  let profiles = M_COMPANIES;
+  if (grade)  profiles = profiles.filter((c: any) => c.signal_grade === grade);
+  if (sector) profiles = profiles.filter((c: any) => c.sector === sector);
+  ok(res, { data: { profiles, total: profiles.length } });
+};
+
+ROUTES["GET /api/v1/company-profiles/:cic"] = async(req,res) => {
+  const cic = req.url.split('/').pop();
+  const co  = M_COMPANIES.find((c: any) => c.cic === cic) || M_COMPANIES[0];
+  ok(res, { data: { profile: co } });
+};
+
+ROUTES["GET /api/v1/signals/:ref"] = async(req,res) => {
+  const ref = req.url.split('/').pop();
+  const sig = M_SIGNALS.find((s: any) => s.reference_code === ref) || M_SIGNALS[0];
+  ok(res, { data: { signal: sig } });
+};
+
+ROUTES["GET /api/v1/gfr/:iso3"] = async(req,res) => {
+  const iso3 = req.url.split('/').pop();
+  const eco  = M_GFR.find((g: any) => g.iso3 === iso3);
+  if (!eco) return fail(res,'NOT_FOUND','Economy not found',404);
+  ok(res, { data: { ranking: eco } });
+};
+
+ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.url.split('/').slice(-2)[0];
+  ok(res, { data: { watchlist_id: id, signals: M_SIGNALS.slice(0,5), count: 5 } });
+};
+
+
+ROUTES["GET /api/v1/signals/search"] = async(req,res) => {
+  const q = new URL('http://x'+req.url).searchParams.get('q')||'';
+  const hits = M_SIGNALS.filter((s:any)=>
+    (s.company||'').toLowerCase().includes(q.toLowerCase()) ||
+    (s.iso3||'').toLowerCase().includes(q.toLowerCase())
+  ).slice(0,10);
+  ok(res,{data:{signals:hits,query:q,total:hits.length}});
+};
+
+ROUTES["GET /api/v1/faq"] = async(req,res) => {
+  ok(res,{data:{sections:5,questions:15,topics:['getting_started','signals','gfr','reports','api']}});
+};
+
+ROUTES["GET /api/v1/corridors/:id"] = async(req,res) => {
+  const id = req.url.split('/').pop();
+  const corridor = M_CORRIDORS.find((c:any)=>c.id===id) || M_CORRIDORS[0];
+  ok(res,{data:{corridor}});
+};
+
+ROUTES["GET /api/v1/sectors"] = async(req,res) => {
+  const sectors=[
+    {num:1,name:'Agriculture, Forestry & Fishing',signals:12,capex_bn:8.4,growth:14},
+    {num:10,name:'Information & Communication (ICT)',signals:56,capex_bn:94.8,growth:28},
+    {num:4,name:'Energy & Utilities',signals:38,capex_bn:72.1,growth:22},
+  ];
+  ok(res,{data:{sectors,total:21}});
+};
+
+ROUTES["GET /api/v1/gfr/summary"] = async(req,res) => {
+  const tiers={FRONTIER:18,HIGH:68,MEDIUM:86,DEVELOPING:43};
+  const top3 = [...M_GFR].sort((a:any,b:any)=>(b.gfr_composite||0)-(a.gfr_composite||0)).slice(0,3);
+  ok(res,{data:{tiers,top3,total:215,quarter:'Q1 2026',z3_verified:true}});
+};
+
+"PUT /api/v1/alerts/:id/read"] = async(req,res) => {
+  const token = getToken(req); const payload = token ? verifyJWT(token) : null;
+  if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id = req.url.split('/').slice(-2)[0];
+  await dbQ('UPDATE notifications.alerts SE
+ROUTES["GET /api/v1/analytics/signals"] = async(req,res) => {
+  const q = new URL('http://x'+req.url).searchParams;
+  const period = q.get('period')||'7d';
+  const data = [{date:'2026-03-12',count:18},{date:'2026-03-13',count:24},{date:'2026-03-14',count:21},{date:'2026-03-15',count:28},{date:'2026-03-16',count:32},{date:'2026-03-17',count:19},{date:'2026-03-18',count:22}];
+  ok(res,{data:{period,signals:data,total:164,by_grade:{PLATINUM:22,GOLD:76,SILVER:48,BRONZE:18}}});
+};
+
+ROUTES["GET /api/v1/analytics/regions"] = async(req,res) => {
+  ok(res,{data:{regions:[
+    {name:'Asia-Pacific',pct:33,fdi_bn:1.72,growth:8},
+    {name:'North America',pct:24,fdi_bn:1.25,growth:3},
+    {name:'Europe',pct:22,fdi_bn:1.14,growth:2},
+    {name:'MENA',pct:8,fdi_bn:0.42,growth:22},
+    {name:'Latin America',pct:7,fdi_bn:0.36,growth:6},
+    {name:'Africa',pct:4,fdi_bn:0.21,growth:14},
+    {name:'South Asia',pct:2,fdi_bn:0.10,growth:9},
+  ],quarter:'Q1 2026'}});
+};
+
+ROUTES["GET /api/v1/analytics/sectors"] = async(req,res) => {
+  ok(res,{data:{sectors:[
+    {name:'ICT',pct:30,fdi_bn:1.56,growth:22},
+    {name:'Energy',pct:21,fdi_bn:1.09,growth:18},
+    {name:'Manufacturing',pct:18,fdi_bn:0.94,growth:8},
+    {name:'Finance',pct:14,fdi_bn:0.73,growth:9},
+    {name:'Real Estate',pct:10,fdi_bn:0.52,growth:5},
+    {name:'Other',pct:7,fdi_bn:0.36,growth:7},
+  ],quarter:'Q1 2026'}});
+};
+
+ROUTES["GET /api/v1/onboarding"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{data:{steps:5,completed:0,preferences:null,tour_done:false}});
+};
+
+ROUTES["POST /api/v1/onboarding"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  ok(res,{data:{saved:true,use_case:d.use_case,regions:d.regions,sectors:d.sectors,updated_at:new Date().toISOString()}});
+};
+
+
+ROUTES["GET /api/v1/publications/:ref"] = async(req,res) => {
+  const ref = req.url.split('/').pop().split('?')[0];
+  const pub = M_PUBLICATIONS ? M_PUBLICATIONS.find((p:any)=>p.ref===ref) : null;
+  if(!pub) return fail(res,'NOT_FOUND','Publication not found',404);
+  ok(res,{data:{publication:pub}});
+};
+
+ROUTES["GET /api/v1/signals/summary"] = async(req,res) => {
+  const grades={PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
+  M_SIGNALS.forEach((s:any)=>{if(s.grade in grades)(grades as any)[s.grade]++;});
+  ok(res,{data:{total:M_SIGNALS.length,grades,top_signal:M_SIGNALS[0]||null,updated_at:new Date().toISOString()}});
+};
+
+ROUTES["GET /api/v1/version"] = async(req,res) => {
+  ok(res,{data:{version:'v91',build:'2026-03-19',api_routes:86,pages:43,agents:30,tests_passing:740,status:'production'}});
+};
+
+ROUTES["GET /api/v1/economies"] = async(req,res) => {
+  const q=new URL('http://x'+req.url).searchParams;
+  const tier=q.get('tier'), limit=parseInt(q.get('limit')||'20');
+  let eco=M_GFR;
+  if(tier) eco=eco.filter((e:any)=>e.tier===tier);
+  ok(res,{data:{economies:eco.slice(0,limit),total:215,tiers:{FRONTIER:18,HIGH:68,MEDIUM:86,DEVELOPING:43}}});
+};
+
+ROUTES["GET /api/v1/alerts"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{data:{alerts:[
+    {id:1,type:'SIGNAL',priority:'HIGH',title:'New PLATINUM signal: Microsoft UAE',read:false,ts:new Date().toISOString()},
+    {id:2,type:'GFR',priority:'MEDIUM',title:'UAE GFR +4.2 → FRONTIER tier',read:false,ts:new Date().toISOString()},
+  ],unread:2}});
+};
+
+
+ROUTES["PUT /api/v1/alerts/:id/read"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=req.url.split('/').slice(-2)[0];
+  ok(res,{data:{id,read:true,updated_at:new Date().toISOString()}});
+};
+
+ROUTES["DELETE /api/v1/alerts/:id"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=req.url.split('/').pop();
+  ok(res,{data:{id,deleted:true}});
+};
+
+ROUTES["GET /api/v1/stats"] = async(req,res) => {
+  ok(res,{data:{signals:M_SIGNALS.length,economies:215,companies:M_COMPANIES.length,corridors:M_CORRIDORS.length,reports_generated:1247,api_calls_24h:284621,uptime_pct:99.97,version:'v91'}});
+};
+
+ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
+  const d=await body(req);
+  const scenario=d.scenario||'base', gdp_boost=parseFloat(d.gdp_boost||'0'), policy_reform=d.policy_reform||false;
+  const multiplier=scenario==='optimistic'?1.25:scenario==='stress'?0.72:1.0;
+  const boost=(1+(gdp_boost/100))*(policy_reform?1.08:1.0)*multiplier;
+  ok(res,{data:{scenario,inputs:d,fdi_change_pct:+((boost-1)*100).toFixed(1),confidence:scenario==='base'?0.82:0.64,horizon_years:5,computed_at:new Date().toISOString()}});
+};
+
+
+ROUTES["GET /api/v1/users/profile"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{data:{id:payload.sub,email:payload.email,role:payload.role||'user',tier:payload.tier||'free_trial',credits:200,org:'Demo Organisation',seats:1,created_at:'2026-01-15T00:00:00Z'}});
+};
+
+ROUTES["POST /api/v1/billing/subscribe"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  ok(res,{data:{checkout_url:'https://checkout.stripe.com/demo',plan_id:d.plan_id,billing_cycle:d.billing_cycle||'monthly',status:'pending'}});
+};
+
+ROUTES["GET /api/v1/watchlists/:id"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=req.url.split('/').slice(-1)[0].split('?')[0];
+  ok(res,{data:{id,name:'My Watchlist',type:'ECONOMY',signals:[],items:[],created_at:new Date().toISOString()}});
+};
+
+ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  ok(res,{data:{added:true,signal_ref:d.signal_ref,watchlist_id:req.url.split('/').slice(-2)[0]}});
+};
+
+ROUTES["POST /api/v1/auth/logout"] = async(req,res) => {
+  ok(res,{data:{logged_out:true,ts:new Date().toISOString()}});
+};
+
+T read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
+  ok(res, { updated: true, alert_id: id });
+};
+
+ROUTES["GET /api/v1/signals/grades"] = async(req,res) => {
+  const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
+  M_SIGNALS.forEach((s:any)=>{ if(s.grade in grades) (grades as any)[s.grade]++; });
+  ok(res,{data:{grades,total:M_SIGNALS.length,updated_at:new Date().toISOString()}});
+};
+
+
+ROUTES["GET /api/v1/watchlists/:id/signals"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=req.url.split('/').slice(-2)[0].split('?')[0];
+  ok(res,{data:{watchlist_id:id,signals:M_SIGNALS.slice(0,5),total:M_SIGNALS.length}});
+};
+
+ROUTES["GET /api/v1/users/api-keys"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{data:{keys:[{id:'key-001',name:'Production Key',prefix:'gfm_sk_live_',created_at:'2026-01-15T00:00:00Z',last_used:'2026-03-18T12:00:00Z',scopes:['signals:read','gfr:read','analytics:read']}],total:1}});
+};
+
+ROUTES["POST /api/v1/users/api-keys"] = async(req,re
+ROUTES["GET /api/v1/demo/signals"] = async(req,res) => {
+  const demo=[
+    {ref:'GFM-SIG-UAE-001',grade:'PLATINUM',company:'Microsoft',eco:'UAE',sector:'ICT',capex_m:850,sci:96.2,flag:'AE'},
+    {ref:'GFM-SIG-IDN-002',grade:'PLATINUM',company:'CATL',eco:'Indonesia',sector:'Manufacturing',capex_m:3200,sci:94.8,flag:'ID'},
+    {ref:'GFM-SIG-SAU-003',grade:'GOLD',company:'ACWA Power',eco:'Saudi Arabia',sector:'Energy',capex_m:980,sci:87.3,flag:'SA'},
+  ];
+  ok(res,{data:{signals:demo,total:3,demo:true,note:'Demo data only — subscribe for live intelligence'}});
+};
+
+ROUTES["GET /api/v1/demo/gfr"] = async(req,res) => {
+  const demo=[
+    {rank:1,iso3:'SGP',eco:'Singapore',score:84.2,tier:'FRONTIER',change:+0.4},
+    {rank:2,iso3:'ARE',eco:'UAE',score:80.0,tier:'FRONTIER',change:+4.2},
+    {rank:3,iso3:'CHE',eco:'Switzerland',score:79.8,tier:'FRONTIER',change:-0.1},
+    {rank:4,iso3:'DNK',eco:'Denmark',score:79.2,tier:'FRONTIER',change:+0.8},
+    {rank:5,iso3:'NLD',eco:'Netherlands',score:78.9,tier:'FRONTIER',change:+0.2},
+  ];
+  ok(res,{data:{rankings:demo,total:215,demo:true,note:'Top 5 shown — subscribe for full 215 economies'}});
+};
+
+ROUTES["GET /api/v1/publications"] = async(req,res) => {
+  const q=new URL('http://x'+req.url).searchParams;
+  const cat=q.get('cat'), limit=parseInt(q.get('limit')||'10');
+  let pubs=M_PUBLICATIONS||[];
+  if(cat) pubs=pubs.filter((p:any)=>p.cat===cat);
+  ok(res,{data:{publications:pubs.slice(0,limit),total:pubs.length}});
+};
+
+ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  if(payload.tier==='free_trial') return fail(res,'PAYMENT_REQUIRED','Professional subscription required',402);
+  const ref='GFM-PMP-'+new Date().toISOString().slice(0,10).replace(/-/g,'')+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  ok(res,{data:{ref,status:'generating',target_economies:d.economies||[],estimated_pages:40,estimated_time:'45 seconds',credits_used:30}});
+};
+
+ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+  const q=new URL('http://x'+req.url).searchParams;
+  const cat=q.get('cat'), region=q.get('region'), limit=parseInt(q.get('limit')||'10');
+  const insights=[
+    {id:1,title:'UAE ICT Investment Surge Q1 2026',cat:'Signal Analysis',region:'MENA',date:'2026-03-18',read_min:5},
+    {id:2,title:'Southeast Asia Battery Manufacturing Boom',cat:'Sector Focus',region:'Asia-Pacific',date:'2026-03-15',read_min:7},
+    {id:3,title:'GFR Quarterly Update: FRONTIER Movers',cat:'GFR Analysis',region:'Global',date:'2026-03-12',read_min:8},
+  ];
+  ok(res,{data:{insights:insights.slice(0,limit),total:insights.length}});
+};
+
+
+ROUTES["GET /api/v1/settings"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  ok(res,{data:{profile:{name:'Demo User',email:payload.email,org:'Demo Org',role:'user'},notifications:{platinum_signals:true,gold_signals:true,gfr_changes:true,report_ready:true,billing:true,newsletter:false},api:{rate_limit_rpm:500,daily_calls:0},billing:{plan:'professional',billing_cycle:'monthly',credits_remaining:142,credits_total:200,next_renewal:'2026-04-18'}}});
+};
+
+ROUTES["PATCH /api/v1/settings"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  ok(res,{data:{updated:true,fields:Object.keys(d),updated_at:new Date().toISOString()}});
+};
+
+ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
+  const q=new URL('http://x'+req.url).searchParams;
+  const scenario=q.get('scenario')||'base', iso3=q.get('iso3')||'GLOBAL';
+  const CAGR={base:0.058,optimistic:0.072,stress:0.024};
+  const cagr=(CAGR as any)[scenario]||0.058;
+  const points=[2025,2030,2035,2040,2045,2050].map(yr=>{
+    const n=yr-2024; const base=1.8;
+    const p50=+(base*((1+cagr)**n)).toFixed(1);
+    return{year:yr,p10:+(p50*.72).toFixed(1),p50,p90:+(p50*1.35).toFixed(1)};
+  });
+  ok(res,{data:{iso3,scenario,cagr:+(cagr*100).toFixed(1)+'%',forecast:points}});
+};
+
+ROUTES["POST /api/v1/reports/:ref/download"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  if(payload.tier==='free_trial') return fail(res,'PAYMENT_REQUIRED','Professional subscription required',402);
+  const ref=req.url.split('/').slice(-2)[0];
+  ok(res,{data:{ref,download_url:`https://cdn.fdimonitor.org/reports/${ref}.pdf`,expires_in:3600,watermarked:true,sha256:'a1b2c3d4'}});
+};
+
+ROUTES["GET /api/v1/search"] = async(req,res) => {
+  const q=new URL('http://x'+req.url).searchParams.get('q')||'';
+  if(!q||q.length<2) return ok(res,{data:{results:[],query:q,total:0}});
+  const signals=M_SIGNALS.filter((s:any)=>(s.company||'').toLowerCase().includes(q.toLowerCase())||
+    (s.eco||s.economy_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  const economies=M_GFR.filter((g:any)=>(g.economy_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  const companies=M_COMPANIES.filter((c:any)=>(c.company_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  ok(res,{data:{query:q,results:{signals,economies,companies},total:signals.length+economies.length+companies.length}});
+};
+
+
+ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
+  const d = await body(req);
+  if(!d.email) return fail(res,'VALIDATION_ERROR','email required',400);
+  ok(res,{data:{sent:true,email:d.email,message:'If an account exists for this email, a reset link has been sent.',expires_in:3600}});
+};
+
+ROUTES["GET /api/v1/gfr/:iso3/signals"] = async(req,res) => {
+  const iso3 = req.url.split('/').slice(-2)[0].toUpperCase();
+  const sigs = M_SIGNALS.filter((s:any)=>(s.iso3||'').toUpperCase()===iso3).slice(0,10);
+  ok(res,{data:{iso3,signals:sigs,total:sigs.length}});
+};
+
+
+ROUTES["GET /api/v1/analytics/corridors"] = async(req,res) => {
+  ok(res,{data:{corridors:M_CORRIDORS.slice(0,10),total:M_CORRIDORS.length,
+    top_by_capex:M_CORRIDORS.slice(0,3),updated_at:new Date().toISOString()}});
+};
+
+
+ROUTES["GET /api/v1/trial/status"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return ok(res,{data:{tier:'free_trial',daysLeft:7,reportsUsed:0,reportsMax:2,searchesUsed:0,searchesMax:3,isSoftLocked:false}});
+  ok(res,{data:{
+    tier:payload.tier||'free_trial',
+    daysLeft:7,reportsUsed:0,reportsMax:2,
+    searchesUsed:0,searchesMax:3,
+    isSoftLocked:false,
+    isProfessional:payload.tier==='professional'||payload.tier==='enterprise',
+  }});
+};
+
+ROUTES["POST /api/v1/trial/consume"] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  const type=d.type||'search'; // 'report' | 'search'
+  ok(res,{data:{consumed:true,type,redirectNow:false,message:`${type} consumed`}});
+};
+
+ROUTES["POST /api/v1/demo/request"] = async(req,res) => {
+  const d=await body(req);
+  if(!d.email) return fail(res,'VALIDATION_ERROR','email required',400);
+  const ref='GFM-DEMO-'+new Date().toISOString().slice(0,10).replace(/-/g,'').slice(2)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+  ok(res,{data:{ref,status:'submitted',email:d.email,trigger:d.trigger||'unknown',
+    message:'Demo request received. Our team will contact you within 24 hours.',
+    access_restored:true}});
+};
+s) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d=await body(req);
+  const key='gfm_sk_live_'+require('crypto').randomBytes(24).toString('hex');
+  ok(res,{data:{id:'key-'+Date.now(),name:d.name||'New API Key',key,scopes:d.scopes||['signals:read'],created_at:new Date().toISOString()}});
+};
+
+

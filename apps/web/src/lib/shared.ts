@@ -18,7 +18,7 @@ export interface GFMOrg {
   id:          string;
   name:        string;
   tier:        'free_trial' | 'professional' | 'enterprise';
-  fic_balance: number;
+  credit_balance: number;
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────

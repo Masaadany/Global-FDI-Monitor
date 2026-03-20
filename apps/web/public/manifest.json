@@ -1,27 +1,53 @@
 {
-  "name": "Global FDI Monitor",
-  "short_name": "GFM",
-  "description": "World's first fully integrated global FDI intelligence platform. 215 economies, 50 AI agents, real-time signals.",
-  "start_url": "/",
+  "name": "FDI Monitor",
+  "short_name": "FDI Monitor",
+  "description": "Global FDI Intelligence Platform — 218+ live signals, GFR rankings for 215 economies, AI-powered reports.",
+  "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0A2540",
-  "theme_color": "#0A66C2",
-  "orientation": "portrait-primary",
-  "lang": "en",
+  "background_color": "#0F0A0A",
+  "theme_color": "#FF6600",
+  "orientation": "any",
   "categories": ["business", "finance", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
-    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any maskable" },
-    { "src": "/apple-touch-icon.svg", "type": "image/svg+xml", "sizes": "180x180", "purpose": "any" }
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "180x180",
+      "purpose": "apple touch icon"
+    }
   ],
   "screenshots": [
-    { "src": "/og-default.svg", "type": "image/svg+xml", "sizes": "1200x630", "label": "Global FDI Monitor Dashboard" }
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "FDI Monitor Dashboard"
+    }
   ],
   "shortcuts": [
-    { "name": "Live Signals", "url": "/signals", "description": "Real-time FDI signals" },
-    { "name": "GFR Rankings", "url": "/gfr", "description": "215 economy rankings" },
-    { "name": "Dashboard", "url": "/dashboard", "description": "Intelligence dashboard" },
-    { "name": "Reports", "url": "/reports", "description": "Generate intelligence reports" }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+    {
+      "name": "FDI Signals",
+      "url": "/signals",
+      "description": "Live FDI signal feed"
+    },
+    {
+      "name": "GFR Rankings",
+      "url": "/gfr",
+      "description": "Global Future Readiness rankings"
+    },
+    {
+      "name": "Generate Report",
+      "url": "/reports",
+      "description": "AI-powered FDI reports"
+    }
+  ]
 }

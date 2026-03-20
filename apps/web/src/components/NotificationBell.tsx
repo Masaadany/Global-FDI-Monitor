@@ -1,99 +1,92 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { useUnreadCount } from '@/lib/useNotifications';
+import Link from 'next/link';
+import { fetchWithAuth } from '@/lib/shared';
 
-interface Notification {
-  id: string;
-  type: 'signal' | 'report' | 'fic' | 'system';
-  title: string;
-  body: string;
-  read: boolean;
-  time: string;
-  grade?: string;
-}
+const API = process.env.NEXT_PUBLIC_API_URL || '';
 
-const DEMO_NOTIFS: Notification[] = [
-  { id:'n1', type:'signal',  title:'PLATINUM Signal: Microsoft → UAE', body:'$850M Cloud Region Dubai confirmed', read:false, time:'2m ago',  grade:'PLATINUM' },
-  { id:'n2', type:'signal',  title:'PLATINUM Signal: CATL → Indonesia', body:'$3.2B Battery Gigafactory committed', read:false, time:'8m ago',  grade:'PLATINUM' },
-  { id:'n3', type:'report',  title:'Report Ready', body:'Market Intelligence Brief — UAE ICT', read:false, time:'15m ago' },
-  { id:'n4', type:'fic',     title:'FIC Balance Low', body:'You have 3 FIC remaining', read:true,  time:'1h ago' },
-  { id:'n5', type:'signal',  title:'GOLD Signal: Siemens → Egypt', body:'$340M Wind JV confirmed', read:true,  time:'2h ago',  grade:'GOLD' },
+const DEMO_ALERTS = [
+  { id:1, type:'SIGNAL', priority:'HIGH',   title:'New PLATINUM: Microsoft UAE +$850M',         read:false, ts:'2m ago'  },
+  { id:2, type:'GFR',    priority:'MEDIUM', title:'UAE GFR upgraded to 80.0 (+4.2)',             read:false, ts:'1h ago'  },
+  { id:3, type:'SIGNAL', priority:'HIGH',   title:'New PLATINUM: CATL Indonesia $3.2B',          read:true,  ts:'3h ago'  },
+  { id:4, type:'POLICY', priority:'LOW',    title:'Saudi Arabia: New FDI incentive framework',   read:true,  ts:'1d ago'  },
+  { id:5, type:'REPORT', priority:'MEDIUM', title:'Report ready: UAE MIB Q1 2026',               read:true,  ts:'2d ago'  },
 ];
 
-const TYPE_ICON: Record<string,string> = { signal:'📡', report:'📋', fic:'⭐', system:'🔔' };
-const GRADE_DOT: Record<string,string>  = { PLATINUM:'#D97706', GOLD:'#059669', SILVER:'#2563EB' };
+const PRIO_COLORS: Record<string,string> = { HIGH:'#EF4444', MEDIUM:'#74BB65', LOW:'#696969' };
+const TYPE_ICONS:  Record<string,string>  = { SIGNAL:'📡', GFR:'🏆', POLICY:'⚖️', REPORT:'📋' };
 
 export default function NotificationBell() {
-  const [open,    setOpen]    = useState(false);
-  const [notifs,  setNotifs]  = useState(DEMO_NOTIFS);
-  const { unread: liveUnread } = useUnreadCount();
+  const [alerts, setAlerts] = useState(DEMO_ALERTS);
+  const [open,   setOpen]   = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const unread = notifs.filter(n => !n.read).length + Math.max(0, liveUnread - 2);
+  const unread = alerts.filter(a=>!a.read).length;
+
+  useEffect(() => {
+    fetchWithAuth(`${API}/api/v1/alerts?limit=5`).then(r=>r.json())
+      .then(d=>{ const a=d.data?.alerts||d.alerts; if(a?.length) setAlerts(a); }).catch(()=>{});
+  }, []);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  function markAllRead() {
-    setNotifs(n => n.map(x => ({ ...x, read: true })));
-  }
-  function markRead(id: string) {
-    setNotifs(n => n.map(x => x.id === id ? { ...x, read: true } : x));
+  function markRead(id: number) {
+    setAlerts(prev=>prev.map(a=>a.id===id?{...a,read:true}:a));
+    fetchWithAuth(`${API}/api/v1/alerts/${id}/read`,{method:'PUT'}).catch(()=>{});
   }
 
   return (
-    <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(v => !v)} className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors" aria-label="Notifications">
-        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="text-slate-600">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    <div ref={ref} className="relative">
+      <button onClick={()=>setOpen(p=>!p)}
+        className="relative p-2 rounded-xl hover:bg-white/5 transition-all"
+        aria-label={`${unread} unread alerts`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#696969" strokeWidth="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
         </svg>
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 bg-red-500 text-white text-xs font-extrabold rounded-full flex items-center justify-center px-1 live-dot">
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-xs font-extrabold flex items-center justify-center"
+                style={{background:'#74BB65',color:'#fff',fontSize:9}}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1.5 w-80 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-            <span className="font-extrabold text-deep text-sm">Notifications</span>
-            <div className="flex items-center gap-2">
-              {unread > 0 && (
-                <button onClick={markAllRead} className="text-xs text-primary hover:underline font-semibold">Mark all read</button>
-              )}
-              <a href="/alerts" className="text-xs text-slate-400 hover:text-primary">All alerts →</a>
-            </div>
+        <div className="absolute right-0 top-full mt-2 w-80 z-50 glass rounded-2xl shadow-glow-orange overflow-hidden"
+             style={{border:'1px solid rgba(10,61,98,0.2)'}}>
+          <div className="flex items-center justify-between px-4 py-3 border-b" style={{borderBottomColor:'rgba(10,61,98,0.1)'}}>
+            <span className="font-extrabold text-sm" style={{color:'#0A3D62'}}>Notifications</span>
+            {unread > 0 && (
+              <button onClick={()=>setAlerts(p=>p.map(a=>({...a,read:true})))}
+                className="text-xs" style={{color:'#74BB65'}}>Mark all read</button>
+            )}
           </div>
-          <div className="max-h-80 overflow-y-auto">
-            {notifs.map(n => (
-              <button key={n.id} onClick={() => markRead(n.id)}
-                className={`w-full flex items-start gap-3 px-4 py-3 text-left border-b border-slate-50 hover:bg-slate-50 transition-colors ${n.read ? 'opacity-60' : ''}`}>
-                <div className="relative flex-shrink-0 mt-0.5">
-                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-sm">
-                    {TYPE_ICON[n.type] || '🔔'}
+          <div className="max-h-72 overflow-y-auto">
+            {alerts.slice(0,5).map(alert=>(
+              <div key={alert.id} onClick={()=>markRead(alert.id)}
+                className={`px-4 py-3 border-b cursor-pointer hover:bg-white/3 transition-all ${!alert.read?'border-l-2':''}`}
+                style={{borderColor:'rgba(10,61,98,0.08)',...(!alert.read?{borderLeftColor:PRIO_COLORS[alert.priority]}:{})}}>
+                <div className="flex items-start gap-2">
+                  <span className="text-sm flex-shrink-0">{TYPE_ICONS[alert.type]||'🔔'}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold truncate" style={{color: alert.read ? '#696969' : '#0A3D62'}}>{alert.title}</div>
+                    <div className="text-xs mt-0.5" style={{color:'#696969'}}>{alert.ts}</div>
                   </div>
-                  {!n.read && <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary rounded-full border-2 border-white"/>}
-                  {n.grade && (
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white" style={{background:GRADE_DOT[n.grade]}}/>
-                  )}
+                  {!alert.read && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{background:'#74BB65'}}/>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-xs text-deep truncate">{n.title}</div>
-                  <div className="text-xs text-slate-400 mt-0.5 leading-tight">{n.body}</div>
-                  <div className="text-xs text-slate-300 mt-1">{n.time}</div>
-                </div>
-              </button>
+              </div>
             ))}
           </div>
-          <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-center">
-            <a href="/alerts" className="text-xs text-primary hover:underline font-semibold">View all alerts & preferences →</a>
+          <div className="px-4 py-2 text-center border-t" style={{borderTopColor:'rgba(10,61,98,0.08)'}}>
+            <Link href="/alerts" onClick={()=>setOpen(false)} className="text-xs font-bold" style={{color:'#74BB65'}}>
+              View all alerts →
+            </Link>
           </div>
         </div>
       )}
