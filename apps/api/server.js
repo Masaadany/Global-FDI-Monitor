@@ -2188,9 +2188,14 @@ ROUTES['POST /api/v1/auth/logout'] = async(req,res) => {
   ok(res,{data:{logged_out:true,ts:new Date().toISOString()}});
 };
 
-// SYNTAX_FIX: T read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
-  ok(res, { updated: true, alert_id: id });
-// SYNTAX_FIX: };
+
+ROUTES['PUT /api/v1/alerts/:id/read'] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const id=req.url.split('/').slice(-2)[0].split('?')[0];
+  await dbQ('UPDATE intelligence.alerts SET is_read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
+  ok(res,{data:{id,read:true,updated:true}});
+};
 
 ROUTES['GET /api/v1/signals/grades'] = async(req,res) => {
   const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
