@@ -18,7 +18,7 @@ IMAGE_NAME="gfm-api"
 IMAGE_TAG="latest"
 
 # From Azure Portal — your PostgreSQL and Redis connection strings
-DATABASE_URL="postgresql://gfm_app:YOUR_DB_PASSWORD@YOUR_POSTGRES_HOST:5432/gfm"
+DATABASE_URL="postgresql://gfm_app:DB_PASSWORD_REDACTED@YOUR_POSTGRES_HOST:5432/gfm"
 REDIS_URL="rediss://YOUR_REDIS_HOST:6380"
 
 # From Stripe dashboard

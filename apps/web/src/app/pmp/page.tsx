@@ -1,6 +1,8 @@
 'use client';
+import { Target, Globe, Building2, Users, Briefcase, CheckCircle, ArrowRight, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 import TrialBanner from '@/components/TrialBanner';
 import Globe4D from '@/components/Globe4D';
 
@@ -61,6 +63,8 @@ const OPPORTUNITIES = [
 const GRADE_C:  Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969'};
 const GRADE_BG: Record<string,string> = {PLATINUM:'rgba(10,61,98,0.1)',GOLD:'rgba(116,187,101,0.12)',SILVER:'rgba(105,105,105,0.1)'};
 const TYPE_C:   Record<string,string> = {MINISTRY:'#0A3D62',IPA:'#74BB65',FREE_ZONE:'#1B6CA8',SECTOR_LEAD:'#696969'};
+
+
 
 export default function PMPPage() {
   const [tab,       setTab]       = useState<'destinations'|'opportunities'|'companies'|'gov'|'dossier'>('destinations');
@@ -377,6 +381,7 @@ export default function PMPPage() {
           </div>
         )}
       </div>
+      <Footer/>
     </div>
   );
 }

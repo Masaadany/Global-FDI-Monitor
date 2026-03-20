@@ -7,7 +7,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || '';
 
 const QUICK_LINKS = [
   { label:'Live Signals',   href:'/signals',   icon:'📡' },
-  { label:'GFR Rankings',   href:'/gfr',       icon:'🏆' },
+  { label:'GFR Assessments',   href:'/gfr',       icon:'🏆' },
   { label:'Mission Planning',href:'/pmp',       icon:'🎯' },
   { label:'Foresight 2050', href:'/forecast',  icon:'📈' },
   { label:'Generate Report',href:'/reports',   icon:'📋' },

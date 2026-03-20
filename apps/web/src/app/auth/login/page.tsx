@@ -1,24 +1,13 @@
 'use client';
 import { useState } from 'react';
+import { Lock, Globe, TrendingUp, CheckCircle, ArrowRight, Zap, Shield, BarChart3 } from 'lucide-react';
 import Link from 'next/link';
-import Logo from '@/components/Logo';
-import { fetchWithAuth } from '@/lib/shared';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
-
-const FEATURES = [
-  { icon:'📡', text:'218+ live FDI signals graded PLATINUM to BRONZE' },
-  { icon:'🏆', text:'GFR rankings for 215 economies · 6 dimensions' },
-  { icon:'📋', text:'10 AI-powered report types in PDF format' },
-  { icon:'🗺', text:'Mission Planning Command Centre' },
-  { icon:'📈', text:'Foresight engine to 2050 · Scenario modelling' },
-  { icon:'🔒', text:'Z3 verified · SHA-256 provenance · Secure API' },
-];
 
 export default function LoginPage() {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
-  const [show,     setShow]     = useState(false);
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
@@ -28,102 +17,121 @@ export default function LoginPage() {
     try {
       const r = await fetch(`${API}/api/v1/auth/login`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({email, password}),
       });
       const d = await r.json();
-      if (d.data?.token) {
-        try { localStorage.setItem('gfm_token', d.data.token); } catch {}
-        window.location.href = '/dashboard';
-      } else {
-        setError(d.error?.message || 'Invalid credentials. Please try again.');
-      }
+      if (!d.success) { setError(d.error?.message || 'Invalid credentials'); }
+      else { window.location.href = '/dashboard'; }
     } catch {
-      setError('Connection failed. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Connection error. Please try again.');
     }
+    setLoading(false);
   }
 
   return (
-    <div className="min-h-screen flex" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#061E30 0%,#0A3D62 45%,#0E4F7A 100%)',
+      display:'grid',gridTemplateColumns:'1fr 1fr',alignItems:'center',position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,
+        backgroundImage:'linear-gradient(rgba(116,187,101,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(116,187,101,0.05) 1px,transparent 1px)',
+        backgroundSize:'40px 40px'}}/>
 
-      {/* Left — Features panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r" style={{background:'rgba(10,61,98,0.04)0.3)',borderRightColor:'rgba(10,61,98,0.1)'}}>
-        <Logo variant="dark" href="/"/>
-        <div>
-          <h2 className="text-3xl font-extrabold mb-2 leading-tight" style={{color:'#0A3D62'}}>
-            The global standard for<br/>FDI intelligence.
-          </h2>
-          <p className="text-sm mb-8 leading-relaxed" style={{color:'#696969'}}>
-            Real-time signals · GFR rankings · AI reports · Mission planning
-          </p>
-          <div className="space-y-3">
-            {FEATURES.map(f=>(
-              <div key={f.text} className="flex items-center gap-3">
-                <span className="text-lg flex-shrink-0">{f.icon}</span>
-                <span className="text-sm" style={{color:'#696969'}}>{f.text}</span>
+      {/* Left: Platform highlights */}
+      <div style={{padding:'60px',position:'relative',zIndex:1}}>
+        <Link href="/" style={{textDecoration:'none',display:'flex',alignItems:'baseline',gap:'2px',marginBottom:'48px'}}>
+          <span style={{fontSize:'20px',fontWeight:900,color:'white'}}>GLOBAL</span>
+          <span style={{fontSize:'20px',fontWeight:900,color:'#74BB65',margin:'0 4px'}}>FDI</span>
+          <span style={{fontSize:'20px',fontWeight:900,color:'white'}}>MONITOR</span>
+        </Link>
+        <h2 style={{fontSize:'clamp(24px,2.5vw,34px)',fontWeight:900,color:'white',lineHeight:'1.2',marginBottom:'14px'}}>
+          Welcome back to<br/><span style={{color:'#74BB65'}}>FDI Intelligence</span>
+        </h2>
+        <p style={{color:'rgba(226,242,223,0.75)',fontSize:'14px',lineHeight:'1.75',marginBottom:'32px'}}>
+          Real-time investment signals, GFR assessment, and Investment Analysis for 215 economies.
+        </p>
+        <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+          {[{icon:Zap,  color:'#74BB65',text:'218+ live signals updated every 2 seconds'},
+            {icon:Globe,color:'#74BB65',text:'Investment Analysis — Global Opportunity Score Analysis'},
+            {icon:BarChart3,color:'#74BB65',text:'GFR Assessment across 6 dimensions · 38 indicators'},
+            {icon:Shield,color:'#74BB65',text:'Z3 verified · SHA-256 provenance · DIFC registered'},
+          ].map(({icon:Icon,color,text})=>(
+            <div key={text} style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
+              <div style={{width:'28px',height:'28px',borderRadius:'8px',flexShrink:0,
+                background:'rgba(116,187,101,0.15)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                <Icon size={14} color={color}/>
               </div>
-            ))}
-          </div>
+              <span style={{fontSize:'13px',color:'rgba(226,242,223,0.8)',lineHeight:'1.6',paddingTop:'4px'}}>{text}</span>
+            </div>
+          ))}
         </div>
-        <div className="text-xs" style={{color:'#696969'}}>
-          © 2026 FDI Monitor · DIFC, Dubai, UAE
+        <div style={{marginTop:'40px',display:'flex',alignItems:'center',gap:'8px',
+          padding:'14px 18px',borderRadius:'12px',background:'rgba(116,187,101,0.08)',
+          border:'1px solid rgba(116,187,101,0.2)'}}>
+          <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#74BB65',
+            animation:'livePulse 2s infinite'}}/>
+          <span style={{fontSize:'12px',color:'rgba(226,242,223,0.8)'}}>
+            <b style={{color:'#74BB65'}}>218+</b> live signals active right now
+          </span>
         </div>
       </div>
 
-      {/* Right — Login form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-10">
-        <div className="w-full max-w-sm">
-          <div className="lg:hidden text-center mb-8">
-            <Logo variant="dark" href="/"/>
-          </div>
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-extrabold mb-1" style={{color:'#0A3D62'}}>Welcome back</h1>
-            <p className="text-sm" style={{color:'#696969'}}>Sign in to your intelligence dashboard</p>
-          </div>
-
-          <div className="gfm-card p-7">
-            <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <div className="text-sm p-3 rounded-xl" style={{background:'rgba(239,68,68,0.08)',color:'#EF4444',border:'1px solid rgba(239,68,68,0.2)'}}>{error}</div>
-              )}
-              <div>
-                <label htmlFor="login-email" className="text-xs font-bold block mb-1" style={{color:'#696969'}}>Work Email</label>
-                <input id="login-email" type="email" value={email} onChange={e=>setEmail(e.target.value)} required
-                  className="w-full px-4 py-3 text-sm rounded-xl" placeholder="you@organisation.com"
-                  autoComplete="email" aria-required="true"/>
-              </div>
-              <div>
-                <label htmlFor="login-password" className="text-xs font-bold block mb-1 flex items-center justify-between" style={{color:'#696969'}}>
-                  Password
-                  <Link href="/auth/reset" className="text-xs" style={{color:'#74BB65'}}>Forgot?</Link>
-                </label>
-                <div className="relative">
-                  <input id="login-password" type={show?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} required
-                    className="w-full px-4 py-3 text-sm rounded-xl pr-12" placeholder="••••••••"
-                    autoComplete="current-password" aria-required="true"/>
-                  <button type="button" onClick={()=>setShow(s=>!s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style={{color:'#696969'}}
-                    aria-label={show?'Hide password':'Show password'}>
-                    {show?'Hide':'Show'}
-                  </button>
-                </div>
-              </div>
-              <button type="submit" disabled={loading}
-                className={`gfm-btn-primary w-full py-3 font-extrabold ${loading?'opacity-70':''}`}>
-                {loading
-                  ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Signing in…</span>
-                  : 'Sign In →'}
-              </button>
-            </form>
+      {/* Right: Login form */}
+      <div style={{padding:'48px',position:'relative',zIndex:1}}>
+        <div style={{background:'white',borderRadius:'20px',padding:'40px',
+          boxShadow:'0 24px 80px rgba(0,0,0,0.2)',maxWidth:'420px',margin:'0 auto'}}>
+          <div style={{textAlign:'center',marginBottom:'28px'}}>
+            <div style={{width:'52px',height:'52px',borderRadius:'14px',
+              background:'rgba(116,187,101,0.1)',border:'1px solid rgba(116,187,101,0.2)',
+              display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px'}}>
+              <Lock size={22} color="#74BB65"/>
+            </div>
+            <h3 style={{fontSize:'20px',fontWeight:800,color:'#0A3D62',marginBottom:'4px'}}>Sign in to your account</h3>
+            <p style={{fontSize:'13px',color:'#696969'}}>Enter your credentials to access the platform</p>
           </div>
 
-          <div className="mt-4 text-center space-y-2">
-            <p className="text-sm" style={{color:'#696969'}}>
-              No account? <Link href="/register" style={{color:'#74BB65'}}>Start free 3-day trial</Link>
-            </p>
-            <p className="text-xs" style={{color:'#696969'}}>No credit card required</p>
-          </div>
+          {error && (
+            <div style={{padding:'10px 14px',borderRadius:'8px',background:'rgba(229,115,115,0.08)',
+              border:'1px solid rgba(229,115,115,0.25)',fontSize:'13px',color:'#C62828',
+              marginBottom:'16px',display:'flex',alignItems:'center',gap:'7px'}}>
+              ⚠ {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+            <div>
+              <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>
+                Work Email
+              </label>
+              <input value={email} onChange={e=>setEmail(e.target.value)} required type="email"
+                autoComplete="email" placeholder="you@organisation.com"
+                style={{width:'100%',padding:'11px 13px',borderRadius:'9px',
+                  border:'1px solid rgba(10,61,98,0.15)',fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
+            </div>
+            <div>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'5px'}}>
+                <label style={{fontSize:'12px',fontWeight:700,color:'#696969'}}>Password</label>
+                <Link href="/auth/reset" style={{fontSize:'11px',color:'#74BB65',textDecoration:'none',fontWeight:600}}>
+                  Forgot password?
+                </Link>
+              </div>
+              <input value={password} onChange={e=>setPassword(e.target.value)} required type="password"
+                autoComplete="current-password" placeholder="Your password"
+                style={{width:'100%',padding:'11px 13px',borderRadius:'9px',
+                  border:'1px solid rgba(10,61,98,0.15)',fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
+            </div>
+            <button type="submit" disabled={loading}
+              style={{padding:'13px',background:'#0A3D62',color:'white',border:'none',
+                borderRadius:'9px',fontSize:'15px',fontWeight:800,cursor:loading?'wait':'pointer',
+                display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',
+                boxShadow:'0 4px 16px rgba(10,61,98,0.2)',opacity:loading?0.75:1}}>
+              {loading ? 'Signing in…' : <><ArrowRight size={14}/> Sign In</>}
+            </button>
+            <div style={{textAlign:'center',fontSize:'13px',color:'#696969'}}>
+              Don't have an account?{' '}
+              <Link href="/register" style={{color:'#74BB65',fontWeight:700,textDecoration:'none'}}>
+                Start free trial →
+              </Link>
+            </div>
+          </form>
         </div>
       </div>
     </div>

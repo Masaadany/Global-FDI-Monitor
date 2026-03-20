@@ -1,51 +1,29 @@
-import type { Metadata } from 'next';
+'use client';
+import { Globe, Shield, TrendingUp, CheckCircle, Users, Target, BarChart3, Zap, Building2, Award, Database, Activity } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
+import Footer from '@/components/Footer';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'About Global FDI Monitor',
-  description: 'FDI Monitor — advanced investment intelligence platform. INSIGHT philosophy, vision, mission, 215 countries, 1,400+ free zones, 30+ years historical data.',
-};
-
 const INSIGHT = [
-  { letter:'I', text:"In today's complex and interconnected world," },
-  { letter:'N', text:'Navigating investment decisions requires more than instinct,' },
-  { letter:'S', text:'Strategic insight guides choices toward high-value opportunities,' },
-  { letter:'I', text:'Intelligence must be accurate, timely, and comprehensive,' },
-  { letter:'G', text:'Grounded in data, it empowers decision-makers to mitigate risk,' },
-  { letter:'H', text:'Harnessing historical and real-time trends reveals emerging opportunities,' },
-  { letter:'T', text:'Transforming investment decisions into sustainable economic impact.' },
+  {letter:'I', word:'Intelligence',   desc:'Real-time FDI signals, Z3-verified, SHA-256 provenance.',                   icon:Zap,      color:'#0A3D62'},
+  {letter:'N', word:'Network',        desc:'300+ primary sources across T1–T4 tiers from 215 economies.',              icon:Globe,    color:'#74BB65'},
+  {letter:'S', word:'Signals',        desc:'218+ live signals graded PLATINUM to BRONZE by Signal Confidence Index.',  icon:Activity, color:'#1B6CA8'},
+  {letter:'I', word:'Indicators',     desc:'World Bank Doing Business 10 indicators normalized via Distance-to-Frontier.', icon:BarChart3,color:'#0A3D62'},
+  {letter:'G', word:'Global',         desc:'GFR assessment across 215 economies — 6 dimensions, 38 indicators.',       icon:Award,    color:'#74BB65'},
+  {letter:'H', word:'Hubs & Zones',   desc:'1,400+ special investment zones evaluated for readiness and incentives.',  icon:Building2,color:'#1B6CA8'},
+  {letter:'T', word:'Transparency',   desc:'Every data point is traceable — GFM-SRC reference, source date, access date.', icon:Shield,  color:'#0A3D62'},
 ];
 
-const EXPERTISE = [
-  { n:'01', title:'Enhancing National Investment Intelligence Capabilities',
-    desc:'End-to-end analytics covering all 215 economies with quarterly GFR rankings and real-time signal feeds.' },
-  { n:'02', title:'Enabling Targeted and Efficient Investor Outreach',
-    desc:'Company Intelligence Centre with 12-dimension profiles, IMS scoring, and signal history for precision targeting.' },
-  { n:'03', title:'Optimizing Investment Promotion Missions and Engagements',
-    desc:'Mission Planning Command Centre matching destination economies, potential investors, government entities, and sector leads.' },
-  { n:'04', title:'Strengthening Global Competitiveness and Strategic Positioning',
-    desc:'GFR benchmarking, scenario modelling to 2050, and policy alignment indicators for long-term strategy.' },
+const LAYERS = [
+  {n:1,name:'Doing Business Indicators',  weight:30, color:'#0A3D62', desc:'10 World Bank indicators via Distance-to-Frontier normalization.'},
+  {n:2,name:'Sector Indicators',          weight:20, color:'#74BB65', desc:'Regulations, incentives, labor, infrastructure, export potential.'},
+  {n:3,name:'Special Investment Zone Indicators',weight:25,color:'#1B6CA8',desc:'Land availability, occupancy, infrastructure readiness, zone incentives.'},
+  {n:4,name:'Market Intelligence Matrix', weight:25, color:'#2E86AB', desc:'IFI signals, trade flows, central bank data, company announcements.'},
 ];
 
-const STRENGTHS = [
-  { icon:'🌍', title:'Comprehensive Global Coverage',        desc:'215 economies · 21 ISIC sectors · 1,400+ free zones · 500 priority cities.' },
-  { icon:'🔭', title:'Holistic Foresight & Scenario Planning', desc:'Probabilistic FDI projections to 2050 with optimistic, base, and stress scenarios.' },
-  { icon:'🔬', title:'Cross-Sector Intelligence',            desc:'Sector heat maps, bilateral corridor analysis, and ESG-aligned investment screening.' },
-  { icon:'⚡', title:'Real-Time Data & Signals',             desc:'2-second signal ingestion · Z3 formal verification · SHA-256 provenance.' },
-  { icon:'🎯', title:'Investment Promotion Mission Planning', desc:'Full dossier generation with company, government entity, and sector lead profiles.' },
-  { icon:'🏆', title:'Global Future Readiness & Value',      desc:'6-dimension GFR composite · 7 pillars · 28 dimensions · 112 indicators.' },
-];
 
-const STATS = [
-  ['215',    'Countries Ranked'],
-  ['1,400+', 'Free Zones Tracked'],
-  ['30+',    'Years Historical Data'],
-  ['15+',    'Primary Source Indices'],
-  ['112',    'GFR Indicators'],
-  ['2s',     'Signal Latency'],
-];
 
 export default function AboutPage() {
   return (
@@ -54,127 +32,139 @@ export default function AboutPage() {
       <TrialBanner/>
 
       {/* Hero */}
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'56px 24px'}}>
-        <div className="max-w-screen-lg mx-auto text-center">
-          <h1 style={{fontSize:'38px',fontWeight:800,color:'white',marginBottom:'16px',lineHeight:'1.2'}}>
-            About Global FDI Monitor
-          </h1>
-          <p style={{color:'rgba(226,242,223,0.85)',fontSize:'16px',maxWidth:'720px',margin:'0 auto 32px',lineHeight:'1.7'}}>
-            GLOBAL FDI MONITOR is an advanced investment intelligence platform designed to transform complex global investment data into actionable strategic insight. By integrating real-time signals, historical data, and forward-looking analytics, the platform enables governments and institutional stakeholders to make informed, data-driven decisions.
-          </p>
-          {/* Stats strip */}
-          <div style={{display:'flex',gap:'32px',justifyContent:'center',flexWrap:'wrap'}}>
-            {STATS.map(([v,l])=>(
-              <div key={l} style={{textAlign:'center'}}>
-                <div style={{fontSize:'26px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
-                <div style={{fontSize:'11px',color:'rgba(226,242,223,0.7)',marginTop:'2px'}}>{l}</div>
-              </div>
-            ))}
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'60px 40px'}}>
+        <div style={{maxWidth:'1100px',margin:'0 auto',textAlign:'center'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'16px'}}>
+            <Globe size={16} color="#74BB65"/>
+            <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.1em',textTransform:'uppercase'}}>About Global FDI Monitor</span>
           </div>
+          <h1 style={{fontSize:'clamp(28px,4vw,46px)',fontWeight:900,color:'white',marginBottom:'16px',lineHeight:'1.1'}}>
+            The Global Standard for<br/>Investment Intelligence
+          </h1>
+          <p style={{fontSize:'16px',color:'rgba(226,242,223,0.82)',maxWidth:'680px',margin:'0 auto',lineHeight:'1.75'}}>
+            Global FDI Monitor transforms complex global investment data into actionable strategic decisions for governments, investment promotion agencies, and institutional investors worldwide.
+          </p>
         </div>
       </section>
 
-      <div className="max-w-screen-lg mx-auto px-6 py-10 space-y-10">
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'48px 24px',display:'flex',flexDirection:'column',gap:'32px'}}>
 
         {/* Vision & Mission */}
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
           {[
-            { title:'VISION', icon:'👁',
-              text:'To become the global standard for investment intelligence, empowering nations to anticipate, attract, and sustain high-value investments.' },
-            { title:'MISSION', icon:'🎯',
-              text:'To enable governments and institutions with a next-generation intelligence platform that delivers real-time insights, predictive analytics, and strategic tools for informed investment decision-making.' },
-          ].map(item=>(
-            <div key={item.title} className="gfm-card" style={{padding:'28px'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px'}}>
-                <span style={{fontSize:'28px'}}>{item.icon}</span>
-                <span style={{fontSize:'12px',fontWeight:800,color:'#74BB65',letterSpacing:'0.1em'}}>{item.title}</span>
+            {title:'Our Vision',icon:Target,color:'#74BB65',text:"To become the world's most trusted and comprehensive source of foreign direct investment intelligence — delivering clarity, speed, and precision to investment professionals across 215 economies."},
+            {title:'Our Mission',icon:Zap,color:'#0A3D62',text:'To democratise access to high-quality investment intelligence by combining rigorous methodology, real-time signals, and AI-powered analytics into a single, accessible platform.'},
+          ].map(({title,icon:Icon,color,text})=>(
+            <div key={title} className="gfm-card" style={{padding:'28px',borderTop:`4px solid ${color}`}}>
+              <div style={{display:'flex',alignItems:'center',gap:'9px',marginBottom:'12px'}}>
+                <Icon size={18} color={color}/>
+                <span style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em'}}>{title}</span>
               </div>
-              <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.7'}}>{item.text}</p>
+              <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.75',margin:0}}>{text}</p>
             </div>
           ))}
         </div>
 
-        {/* INSIGHT philosophy */}
-        <div>
-          <div style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.1em',color:'#74BB65',marginBottom:'6px'}}>Philosophy</div>
-          <h2 style={{fontSize:'22px',fontWeight:700,color:'#0A3D62',marginBottom:'20px'}}>The INSIGHT Framework</h2>
-          <div style={{display:'grid',gap:'10px'}}>
-            {INSIGHT.map((item,i)=>(
-              <div key={i} className="gfm-card" style={{padding:'16px 20px',display:'flex',alignItems:'center',gap:'16px',
-                borderLeft:`4px solid ${i%2===0?'#74BB65':'#0A3D62'}`}}>
-                <div style={{width:'32px',height:'32px',borderRadius:'8px',flexShrink:0,display:'flex',
-                  alignItems:'center',justifyContent:'center',fontSize:'18px',fontWeight:900,
-                  background:i%2===0?'rgba(116,187,101,0.12)':'rgba(10,61,98,0.08)',
-                  color:i%2===0?'#74BB65':'#0A3D62'}}>
-                  {item.letter}
+        {/* INSIGHT framework */}
+        <div className="gfm-card" style={{padding:'28px'}}>
+          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'20px',display:'flex',alignItems:'center',gap:'8px'}}>
+            <Award size={16} color="#74BB65"/> The INSIGHT Framework
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'12px'}}>
+            {INSIGHT.map(({letter,word,desc,icon:Icon,color})=>(
+              <div key={word} style={{textAlign:'center',padding:'16px 8px'}}>
+                <div style={{width:'48px',height:'48px',borderRadius:'14px',background:`${color}10`,
+                  border:`2px solid ${color}20`,display:'flex',alignItems:'center',justifyContent:'center',
+                  margin:'0 auto 10px'}}>
+                  <span style={{fontSize:'22px',fontWeight:900,color}}>{letter}</span>
                 </div>
-                <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.5',margin:0}}>{item.text}</p>
+                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{word}</div>
+                <div style={{fontSize:'10px',color:'#696969',lineHeight:'1.4'}}>{desc}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Expertise */}
-        <div>
-          <div style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.1em',color:'#74BB65',marginBottom:'6px'}}>Our Expertise</div>
-          <h2 style={{fontSize:'22px',fontWeight:700,color:'#0A3D62',marginBottom:'20px'}}>Expertise & Focus</h2>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
-            {EXPERTISE.map(e=>(
-              <div key={e.n} className="gfm-card" style={{padding:'24px'}}>
-                <div style={{fontSize:'28px',fontWeight:900,color:'rgba(116,187,101,0.25)',marginBottom:'8px',fontFamily:'monospace'}}>{e.n}</div>
-                <h3 style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>{e.title}</h3>
-                <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.6'}}>{e.desc}</p>
+        {/* Scoring methodology */}
+        <div className="gfm-card" style={{padding:'28px'}}>
+          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px',display:'flex',alignItems:'center',gap:'8px'}}>
+            <BarChart3 size={16} color="#74BB65"/> Global Opportunity Score Analysis Methodology
+          </div>
+          <div style={{fontFamily:'monospace',fontSize:'13px',color:'#0A3D62',
+            background:'rgba(10,61,98,0.04)',padding:'14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.1)',
+            marginBottom:'16px',lineHeight:'1.9'}}>
+            GOSA = (0.30 × Layer 1: Doing Business Indicators) +<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.20 × Layer 2: Sector Indicators) +<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.25 × Layer 3: Special Investment Zone Indicators) +<br/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.25 × Layer 4: Market Intelligence Matrix)
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+            {LAYERS.map(l=>(
+              <div key={l.n} style={{padding:'14px',borderRadius:'10px',background:`${l.color}06`,
+                border:`1px solid ${l.color}20`,borderLeft:`4px solid ${l.color}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
+                  <span style={{fontSize:'11px',fontWeight:800,color:l.color}}>LAYER {l.n}</span>
+                  <span style={{fontSize:'11px',fontWeight:700,color:l.color}}>{l.weight}%</span>
+                </div>
+                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'5px'}}>{l.name}</div>
+                <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.4'}}>{l.desc}</div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Strategic strengths */}
-        <div>
-          <div style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.1em',color:'#74BB65',marginBottom:'6px'}}>Capabilities</div>
-          <h2 style={{fontSize:'22px',fontWeight:700,color:'#0A3D62',marginBottom:'20px'}}>Strategic Strong Points</h2>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'16px'}}>
-            {STRENGTHS.map(s=>(
-              <div key={s.title} className="gfm-card" style={{padding:'20px'}}>
-                <div style={{fontSize:'28px',marginBottom:'10px'}}>{s.icon}</div>
-                <h3 style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'6px'}}>{s.title}</h3>
-                <p style={{fontSize:'12px',color:'#696969',lineHeight:'1.5'}}>{s.desc}</p>
+        {/* Key strengths */}
+        <div className="gfm-card" style={{padding:'28px'}}>
+          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
+            <Shield size={16} color="#74BB65"/> Our Core Strengths
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
+            {[
+              {icon:Database,  title:'Data Integrity',          desc:'Z3 formal verification + SHA-256 provenance on all PLATINUM/GOLD signals. Every data point traceable.'},
+              {icon:Zap,       title:'Real-Time Intelligence',  desc:'218+ live signals updated every 2 seconds. Ingestion latency below 2s from source publication.'},
+              {icon:Globe,     title:'Global Coverage',         desc:'215 economies, 21 ISIC sectors, 1,400+ investment zones, 300+ verified data sources.'},
+              {icon:BarChart3, title:'Rigorous Methodology',    desc:'World Bank Doing Business methodology combined with proprietary sector and zone intelligence layers.'},
+              {icon:Shield,    title:'Security & Compliance',   desc:'PDF-only reports, dynamic watermarks, copy protection. DIFC registered, GDPR compliant.'},
+              {icon:Users,     title:'Expert Team',             desc:'Investment intelligence professionals with backgrounds at sovereign wealth funds, IPAs, and multilateral institutions.'},
+            ].map(({icon:Icon,title,desc})=>(
+              <div key={title} style={{display:'flex',gap:'12px',padding:'14px',
+                borderRadius:'10px',background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)'}}>
+                <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(116,187,101,0.1)',
+                  display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <Icon size={18} color="#74BB65"/>
+                </div>
+                <div>
+                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{title}</div>
+                  <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.5'}}>{desc}</div>
+                </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Methodology */}
-        <div className="gfm-card" style={{padding:'32px',background:'rgba(10,61,98,0.03)',border:'1px solid rgba(10,61,98,0.08)'}}>
-          <div style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.1em',color:'#74BB65',marginBottom:'6px'}}>Methodology</div>
-          <h2 style={{fontSize:'20px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Analytical Framework</h2>
-          <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.8',marginBottom:'16px'}}>
-            GLOBAL FDI MONITOR applies a multi-layered analytical framework combining real-time investment signals, verified data sources, and historical datasets spanning over three decades. The platform integrates cross-source validation and proprietary scoring models to ensure accuracy, consistency, and strategic relevance. Investment data is continuously monitored and refined based on verified announcement data, ensuring a balance between immediacy, reliability, and long-term foresight.
-          </p>
-          <Link href="/gfr/methodology" style={{color:'#0A3D62',fontWeight:700,fontSize:'14px',textDecoration:'none',
-            display:'inline-flex',alignItems:'center',gap:'4px',
-            padding:'8px 16px',borderRadius:'8px',background:'rgba(116,187,101,0.12)',border:'1px solid rgba(116,187,101,0.3)'}}>
-            View Full Methodology →
-          </Link>
         </div>
 
         {/* CTA */}
-        <div style={{textAlign:'center',paddingBottom:'16px'}}>
+        <div style={{textAlign:'center',padding:'32px',background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'16px'}}>
+          <h3 style={{fontSize:'22px',fontWeight:800,color:'white',marginBottom:'10px'}}>
+            Ready to explore global investment intelligence?
+          </h3>
+          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'20px',fontSize:'14px'}}>
+            Start a free trial — full access to signals, GFR assessment, and Investment Analysis.
+          </p>
           <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
-            <Link href="/register" className="gfm-btn-primary" style={{padding:'14px 32px',fontSize:'15px'}}>
+            <Link href="/register"
+              style={{padding:'12px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
+                textDecoration:'none',fontWeight:700,fontSize:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
               Start Free Trial →
             </Link>
-            <Link href="/gfr" style={{padding:'14px 32px',fontSize:'15px',fontWeight:600,
-              borderRadius:'8px',border:'2px solid #0A3D62',color:'#0A3D62',textDecoration:'none'}}>
-              View GFR Rankings
-            </Link>
-            <Link href="/contact" style={{padding:'14px 32px',fontSize:'15px',fontWeight:600,
-              borderRadius:'8px',border:'2px solid #696969',color:'#696969',textDecoration:'none'}}>
-              Contact Us
+            <Link href="/investment-analysis"
+              style={{padding:'12px 24px',border:'1px solid rgba(226,242,223,0.35)',color:'rgba(226,242,223,0.9)',
+                borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>
+              View Investment Analysis
             </Link>
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

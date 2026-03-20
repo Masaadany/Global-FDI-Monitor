@@ -1,166 +1,208 @@
-import type { Metadata } from 'next';
+'use client';
+import { BookOpen, CheckCircle, Globe, Shield, BarChart3, Target, Database, TrendingUp, ArrowRight } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import Footer from '@/components/Footer';
 import DimensionWheel from '@/components/DimensionWheel';
 import SourceBadge from '@/components/SourceBadge';
+import PreviewGate from '@/components/PreviewGate';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'GFR Methodology — FDI Monitor',
-  description: 'Global Future Readiness Ranking methodology. 7 pillars, 28 dimensions, 112 indicators, 215 economies. ETR, ICT, TCM, DTF, SGT, GRP dimensions explained.',
-};
-
-const SOURCES = [
-  { abbr:'WEO',  name:'IMF World Economic Outlook Apr 2026',   url:'https://imf.org/en/Publications/WEO', date:'Apr 2026',  ref:'GFM-SRC-000001' },
-  { abbr:'GII',  name:'Global Innovation Index 2024',          url:'https://wipo.int/gii',                date:'Oct 2024', ref:'GFM-SRC-000002' },
-  { abbr:'CCPI', name:'Climate Change Performance Index 2025', url:'https://ccpi.org',                    date:'Nov 2024', ref:'GFM-SRC-000003' },
-  { abbr:'WJPI', name:'World Justice Project Rule of Law 2025',url:'https://worldjusticeproject.org',     date:'Oct 2025', ref:'GFM-SRC-000004' },
-  { abbr:'WIR',  name:'UNCTAD World Investment Report 2025',   url:'https://unctad.org/wir',              date:'Jun 2025', ref:'GFM-SRC-000005' },
-  { abbr:'WCR',  name:'IMD World Competitiveness Ranking 2025',url:'https://imd.org/centers/wcc/world-competitiveness-center/', date:'Jun 2025', ref:'GFM-SRC-000006' },
+const DIMENSIONS = [
+  {code:'ETR',name:'Economic & Trade Resilience',  weight:20,color:'#0A3D62',
+   indicators:['GDP Growth Rate','Current Account Balance','Inflation Rate','Debt/GDP Ratio','Export Diversification'],
+   sources:['IMF WEO','World Bank WDI','OECD National Accounts']},
+  {code:'ICT',name:'Innovation & Creative Talent',  weight:18,color:'#74BB65',
+   indicators:['Global Innovation Index','R&D Expenditure (% GDP)','Patent Filings','STEM Graduate Rate','Startup Density'],
+   sources:['WIPO GII','UNESCO Science Report','OECD MSTI']},
+  {code:'TCM',name:'Trade & Capital Mobility',      weight:18,color:'#1B6CA8',
+   indicators:['FDI Inflows (% GDP)','Trade Openness Index','Capital Account Restrictions','Free Trade Agreements','Logistics Performance'],
+   sources:['UNCTAD WIR','World Bank LPI','IMF BOP Statistics']},
+  {code:'DTF',name:'Digital & Tech Frontier',       weight:16,color:'#2E86AB',
+   indicators:['Broadband Penetration','Cloud Adoption Index','E-Government Development','AI Readiness Score','ICT Export Share'],
+   sources:['ITU Digital Development','Oxford Insights AI Government','World Bank ICT']},
+  {code:'SGT',name:'Sustainable Growth Trajectory', weight:15,color:'#74BB65',
+   indicators:['Renewable Energy Share','Carbon Intensity (declining)','ESG Governance Score','Green Investment Share','SDG Progress Index'],
+   sources:['IEA World Energy','Climate Change Performance Index','UN SDG Report']},
+  {code:'GRP',name:'Governance & Policy',           weight:13,color:'#0A3D62',
+   indicators:['World Justice Project Rule of Law','World Bank Government Effectiveness','Transparency International CPI','Political Stability Index','Regulatory Quality'],
+   sources:['World Justice Project','World Bank WGI','Transparency International']},
 ];
 
-const PILLARS = [
-  { n:'I',   name:'Market Fundamentals',       dims:['ETR','GRP'], icon:'📊' },
-  { n:'II',  name:'Innovation Ecosystem',      dims:['ICT'],       icon:'💡' },
-  { n:'III', name:'Human Capital',             dims:['TCM'],       icon:'🧑‍💼' },
-  { n:'IV',  name:'Digital Infrastructure',   dims:['DTF'],       icon:'📡' },
-  { n:'V',   name:'Sustainability',            dims:['SGT'],       icon:'🌿' },
-  { n:'VI',  name:'Investment Climate',        dims:['IRES','IMS'],icon:'🌐' },
-  { n:'VII', name:'Future Readiness',          dims:['PAI','GCI'], icon:'🔭' },
+const NORMALISATION_STEPS = [
+  {n:1, title:'Raw Data Collection',      desc:'Source data collected from T1–T4 verified sources. Each indicator has a defined source, update frequency, and coverage scope.'},
+  {n:2, title:'Distance-to-Frontier',     desc:'Each indicator score: DTF = (Actual − Min) / (Frontier − Max) × 100. Frontier is the best global performance observed.'},
+  {n:3, title:'Outlier Treatment',        desc:'Values beyond 3 standard deviations are Winsorised to prevent extreme scores distorting dimension averages.'},
+  {n:4, title:'Dimension Aggregation',    desc:'Unweighted average of normalised indicator scores within each dimension. Missing data interpolated using 3-year trend.'},
+  {n:5, title:'GFR Score Computation',    desc:'GFR = (ETR×0.20) + (ICT×0.18) + (TCM×0.18) + (DTF×0.16) + (SGT×0.15) + (GRP×0.13). Rounded to 1 decimal place.'},
+  {n:6, title:'Tier Classification',      desc:'VERY HIGH ≥90 · HIGH 70–89 · MEDIUM 50–69 · LOW <50. Tier transitions require ≥2 consecutive quarters.'},
 ];
 
-const NORMALISE_STEPS = [
-  { n:1, title:'Raw Data Collection',          desc:'Collect indicators from 15+ authoritative sources across all 215 economies annually.' },
-  { n:2, title:'Schema Validation',            desc:'Enforce correct formats, units, ISO-3166 codes, sector taxonomy, and range constraints.' },
-  { n:3, title:'Cross-Source Verification',    desc:'Every critical indicator verified against 2–3 independent sources; conflicts resolved by Reconciliation Agent.' },
-  { n:4, title:'Z-Score Normalisation',        desc:'All indicators standardised to mean 0, SD 1. Winsorised at ±3σ to control outliers.' },
-  { n:5, title:'Min-Max Rescaling',            desc:'Normalised values mapped to 0–100 scale. Higher = better readiness throughout.' },
-  { n:6, title:'Weighted Aggregation',         desc:'Dimension scores aggregated by pillar weights. Pillar scores aggregated to final GFR score.' },
-];
-
-export default function MethodologyPage() {
+export default function GFRMethodologyPage() {
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/>
-      <TrialBanner/>
-
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'48px 24px 32px'}}>
-        <div className="max-w-screen-lg mx-auto">
-          <div style={{fontSize:'11px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.1em',color:'#74BB65',marginBottom:'8px'}}>
-            Technical Reference Manual · TRS-GMFRR-001
+      <NavBar/><TrialBanner/>
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'44px 24px'}}>
+        <div style={{maxWidth:'1100px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+              <BookOpen size={16} color="#74BB65"/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>GFR Methodology</span>
+            </div>
+            <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>
+              Global Future Readiness — Assessment Methodology
+            </h1>
+            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
+              6 dimensions · 38 indicators · Distance-to-Frontier normalisation · Quarterly recalculation
+            </p>
           </div>
-          <h1 style={{fontSize:'32px',fontWeight:800,color:'white',marginBottom:'12px',lineHeight:'1.2'}}>
-            Global Future Readiness Ranking<br/>Methodology
-          </h1>
-          <p style={{color:'rgba(226,242,223,0.8)',maxWidth:'640px',lineHeight:'1.6',marginBottom:'20px'}}>
-            A composite, forward-looking framework synthesising intelligence from 15+ leading international indices into a single authoritative assessment of each economy's readiness to attract, sustain, and benefit from global investment flows over a 5-year horizon.
-          </p>
-          <div style={{display:'flex',gap:'24px',flexWrap:'wrap'}}>
-            {[['7','Pillars'],['28','Dimensions'],['112','Indicators'],['215','Economies'],['15+','Source Indices'],['Annual','Publication']].map(([v,l])=>(
+          <div style={{display:'flex',gap:'20px'}}>
+            {[['6','Dimensions'],['38','Indicators'],['215','Economies'],['Q1 2026','Edition']].map(([v,l])=>(
               <div key={l} style={{textAlign:'center'}}>
-                <div style={{fontSize:'24px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
-                <div style={{fontSize:'11px',color:'rgba(226,242,223,0.7)'}}>{l}</div>
+                <div style={{fontSize:'20px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="max-w-screen-lg mx-auto px-6 py-8 space-y-8">
-
-        {/* 6-Dimension Wheel */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>
-            The Six Core Dimensions
-          </h2>
-          <p style={{fontSize:'13px',color:'#696969',marginBottom:'20px'}}>
-            Click a dimension to expand indicators. Width represents score; weight shown as W:%.
-          </p>
-          <DimensionWheel/>
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'28px 24px',display:'flex',flexDirection:'column',gap:'20px'}}>
+        {/* Dimension Wheel + Overview */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px',alignItems:'start'}}>
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <BarChart3 size={14} color="#74BB65"/> Dimension Weights & Structure
+            </div>
+            <DimensionWheel/>
+          </div>
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Shield size={14} color="#74BB65"/> GFR Score Formula
+            </div>
+            <div style={{fontFamily:'monospace',fontSize:'12px',color:'#0A3D62',
+              background:'rgba(10,61,98,0.04)',padding:'16px',borderRadius:'9px',
+              border:'1px solid rgba(10,61,98,0.1)',lineHeight:'2.0',marginBottom:'16px'}}>
+              GFR = (ETR × 0.20)<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;+ (ICT × 0.18)<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;+ (TCM × 0.18)<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;+ (DTF × 0.16)<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;+ (SGT × 0.15)<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;+ (GRP × 0.13)
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'8px'}}>
+              {[{tier:'VERY HIGH',range:'≥ 90',color:'#74BB65'},{tier:'HIGH',range:'70–89',color:'#0A3D62'},
+                {tier:'MEDIUM',range:'50–69',color:'#FFB347'},{tier:'LOW',range:'< 50',color:'#E57373'}].map(t=>(
+                <div key={t.tier} style={{padding:'10px',borderRadius:'8px',background:`${t.color}08`,
+                  border:`1px solid ${t.color}20`,textAlign:'center'}}>
+                  <div style={{fontSize:'13px',fontWeight:800,color:t.color,fontFamily:'monospace'}}>{t.range}</div>
+                  <div style={{fontSize:'10px',fontWeight:700,color:t.color,marginTop:'2px'}}>{t.tier}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{marginTop:'16px',paddingTop:'14px',borderTop:'1px solid rgba(10,61,98,0.06)'}}>
+              <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>Investment Analysis Integration</div>
+              <p style={{fontSize:'12px',color:'#696969',lineHeight:'1.6',marginBottom:'10px'}}>
+                GFR scores feed into the Investment Analysis module as part of Layer 4 (Market Intelligence Matrix). The Global Opportunity Score Analysis (GOSA) builds upon GFR with Doing Business, Sector, and Zone indicators.
+              </p>
+              <Link href="/investment-analysis" style={{display:'inline-flex',alignItems:'center',gap:'5px',
+                padding:'8px 16px',background:'#74BB65',color:'white',borderRadius:'7px',
+                textDecoration:'none',fontSize:'12px',fontWeight:700}}>
+                Open Investment Analysis <ArrowRight size={12}/>
+              </Link>
+            </div>
+          </div>
         </div>
 
-        {/* 7 Pillars */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>
-            7-Pillar Architecture
-          </h2>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'12px'}}>
-            {PILLARS.map(p=>(
-              <div key={p.n} style={{
-                padding:'16px',borderRadius:'10px',
-                background:'rgba(10,61,98,0.04)',border:'1px solid rgba(10,61,98,0.08)',
-              }}>
-                <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>
-                  <span style={{fontSize:'20px'}}>{p.icon}</span>
+        {/* 6 dimensions */}
+        <div className="gfm-card" style={{padding:'24px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'18px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <Globe size={14} color="#74BB65"/> 6 Dimensions — Indicators & Sources
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+            {DIMENSIONS.map(dim=>(
+              <div key={dim.code} style={{padding:'16px',borderRadius:'10px',
+                background:`${dim.color}04`,border:`1px solid ${dim.color}18`,borderLeft:`4px solid ${dim.color}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:'8px',marginBottom:'10px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+                    <span style={{fontSize:'14px',fontWeight:900,color:dim.color,fontFamily:'monospace'}}>{dim.code}</span>
+                    <span style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{dim.name}</span>
+                  </div>
+                  <span style={{fontSize:'11px',fontWeight:800,padding:'3px 10px',borderRadius:'10px',
+                    background:`${dim.color}12`,color:dim.color}}>Weight: {dim.weight}%</span>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
                   <div>
-                    <div style={{fontSize:'10px',color:'#696969',fontWeight:700}}>PILLAR {p.n}</div>
-                    <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{p.name}</div>
+                    <div style={{fontSize:'10px',fontWeight:700,color:'#696969',textTransform:'uppercase',
+                      letterSpacing:'0.05em',marginBottom:'5px'}}>Indicators</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                      {dim.indicators.map(ind=>(
+                        <div key={ind} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'11px',color:'#696969'}}>
+                          <CheckCircle size={9} color={dim.color}/>{ind}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:'10px',fontWeight:700,color:'#696969',textTransform:'uppercase',
+                      letterSpacing:'0.05em',marginBottom:'5px'}}>Sources</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:'3px'}}>
+                      {dim.sources.map(src=>(
+                        <div key={src} style={{fontSize:'11px',color:'#696969',fontFamily:'monospace'}}>{src}</div>
+                      ))}
+                    </div>
                   </div>
                 </div>
-                <div style={{display:'flex',gap:'4px',flexWrap:'wrap'}}>
-                  {p.dims.map(d=>(
-                    <span key={d} style={{fontSize:'10px',background:'rgba(116,187,101,0.15)',
-                      color:'#0A3D62',padding:'2px 8px',borderRadius:'12px',fontWeight:700}}>{d}</span>
-                  ))}
-                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Normalisation methodology */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>
-            6-Step Normalisation & Scoring
-          </h2>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'12px'}}>
-            {NORMALISE_STEPS.map(s=>(
-              <div key={s.n} style={{display:'flex',gap:'12px',alignItems:'flex-start',
-                padding:'14px',background:'rgba(10,61,98,0.03)',borderRadius:'10px'}}>
-                <div style={{
-                  width:'28px',height:'28px',borderRadius:'50%',flexShrink:0,
-                  background:'#0A3D62',color:'white',display:'flex',alignItems:'center',
-                  justifyContent:'center',fontSize:'12px',fontWeight:800,
-                }}>{s.n}</div>
-                <div>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'3px'}}>{s.title}</div>
-                  <div style={{fontSize:'12px',color:'#696969',lineHeight:'1.4'}}>{s.desc}</div>
+        {/* Normalisation pipeline */}
+        <PreviewGate feature="full_profile">
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'18px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Database size={14} color="#74BB65"/> 6-Step Normalisation Pipeline
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px'}}>
+              {NORMALISATION_STEPS.map(step=>(
+                <div key={step.n} style={{display:'flex',gap:'10px',padding:'14px',borderRadius:'10px',
+                  background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)'}}>
+                  <div style={{width:'28px',height:'28px',borderRadius:'50%',flexShrink:0,
+                    background:'#0A3D62',color:'white',display:'flex',alignItems:'center',
+                    justifyContent:'center',fontSize:'12px',fontWeight:800}}>{step.n}</div>
+                  <div>
+                    <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{step.title}</div>
+                    <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.5'}}>{step.desc}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </PreviewGate>
 
-        {/* Data Sources */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>
-            Primary Data Sources
-          </h2>
-          <div className="gfm-card" style={{overflow:'hidden'}}>
-            <table className="gfm-table">
-              <thead><tr><th>Code</th><th>Source</th><th>Published</th><th>Reference</th></tr></thead>
-              <tbody>
-                {SOURCES.map(s=>(
-                  <tr key={s.abbr}>
-                    <td style={{fontFamily:'monospace',fontWeight:700,color:'#0A3D62'}}>{s.abbr}</td>
-                    <td>
-                      <a href={s.url} target="_blank" rel="noopener" style={{color:'#1B6CA8',fontWeight:500,textDecoration:'none'}}>
-                        {s.name} ↗
-                      </a>
-                    </td>
-                    <td style={{color:'#696969',fontSize:'12px'}}>{s.date}</td>
-                    <td style={{fontFamily:'monospace',fontSize:'11px',color:'#696969'}}>{s.ref}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Source transparency */}
+        <div className="gfm-card" style={{padding:'22px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <TrendingUp size={14} color="#74BB65"/> Data Transparency & Source Attribution
           </div>
-          <p style={{fontSize:'12px',color:'#696969',marginTop:'12px'}}>
-            Full source inventory in the{' '}
-            <Link href="/sources" style={{color:'#1B6CA8'}}>Data Sources Registry →</Link>
+          <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.75',marginBottom:'14px'}}>
+            Every GFR score is traceable to its source data. Hover over any score on the platform to see the contributing source, update date, and GFM reference code.
           </p>
+          <div style={{display:'flex',gap:'12px',flexWrap:'wrap'}}>
+            {[{src:'IMF World Economic Outlook',ref:'GFM-SRC-000001',date:'Apr 2026'},
+              {src:'UNCTAD World Investment Report',ref:'GFM-SRC-000002',date:'Jun 2025'},
+              {src:'World Bank WDI',ref:'GFM-SRC-000003',date:'2025'}].map(s=>(
+              <SourceBadge key={s.ref} source={s.src} date={s.date} accessed="20 Mar 2026" refCode={s.ref}>
+                <span style={{fontSize:'11px',padding:'4px 10px',borderRadius:'7px',
+                  background:'rgba(10,61,98,0.05)',border:'1px solid rgba(10,61,98,0.1)',
+                  color:'#696969',cursor:'default',display:'inline-block'}}>{s.src}</span>
+              </SourceBadge>
+            ))}
+          </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

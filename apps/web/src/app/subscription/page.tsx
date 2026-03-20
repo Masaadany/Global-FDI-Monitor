@@ -1,141 +1,186 @@
 'use client';
 import { useState } from 'react';
+import { CheckCircle, ArrowRight, Globe, Zap, Shield, CreditCard, Users, Download, Key, Star } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
+import Footer from '@/components/Footer';
+import { useTrial } from '@/lib/trialContext';
 import Link from 'next/link';
 
-const PLANS = [
-  {
-    id:'trial', name:'Free Trial', monthly:0, annual:0, period:'3 days',
-    color:'#696969', badge:'',
-    features:['Full dashboard access','218+ live FDI signals','GFR rankings 215 economies','Foresight 2050 views','Scenario planner (view)','Benchmarking tool (view)','1 user seat'],
-    limits:  ['No PDF report generation','No data downloads','No API access'],
-    cta:'Start Free Trial', href:'/register',
-  },
-  {
-    id:'professional', name:'Professional', monthly:799, annual:679, period:'month',
-    color:'#74BB65', badge:'Most Popular',
-    features:['Everything in Free Trial','Unlimited PDF report generation','Data exports (watermarked)','API access 500 req/min','WebSocket live feed','3 user seats','200 intelligence credits/month','Priority support (24h)'],
-    limits:[],
-    cta:'Start Professional', href:'/register',
-  },
-  {
-    id:'enterprise', name:'Enterprise', monthly:0, annual:0, period:'',
-    color:'#0A3D62', badge:'',
-    features:['Everything in Professional','Unlimited user seats','Dedicated data operations team','Custom API SLA','White-label option available','Custom report formats','Enterprise SSO','Dedicated onboarding'],
-    limits:[],
-    cta:'Contact Sales', href:'/contact',
-  },
+const FEATURES_PRO = [
+  {icon:Zap,      text:'Unlimited FDI signal access — all grades'},
+  {icon:Download, text:'Unlimited PDF report downloads'},
+  {icon:Globe,    text:'Full Investment Analysis — 215 economies'},
+  {icon:Key,      text:'API access — 4,800 credits/year'},
+  {icon:Users,    text:'3 user seats included'},
+  {icon:Shield,   text:'Priority email support'},
+];
+
+const FEATURES_ENT = [
+  {icon:Zap,      text:'Everything in Professional'},
+  {icon:Users,    text:'Unlimited user seats'},
+  {icon:Key,      text:'Unlimited API credits'},
+  {icon:Star,     text:'White-label reports & branding'},
+  {icon:Shield,   text:'Dedicated success manager + SLA'},
+  {icon:Globe,    text:'Custom data integrations & on-premise option'},
 ];
 
 export default function SubscriptionPage() {
-  const [annual, setAnnual] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'annual'|'monthly'>('annual');
+  const trial = useTrial();
+
+  const proPrice  = billingCycle==='annual' ? '$9,588/year' : '$999/month';
+  const savings   = billingCycle==='annual' ? 'Save 20%' : null;
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
       <TrialBanner/>
-      <section className="gfm-hero px-6 py-14 text-center">
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{color:'#74BB65'}}>Subscription Plans</div>
-          <h1 className="text-4xl font-extrabold mb-3" style={{color:'#0A3D62'}}>Choose Your Intelligence Tier</h1>
-          <p className="text-base mb-6" style={{color:'#696969'}}>3-day free trial · No credit card required · Cancel anytime</p>
-
-          {/* Annual / Monthly toggle */}
-          <div className="inline-flex items-center gap-3 p-1 rounded-full" style={{background:'rgba(10,61,98,0.1)'}}>
-            <button onClick={()=>setAnnual(false)}
-              className="px-5 py-2 rounded-full text-sm font-bold transition-all"
-              style={!annual?{background:'#74BB65',color:'#fff'}:{color:'#696969'}}>
-              Monthly
-            </button>
-            <button onClick={()=>setAnnual(true)}
-              className="px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2"
-              style={annual?{background:'#74BB65',color:'#fff'}:{color:'#696969'}}>
-              Annual
-              <span className="text-xs px-1.5 py-0.5 rounded" style={{background:'rgba(34,197,94,0.2)',color:'#22c55e'}}>Save 15%</span>
-            </button>
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'52px 24px',textAlign:'center'}}>
+        <div style={{maxWidth:'640px',margin:'0 auto'}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:'6px',
+            background:'rgba(116,187,101,0.15)',border:'1px solid rgba(116,187,101,0.3)',
+            padding:'5px 16px',borderRadius:'20px',marginBottom:'18px'}}>
+            <Star size={12} color="#74BB65"/>
+            <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em'}}>UPGRADE YOUR ACCOUNT</span>
           </div>
+          <h1 style={{fontSize:'clamp(26px,3.5vw,42px)',fontWeight:900,color:'white',marginBottom:'12px',lineHeight:'1.15'}}>
+            Unlock Full Investment Intelligence
+          </h1>
+          <p style={{color:'rgba(226,242,223,0.82)',fontSize:'15px',lineHeight:'1.7'}}>
+            {trial.isProfessional
+              ? 'You are on the Professional plan. Manage your subscription below.'
+              : 'Upgrade from your free trial to Professional for unlimited access.'}
+          </p>
+          {/* Billing toggle */}
+          {!trial.isProfessional && (
+            <div style={{display:'inline-flex',background:'rgba(255,255,255,0.1)',borderRadius:'10px',
+              padding:'4px',marginTop:'20px',gap:'4px'}}>
+              {(['annual','monthly'] as const).map(cycle=>(
+                <button key={cycle} onClick={()=>setBillingCycle(cycle)}
+                  style={{padding:'8px 20px',borderRadius:'7px',border:'none',cursor:'pointer',
+                    fontSize:'13px',fontWeight:700,transition:'all 0.2s',
+                    background:billingCycle===cycle?'white':'transparent',
+                    color:billingCycle===cycle?'#0A3D62':'rgba(255,255,255,0.8)'}}>
+                  {cycle==='annual'?'Annual':'Monthly'}
+                  {cycle==='annual' && (
+                    <span style={{marginLeft:'6px',fontSize:'10px',fontWeight:800,
+                      color:'#74BB65',background:'rgba(116,187,101,0.15)',padding:'1px 6px',borderRadius:'8px'}}>
+                      Save 20%
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      <div className="max-w-5xl mx-auto px-6 pb-12">
-        <div className="grid md:grid-cols-3 gap-5 mb-10">
-          {PLANS.map(plan=>(
-            <div key={plan.id}
-              className={`gfm-card p-6 flex flex-col relative ${plan.badge?'border-2':''}`}
-              style={plan.badge?{borderColor:plan.color,boxShadow:`0 0 32px ${plan.color}20`}:{}}>
-              {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 text-xs font-extrabold px-4 py-1 rounded-full whitespace-nowrap"
-                  style={{background:plan.color,color:'#E2F2DF'}}>{plan.badge}</div>
-              )}
-
-              <div className="mb-5">
-                <div className="font-extrabold text-lg mb-1" style={{color:'#0A3D62'}}>{plan.name}</div>
-                <div className="flex items-baseline gap-1 mb-2">
-                  {plan.id === 'enterprise' ? (
-                    <span className="text-3xl font-extrabold" style={{color:plan.color}}>Custom</span>
-                  ) : plan.id === 'trial' ? (
-                    <><span className="text-4xl font-extrabold font-data" style={{color:plan.color}}>$0</span>
-                    <span className="text-sm" style={{color:'#696969'}}>/3 days</span></>
-                  ) : (
-                    <><span className="text-4xl font-extrabold font-data" style={{color:plan.color}}>
-                      ${annual ? plan.annual : plan.monthly}
-                    </span>
-                    <span className="text-sm" style={{color:'#696969'}}>/{plan.period}</span></>
-                  )}
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'36px 24px',display:'flex',flexDirection:'column',gap:'24px'}}>
+        {/* Current plan status */}
+        {trial.isProfessional ? (
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'16px'}}>
+              <div>
+                <div style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',marginBottom:'4px',display:'flex',alignItems:'center',gap:'8px'}}>
+                  <CheckCircle size={18} color="#74BB65"/> Professional Plan — Active
                 </div>
-                {plan.id === 'professional' && annual && (
-                  <div className="text-xs font-bold" style={{color:'#22c55e'}}>Saving $1,440/year vs monthly</div>
-                )}
+                <div style={{fontSize:'13px',color:'#696969'}}>$9,588/year · Renews: April 1, 2027 · 3 user seats</div>
               </div>
-
-              <div className="flex-1 space-y-1.5 mb-5">
-                {plan.features.map(f=>(
-                  <div key={f} className="flex gap-2 text-xs"><span style={{color:'#22c55e',flexShrink:0}}>✓</span><span style={{color:'#696969'}}>{f}</span></div>
-                ))}
-                {plan.limits.map(f=>(
-                  <div key={f} className="flex gap-2 text-xs"><span style={{flexShrink:0,color:'#696969'}}>✗</span><span style={{color:'#696969'}}>{f}</span></div>
+              <div style={{display:'flex',gap:'8px'}}>
+                <Link href="/settings?tab=billing" style={{padding:'9px 18px',border:'1px solid rgba(10,61,98,0.15)',
+                  borderRadius:'8px',color:'#0A3D62',textDecoration:'none',fontWeight:600,fontSize:'13px'}}>
+                  Manage Billing
+                </Link>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px',alignItems:'start'}}>
+            {/* Professional card */}
+            <div style={{borderRadius:'16px',overflow:'hidden',
+              background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',
+              boxShadow:'0 12px 40px rgba(10,61,98,0.25)'}}>
+              <div style={{padding:'28px 26px 20px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'16px'}}>
+                  <div>
+                    <div style={{fontSize:'11px',fontWeight:700,color:'rgba(226,242,223,0.7)',
+                      textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>PROFESSIONAL</div>
+                    <div style={{fontSize:'38px',fontWeight:900,color:'white',lineHeight:1}}>{proPrice}</div>
+                    {savings && (
+                      <div style={{fontSize:'12px',color:'#74BB65',fontWeight:700,marginTop:'4px'}}>{savings}</div>
+                    )}
+                  </div>
+                  <div style={{padding:'4px 12px',borderRadius:'20px',background:'#74BB65',
+                    fontSize:'10px',fontWeight:800,color:'white',letterSpacing:'0.05em'}}>POPULAR</div>
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'20px'}}>
+                  {FEATURES_PRO.map(({icon:Icon,text})=>(
+                    <div key={text} style={{display:'flex',alignItems:'center',gap:'9px'}}>
+                      <Icon size={14} color="#74BB65"/>
+                      <span style={{fontSize:'13px',color:'rgba(226,242,223,0.9)'}}>{text}</span>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/contact" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'7px',
+                  padding:'14px',borderRadius:'10px',background:'#74BB65',color:'white',
+                  textDecoration:'none',fontWeight:800,fontSize:'15px',
+                  boxShadow:'0 4px 16px rgba(116,187,101,0.35)'}}>
+                  Get Professional <ArrowRight size={14}/>
+                </Link>
+              </div>
+            </div>
+            {/* Enterprise card */}
+            <div className="gfm-card" style={{padding:'28px 26px',border:'1px solid rgba(10,61,98,0.1)'}}>
+              <div style={{marginBottom:'16px'}}>
+                <div style={{fontSize:'11px',fontWeight:700,color:'#696969',
+                  textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>ENTERPRISE</div>
+                <div style={{fontSize:'32px',fontWeight:900,color:'#0A3D62',lineHeight:1}}>Custom</div>
+                <div style={{fontSize:'12px',color:'#696969',marginTop:'4px'}}>Negotiated pricing · Unlimited scale</div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'20px'}}>
+                {FEATURES_ENT.map(({icon:Icon,text})=>(
+                  <div key={text} style={{display:'flex',alignItems:'center',gap:'9px'}}>
+                    <Icon size={14} color="#0A3D62"/>
+                    <span style={{fontSize:'13px',color:'#696969'}}>{text}</span>
+                  </div>
                 ))}
               </div>
-
-              <Link href={plan.href}
-                className={`block text-center py-3 rounded-xl text-sm font-extrabold transition-all ${plan.badge?'gfm-btn-primary':''}`}
-                style={!plan.badge?{border:'1px solid rgba(10,61,98,0.2)',color:'#696969'}:{}}>
-                {plan.cta}
+              <Link href="/contact" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'7px',
+                padding:'13px',borderRadius:'10px',background:'#0A3D62',color:'white',
+                textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
+                Contact Sales <ArrowRight size={14}/>
               </Link>
             </div>
-          ))}
-        </div>
-
-        {/* Annual savings banner */}
-        {!annual && (
-          <div className="gfm-card p-4 flex items-center gap-4 flex-wrap mb-8">
-            <span className="text-2xl">💡</span>
-            <div className="flex-1">
-              <div className="font-extrabold text-sm" style={{color:'#0A3D62'}}>Switch to Annual Billing — Save 15%</div>
-              <div className="text-xs mt-0.5" style={{color:'#696969'}}>Professional at $679/month billed annually — saving $1,440/year.</div>
-            </div>
-            <button onClick={()=>setAnnual(true)} className="gfm-btn-primary text-sm py-2 px-5 flex-shrink-0">
-              View Annual Pricing
-            </button>
           </div>
         )}
 
-        {/* FAQ */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {[
-            ['Can I generate reports on the free trial?','No. Report generation and data downloads require a Professional subscription. The free trial gives full read-only dashboard access for 3 days.'],
-            ['What payment methods are accepted?','Stripe processes all payments securely. We accept all major credit and debit cards, and wire transfer for annual Enterprise contracts.'],
-            ['Can I cancel anytime?','Yes. Cancel from Settings → Billing at any time. Cancellation takes effect at end of current billing period. No prorated refunds.'],
-            ['Do intelligence credits expire?','Credits included with Professional ($200/month) expire at end of billing period. Credits purchased separately (credit packs) never expire.'],
-          ].map(([q,a])=>(
-            <div key={q} className="gfm-card p-5">
-              <div className="font-bold text-sm mb-1" style={{color:'#0A3D62'}}>{q}</div>
-              <div className="text-xs leading-relaxed" style={{color:'#696969'}}>{a}</div>
+        {/* Trial status card */}
+        {!trial.isProfessional && (
+          <div className="gfm-card" style={{padding:'20px',
+            background:'rgba(116,187,101,0.04)',border:'1px solid rgba(116,187,101,0.2)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
+              <div>
+                <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>
+                  Free Trial — {trial.daysLeft} day{trial.daysLeft!==1?'s':''} remaining
+                </div>
+                <div style={{fontSize:'12px',color:'#696969'}}>
+                  {trial.reportsUsed}/{trial.reportsMax} reports used · {trial.searchesUsed}/{trial.searchesMax} searches used
+                </div>
+              </div>
+              <div style={{display:'flex',gap:'8px'}}>
+                <div style={{height:'8px',width:'120px',borderRadius:'4px',background:'rgba(10,61,98,0.08)',overflow:'hidden'}}>
+                  <div style={{height:'100%',borderRadius:'4px',
+                    width:`${((7-trial.daysLeft)/7)*100}%`,
+                    background:trial.daysLeft<=1?'#E57373':'#74BB65'}}/>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
+      <Footer/>
     </div>
   );
 }

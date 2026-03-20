@@ -6,7 +6,7 @@ const DIMENSIONS = [
     desc:'GDP growth · Trade openness · FDI stock · Tariff complexity · Export diversification',
     indicators:['GDP growth rate','Trade-to-GDP ratio','FDI stock % GDP','Applied MFN tariff','Export concentration index'] },
   { code:'ICT', name:'Innovation & Competitiveness',    color:'#74BB65', pct:68, weight:18,
-    desc:'GII ranking · R&D spend · Unicorn density · Patent activity · Startup ecosystem',
+    desc:'GII assessment · R&D spend · Unicorn density · Patent activity · Startup ecosystem',
     indicators:['GII score','R&D % GDP','Unicorns per million','Patent filings','Startup density'] },
   { code:'TCM', name:'Talent & Capital Markets',        color:'#1B6CA8', pct:65, weight:17,
     desc:'Tertiary enrolment · Talent retention · Market cap · Venture capital · Banking depth',

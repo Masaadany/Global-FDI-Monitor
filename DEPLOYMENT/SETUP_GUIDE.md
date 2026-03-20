@@ -36,8 +36,8 @@ Create `apps/api/.env`:
 ```env
 # Required
 JWT_SECRET=<32+ char random string>
-DATABASE_URL=postgresql://fdiuser:Ash@#2020@fdi-db-prod-fdimahmoud.postgres.database.azure.com:5432/gfm?sslmode=require
-REDIS_URL=rediss://:zsAQ2PmnVMirDuHLUsy84Nl9MsrGwsCDVAzCaGFF2ks=@fdi-cache-prod.redis.cache.windows.net:6380
+DATABASE_URL=postgresql://fdiuser:DB_PASSWORD_REDACTED@fdi-db-prod-fdimahmoud.postgres.database.azure.com:5432/gfm?sslmode=require
+REDIS_URL=rediss://:REDIS_KEY_REDACTED@fdi-cache-prod.redis.cache.windows.net:6380
 
 # Payments (Stripe)
 STRIPE_SECRET_KEY=sk_live_...

@@ -1,201 +1,223 @@
 'use client';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Logo from '@/components/Logo';
+import { Globe, CheckCircle, ArrowRight, Target, Zap, BarChart3 } from 'lucide-react';
+import NavBar from '@/components/NavBar';
 import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
 const STEPS = [
-  { id:1, title:'Welcome to FDI Monitor', subtitle:'Tell us about yourself' },
-  { id:2, title:'Your Use Case',           subtitle:'How will you use the platform?' },
-  { id:3, title:'Regions of Interest',     subtitle:'Which regions do you track?' },
-  { id:4, title:'Target Sectors',          subtitle:'Which sectors matter most?' },
-  { id:5, title:'Ready to Launch',         subtitle:'Your intelligence dashboard awaits' },
+  {id:'welcome',    title:'Welcome to Global FDI Monitor',    subtitle:'Your investment intelligence platform'},
+  {id:'language',   title:'Choose Your Language',             subtitle:'We support 10 official languages'},
+  {id:'use-case',   title:'What best describes your role?',   subtitle:'We\'ll personalise your experience'},
+  {id:'regions',    title:'Select your focus regions',        subtitle:'Which regions matter most to you?'},
+  {id:'sectors',    title:'Your key investment sectors',      subtitle:'Filter intelligence to what matters'},
 ];
 
-const USE_CASES = [
-  {id:'ipa',      label:'Investment Promotion Agency', icon:'🏛'},
-  {id:'swf',      label:'Sovereign Wealth Fund',       icon:'💰'},
-  {id:'pe',       label:'Private Equity / VC',         icon:'📊'},
-  {id:'consult',  label:'Strategy Consultant',         icon:'🎯'},
-  {id:'research', label:'Academic Research',           icon:'🔬'},
-  {id:'govt',     label:'Government / Ministry',       icon:'⚖️'},
-  {id:'corp',     label:'Corporate Strategy',          icon:'🏢'},
-  {id:'other',    label:'Other',                       icon:'💼'},
+const LANGUAGES = [
+  {code:'en',name:'English',    native:'English',    flag:'🇺🇸'},
+  {code:'ar',name:'Arabic',     native:'العربية',    flag:'🇸🇦',dir:'rtl'},
+  {code:'zh',name:'Chinese',    native:'中文',        flag:'🇨🇳'},
+  {code:'fr',name:'French',     native:'Français',   flag:'🇫🇷'},
+  {code:'es',name:'Spanish',    native:'Español',    flag:'🇪🇸'},
+  {code:'de',name:'German',     native:'Deutsch',    flag:'🇩🇪'},
+  {code:'ja',name:'Japanese',   native:'日本語',      flag:'🇯🇵'},
+  {code:'ko',name:'Korean',     native:'한국어',      flag:'🇰🇷'},
+  {code:'pt',name:'Portuguese', native:'Português',  flag:'🇧🇷'},
+  {code:'ru',name:'Russian',    native:'Русский',    flag:'🇷🇺'},
 ];
 
-const REGIONS = [
-  {id:'mena',       label:'MENA',            icon:'🌍'},
-  {id:'apac',       label:'Asia-Pacific',    icon:'🌏'},
-  {id:'europe',     label:'Europe',          icon:'🇪🇺'},
-  {id:'namerica',   label:'North America',   icon:'🌎'},
-  {id:'africa',     label:'Africa',          icon:'🌍'},
-  {id:'latam',      label:'Latin America',   icon:'🌎'},
-  {id:'global',     label:'Global',          icon:'🌐'},
-  {id:'south_asia', label:'South Asia',      icon:'🌏'},
+const ROLES = [
+  {id:'ipa',       label:'Investment Promotion Agency (IPA)',    icon:'🏛'},
+  {id:'gov',       label:'Government / Ministry',               icon:'🏢'},
+  {id:'swf',       label:'Sovereign Wealth Fund',               icon:'💰'},
+  {id:'consulting',label:'Strategy / Consulting Firm',          icon:'📊'},
+  {id:'pe',        label:'Private Equity / Venture Capital',    icon:'📈'},
+  {id:'corporate', label:'Corporate / Multinational',           icon:'🌐'},
+  {id:'academic',  label:'Research / Academic Institution',     icon:'📚'},
+  {id:'other',     label:'Other Professional',                  icon:'👤'},
 ];
 
-const SECTORS = [
-  {id:'ict',    label:'ICT & Digital',        icon:'💻'},
-  {id:'energy', label:'Energy & Utilities',   icon:'⚡'},
-  {id:'manuf',  label:'Manufacturing',        icon:'🏭'},
-  {id:'fin',    label:'Financial Services',   icon:'💰'},
-  {id:'re',     label:'Real Estate',          icon:'🏢'},
-  {id:'health', label:'Health & Life Sci',   icon:'🏥'},
-  {id:'infra',  label:'Infrastructure',       icon:'🏗'},
-  {id:'auto',   label:'Auto & Mobility',      icon:'🚗'},
-];
+const REGIONS_LIST = ['Middle East & North Africa','Asia-Pacific','Europe','Americas','Sub-Saharan Africa','South Asia'];
+const SECTORS_LIST = ['Technology','Renewable Energy','Manufacturing','Financial Services','Healthcare','Logistics & Infrastructure','Agriculture','Real Estate'];
 
 export default function OnboardingPage() {
-  const [step,     setStep]     = useState(1);
-  const [useCase,  setUseCase]  = useState('');
+  const [step,     setStep]     = useState(0);
+  const [lang,     setLang]     = useState('en');
+  const [role,     setRole]     = useState('');
   const [regions,  setRegions]  = useState<string[]>([]);
   const [sectors,  setSectors]  = useState<string[]>([]);
-  const [loading,  setLoading]  = useState(false);
-  const router = useRouter();
 
-  function toggleRegion(id: string) {
-    setRegions(r => r.includes(id) ? r.filter(x=>x!==id) : [...r,id]);
-  }
-  function toggleSector(id: string) {
-    setSectors(s => s.includes(id) ? s.filter(x=>x!==id) : [...s,id]);
-  }
+  const STEP = STEPS[step];
+  const isLast = step === STEPS.length - 1;
 
-  async function finish() {
-    setLoading(true);
-    try {
-      const token = typeof window!=='undefined' ? localStorage.getItem('gfm_token')||'' : '';
-      await fetch(`${API}/api/v1/onboarding`, {
-        method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
-        body: JSON.stringify({use_case:useCase, regions, sectors}),
-      });
-    } catch {}
-    router.push('/dashboard');
-  }
+  function next() { if (step < STEPS.length - 1) setStep(s=>s+1); }
+  function back() { if (step > 0) setStep(s=>s-1); }
 
-  const pct = Math.round((step/STEPS.length)*100);
+  const canNext = () => {
+    if (step===1) return true;
+    if (step===2) return !!role;
+    if (step===3) return regions.length > 0;
+    if (step===4) return sectors.length > 0;
+    return true;
+  };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{background:'#E2F2DF'}}>
-      {/* Header */}
-      <div className="px-6 py-4 border-b flex items-center justify-between" style={{borderBottomColor:'rgba(10,61,98,0.1)'}}>
-        <Logo variant="nav" href="/"/>
-        <div className="text-xs" style={{color:'#696969'}}>Step {step} of {STEPS.length}</div>
-      </div>
+    <div className="min-h-screen" style={{background:'linear-gradient(135deg,#0A3D62 0%,#0E4F7A 100%)',
+      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'24px',
+      position:'relative',overflow:'hidden'}}>
+      {/* Grid overlay */}
+      <div style={{position:'absolute',inset:0,
+        backgroundImage:'linear-gradient(rgba(116,187,101,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(116,187,101,0.05) 1px,transparent 1px)',
+        backgroundSize:'40px 40px'}}/>
 
-      {/* Progress bar */}
-      <div className="h-0.5" style={{background:'rgba(10,61,98,0.1)'}}>
-        <div className="h-full transition-all duration-500" style={{width:`${pct}%`,background:'#74BB65'}}/>
-      </div>
+      <div style={{position:'relative',zIndex:1,width:'100%',maxWidth:'580px'}}>
+        {/* Logo */}
+        <div style={{textAlign:'center',marginBottom:'28px'}}>
+          <Link href="/" style={{textDecoration:'none',display:'inline-flex',alignItems:'baseline',gap:'2px'}}>
+            <span style={{fontSize:'22px',fontWeight:900,color:'white'}}>GLOBAL</span>
+            <span style={{fontSize:'22px',fontWeight:900,color:'#74BB65',marginLeft:'4px'}}>FDI</span>
+            <span style={{fontSize:'22px',fontWeight:900,color:'white',marginLeft:'4px'}}>MONITOR</span>
+          </Link>
+        </div>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-lg">
-          {/* Step header */}
-          <div className="text-center mb-8">
-            <div className="flex justify-center gap-2 mb-4">
-              {STEPS.map(s=>(
-                <div key={s.id} className={`w-2 h-2 rounded-full transition-all ${step>=s.id?'':'opacity-30'}`}
-                  style={{background:step>=s.id?'#74BB65':'#696969'}}/>
-              ))}
-            </div>
-            <h1 className="text-2xl font-extrabold mb-1" style={{color:'#0A3D62'}}>{STEPS[step-1].title}</h1>
-            <p className="text-sm" style={{color:'#696969'}}>{STEPS[step-1].subtitle}</p>
+        {/* Progress bar */}
+        <div style={{display:'flex',gap:'4px',marginBottom:'28px'}}>
+          {STEPS.map((_,i)=>(
+            <div key={i} style={{flex:1,height:'4px',borderRadius:'2px',
+              background:i<=step?'#74BB65':'rgba(255,255,255,0.15)',transition:'background 0.3s'}}/>
+          ))}
+        </div>
+
+        {/* Card */}
+        <div style={{background:'white',borderRadius:'20px',padding:'36px',
+          boxShadow:'0 24px 80px rgba(0,0,0,0.2)'}}>
+          <div style={{textAlign:'center',marginBottom:'28px'}}>
+            <div style={{fontSize:'22px',fontWeight:800,color:'#0A3D62',marginBottom:'6px'}}>{STEP.title}</div>
+            <div style={{fontSize:'14px',color:'#696969'}}>{STEP.subtitle}</div>
           </div>
 
-          {/* Step content */}
-          {step === 1 && (
-            <div className="gfm-card p-6 text-center">
-              <div className="text-5xl mb-4">👋</div>
-              <p className="text-sm leading-relaxed mb-4" style={{color:'#696969'}}>
-                Welcome to FDI Monitor — the global standard for investment intelligence. This quick setup takes 2 minutes and personalises your dashboard experience.
-              </p>
-              <div className="grid grid-cols-3 gap-3 text-xs mt-4">
-                {[['218','Live Signals'],['215','Economies'],['10','Report Types']].map(([v,l])=>(
-                  <div key={l} className="p-3 rounded-xl" style={{background:'rgba(116,187,101,0.06)'}}>
-                    <div className="font-extrabold font-data text-lg" style={{color:'#74BB65'}}>{v}</div>
-                    <div style={{color:'#696969'}}>{l}</div>
+          {/* Step 0: Welcome */}
+          {step===0 && (
+            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+              {[{icon:Zap,   title:'218+ live FDI signals',   desc:'PLATINUM to BRONZE, Z3 verified, 2s updates'},
+                {icon:Globe, title:'215 economies covered',   desc:'GFR assessment, Investment Analysis, benchmarking'},
+                {icon:BarChart3,title:'Investment Analysis',  desc:'4-layer scoring — Doing Business to Market Intelligence'},
+                {icon:Target,title:'Mission Planning',        desc:'Destination countries, targets, dossier generation'},
+              ].map(({icon:Icon,title,desc})=>(
+                <div key={title} style={{display:'flex',gap:'12px',padding:'14px',borderRadius:'10px',
+                  background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)'}}>
+                  <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(116,187,101,0.1)',
+                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <Icon size={16} color="#74BB65"/>
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'2px'}}>{title}</div>
+                    <div style={{fontSize:'11px',color:'#696969'}}>{desc}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
-          {step === 2 && (
-            <div className="grid grid-cols-2 gap-3">
-              {USE_CASES.map(uc=>(
-                <button key={uc.id} onClick={()=>setUseCase(uc.id)}
-                  className={`gfm-card p-4 text-left transition-all border-2 ${useCase===uc.id?'':'border-transparent'}`}
-                  style={useCase===uc.id?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
-                  <div className="text-2xl mb-1">{uc.icon}</div>
-                  <div className="text-xs font-semibold" style={{color:useCase===uc.id?'#74BB65':'#0A3D62'}}>{uc.label}</div>
+          {/* Step 1: Language */}
+          {step===1 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+              {LANGUAGES.map(l=>(
+                <button key={l.code} onClick={()=>setLang(l.code)}
+                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 14px',
+                    borderRadius:'9px',border:lang===l.code?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
+                    background:lang===l.code?'rgba(116,187,101,0.06)':'white',
+                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
+                  <span style={{fontSize:'20px'}}>{l.flag}</span>
+                  <div>
+                    <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{l.native}</div>
+                    <div style={{fontSize:'10px',color:'#696969'}}>{l.name}</div>
+                  </div>
+                  {lang===l.code && <CheckCircle size={14} color="#74BB65" style={{marginLeft:'auto'}}/>}
                 </button>
               ))}
             </div>
           )}
 
-          {step === 3 && (
-            <div className="grid grid-cols-2 gap-3">
-              {REGIONS.map(r=>(
-                <button key={r.id} onClick={()=>toggleRegion(r.id)}
-                  className={`gfm-card p-4 text-left transition-all border-2 ${regions.includes(r.id)?'':'border-transparent'}`}
-                  style={regions.includes(r.id)?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
-                  <div className="text-2xl mb-1">{r.icon}</div>
-                  <div className="text-xs font-semibold" style={{color:regions.includes(r.id)?'#74BB65':'#0A3D62'}}>{r.label}</div>
+          {/* Step 2: Role */}
+          {step===2 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+              {ROLES.map(r=>(
+                <button key={r.id} onClick={()=>setRole(r.id)}
+                  style={{display:'flex',alignItems:'center',gap:'8px',padding:'12px',
+                    borderRadius:'9px',border:role===r.id?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
+                    background:role===r.id?'rgba(116,187,101,0.06)':'white',
+                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
+                  <span style={{fontSize:'20px'}}>{r.icon}</span>
+                  <span style={{fontSize:'12px',fontWeight:600,color:'#0A3D62',lineHeight:'1.3'}}>{r.label}</span>
+                  {role===r.id && <CheckCircle size={12} color="#74BB65" style={{marginLeft:'auto',flexShrink:0}}/>}
                 </button>
               ))}
             </div>
           )}
 
-          {step === 4 && (
-            <div className="grid grid-cols-2 gap-3">
-              {SECTORS.map(s=>(
-                <button key={s.id} onClick={()=>toggleSector(s.id)}
-                  className={`gfm-card p-4 text-left transition-all border-2 ${sectors.includes(s.id)?'':'border-transparent'}`}
-                  style={sectors.includes(s.id)?{borderColor:'#74BB65',background:'rgba(116,187,101,0.06)'}:{}}>
-                  <div className="text-2xl mb-1">{s.icon}</div>
-                  <div className="text-xs font-semibold" style={{color:sectors.includes(s.id)?'#74BB65':'#0A3D62'}}>{s.label}</div>
+          {/* Step 3: Regions */}
+          {step===3 && (
+            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+              {REGIONS_LIST.map(r=>(
+                <button key={r}
+                  onClick={()=>setRegions(p=>p.includes(r)?p.filter(x=>x!==r):[...p,r])}
+                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'12px 16px',
+                    borderRadius:'9px',border:regions.includes(r)?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
+                    background:regions.includes(r)?'rgba(116,187,101,0.06)':'white',
+                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
+                  <div style={{width:'18px',height:'18px',borderRadius:'4px',border:'2px solid',
+                    borderColor:regions.includes(r)?'#74BB65':'rgba(10,61,98,0.2)',
+                    background:regions.includes(r)?'#74BB65':'transparent',
+                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    {regions.includes(r) && <CheckCircle size={11} color="white"/>}
+                  </div>
+                  <span style={{fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{r}</span>
                 </button>
               ))}
             </div>
           )}
 
-          {step === 5 && (
-            <div className="gfm-card p-6 text-center">
-              <div className="text-5xl mb-4">🚀</div>
-              <h2 className="text-xl font-extrabold mb-2" style={{color:'#0A3D62'}}>You are all set!</h2>
-              <p className="text-sm mb-4" style={{color:'#696969'}}>
-                Your dashboard is personalised for {useCase ? USE_CASES.find(u=>u.id===useCase)?.label : 'your profile'}.
-                {regions.length > 0 ? ` Tracking ${regions.length} region${regions.length>1?'s':''}.` : ''}
-                {sectors.length > 0 ? ` Focus on ${sectors.length} sector${sectors.length>1?'s':''}.` : ''}
-              </p>
-              <div className="text-xs mb-4 p-3 rounded-xl" style={{background:'rgba(34,197,94,0.06)',color:'#22c55e'}}>
-                3-day free trial active · No credit card required
-              </div>
+          {/* Step 4: Sectors */}
+          {step===4 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+              {SECTORS_LIST.map(s=>(
+                <button key={s}
+                  onClick={()=>setSectors(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s])}
+                  style={{padding:'10px 14px',borderRadius:'9px',
+                    border:sectors.includes(s)?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
+                    background:sectors.includes(s)?'rgba(116,187,101,0.06)':'white',
+                    cursor:'pointer',transition:'all 0.15s',fontSize:'12px',fontWeight:600,
+                    color:'#0A3D62',textAlign:'left',display:'flex',alignItems:'center',gap:'6px'}}>
+                  {sectors.includes(s) && <CheckCircle size={11} color="#74BB65"/>}
+                  {s}
+                </button>
+              ))}
             </div>
           )}
 
           {/* Navigation */}
-          <div className="flex gap-3 mt-6">
-            {step > 1 && (
-              <button onClick={()=>setStep(s=>s-1)}
-                className="gfm-btn-outline px-5 py-3 text-sm flex-shrink-0" style={{color:'#696969'}}>← Back</button>
-            )}
-            {step < 5 ? (
-              <button onClick={()=>setStep(s=>s+1)} disabled={step===2&&!useCase}
-                className={`gfm-btn-primary flex-1 py-3 font-extrabold ${step===2&&!useCase?'opacity-50':''}`}>
-                Continue →
-              </button>
-            ) : (
-              <button onClick={finish} disabled={loading}
-                className={`gfm-btn-primary flex-1 py-3 font-extrabold ${loading?'opacity-70':''}`}>
-                {loading ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"/>Loading…</span> : 'Enter Dashboard →'}
-              </button>
-            )}
+          <div style={{display:'flex',gap:'10px',marginTop:'24px',justifyContent:'space-between'}}>
+            {step > 0
+              ? <button onClick={back} style={{padding:'11px 20px',border:'1px solid rgba(10,61,98,0.15)',
+                  borderRadius:'9px',background:'transparent',cursor:'pointer',fontSize:'14px',fontWeight:600,color:'#696969'}}>← Back</button>
+              : <div/>}
+            {isLast
+              ? <Link href="/dashboard" style={{display:'flex',alignItems:'center',gap:'7px',
+                  padding:'11px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
+                  textDecoration:'none',fontWeight:800,fontSize:'14px',
+                  boxShadow:'0 4px 16px rgba(116,187,101,0.3)'}}>
+                  Launch Platform <ArrowRight size={14}/>
+                </Link>
+              : <button onClick={next} disabled={!canNext()}
+                  style={{display:'flex',alignItems:'center',gap:'7px',
+                    padding:'11px 24px',background:canNext()?'#74BB65':'rgba(116,187,101,0.4)',
+                    color:'white',borderRadius:'9px',border:'none',cursor:canNext()?'pointer':'not-allowed',
+                    fontSize:'14px',fontWeight:700,transition:'all 0.15s'}}>
+                  Continue <ArrowRight size={13}/>
+                </button>}
           </div>
-          {step === 2 && <p className="text-xs text-center mt-2" style={{color:'#696969'}}>Select your primary use case to continue</p>}
-          <div className="text-center mt-3">
-            <Link href="/dashboard" className="text-xs" style={{color:'#696969'}}>Skip onboarding →</Link>
+          <div style={{textAlign:'center',marginTop:'14px',fontSize:'11px',color:'#696969'}}>
+            Step {step+1} of {STEPS.length}
           </div>
         </div>
       </div>

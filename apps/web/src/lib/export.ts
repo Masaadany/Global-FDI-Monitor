@@ -27,8 +27,8 @@ export function exportJSON(data: unknown, filename: string): void {
 }
 
 // ── GFR Export ────────────────────────────────────────────────────────────
-export function exportGFR(rankings: Record<string, unknown>[], quarter: string = 'Q1-2026'): void {
-  const data = rankings.map(r => ({
+export function exportGFR(assessments: Record<string, unknown>[], quarter: string = 'Q1-2026'): void {
+  const data = assessments.map(r => ({
     Rank:           r.rank,
     ISO3:           r.iso3,
     Economy:        r.economy || r.economy_name,
@@ -42,7 +42,7 @@ export function exportGFR(rankings: Record<string, unknown>[], quarter: string =
     'Sustainability': r.sustain_score,
     Quarter:        quarter,
   }));
-  exportCSV(data, `GFM_GFR_Rankings_${quarter.replace('-','_')}`);
+  exportCSV(data, `GFM_GFR_Assessment_${quarter.replace('-','_')}`);
 }
 
 // ── Signals Export ────────────────────────────────────────────────────────

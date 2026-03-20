@@ -1,182 +1,217 @@
 'use client';
 import { useState } from 'react';
+import { TrendingUp, Activity, BarChart3, Globe, Zap, Target, ArrowRight, RefreshCw } from 'lucide-react';
 import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 import TrialBanner from '@/components/TrialBanner';
-import Link from 'next/link';
+import PreviewGate from '@/components/PreviewGate';
 
 const PRESETS = [
-  { id:'base',      name:'Base Case',        desc:'Moderate growth at historical rates',        gdp:0,    tech:1.0,  energy:0.5, color:'#74BB65' },
-  { id:'optimistic',name:'Optimistic',        desc:'AI productivity boom + rapid energy shift',  gdp:2.5,  tech:1.5,  energy:0.9, color:'#22c55e' },
-  { id:'stress',    name:'Stress',            desc:'Geopolitical fragmentation, slow growth',    gdp:-1.5, tech:0.7,  energy:0.2, color:'#EF4444' },
-  { id:'green',     name:'Green Acceleration',desc:'Mandatory net-zero + digital leap',          gdp:1.0,  tech:1.3,  energy:1.0, color:'#22c55e' },
+  {id:'base',       label:'Base Case',   color:'#0A3D62', prob:60, fdi:'$9.2T', tech:'+72%', renew:'+68%', gdp:2.8},
+  {id:'optimistic', label:'Optimistic',  color:'#74BB65', prob:25, fdi:'$10.8T',tech:'+85%', renew:'+78%', gdp:4.2},
+  {id:'stress',     label:'Stress',      color:'#E57373', prob:15, fdi:'$6.8T', tech:'+28%', renew:'+22%', gdp:0.8},
 ];
 
-function runMC(gdp: number, tech: number, energy: number): {p10:number,p50:number,p90:number,cagr:string} {
-  const BASE = 1.8;
-  const adj = 1 + (gdp * 0.40) + ((tech - 1) * 0.30) + (energy * 0.15);
-  const p50 = parseFloat((BASE * adj).toFixed(2));
-  const p10 = parseFloat((p50 * 0.65).toFixed(2));
-  const p90 = parseFloat((p50 * 1.42).toFixed(2));
-  const cagr = (((p50 / BASE) ** (1/11) - 1) * 100).toFixed(1) + '%';
-  return { p10, p50, p90, cagr };
-}
+const LEVERS = [
+  {id:'gdp',    label:'Global GDP Growth Rate',   min:-2,  max:6,   step:0.1, default:2.8,  unit:'% CAGR',  suffix:'%'},
+  {id:'tech',   label:'Technology Adoption Speed', min:0,   max:100, step:5,   default:60,   unit:'index',   suffix:''},
+  {id:'energy', label:'Green Energy Transition',   min:0,   max:100, step:5,   default:50,   unit:'pace',    suffix:''},
+  {id:'trade',  label:'Trade Openness',            min:0,   max:100, step:5,   default:70,   unit:'index',   suffix:''},
+  {id:'gov',    label:'Governance Reform',         min:0,   max:100, step:5,   default:55,   unit:'index',   suffix:''},
+];
 
-function ConfBar({ p10, p50, p90, color }: { p10:number; p50:number; p90:number; color:string }) {
-  const max = 5; const W = 320;
-  const x10 = (p10/max)*W, x50 = (p50/max)*W, x90 = (p90/max)*W;
+function ScenarioBar({ label, val, max, color }: {label:string,val:number,max:number,color:string}) {
   return (
-    <svg viewBox={`0 0 ${W} 36`} className="w-full">
-      <rect x={x10} y={10} width={x90-x10} height={16} rx="4" fill={color} opacity="0.2"/>
-      <rect x={x50-2} y={6} width={4} height={24} rx="2" fill={color}/>
-      {[{x:x10,l:`$${p10}T`},{x:x50,l:`$${p50}T`},{x:x90,l:`$${p90}T`}].map(({x,l})=>(
-        <text key={l} x={x} y={4} textAnchor="middle" fontSize="9" fill={color} fontFamily="monospace">{l}</text>
-      ))}
-      <text x={0} y={35} fontSize="8" fill="#696969" fontFamily="monospace">P10</text>
-      <text x={W/2} y={35} textAnchor="middle" fontSize="8" fill="#696969" fontFamily="monospace">P50</text>
-      <text x={W} y={35} textAnchor="end" fontSize="8" fill="#696969" fontFamily="monospace">P90</text>
-    </svg>
+    <div style={{marginBottom:'8px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px',fontSize:'11px'}}>
+        <span style={{color:'#696969'}}>{label}</span>
+        <span style={{fontWeight:700,color,fontFamily:'monospace'}}>{val}</span>
+      </div>
+      <div style={{height:'7px',borderRadius:'4px',background:'rgba(10,61,98,0.08)'}}>
+        <div style={{height:'100%',borderRadius:'4px',width:`${(val/max)*100}%`,background:color,transition:'width 0.4s ease'}}/>
+      </div>
+    </div>
   );
 }
 
 export default function ScenarioPlannerPage() {
-  const [preset, setPreset]   = useState('base');
-  const [gdp,    setGdp]      = useState(0);
-  const [tech,   setTech]     = useState(1.0);
-  const [energy, setEnergy]   = useState(0.5);
-  const [custom, setCustom]   = useState(false);
+  const [preset,  setPreset]  = useState<string|null>(null);
+  const [levers,  setLevers]  = useState<Record<string,number>>({gdp:2.8,tech:60,energy:50,trade:70,gov:55});
+  const [ran,     setRan]     = useState(false);
+  const [running, setRunning] = useState(false);
 
-  function applyPreset(p: typeof PRESETS[0]) {
-    setPreset(p.id); setGdp(p.gdp); setTech(p.tech); setEnergy(p.energy); setCustom(false);
+  function setLever(id:string, v:number) {
+    setLevers(l=>({...l,[id]:v}));
+    setPreset(null); setRan(false);
   }
 
-  const results = runMC(gdp, tech, energy);
-  const activePreset = PRESETS.find(p=>p.id===preset);
+  function applyPreset(p:typeof PRESETS[0]) {
+    setPreset(p.id);
+    setLevers({gdp:p.gdp, tech:p.id==='optimistic'?80:p.id==='stress'?25:60,
+               energy:p.id==='optimistic'?75:p.id==='stress'?20:50, trade:70, gov:55});
+    setRan(false);
+  }
+
+  function runScenario() {
+    setRunning(true);
+    setTimeout(()=>{setRunning(false);setRan(true);},1200);
+  }
+
+  function resetAll() {
+    setLevers({gdp:2.8,tech:60,energy:50,trade:70,gov:55});
+    setPreset(null); setRan(false);
+  }
+
+  // Derived outputs
+  const fdiT = +(9.2*(1+(levers.gdp-2.8)/100*12)*(1+levers.tech/100*0.25)*(1+levers.energy/100*0.18)).toFixed(1);
+  const techT = +(3.8*(1+levers.tech/100*0.35)).toFixed(1);
+  const renewT= +(2.2*(1+levers.energy/100*0.45)).toFixed(1);
+  const topWinners = levers.gdp>3 ? '🇦🇪 UAE · 🇮🇳 India · 🇸🇬 Singapore' : levers.energy>70 ? '🇩🇪 Germany · 🇦🇺 Australia · 🇸🇪 Sweden' : '🇺🇸 USA · 🇨🇳 China · 🇩🇪 Germany';
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
       <TrialBanner/>
-      <section className="gfm-hero px-6 py-10">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Monte Carlo · 10,000 Simulations</div>
-          <h1 className="text-3xl font-extrabold" style={{color:'#0A3D62'}}>Scenario Planner</h1>
-          <p className="text-sm mt-1" style={{color:'#696969'}}>P10/P50/P90 global FDI projections · Adjust macro variables · Compare scenarios</p>
+
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'12px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+              <Activity size={16} color="#74BB65"/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Scenario Planner</span>
+            </div>
+            <h1 style={{fontSize:'28px',fontWeight:800,color:'white'}}>FDI Scenario Planning 2050</h1>
+            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px',marginTop:'4px'}}>
+              Model optimistic, base, and stress scenarios or build your custom 2050 projection.
+            </p>
+          </div>
         </div>
       </section>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-5 grid lg:grid-cols-3 gap-5">
-        {/* Controls */}
-        <div className="space-y-4">
-          {/* Presets */}
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>Preset Scenarios</div>
-            <div className="space-y-2">
-              {PRESETS.map(p=>(
-                <button key={p.id} onClick={()=>applyPreset(p)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all ${preset===p.id&&!custom?'':'hover:bg-white/3'}`}
-                  style={preset===p.id&&!custom?{borderColor:p.color,background:`${p.color}08`}:{borderColor:'rgba(10,61,98,0.15)'}}>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs font-extrabold" style={{color:preset===p.id&&!custom?p.color:'#696969'}}>{p.name}</span>
-                    {preset===p.id&&!custom && <span style={{color:p.color}}>●</span>}
-                  </div>
-                  <div className="text-xs" style={{color:'#696969'}}>{p.desc}</div>
-                </button>
+      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'flex',flexDirection:'column',gap:'20px'}}>
+
+        {/* Preset cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
+          {PRESETS.map(p=>(
+            <div key={p.id} onClick={()=>applyPreset(p)}
+              style={{background:'white',borderRadius:'12px',padding:'20px',cursor:'pointer',
+                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
+                border:preset===p.id?`2px solid ${p.color}`:'1px solid rgba(10,61,98,0.06)',
+                borderTop:`4px solid ${p.color}`,transition:'all 0.15s'}}>
+              <div style={{fontSize:'14px',fontWeight:700,color:p.color,marginBottom:'3px'}}>{p.label}</div>
+              <div style={{fontSize:'11px',color:'#696969',marginBottom:'12px',fontStyle:'italic'}}>
+                {p.id==='base'?'"Moderate Growth Continuation"':p.id==='optimistic'?'"Accelerated Global Growth"':'"Geopolitical Fragmentation"'}
+              </div>
+              {[['Global FDI 2050',p.fdi],['Technology',p.tech],['Renewable',p.renew]].map(([l,v])=>(
+                <div key={l} style={{display:'flex',justifyContent:'space-between',fontSize:'12px',
+                  padding:'4px 0',borderBottom:'1px solid rgba(10,61,98,0.04)'}}>
+                  <span style={{color:'#696969'}}>{l}</span>
+                  <span style={{fontWeight:700,color:p.color,fontFamily:'monospace'}}>{v}</span>
+                </div>
               ))}
+              <div style={{marginTop:'10px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px',fontSize:'11px'}}>
+                  <span style={{color:'#696969'}}>Probability</span>
+                  <span style={{fontWeight:700,color:p.color}}>{p.prob}%</span>
+                </div>
+                <div style={{height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.07)'}}>
+                  <div style={{height:'100%',borderRadius:'3px',width:`${p.prob}%`,background:p.color}}/>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Custom levers */}
+        <div style={{background:'white',borderRadius:'12px',padding:'24px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px',flexWrap:'wrap',gap:'10px'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <Target size={16} color="#74BB65"/>
+              <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>What-If Analysis — Adjust Levers</span>
+            </div>
+            <div style={{display:'flex',gap:'8px'}}>
+              <button onClick={resetAll} style={{display:'flex',alignItems:'center',gap:'5px',
+                padding:'7px 14px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'7px',
+                background:'transparent',cursor:'pointer',fontSize:'12px',color:'#696969',fontWeight:600}}>
+                <RefreshCw size={12}/> Reset
+              </button>
+              <button onClick={runScenario} disabled={running}
+                style={{display:'flex',alignItems:'center',gap:'5px',
+                  padding:'8px 18px',background:'#74BB65',border:'none',borderRadius:'7px',
+                  color:'white',cursor:'pointer',fontSize:'13px',fontWeight:700,
+                  opacity:running?0.7:1}}>
+                {running ? <><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/> Running…</> : <><Zap size={13}/> Run Scenario</>}
+              </button>
             </div>
           </div>
 
-          {/* What-If sliders */}
-          <div className="gfm-card p-5">
-            <div className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>What-If Variables</div>
-            <div className="space-y-5">
-              {[
-                {label:'GDP Growth Adj.',    val:gdp,    set:(v:number)=>{setGdp(v);setCustom(true)},    min:-3,  max:5,   step:0.5, fmt:(v:number)=>`${v>0?'+':''}${v}%`,   color:'#74BB65'},
-                {label:'Tech Adoption Mult.',val:tech,   set:(v:number)=>{setTech(v);setCustom(true)},   min:0.5, max:2,   step:0.1, fmt:(v:number)=>`×${v.toFixed(1)}`,     color:'#74BB65'},
-                {label:'Energy Transition',  val:energy, set:(v:number)=>{setEnergy(v);setCustom(true)}, min:0,   max:1,   step:0.1, fmt:(v:number)=>`${Math.round(v*100)}%`,color:'#22c55e'},
-              ].map(s=>(
-                <div key={s.label}>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-xs font-bold" style={{color:'#696969'}}>{s.label}</span>
-                    <span className="text-xs font-extrabold font-data" style={{color:s.color}}>{s.fmt(s.val)}</span>
-                  </div>
-                  <input type="range" min={s.min} max={s.max} step={s.step} value={s.val}
-                    onChange={e=>s.set(parseFloat(e.target.value))}
-                    className="w-full h-2 rounded-full cursor-pointer"
-                    style={{accentColor:s.color, background:'rgba(10,61,98,0.1)'}}/>
-                  <div className="flex justify-between text-xs mt-0.5" style={{color:'#696969'}}>
-                    <span>{s.fmt(s.min)}</span><span>{s.fmt(s.max)}</span>
-                  </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
+            {LEVERS.map(l=>(
+              <div key={l.id}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
+                  <label style={{fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{l.label}</label>
+                  <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>
+                    {levers[l.id]?.toFixed(l.step<1?1:0)}{l.suffix}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                  <span style={{fontSize:'10px',color:'#696969',minWidth:'24px'}}>{l.min}</span>
+                  <input type="range" min={l.min} max={l.max} step={l.step} value={levers[l.id]||l.default}
+                    onChange={e=>setLever(l.id,+e.target.value)}
+                    style={{flex:1,accentColor:'#74BB65',height:'4px'}}/>
+                  <span style={{fontSize:'10px',color:'#696969',minWidth:'24px',textAlign:'right'}}>{l.max}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Results */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Main result */}
-          <div className="gfm-card p-6">
-            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div>
-                <div className="text-xs font-extrabold uppercase tracking-widest mb-1" style={{color:activePreset?.color||'#74BB65'}}>
-                  {custom ? '🎛 Custom Scenario' : `📊 ${activePreset?.name}`}
-                </div>
-                <div className="text-xs" style={{color:'#696969'}}>Global FDI by 2035 · Monte Carlo P10/P50/P90</div>
+        <PreviewGate feature="full_profile">
+          {ran && (
+            <div style={{background:'white',borderRadius:'12px',padding:'24px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
+              border:'1px solid rgba(116,187,101,0.25)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'20px'}}>
+                <TrendingUp size={16} color="#74BB65"/>
+                <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>Your Custom Scenario Results · 2050</span>
+                <span style={{marginLeft:'auto',fontSize:'11px',padding:'3px 10px',borderRadius:'10px',
+                  background:'rgba(116,187,101,0.1)',color:'#74BB65',fontWeight:700}}>Custom</span>
               </div>
-              <div className="flex gap-5">
-                {[['P50 (Median)',`$${results.p50}T`,'#74BB65'],['CAGR',results.cagr,'#22c55e'],['Simulations','10,000','#696969']].map(([l,v,c])=>(
-                  <div key={l} className="text-center">
-                    <div className="text-xl font-extrabold font-data" style={{color:c}}>{v}</div>
-                    <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
+
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px',marginBottom:'20px'}}>
+                {[{l:'Global FDI 2050',v:`$${fdiT}T`,c:'#0A3D62'},{l:'Technology FDI',v:`$${techT}T`,c:'#74BB65'},{l:'Renewable FDI',v:`$${renewT}T`,c:'#1B6CA8'}].map(({l,v,c})=>(
+                  <div key={l} style={{textAlign:'center',padding:'16px',borderRadius:'10px',background:'rgba(10,61,98,0.03)'}}>
+                    <div style={{fontSize:'26px',fontWeight:900,color:c,fontFamily:'monospace'}}>{v}</div>
+                    <div style={{fontSize:'11px',color:'#696969',marginTop:'4px'}}>{l}</div>
                   </div>
                 ))}
               </div>
-            </div>
-            <ConfBar p10={results.p10} p50={results.p50} p90={results.p90} color={activePreset?.color||'#74BB65'}/>
-          </div>
 
-          {/* Comparison table */}
-          <div className="gfm-card overflow-hidden">
-            <div className="px-5 py-3 border-b font-extrabold text-sm" style={{borderBottomColor:'rgba(10,61,98,0.1)',color:'#0A3D62'}}>Scenario Comparison</div>
-            <div className="overflow-x-auto">
-              <table className="gfm-table">
-                <thead><tr><th>Scenario</th><th>P10</th><th>P50 (Median)</th><th>P90</th><th>CAGR</th></tr></thead>
-                <tbody>
-                  {PRESETS.map(p=>{
-                    const r = runMC(p.gdp, p.tech, p.energy);
-                    const isActive = preset===p.id && !custom;
-                    return (
-                      <tr key={p.id} style={isActive?{background:'rgba(116,187,101,0.05)'}:{}}>
-                        <td>
-                          <span className="font-bold text-xs px-2 py-0.5 rounded" style={{color:p.color,background:`${p.color}15`}}>{p.name}</span>
-                        </td>
-                        <td className="font-data" style={{color:'#696969'}}>${r.p10}T</td>
-                        <td className="font-extrabold font-data" style={{color:p.color}}>${r.p50}T</td>
-                        <td className="font-data" style={{color:'#696969'}}>${r.p90}T</td>
-                        <td className="font-bold" style={{color:'#22c55e'}}>{r.cagr}</td>
-                      </tr>
-                    );
-                  })}
-                  {custom && (
-                    <tr style={{background:'rgba(116,187,101,0.05)',borderTop:'1px solid rgba(116,187,101,0.2)'}}>
-                      <td><span className="font-bold text-xs px-2 py-0.5 rounded" style={{color:'#74BB65',background:'rgba(116,187,101,0.15)'}}>🎛 Custom</span></td>
-                      <td className="font-data" style={{color:'#696969'}}>${results.p10}T</td>
-                      <td className="font-extrabold font-data" style={{color:'#74BB65'}}>${results.p50}T</td>
-                      <td className="font-data" style={{color:'#696969'}}>${results.p90}T</td>
-                      <td className="font-bold" style={{color:'#22c55e'}}>{results.cagr}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+              <div style={{marginBottom:'16px'}}>
+                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'10px'}}>Outcome Indicators</div>
+                <ScenarioBar label="FDI Volume vs Base" val={Math.round((fdiT/9.2)*100)} max={130} color="#74BB65"/>
+                <ScenarioBar label="Technology Share"   val={Math.round(levers.tech)}     max={100} color="#0A3D62"/>
+                <ScenarioBar label="Green Economy"      val={Math.round(levers.energy)}   max={100} color="#1B6CA8"/>
+              </div>
 
-          <div className="flex gap-3">
-            <Link href="/forecast"     className="gfm-btn-primary text-sm py-2 px-5">Foresight 2050 →</Link>
-            <Link href="/benchmarking" className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#696969'}}>Benchmark Economies</Link>
-          </div>
-        </div>
+              <div style={{padding:'12px 16px',borderRadius:'10px',background:'rgba(116,187,101,0.06)',
+                border:'1px solid rgba(116,187,101,0.15)',fontSize:'13px'}}>
+                <span style={{color:'#696969'}}>Top FDI Winners: </span>
+                <span style={{fontWeight:700,color:'#0A3D62'}}>{topWinners}</span>
+              </div>
+
+              <div style={{display:'flex',gap:'8px',marginTop:'16px'}}>
+                <button style={{display:'flex',alignItems:'center',gap:'5px',padding:'9px 18px',
+                  background:'#0A3D62',border:'none',borderRadius:'8px',color:'white',
+                  cursor:'pointer',fontSize:'13px',fontWeight:700}}>
+                  <ArrowRight size={14}/> Export Scenario Report
+                </button>
+              </div>
+            </div>
+          )}
+        </PreviewGate>
       </div>
+      <Footer/>
     </div>
   );
 }

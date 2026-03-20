@@ -23,7 +23,7 @@ export default function InvestmentHeatmap() {
     <div role="region" aria-label="Investment heatmap" className="gfm-card p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="font-extrabold text-sm" style={{color:'#0A3D62'}}>🌡️ FDI Attractiveness Heatmap</div>
-        <Link href="/gfr" className="text-xs font-bold" style={{color:'#74BB65'}}>Full Rankings →</Link>
+        <Link href="/gfr" className="text-xs font-bold" style={{color:'#74BB65'}}>Full Assessment →</Link>
       </div>
       <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
         {HEATMAP_DATA.map(d=>(

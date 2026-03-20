@@ -1,39 +1,34 @@
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
-import type { Metadata } from 'next';
-
-export const metadata: Metadata = { title: '404 — Page Not Found | FDI Monitor' };
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen" style={{background:'#0F0A0A'}}>
-      <NavBar/>
-      <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
-        <div className="text-8xl font-extrabold font-data mb-4" style={{color:'rgba(255,102,0,0.15)'}}>404</div>
-        <div className="text-4xl font-extrabold mb-3" style={{color:'#FAFAF0'}}>Page Not Found</div>
-        <p className="text-base max-w-md mb-8" style={{color:'#87A19E'}}>
-          The intelligence you&apos;re looking for may have moved. Try navigating from the dashboard.
+    <div style={{minHeight:'100vh',background:'#E2F2DF',display:'flex',alignItems:'center',
+      justifyContent:'center',padding:'24px',textAlign:'center'}}>
+      <div style={{maxWidth:'540px'}}>
+        <div style={{fontSize:'80px',marginBottom:'16px',lineHeight:1}}>🌍</div>
+        <h1 style={{fontSize:'32px',fontWeight:900,color:'#0A3D62',marginBottom:'10px'}}>
+          Page Not Found
+        </h1>
+        <p style={{fontSize:'15px',color:'#696969',lineHeight:'1.75',marginBottom:'28px'}}>
+          The page you're looking for doesn't exist or has been moved. 
+          Explore our investment intelligence platform instead.
         </p>
-        <div className="flex gap-3 flex-wrap justify-center">
-          <Link href="/dashboard" className="gfm-btn-primary px-8 py-3">Go to Dashboard</Link>
-          <Link href="/"          className="gfm-btn-outline px-8 py-3" style={{color:'#87A19E'}}>Homepage</Link>
-          <Link href="/signals"   className="gfm-btn-outline px-8 py-3" style={{color:'#87A19E'}}>Live Signals</Link>
+        <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
+          <Link href="/dashboard" style={{padding:'12px 24px',background:'#0A3D62',color:'white',
+            borderRadius:'9px',textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
+            Go to Dashboard
+          </Link>
+          <Link href="/investment-analysis" style={{padding:'12px 22px',background:'#74BB65',color:'white',
+            borderRadius:'9px',textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
+            Investment Analysis
+          </Link>
+          <Link href="/" style={{padding:'12px 18px',border:'1px solid rgba(10,61,98,0.15)',color:'#0A3D62',
+            borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>
+            Home
+          </Link>
         </div>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-3 mt-12 max-w-2xl">
-          {[
-            {href:'/gfr',          label:'GFR Rankings',      icon:'🏆'},
-            {href:'/forecast',     label:'Foresight 2050',    icon:'📈'},
-            {href:'/pmp',          label:'Mission Planning',  icon:'🎯'},
-            {href:'/sectors',      label:'Sectors',           icon:'🏭'},
-            {href:'/reports',      label:'Reports',           icon:'📋'},
-            {href:'/sources',      label:'Data Sources',      icon:'🔍'},
-          ].map(item=>(
-            <Link key={item.href} href={item.href}
-              className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-white/5 transition-all">
-              <span className="text-2xl">{item.icon}</span>
-              <span className="text-xs" style={{color:'#496767'}}>{item.label}</span>
-            </Link>
-          ))}
+        <div style={{marginTop:'24px',fontSize:'12px',color:'#696969'}}>
+          GFR Assessment · Investment Analysis · FDI Signals · Mission Planning
         </div>
       </div>
     </div>

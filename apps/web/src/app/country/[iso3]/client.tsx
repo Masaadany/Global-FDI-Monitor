@@ -138,7 +138,7 @@ export default function CountryProfileClient({ iso3 }: { iso3: string }) {
             <div className="flex flex-wrap gap-3">
               <Link href={`/pmp?iso3=${iso3}`}       className="gfm-btn-primary text-sm py-2 px-5">Mission Planning →</Link>
               <Link href={`/benchmarking?iso3=${iso3}`} className="gfm-btn-outline text-sm py-2 px-5">Compare Economy</Link>
-              <Link href="/gfr"                       className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#87A19E'}}>GFR Rankings</Link>
+              <Link href="/gfr"                       className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#87A19E'}}>GFR Assessments</Link>
             </div>
           </div>
         )}

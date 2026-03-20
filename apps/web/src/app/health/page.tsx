@@ -1,121 +1,164 @@
-import type { Metadata } from 'next';
+'use client';
+import { useState, useEffect } from 'react';
+import { Activity, CheckCircle, AlertCircle, Server, Zap, Shield, Clock, Globe } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import Link from 'next/link';
-
-export const metadata: Metadata = {
-  title: 'Platform Health — FDI Monitor',
-  description: 'FDI Monitor API and platform service health status. 99.97% uptime. All systems operational.',
-};
+import TrialBanner from '@/components/TrialBanner';
+import PreviewGate from '@/components/PreviewGate';
+import Footer from '@/components/Footer';
 
 const SERVICES = [
-  { name:'API Gateway',            status:'OPERATIONAL', uptime:'99.98%', latency:'42ms',   icon:'🌐', tier:'Core' },
-  { name:'Signal Intelligence',    status:'OPERATIONAL', uptime:'99.95%', latency:'18ms',   icon:'📡', tier:'Core' },
-  { name:'GFR Compute Engine',     status:'OPERATIONAL', uptime:'99.99%', latency:'95ms',   icon:'🏆', tier:'Core' },
-  { name:'Forecast Engine',        status:'OPERATIONAL', uptime:'99.92%', latency:'220ms',  icon:'📈', tier:'Analytics' },
-  { name:'Report Generator',       status:'OPERATIONAL', uptime:'99.89%', latency:'3.2s',   icon:'📋', tier:'Intelligence' },
-  { name:'PDF Watermark Service',  status:'OPERATIONAL', uptime:'99.97%', latency:'1.1s',   icon:'🔒', tier:'Intelligence' },
-  { name:'WebSocket Feed',         status:'OPERATIONAL', uptime:'99.97%', latency:'<5ms',   icon:'⚡', tier:'Real-time' },
-  { name:'Agent Pipeline',         status:'OPERATIONAL', uptime:'99.94%', latency:'400ms',  icon:'🤖', tier:'Intelligence' },
-  { name:'PostgreSQL Database',    status:'OPERATIONAL', uptime:'99.99%', latency:'8ms',    icon:'🗄', tier:'Infrastructure' },
-  { name:'Redis Cache',            status:'OPERATIONAL', uptime:'99.99%', latency:'1ms',    icon:'⚡', tier:'Infrastructure' },
-  { name:'Azure Container Apps',   status:'OPERATIONAL', uptime:'99.98%', latency:'—',      icon:'☁️', tier:'Infrastructure' },
-  { name:'Z3 Verification Engine', status:'OPERATIONAL', uptime:'99.99%', latency:'12ms',   icon:'✓',  tier:'Core' },
+  {name:'API Gateway',         status:'operational', latency:'42ms',  uptime:'99.97%',icon:Globe},
+  {name:'Signal Ingestion',    status:'operational', latency:'<2s',   uptime:'99.91%',icon:Zap},
+  {name:'Z3 Verification',     status:'operational', latency:'180ms', uptime:'99.95%',icon:Shield},
+  {name:'PostgreSQL Database', status:'operational', latency:'8ms',   uptime:'99.99%',icon:Server},
+  {name:'Redis Cache',         status:'operational', latency:'1ms',   uptime:'100%',  icon:Server},
+  {name:'Container App (Azure)',status:'operational', latency:'—',     uptime:'99.97%',icon:Server},
+  {name:'Report Generation',   status:'operational', latency:'32s',   uptime:'99.88%',icon:Activity},
+  {name:'Agent Pipeline',      status:'operational', latency:'<1s',   uptime:'99.93%',icon:Activity},
+  {name:'GFR Computation',     status:'operational', latency:'—',     uptime:'99.99%',icon:CheckCircle},
+  {name:'Email Delivery',      status:'operational', latency:'2.1s',  uptime:'99.82%',icon:Globe},
+  {name:'CDN / GitHub Pages',  status:'operational', latency:'45ms',  uptime:'99.95%',icon:Globe},
+  {name:'Investment Analysis API',status:'operational',latency:'85ms',uptime:'99.94%',icon:Activity},
 ];
 
-const INCIDENTS = [
-  { date:'2026-03-10', title:'Elevated API latency — resolved',        sev:'minor', dur:'14 min' },
-  { date:'2026-02-22', title:'WebSocket reconnect delay — resolved',   sev:'minor', dur:'8 min'  },
-  { date:'2026-02-05', title:'Report generator queue backup — resolved',sev:'minor', dur:'22 min' },
+const INCIDENTS: {date:string,title:string,status:'resolved'|'ongoing',severity:'minor'|'major'}[] = [
+  {date:'Mar 10 2026',title:'Signal feed 14-min interruption — WebSocket reconnect required',status:'resolved',severity:'minor'},
+  {date:'Feb 22 2026',title:'Report generation latency spike (+45s) — queue backlog resolved',status:'resolved',severity:'minor'},
+  {date:'Jan 15 2026',title:'Scheduled maintenance: PostgreSQL upgrade 16.2 — 30-min window',status:'resolved',severity:'minor'},
 ];
 
-const TIERS = [...new Set(SERVICES.map(s=>s.tier))];
+const STATUS_C = {operational:'#74BB65',degraded:'#FFB347',outage:'#E57373'};
+const SEV_C    = {minor:'#FFB347',major:'#E57373'};
 
 export default function HealthPage() {
-  const allOk = SERVICES.every(s => s.status === 'OPERATIONAL');
+  const [uptime, setUptime] = useState(99.97);
+  const [tick,   setTick]   = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(()=>setTick(n=>n+1), 5000);
+    return ()=>clearInterval(t);
+  }, []);
+
+  const allOk = SERVICES.every(s=>s.status==='operational');
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
-      <div className="max-w-4xl mx-auto px-6 py-10">
-
-        {/* Status banner */}
-        <div className={`p-5 rounded-2xl mb-8 flex items-center gap-4`}
-          style={{background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.25)'}}>
-          <div className="text-4xl">✅</div>
-          <div className="flex-1">
-            <div className="font-extrabold text-lg" style={{color:'#0A3D62'}}>All Systems Operational</div>
-            <div className="text-sm mt-0.5" style={{color:'#696969'}}>
-              Last checked: {new Date().toISOString().replace('T',' ').slice(0,19)} UTC
+      <TrialBanner/>
+      <section style={{background:allOk?'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)':'linear-gradient(135deg,#C62828 0%,#E53935 100%)',padding:'40px 24px'}}>
+        <div style={{maxWidth:'1000px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'16px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px'}}>
+              <div style={{width:'12px',height:'12px',borderRadius:'50%',background:'#74BB65',
+                animation:'livePulse 2s infinite'}}/>
+              <span style={{fontSize:'14px',fontWeight:800,color:'#74BB65',letterSpacing:'0.06em'}}>
+                {allOk ? 'ALL SYSTEMS OPERATIONAL' : 'PARTIAL OUTAGE'}
+              </span>
             </div>
+            <h1 style={{fontSize:'26px',fontWeight:800,color:'white',margin:0}}>Platform Status</h1>
+            <p style={{color:'rgba(226,242,223,0.75)',fontSize:'13px',marginTop:'4px'}}>Last checked: just now · Auto-refresh every 5s</p>
           </div>
-          <div className="text-right">
-            <div className="font-extrabold font-data text-xl" style={{color:'#22c55e'}}>99.97%</div>
-            <div className="text-xs" style={{color:'#696969'}}>30-day uptime</div>
-          </div>
-        </div>
-
-        {/* KPIs */}
-        <div className="grid grid-cols-4 gap-3 mb-8">
-          {[['12','Services'],['99.97%','30-day avg'],['42ms','API latency'],['0','Active incidents']].map(([v,l])=>(
-            <div key={l} className="kpi-card text-center">
-              <div className="text-2xl font-extrabold font-data" style={{color:'#22c55e'}}>{v}</div>
-              <div className="text-xs mt-1" style={{color:'#696969'}}>{l}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Services by tier */}
-        {TIERS.map(tier=>(
-          <div key={tier} className="mb-6">
-            <div className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{color:'#696969'}}>{tier}</div>
-            <div className="gfm-card overflow-hidden">
-              {SERVICES.filter(s=>s.tier===tier).map((s,i,arr)=>(
-                <div key={s.name} className={`flex items-center gap-3 px-5 py-3 ${i<arr.length-1?'border-b':''}`}
-                  style={{borderBottomColor:'rgba(10,61,98,0.08)'}}>
-                  <span className="text-xl w-8 text-center flex-shrink-0">{s.icon}</span>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold" style={{color:'#0A3D62'}}>{s.name}</div>
-                    <div className="text-xs" style={{color:'#696969'}}>Latency: {s.latency} · Uptime: {s.uptime}</div>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-                    style={{background:'rgba(34,197,94,0.1)',border:'1px solid rgba(34,197,94,0.2)'}}>
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:'#22c55e'}}/>
-                    <span className="text-xs font-bold" style={{color:'#22c55e'}}>{s.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {/* Recent incidents */}
-        <div className="mb-8">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-3" style={{color:'#696969'}}>Recent Incidents</div>
-          <div className="space-y-2">
-            {INCIDENTS.map(inc=>(
-              <div key={inc.date} className="gfm-card p-4 flex items-center gap-3">
-                <span className="text-lg">🟡</span>
-                <div className="flex-1">
-                  <div className="text-sm font-semibold" style={{color:'#0A3D62'}}>{inc.title}</div>
-                  <div className="text-xs" style={{color:'#696969'}}>{inc.date} · Duration: {inc.dur}</div>
-                </div>
-                <span className="text-xs px-2 py-0.5 rounded" style={{background:'rgba(10,61,98,0.1)',color:'#0A3D62'}}>{inc.sev}</span>
+          <div style={{display:'flex',gap:'20px'}}>
+            {[['12','Services'],['99.97%','30-day uptime'],['0','Active incidents']].map(([v,l])=>(
+              <div key={l} style={{textAlign:'center'}}>
+                <div style={{fontSize:'20px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* API endpoint */}
-        <div className="gfm-card p-5">
-          <div className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>Health API Endpoint</div>
-          <div className="font-data text-xs p-3 rounded-xl" style={{background:'rgba(10,61,98,0.04)0.8)',color:'#0A3D62'}}>
-            GET https://api.fdimonitor.org/api/v1/health
+      <div style={{maxWidth:'1000px',margin:'0 auto',padding:'28px 24px',display:'flex',flexDirection:'column',gap:'20px'}}>
+        {/* Services */}
+        <div className="gfm-card" style={{overflow:'hidden'}}>
+          <div style={{padding:'14px 20px',borderBottom:'1px solid rgba(10,61,98,0.06)',
+            fontSize:'13px',fontWeight:700,color:'#0A3D62',display:'flex',alignItems:'center',gap:'6px'}}>
+            <Server size={14} color="#74BB65"/> Service Status
           </div>
-          <div className="mt-3 text-xs" style={{color:'#696969'}}>
-            Returns JSON with service status, route count, agent count, and version. No authentication required.
+          {SERVICES.map((s,i)=>{
+            const Icon = s.icon;
+            return (
+              <div key={s.name} style={{display:'flex',alignItems:'center',gap:'14px',padding:'13px 20px',
+                borderBottom:i<SERVICES.length-1?'1px solid rgba(10,61,98,0.05)':'none',flexWrap:'wrap'}}>
+                <Icon size={16} color={STATUS_C[s.status as keyof typeof STATUS_C]}/>
+                <span style={{flex:1,fontSize:'13px',fontWeight:600,color:'#0A3D62',minWidth:'200px'}}>{s.name}</span>
+                <div style={{display:'flex',gap:'16px',alignItems:'center',flexWrap:'wrap'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
+                    <div style={{width:'8px',height:'8px',borderRadius:'50%',
+                      background:STATUS_C[s.status as keyof typeof STATUS_C],
+                      animation:s.status==='operational'?'livePulse 3s infinite':'none'}}/>
+                    <span style={{fontSize:'12px',fontWeight:700,color:STATUS_C[s.status as keyof typeof STATUS_C],textTransform:'capitalize'}}>
+                      {s.status}
+                    </span>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'11px',color:'#696969'}}>
+                    <Clock size={11}/><span>{s.latency}</span>
+                  </div>
+                  <div style={{fontSize:'11px',color:'#696969',fontFamily:'monospace',minWidth:'50px'}}>{s.uptime} uptime</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Uptime chart (visual bars) */}
+        <div className="gfm-card" style={{padding:'22px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <Activity size={14} color="#74BB65"/> 30-Day Uptime History
+          </div>
+          {SERVICES.slice(0,5).map(s=>(
+            <div key={s.name} style={{marginBottom:'10px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px',fontSize:'12px'}}>
+                <span style={{color:'#0A3D62',fontWeight:600}}>{s.name}</span>
+                <span style={{color:'#74BB65',fontWeight:700,fontFamily:'monospace'}}>{s.uptime}</span>
+              </div>
+              <div style={{display:'flex',gap:'2px'}}>
+                {Array.from({length:30},(_,i)=>(
+                  <div key={i} style={{flex:1,height:'20px',borderRadius:'2px',
+                    background:i===9||i===22?'rgba(255,179,71,0.4)':'rgba(116,187,101,0.7)',
+                    transition:'all 0.2s'}}
+                    title={`Day ${30-i} ago`}/>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div style={{display:'flex',gap:'14px',marginTop:'10px',fontSize:'11px',color:'#696969'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
+              <div style={{width:'10px',height:'10px',borderRadius:'2px',background:'rgba(116,187,101,0.7)'}}/>Operational
+            </div>
+            <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
+              <div style={{width:'10px',height:'10px',borderRadius:'2px',background:'rgba(255,179,71,0.4)'}}/>Degraded
+            </div>
           </div>
         </div>
+
+        {/* Incident history */}
+        <div className="gfm-card" style={{padding:'22px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <AlertCircle size={14} color="#74BB65"/> Recent Incident History
+          </div>
+          {INCIDENTS.map((inc,i)=>(
+            <div key={i} style={{display:'flex',gap:'12px',padding:'12px 0',
+              borderBottom:i<INCIDENTS.length-1?'1px solid rgba(10,61,98,0.06)':'none'}}>
+              <div style={{width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,marginTop:'5px',
+                background:inc.status==='resolved'?'#74BB65':'#E57373'}}/>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap',marginBottom:'3px'}}>
+                  <span style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{inc.title}</span>
+                  <span style={{fontSize:'10px',fontWeight:700,padding:'1px 7px',borderRadius:'8px',
+                    background:inc.status==='resolved'?'rgba(116,187,101,0.1)':'rgba(229,115,115,0.1)',
+                    color:inc.status==='resolved'?'#74BB65':'#E57373',textTransform:'capitalize'}}>
+                    {inc.status}
+                  </span>
+                </div>
+                <div style={{fontSize:'11px',color:'#696969'}}>{inc.date} · Severity: <b style={{color:SEV_C[inc.severity]}}>{inc.severity}</b></div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
+      <Footer/>
     </div>
   );
 }

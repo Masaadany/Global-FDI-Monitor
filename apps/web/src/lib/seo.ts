@@ -46,9 +46,9 @@ export function generateMetadata(opts: {
 
 // Pre-built metadata for key pages
 export const PAGE_META = {
-  home:      generateMetadata({ title: 'Real-Time FDI Intelligence Platform', description: 'The world\'s most comprehensive FDI intelligence platform. 215 economies, real-time signals, GFR rankings, AI-powered reports. From $899/month.', path: '/' }),
+  home:      generateMetadata({ title: 'Real-Time FDI Intelligence Platform', description: 'The world\'s most comprehensive FDI intelligence platform. 215 economies, real-time signals, GFR assessments, AI-powered reports. From $899/month.', path: '/' }),
   signals:   generateMetadata({ title: 'Live FDI Signals', description: 'Monitor 218+ live FDI signals across 215 economies. PLATINUM to BRONZE grades. Filter by country, sector, and type.', path: '/signals' }),
-  gfr:       generateMetadata({ title: 'Global Future Readiness Rankings', description: 'GFR composite rankings for 215 economies. 6 core dimensions, 6 proprietary factors, quarterly update.', path: '/gfr' }),
+  gfr:       generateMetadata({ title: 'Global Future Readiness Assessment', description: 'GFR composite assessments for 215 economies. 6 core dimensions, 6 proprietary factors, quarterly update.', path: '/gfr' }),
   dashboard: generateMetadata({ title: 'Dashboard', description: 'Your GFM intelligence dashboard.', path: '/dashboard', noIndex: true }),
   demo:      generateMetadata({ title: 'Platform Demo', description: 'Preview GFM live — signals, maps, and analytics. No login required.', path: '/demo' }),
   pricing:   generateMetadata({ title: 'Pricing', description: 'Professional FDI intelligence from $799/month. 3-day free trial included.', path: '/pricing' }),
@@ -64,7 +64,7 @@ export const OG_IMAGE = {
 export const SITE_CONFIG = {
   name:        'Global FDI Monitor',
   url:         'https://fdimonitor.org',
-  description: 'The world\'s first fully integrated FDI intelligence platform. 215 economies, real-time signals, GFR rankings.',
+  description: 'The world\'s first fully integrated FDI intelligence platform. 215 economies, real-time signals, GFR assessments.',
   twitter:     '@fdimonitor',
   locale:      'en_US',
 };

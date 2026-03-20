@@ -7,12 +7,12 @@ import TrialGateWrapper from '@/components/TrialGateWrapper';
 
 export const metadata: Metadata = {
   title: { default:'Global FDI Monitor', template:'%s — Global FDI Monitor' },
-  description:'The global standard for foreign direct investment intelligence. Real-time signals, GFR rankings for 215 economies, AI-powered reports, and mission planning.',
-  keywords:['FDI','investment intelligence','GFR ranking','investment monitor','signal confidence'],
+  description:'The global standard for foreign direct investment intelligence. Real-time signals, GFR assessments for 215 economies, AI-powered reports, and mission planning.',
+  keywords:['FDI','investment intelligence','GFR assessment','investment monitor','signal confidence'],
   authors:[{name:'Global FDI Monitor',url:'https://fdimonitor.org'}],
   openGraph:{
     title:'Global FDI Monitor',
-    description:'Real-time FDI intelligence. GFR rankings for 215 economies, live signals, AI reports.',
+    description:'Real-time FDI intelligence. GFR assessments for 215 economies, live signals, AI reports.',
     url:'https://fdimonitor.org',
     siteName:'Global FDI Monitor',
     type:'website',

@@ -1,200 +1,260 @@
 'use client';
 import { useState } from 'react';
+import { Play, Globe, Award, BarChart3, Target, ArrowRight, Zap, Shield, CheckCircle, TrendingUp, Building2 } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import Footer from '@/components/Footer';
+import FDIFlowMap from '@/components/FDIFlowMap';
+import AnimatedCounter from '@/components/AnimatedCounter';
+import SectorDonut from '@/components/SectorDonut';
 import Link from 'next/link';
 
-const DEMO_TABS = [
-  {
-    id:'signals', label:'Live Signals', icon:'📡',
-    desc:'Real-time FDI signal feed with SCI scoring and Z3 verification',
-    preview: [
-      {grade:'PLATINUM',company:'Microsoft',eco:'UAE',sector:'ICT',capex:'$850M',sci:96.2,flag:'🇦🇪'},
-      {grade:'PLATINUM',company:'CATL',eco:'Indonesia',sector:'Manufacturing',capex:'$3.2B',sci:94.8,flag:'🇮🇩'},
-      {grade:'GOLD',company:'ACWA Power',eco:'Saudi Arabia',sector:'Energy',capex:'$980M',sci:87.3,flag:'🇸🇦'},
-      {grade:'GOLD',company:'Google Cloud',eco:'Singapore',sector:'ICT',capex:'$620M',sci:85.1,flag:'🇸🇬'},
-    ],
-  },
-  {
-    id:'gfr', label:'GFR Rankings', icon:'🏆',
-    desc:'Global Future Readiness rankings for 215 economies across 6 dimensions',
-    rankings: [
-      {rank:1, eco:'Singapore',   flag:'🇸🇬',score:84.2,tier:'FRONTIER',change:'+0.4'},
-      {rank:2, eco:'UAE',         flag:'🇦🇪',score:80.0,tier:'FRONTIER',change:'+4.2'},
-      {rank:3, eco:'Switzerland', flag:'🇨🇭',score:79.8,tier:'FRONTIER',change:'-0.1'},
-      {rank:4, eco:'Denmark',     flag:'🇩🇰',score:79.2,tier:'FRONTIER',change:'+0.8'},
-      {rank:5, eco:'Netherlands', flag:'🇳🇱',score:78.9,tier:'FRONTIER',change:'+0.2'},
-    ],
-  },
-  {
-    id:'reports', label:'AI Reports', icon:'📋',
-    desc:'10 AI-powered report types from Market Intelligence Briefs to Mission Planning Dossiers',
-    report_types: [
-      {id:'MIB',  name:'Market Intelligence Brief',     credits:5,  pages:'5–8'},
-      {id:'ICR',  name:'Investment Climate Report',     credits:18, pages:'15–20'},
-      {id:'FCGR', name:'Flagship GFR Report',           credits:25, pages:'30–40'},
-      {id:'PMP',  name:'Mission Planning Dossier',      credits:30, pages:'35–45'},
-    ],
-  },
-  {
-    id:'forecast', label:'Foresight 2050', icon:'🔭',
-    desc:'Probabilistic FDI forecasts to 2050 with scenario modelling',
-    scenarios: [
-      {name:'Optimistic',color:'#22c55e',cagr:'7.2%',fdi2035:'$4.1T'},
-      {name:'Base',      color:'#74BB65',cagr:'5.8%',fdi2035:'$3.2T'},
-      {name:'Stress',    color:'#EF4444',cagr:'2.4%',fdi2035:'$1.9T'},
-    ],
-  },
+const DEMO_SIGNALS = [
+  {flag:'🇦🇪',eco:'UAE',co:'Microsoft',amt:'$5.2B',sector:'Technology',sci:96,grade:'PLATINUM'},
+  {flag:'🇮🇩',eco:'Indonesia',co:'CATL',amt:'$3.2B',sector:'Manufacturing',sci:94,grade:'PLATINUM'},
+  {flag:'🇸🇦',eco:'Saudi Arabia',co:'Amazon AWS',amt:'$5.4B',sector:'Technology',sci:91,grade:'GOLD'},
+  {flag:'🇩🇪',eco:'Germany',co:'Siemens',amt:'$2.1B',sector:'Energy',sci:88,grade:'GOLD'},
 ];
 
-const GRADE_C: Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#696969'};
-const TIER_C: Record<string,string>  = {FRONTIER:'#0A3D62',HIGH:'#74BB65',MEDIUM:'#696969'};
+const SECTORS_DEMO = [
+  {label:'Technology',value:45,color:'#0A3D62'},
+  {label:'Energy',value:18,color:'#74BB65'},
+  {label:'Manufacturing',value:14,color:'#1B6CA8'},
+  {label:'Finance',value:10,color:'#2E86AB'},
+  {label:'Healthcare',value:7,color:'#696969'},
+  {label:'Infrastructure',value:6,color:'#9E9E9E'},
+];
+
+const FEATURES = [
+  {id:'signals',   icon:Zap,        title:'Live FDI Signals',         desc:'See real-time investment signals graded PLATINUM to BRONZE with SCI scoring.'},
+  {id:'analysis',  icon:BarChart3,  title:'Investment Analysis',       desc:'Global Opportunity Score Analysis across 215 economies with 4-layer methodology.'},
+  {id:'benchmark', icon:Target,     title:'Benchmark',                 desc:'Compare countries side-by-side across all Doing Business and sector indicators.'},
+  {id:'mission',   icon:Building2,  title:'Mission Planning',          desc:'Build investment promotion missions — destinations, targets, dossier generation.'},
+];
+
+
 
 export default function DemoPage() {
-  const [tab, setTab] = useState('signals');
-  const active = DEMO_TABS.find(t=>t.id===tab)!;
+  const [activeFeature, setActiveFeature] = useState('signals');
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
       <TrialBanner/>
-      <section className="gfm-hero px-6 py-10">
-        <div className="max-w-screen-xl mx-auto relative z-10 text-center">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Interactive Demo</div>
-          <h1 className="text-3xl font-extrabold mb-2" style={{color:'#0A3D62'}}>See FDI Monitor in Action</h1>
-          <p className="text-sm mb-6" style={{color:'#696969'}}>Explore the platform before you sign up · No account required</p>
-          <Link href="/register" className="gfm-btn-primary px-8 py-3 text-sm">
-            Start Free 3-Day Trial →
-          </Link>
-        </div>
-      </section>
 
-      {/* Tab bar */}
-      <div className="sticky top-16 z-30 flex gap-0 border-b px-6" style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
-        {DEMO_TABS.map(t=>(
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            className={`dash-tab ${tab===t.id?'active':''}`}
-            aria-selected={tab===t.id}>
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="max-w-screen-xl mx-auto px-6 py-6">
-        <div className="mb-4">
-          <div className="text-sm font-bold mb-1" style={{color:'#0A3D62'}}>{active.desc}</div>
-          <div className="text-xs" style={{color:'#696969'}}>Demo data only — sign up for live intelligence</div>
-        </div>
-
-        {/* Signals tab */}
-        {tab === 'signals' && (
-          <div className="gfm-card overflow-hidden">
-            <table className="gfm-table">
-              <thead><tr>
-                <th>Grade</th><th>Company</th><th>Economy</th><th>Sector</th>
-                <th>CapEx</th><th>SCI Score</th>
-              </tr></thead>
-              <tbody>
-                {active.preview?.map((s,i)=>(
-                  <tr key={i}>
-                    <td><span className={`gfm-badge grade-${s.grade}`}>{s.grade}</span></td>
-                    <td className="font-semibold" style={{color:'#0A3D62'}}>{s.company}</td>
-                    <td><span className="mr-1">{s.flag}</span>{s.eco}</td>
-                    <td style={{color:'#696969'}}>{s.sector}</td>
-                    <td className="font-data font-bold" style={{color:'#74BB65'}}>{s.capex}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{background:'rgba(10,61,98,0.2)'}}>
-                          <div className="h-full rounded-full" style={{width:`${s.sci}%`,background:GRADE_C[s.grade]}}/>
-                        </div>
-                        <span className="font-data text-xs" style={{color:GRADE_C[s.grade]}}>{s.sci}</span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* GFR tab */}
-        {tab === 'gfr' && (
-          <div className="gfm-card overflow-hidden">
-            <table className="gfm-table">
-              <thead><tr><th>Rank</th><th>Economy</th><th>GFR Score</th><th>Tier</th><th>Change</th></tr></thead>
-              <tbody>
-                {active.rankings?.map(r=>(
-                  <tr key={r.rank}>
-                    <td className="font-extrabold font-data" style={{color:'#74BB65'}}>#{r.rank}</td>
-                    <td className="font-semibold" style={{color:'#0A3D62'}}><span className="mr-1">{r.flag}</span>{r.eco}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 rounded-full overflow-hidden" style={{background:'rgba(10,61,98,0.2)'}}>
-                          <div className="h-full rounded-full" style={{width:`${r.score}%`,background:TIER_C[r.tier]}}/>
-                        </div>
-                        <span className="font-data font-bold" style={{color:TIER_C[r.tier]}}>{r.score}</span>
-                      </div>
-                    </td>
-                    <td><span className="text-xs font-bold px-2 py-0.5 rounded" style={{background:`${TIER_C[r.tier]}18`,color:TIER_C[r.tier]}}>{r.tier}</span></td>
-                    <td className="font-bold font-data" style={{color:r.change.startsWith('+')?'#22c55e':'#EF4444'}}>{r.change}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Reports tab */}
-        {tab === 'reports' && (
-          <div className="grid md:grid-cols-2 gap-4">
-            {active.report_types?.map(rt=>(
-              <div key={rt.id} className="gfm-card p-5">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <div className="text-xs font-bold mb-1" style={{color:'#74BB65'}}>{rt.id}</div>
-                    <div className="font-extrabold text-sm" style={{color:'#0A3D62'}}>{rt.name}</div>
+      {/* Hero */}
+      <section style={{background:'linear-gradient(135deg,#061E30 0%,#0A3D62 45%,#0E4F7A 100%)',
+        padding:'60px 40px',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,
+          backgroundImage:'linear-gradient(rgba(116,187,101,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(116,187,101,0.06) 1px,transparent 1px)',
+          backgroundSize:'48px 48px'}}/>
+        <div style={{position:'relative',zIndex:1,maxWidth:'1100px',margin:'0 auto',display:'grid',
+          gridTemplateColumns:'1fr 1fr',gap:'48px',alignItems:'center'}}>
+          <div>
+            <div style={{display:'inline-flex',alignItems:'center',gap:'7px',
+              background:'rgba(116,187,101,0.12)',border:'1px solid rgba(116,187,101,0.3)',
+              padding:'5px 14px',borderRadius:'20px',marginBottom:'20px'}}>
+              <Play size={11} color="#74BB65" fill="#74BB65"/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em'}}>INTERACTIVE DEMO</span>
+            </div>
+            <h1 style={{fontSize:'clamp(28px,3.5vw,46px)',fontWeight:900,color:'white',lineHeight:'1.1',marginBottom:'16px'}}>
+              Explore the Full<br/><span style={{color:'#74BB65'}}>FDI Monitor</span><br/>Platform
+            </h1>
+            <p style={{fontSize:'15px',color:'rgba(226,242,223,0.82)',lineHeight:'1.75',marginBottom:'28px'}}>
+              No login required. Interact with live signals, Investment Analysis, benchmarking, and mission planning tools.
+            </p>
+            <div style={{display:'flex',gap:'12px',flexWrap:'wrap'}}>
+              <Link href="/register" style={{display:'inline-flex',alignItems:'center',gap:'7px',
+                padding:'13px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
+                textDecoration:'none',fontWeight:800,fontSize:'15px',boxShadow:'0 4px 16px rgba(116,187,101,0.35)'}}>
+                Start Free Trial <ArrowRight size={14}/>
+              </Link>
+              <Link href="/contact" style={{display:'inline-flex',alignItems:'center',gap:'7px',
+                padding:'13px 22px',border:'1px solid rgba(255,255,255,0.25)',color:'rgba(226,242,223,0.9)',
+                borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'15px'}}>
+                Request Demo
+              </Link>
+            </div>
+            {/* Stats */}
+            <div style={{display:'flex',gap:'24px',marginTop:'32px'}}>
+              {[{v:215,s:'',l:'Economies'},{v:218,s:'+',l:'Live Signals'},{v:107,s:'',l:'API Routes'}].map(({v,s,l})=>(
+                <div key={l}>
+                  <div style={{fontSize:'22px',fontWeight:900,color:'white',fontFamily:'monospace',lineHeight:1}}>
+                    <AnimatedCounter value={v} suffix={s} duration={2000}/>
                   </div>
-                  <div className="text-right">
-                    <div className="font-extrabold font-data" style={{color:'#74BB65'}}>{rt.credits} cr</div>
-                    <div className="text-xs" style={{color:'#696969'}}>{rt.pages} pages</div>
-                  </div>
-                </div>
-                <button className="gfm-btn-outline w-full py-2 text-xs mt-3" style={{color:'#696969'}} disabled>
-                  Preview (requires subscription)
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Forecast tab */}
-        {tab === 'forecast' && (
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-4">
-              {active.scenarios?.map(s=>(
-                <div key={s.name} className="gfm-card p-5 text-center">
-                  <div className="font-extrabold text-sm mb-3" style={{color:s.color}}>{s.name} Scenario</div>
-                  <div className="text-3xl font-extrabold font-data mb-1" style={{color:s.color}}>{s.fdi2035}</div>
-                  <div className="text-xs mb-3" style={{color:'#696969'}}>Global FDI by 2035</div>
-                  <div className="text-sm font-bold" style={{color:'#696969'}}>CAGR {s.cagr}</div>
+                  <div style={{fontSize:'10px',color:'rgba(226,242,223,0.55)',marginTop:'3px'}}>{l}</div>
                 </div>
               ))}
             </div>
-            <div className="gfm-card p-5 text-center">
-              <p className="text-sm mb-3" style={{color:'#696969'}}>Access full foresight engine with timeline charts, top 20 economies, and what-if sliders</p>
-              <Link href="/register" className="gfm-btn-primary px-8 py-2.5 text-sm">Unlock Foresight →</Link>
+          </div>
+          <div><FDIFlowMap height={300}/></div>
+        </div>
+      </section>
+
+      {/* Interactive feature demo */}
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'48px 24px',display:'flex',flexDirection:'column',gap:'32px'}}>
+
+        {/* Feature selector */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px'}}>
+          {FEATURES.map(({id,icon:Icon,title,desc})=>(
+            <div key={id} onClick={()=>setActiveFeature(id)}
+              style={{background:'white',borderRadius:'12px',padding:'18px',cursor:'pointer',
+                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',transition:'all 0.15s',
+                border:activeFeature===id?'2px solid #74BB65':'1px solid rgba(10,61,98,0.07)',
+                borderTop:activeFeature===id?'4px solid #74BB65':'4px solid transparent'}}>
+              <div style={{width:'40px',height:'40px',borderRadius:'10px',
+                background:activeFeature===id?'rgba(116,187,101,0.1)':'rgba(10,61,98,0.06)',
+                display:'flex',alignItems:'center',justifyContent:'center',marginBottom:'10px'}}>
+                <Icon size={18} color={activeFeature===id?'#74BB65':'#0A3D62'}/>
+              </div>
+              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{title}</div>
+              <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.5'}}>{desc}</div>
             </div>
+          ))}
+        </div>
+
+        {/* Feature preview panels */}
+        {activeFeature==='signals' && (
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#74BB65',animation:'livePulse 2s infinite'}}/>
+              Live FDI Signal Feed — PLATINUM & GOLD
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'20px'}}>
+              {DEMO_SIGNALS.map((s,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 16px',
+                  borderRadius:'10px',background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)',flexWrap:'wrap'}}>
+                  <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'10px',
+                    background:s.grade==='PLATINUM'?'rgba(10,61,98,0.1)':'rgba(116,187,101,0.12)',
+                    color:s.grade==='PLATINUM'?'#0A3D62':'#74BB65'}}>{s.grade}</span>
+                  <span style={{fontSize:'14px'}}>{s.flag}</span>
+                  <span style={{fontWeight:700,color:'#0A3D62',flex:1,minWidth:'120px'}}>{s.co}</span>
+                  <span style={{color:'#696969',fontSize:'12px'}}>{s.eco}</span>
+                  <span style={{fontFamily:'monospace',fontWeight:700,color:'#0A3D62'}}>{s.amt}</span>
+                  <span style={{fontSize:'11px',color:'#696969'}}>{s.sector}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
+                    <div style={{width:'40px',height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.07)'}}>
+                      <div style={{height:'100%',borderRadius:'3px',width:`${s.sci}%`,background:s.grade==='PLATINUM'?'#0A3D62':'#74BB65'}}/>
+                    </div>
+                    <span style={{fontSize:'11px',fontWeight:700,color:s.grade==='PLATINUM'?'#0A3D62':'#74BB65'}}>{s.sci}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Link href="/signals" style={{display:'inline-flex',alignItems:'center',gap:'6px',
+              padding:'9px 18px',background:'#0A3D62',color:'white',borderRadius:'8px',
+              textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+              View All Live Signals <ArrowRight size={13}/>
+            </Link>
           </div>
         )}
 
-        <div className="mt-8 text-center">
-          <p className="text-sm mb-3" style={{color:'#696969'}}>Ready for live intelligence?</p>
-          <div className="flex gap-3 justify-center">
-            <Link href="/register"     className="gfm-btn-primary px-8 py-3 text-sm">Start Free Trial →</Link>
-            <Link href="/pricing"      className="gfm-btn-outline px-6 py-3 text-sm" style={{color:'#696969'}}>View Pricing</Link>
+        {activeFeature==='analysis' && (
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <BarChart3 size={14} color="#74BB65"/> Investment Analysis — Global Opportunity Score Analysis
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px',marginBottom:'20px'}}>
+              <SectorDonut slices={SECTORS_DEMO} size={200} title="FDI 2025"/>
+              <div>
+                {[{eco:'🇸🇬 Singapore',score:88.4,tier:'Top Tier',color:'#74BB65'},
+                  {eco:'🇦🇪 UAE',score:83.5,tier:'Top Tier',color:'#74BB65'},
+                  {eco:'🇻🇳 Vietnam',score:79.4,tier:'High Tier',color:'#0A3D62'},
+                  {eco:'🇮🇩 Indonesia',score:74.8,tier:'High Tier',color:'#0A3D62'}].map(e=>(
+                  <div key={e.eco} style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'10px'}}>
+                    <span style={{fontSize:'13px',fontWeight:600,color:'#0A3D62',minWidth:'130px'}}>{e.eco}</span>
+                    <div style={{flex:1,height:'10px',borderRadius:'5px',background:'rgba(10,61,98,0.06)'}}>
+                      <div style={{height:'100%',borderRadius:'5px',width:`${e.score}%`,background:e.color}}/>
+                    </div>
+                    <span style={{fontSize:'13px',fontWeight:800,color:e.color,fontFamily:'monospace',minWidth:'34px'}}>{e.score}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <Link href="/investment-analysis" style={{display:'inline-flex',alignItems:'center',gap:'6px',
+              padding:'9px 18px',background:'#0A3D62',color:'white',borderRadius:'8px',
+              textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+              Open Investment Analysis <ArrowRight size={13}/>
+            </Link>
+          </div>
+        )}
+
+        {activeFeature==='benchmark' && (
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Target size={14} color="#74BB65"/> Benchmark — Compare Economies
+            </div>
+            {[{eco:'🇻🇳 Vietnam',l1:80.5,l2:79.1,l3:78.9,l4:79.1,total:79.4},
+              {eco:'🇹🇭 Thailand',l1:78.2,l2:76.8,l3:77.0,l4:76.4,total:77.1},
+              {eco:'🇲🇾 Malaysia',l1:79.8,l2:77.5,l3:78.1,l4:77.4,total:78.2},
+              {eco:'🇮🇩 Indonesia',l1:76.0,l2:74.5,l3:74.2,l4:74.5,total:74.8}].map(e=>(
+              <div key={e.eco} style={{marginBottom:'14px',padding:'12px',borderRadius:'9px',background:'rgba(10,61,98,0.02)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
+                  <span style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{e.eco}</span>
+                  <span style={{fontSize:'14px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{e.total}</span>
+                </div>
+                <div style={{display:'flex',gap:'4px'}}>
+                  {[{v:e.l1,c:'#0A3D62'},{v:e.l2,c:'#74BB65'},{v:e.l3,c:'#1B6CA8'},{v:e.l4,c:'#2E86AB'}].map(({v,c},i)=>(
+                    <div key={i} style={{flex:1,height:'6px',borderRadius:'3px',background:c,opacity:v/100}}/>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Link href="/investment-analysis" style={{display:'inline-flex',alignItems:'center',gap:'6px',
+              padding:'9px 18px',background:'#0A3D62',color:'white',borderRadius:'8px',
+              textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+              Open Benchmark Tool <ArrowRight size={13}/>
+            </Link>
+          </div>
+        )}
+
+        {activeFeature==='mission' && (
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Building2 size={14} color="#74BB65"/> Mission Planning — Investment Promotion Dossier
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px',marginBottom:'20px'}}>
+              {[{label:'Destination Countries',val:'5',icon:'🌍'},
+                {label:'Target Companies',val:'18',icon:'🏢'},
+                {label:'Opportunities Matched',val:'12',icon:'🎯'}].map(({label,val,icon})=>(
+                <div key={label} style={{textAlign:'center',padding:'16px',borderRadius:'10px',
+                  background:'rgba(116,187,101,0.06)',border:'1px solid rgba(116,187,101,0.15)'}}>
+                  <div style={{fontSize:'24px',marginBottom:'4px'}}>{icon}</div>
+                  <div style={{fontSize:'22px',fontWeight:900,color:'#74BB65',fontFamily:'monospace'}}>{val}</div>
+                  <div style={{fontSize:'11px',color:'#696969',marginTop:'2px'}}>{label}</div>
+                </div>
+              ))}
+            </div>
+            <Link href="/pmp" style={{display:'inline-flex',alignItems:'center',gap:'6px',
+              padding:'9px 18px',background:'#0A3D62',color:'white',borderRadius:'8px',
+              textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+              Open Mission Planner <ArrowRight size={13}/>
+            </Link>
+          </div>
+        )}
+
+        {/* Bottom CTA */}
+        <div style={{textAlign:'center',padding:'36px',background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'16px'}}>
+          <h3 style={{fontSize:'22px',fontWeight:800,color:'white',marginBottom:'10px'}}>
+            Ready to get started?
+          </h3>
+          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'22px',fontSize:'14px'}}>
+            Join investment professionals from IPAs, sovereign wealth funds, and strategy firms worldwide.
+          </p>
+          <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
+            <Link href="/register" style={{padding:'12px 28px',background:'#74BB65',color:'white',
+              borderRadius:'9px',textDecoration:'none',fontWeight:800,fontSize:'14px',
+              display:'flex',alignItems:'center',gap:'6px'}}>
+              Start Free Trial <ArrowRight size={14}/>
+            </Link>
+            <Link href="/contact" style={{padding:'12px 22px',border:'1px solid rgba(255,255,255,0.25)',
+              color:'rgba(226,242,223,0.9)',borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>
+              Request Live Demo
+            </Link>
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

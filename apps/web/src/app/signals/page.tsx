@@ -1,6 +1,8 @@
 'use client';
+import { Zap, Shield, Activity, Filter, Globe, BarChart3, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 import TrialBanner from '@/components/TrialBanner';
 import SourceBadge from '@/components/SourceBadge';
 import ReadOnlyOverlay from '@/components/ReadOnlyOverlay';
@@ -37,6 +39,8 @@ const SCI_FORMULA = {
     {name:'Publish Reliability', weight:15, desc:'Track record of source for this signal type'},
   ],
 };
+
+
 
 export default function SignalsPage() {
   const [view,    setView]    = useState<'table'|'cards'>('table');
@@ -324,6 +328,7 @@ export default function SignalsPage() {
           )}
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

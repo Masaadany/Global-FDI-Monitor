@@ -1,8 +1,12 @@
 'use client';
+import { Zap, Globe, BarChart3, TrendingUp, Activity, Bell, Target, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
+import Link from 'next/link';
+import Footer from '@/components/Footer';
 import TrialBanner from '@/components/TrialBanner';
 import Globe4D from '@/components/Globe4D';
+import FDIFlowMap from '@/components/FDIFlowMap';
 import AdvancedAnalytics from '@/components/AdvancedAnalytics';
 import BentoDashboard from '@/components/BentoDashboard';
 import InvestmentHeatmap from '@/components/InvestmentHeatmap';
@@ -31,6 +35,8 @@ const GFR_MOVERS = [
 
 const GRADE_C: Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#9E9E9E'};
 const GRADE_BG: Record<string,string> = {PLATINUM:'rgba(10,61,98,0.1)',GOLD:'rgba(116,187,101,0.12)',SILVER:'rgba(105,105,105,0.1)',BRONZE:'rgba(158,158,158,0.1)'};
+
+
 
 export default function DashboardPage() {
   const [tab,        setTab]        = useState('overview');
@@ -189,7 +195,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div style={{height:'200px',display:'flex',justifyContent:'center',alignItems:'center',position:'relative'}}>
-                  <Globe4D/>
+                  <FDIFlowMap height={200}/>
                 </div>
                 <div style={{marginTop:'12px'}}>
                   <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)',marginBottom:'4px'}}>Time Slider: 2015 → 2050</div>
@@ -318,6 +324,20 @@ export default function DashboardPage() {
             </p>
           </div>
 
+          {/* IA widget */}
+              <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'10px',
+                padding:'14px',marginTop:'8px'}}>
+                <div style={{fontSize:'11px',fontWeight:700,color:'#74BB65',textTransform:'uppercase',
+                  letterSpacing:'0.06em',marginBottom:'6px'}}>Investment Analysis</div>
+                <p style={{fontSize:'11px',color:'rgba(226,242,223,0.8)',lineHeight:'1.5',marginBottom:'8px'}}>
+                  Global Opportunity Score Analysis for 215 economies — 4 layers, benchmarking, impact.
+                </p>
+                <a href="/investment-analysis" style={{display:'flex',alignItems:'center',gap:'4px',
+                  fontSize:'11px',fontWeight:700,color:'#74BB65',textDecoration:'none'}}>
+                  Open Investment Analysis →
+                </a>
+              </div>
+
           {/* Quick actions */}
           <div style={{background:'white',borderRadius:'12px',padding:'14px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
             <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>Quick Actions</div>
@@ -332,6 +352,7 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

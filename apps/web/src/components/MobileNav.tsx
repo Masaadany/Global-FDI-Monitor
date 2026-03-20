@@ -8,7 +8,7 @@ const NAV_SECTIONS = [
   { title:'Intelligence', links:[
     {href:'/dashboard',  label:'Dashboard',         icon:'📊'},
     {href:'/signals',    label:'Live Signals',       icon:'📡'},
-    {href:'/gfr',        label:'GFR Rankings',       icon:'🏆'},
+    {href:'/gfr',        label:'GFR Assessments',       icon:'🏆'},
     {href:'/analytics',  label:'Analytics',          icon:'📈'},
   ]},
   { title:'Planning', links:[

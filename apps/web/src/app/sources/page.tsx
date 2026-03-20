@@ -1,161 +1,197 @@
-import type { Metadata } from 'next';
+'use client';
+import { useState } from 'react';
+import { Database, Shield, CheckCircle, Globe, TrendingUp, BarChart3, Search, Filter, Clock } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import Footer from '@/components/Footer';
+import SourceBadge from '@/components/SourceBadge';
+import PreviewGate from '@/components/PreviewGate';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'Data Sources — FDI Monitor',
-  description: 'FDI Monitor 300+ verified sources across 5 tiers. Z3 formal verification, SHA-256 provenance, 15-minute ingestion.',
-};
-
 const TIERS = [
-  { tier:'T1', name:'Official International Bodies',         weight:1.00, color:'#0A3D62', refresh:'Daily',
-    sources:['IMF World Economic Outlook','World Bank FDI database','UNCTAD World Investment Report','OECD FDI Statistics','UN Comtrade','IFC/MIGA data','WTO Trade Statistics'],
-    desc:'Primary multilateral institutions with the highest data quality and verification standards. Z3 constraint sets applied to all T1 signals.' },
-  { tier:'T2', name:'National Central Banks & Ministries',   weight:0.92, color:'#74BB65', refresh:'Daily',
-    sources:['UAE Central Bank','Saudi Arabian Monetary Authority','Reserve Bank of India','Bundesbank','Bank of England','Monetary Authority of Singapore','US Federal Reserve / BEA'],
-    desc:'National financial authorities providing official balance of payments, FDI inflow/outflow, and reserve data.' },
-  { tier:'T3', name:'Investment Promotion Agencies',         weight:0.85, color:'#74BB65', refresh:'2 hours',
-    sources:['InvestAD (UAE)','SAGIA (Saudi Arabia)','EDB Bahrain','Invest India','JETRO (Japan)','Germany Trade & Invest','Singapore EDB'],
-    desc:'National IPAs publishing investment incentive data, project registrations, and sector-level announcements.' },
-  { tier:'T4', name:'Corporate Intelligence & Filings',      weight:0.76, color:'#696969', refresh:'4 hours',
-    sources:['SEC EDGAR filings','Companies House UK','Earnings call transcripts','Corporate press releases','M&A databases (Bloomberg/Refinitiv)','Patent registrations'],
-    desc:'Primary corporate disclosures providing direct investment intent evidence. Highest specificity for greenfield and M&A signals.' },
-  { tier:'T5', name:'Media & Alternative Data',              weight:0.65, color:'#696969', refresh:'8 hours',
-    sources:['Reuters / AP wire','Financial Times','Zawya MENA','Construction intelligence (Dodge)','Conference announcements','Site selector interviews'],
-    desc:'Corroborative signals always cross-validated against T1–T4 before inclusion in scored intelligence.' },
+  {tier:'T1',label:'Primary Official',color:'#0A3D62',bg:'rgba(10,61,98,0.07)',
+   desc:'Authoritative primary sources: multilateral organisations, central banks, national statistics offices.',
+   count:38, verif:'Z3 + SHA-256',
+   sources:[
+     {name:'IMF World Economic Outlook',     org:'IMF',     freq:'Quarterly',  ref:'GFM-SRC-000001'},
+     {name:'UNCTAD World Investment Report',  org:'UNCTAD',  freq:'Annual',     ref:'GFM-SRC-000002'},
+     {name:'World Bank WDI',                 org:'World Bank',freq:'Annual',   ref:'GFM-SRC-000003'},
+     {name:'World Bank Doing Business',       org:'World Bank',freq:'Annual',   ref:'GFM-SRC-000004'},
+     {name:'OECD FDI Statistics',            org:'OECD',    freq:'Quarterly',  ref:'GFM-SRC-000005'},
+     {name:'OECD National Accounts',         org:'OECD',    freq:'Quarterly',  ref:'GFM-SRC-000006'},
+     {name:'Bank for International Settlements',org:'BIS',  freq:'Quarterly',  ref:'GFM-SRC-000007'},
+     {name:'UN Comtrade',                     org:'UN',      freq:'Monthly',    ref:'GFM-SRC-000008'},
+   ]},
+  {tier:'T2',label:'Research & Analytics',color:'#74BB65',bg:'rgba(116,187,101,0.07)',
+   desc:'Leading research institutions, independent analytical bodies, and major index providers.',
+   count:64, verif:'SHA-256',
+   sources:[
+     {name:'fDi Markets Intelligence',       org:'FT',       freq:'Real-time', ref:'GFM-SRC-000101'},
+     {name:'IMD World Competitiveness',      org:'IMD',      freq:'Annual',    ref:'GFM-SRC-000102'},
+     {name:'Global Innovation Index (GII)',  org:'WIPO',     freq:'Annual',    ref:'GFM-SRC-000103'},
+     {name:'World Justice Project Rule of Law',org:'WJP',   freq:'Annual',    ref:'GFM-SRC-000104'},
+     {name:'Transparency International CPI', org:'TI',       freq:'Annual',    ref:'GFM-SRC-000105'},
+     {name:'Oxford Insights AI Government',  org:'Oxford',   freq:'Annual',    ref:'GFM-SRC-000106'},
+     {name:'ITU Digital Development Index',  org:'ITU',      freq:'Annual',    ref:'GFM-SRC-000107'},
+     {name:'Climate Change Performance Index',org:'CAN',     freq:'Annual',    ref:'GFM-SRC-000108'},
+   ]},
+  {tier:'T3',label:'Intelligence Feeds',color:'#1B6CA8',bg:'rgba(27,108,168,0.07)',
+   desc:'Real-time news agencies, official press releases, regulatory filings, and diplomatic channels.',
+   count:124, verif:'Extraction confidence',
+   sources:[
+     {name:'Reuters FDI Wire',               org:'Reuters',  freq:'Real-time', ref:'GFM-SRC-000201'},
+     {name:'Bloomberg Terminal',             org:'Bloomberg',freq:'Real-time', ref:'GFM-SRC-000202'},
+     {name:'SEC EDGAR Filings',              org:'SEC',      freq:'Real-time', ref:'GFM-SRC-000203'},
+     {name:'European Commission Press',      org:'EC',       freq:'As-issued', ref:'GFM-SRC-000204'},
+     {name:'IPA Official Announcements',     org:'Various',  freq:'As-issued', ref:'GFM-SRC-000205'},
+     {name:'Central Bank Publications',      org:'Various',  freq:'Monthly',   ref:'GFM-SRC-000206'},
+     {name:'Stock Exchange Filings',         org:'Various',  freq:'Real-time', ref:'GFM-SRC-000207'},
+     {name:'Ministry of Investment Releases',org:'Various',  freq:'As-issued', ref:'GFM-SRC-000208'},
+   ]},
+  {tier:'T4',label:'Supplementary',color:'#696969',bg:'rgba(105,105,105,0.06)',
+   desc:'Supplementary intelligence: industry associations, zone authorities, academic research, partner feeds.',
+   count:78, verif:'Manual review',
+   sources:[
+     {name:'WAIPA Member Database',          org:'WAIPA',   freq:'Monthly',   ref:'GFM-SRC-000301'},
+     {name:'SEZ Authority Data',             org:'Various', freq:'Monthly',   ref:'GFM-SRC-000302'},
+     {name:'UNCTAD E-Regulations',           org:'UNCTAD',  freq:'Monthly',   ref:'GFM-SRC-000303'},
+     {name:'Academic Research Database',     org:'Various', freq:'Quarterly', ref:'GFM-SRC-000304'},
+     {name:'Industry Association Reports',   org:'Various', freq:'Quarterly', ref:'GFM-SRC-000305'},
+     {name:'Embassy Trade Reports',          org:'Various', freq:'Monthly',   ref:'GFM-SRC-000306'},
+     {name:'Partner Intelligence Feeds',     org:'Private', freq:'Real-time', ref:'GFM-SRC-000307'},
+     {name:'Corporate Annual Reports',       org:'Various', freq:'Annual',    ref:'GFM-SRC-000308'},
+   ]},
 ];
 
 const PIPELINE_STEPS = [
-  { num:'01', title:'Collection',        icon:'📡', desc:'Automated ingestion from 300+ sources via API, RSS, and structured scraping. T1–T3 refresh every 15 minutes. T4–T5 every 2–8 hours.' },
-  { num:'02', title:'Extraction',        icon:'🔍', desc:'NLP entity extraction identifies investor, destination economy, sector, CapEx amount, and signal type from raw source content.' },
-  { num:'03', title:'Cross-Validation',  icon:'⚖️', desc:'Minimum 2 independent T1–T4 sources required. Single-source signals are quarantined until a second source confirms.' },
-  { num:'04', title:'Z3 Verification',   icon:'✓',  desc:'Microsoft Z3 SMT theorem prover checks 14 logical constraint sets per signal: geographic, sector, amount, and timeline consistency.' },
-  { num:'05', title:'SCI Scoring',       icon:'📊', desc:'SCI = (Source_Weight × 0.30) + (Cross_Validation × 0.25) + (Recency × 0.25) + (Specificity × 0.20). Scores 0–100.' },
-  { num:'06', title:'SHA-256 Provenance',icon:'🔒', desc:'Every scored signal receives a SHA-256 hash committing to the source data state at time of scoring. Immutable audit trail.' },
-];
-
-const FRESHNESS = [
-  { tier:'T1', interval:'Daily',    last_refresh:'08:00 UTC', status:'fresh', signals:62  },
-  { tier:'T2', interval:'Daily',    last_refresh:'09:30 UTC', status:'fresh', signals:48  },
-  { tier:'T3', interval:'2 hours',  last_refresh:'12 min ago',status:'fresh', signals:54  },
-  { tier:'T4', interval:'4 hours',  last_refresh:'1h 22m ago',status:'fresh', signals:38  },
-  { tier:'T5', interval:'8 hours',  last_refresh:'3h 45m ago',status:'fresh', signals:16  },
+  {n:1,title:'Ingestion',       color:'#0A3D62',desc:'Automated crawlers scrape 300+ sources every 2s. RSS, API, HTML parsing.'},
+  {n:2,title:'Extraction',      color:'#74BB65',desc:'NLP models extract structured fields: economy, company, amount, sector, type.'},
+  {n:3,title:'Validation',      color:'#1B6CA8',desc:'Schema validation, field completeness check, outlier detection.'},
+  {n:4,title:'Z3 Verification', color:'#0A3D62',desc:'14 Z3 formal constraints for PLATINUM/GOLD candidates. Rejects on failure.'},
+  {n:5,title:'SHA Provenance',  color:'#74BB65',desc:'SHA-256 hash seals verified records. Tamper-evident audit trail.'},
+  {n:6,title:'SCI Scoring',     color:'#1B6CA8',desc:'5-component Signal Confidence Index assigned. Grade assigned PLATINUM–BRONZE.'},
 ];
 
 export default function SourcesPage() {
+  const [activeTier, setActiveTier] = useState('T1');
+  const [search, setSearch] = useState('');
+
+  const current = TIERS.find(t=>t.tier===activeTier);
+  const allSources = current?.sources.filter(s=>!search||s.name.toLowerCase().includes(search.toLowerCase())) || [];
+
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/>
-      <TrialBanner/>
-      <section className="gfm-hero px-6 py-12">
-        <div className="max-w-screen-xl mx-auto relative z-10">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Data Intelligence</div>
-          <h1 className="text-3xl font-extrabold mb-2" style={{color:'#0A3D62'}}>Data Sources & Verification</h1>
-          <p className="text-sm max-w-2xl" style={{color:'#696969'}}>300+ verified sources · 5 tiers · Z3 formal verification · SHA-256 provenance · 15-min ingestion</p>
-          <div className="flex gap-8 mt-6 flex-wrap">
-            {[['300+','Sources'],['5','Tiers'],['Z3','Verified'],['SHA-256','Provenance'],['14','Constraints'],['15min','Fastest Refresh']].map(([v,l])=>(
-              <div key={l}><div className="text-2xl font-extrabold font-data" style={{color:'#74BB65'}}>{v}</div><div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div></div>
+      <NavBar/><TrialBanner/>
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'40px 24px'}}>
+        <div style={{maxWidth:'1200px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+              <Database size={16} color="#74BB65"/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Data Sources</span>
+            </div>
+            <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>Source Registry</h1>
+            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
+              304 verified sources · 4-tier hierarchy · Z3 + SHA-256 verification · GFM-SRC reference codes
+            </p>
+          </div>
+          <div style={{display:'flex',gap:'18px'}}>
+            {[['304','Total Sources'],['T1–T4','Tiers'],['Z3','Top Tier'],['100%','Cited']].map(([v,l])=>(
+              <div key={l} style={{textAlign:'center'}}>
+                <div style={{fontSize:'18px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-8 space-y-10">
-
-        {/* Data freshness dashboard */}
-        <div>
-          <h2 className="text-lg font-extrabold mb-4" style={{color:'#0A3D62'}}>Live Data Freshness</h2>
-          <div className="grid md:grid-cols-5 gap-3">
-            {FRESHNESS.map(f=>(
-              <div key={f.tier} className="gfm-card p-4 text-center">
-                <div className="flex justify-center mb-2">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{background:'#22c55e'}}/>
-                </div>
-                <div className="font-extrabold font-data text-2xl mb-0.5" style={{color:'#74BB65'}}>{f.tier}</div>
-                <div className="text-xs mb-1" style={{color:'#696969'}}>{f.interval}</div>
-                <div className="text-xs" style={{color:'#696969'}}>Last: {f.last_refresh}</div>
-                <div className="font-data font-bold mt-1" style={{color:'#22c55e'}}>{f.signals} signals</div>
+      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'flex',flexDirection:'column',gap:'20px'}}>
+        {/* Tier cards */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+          {TIERS.map(t=>(
+            <div key={t.tier} onClick={()=>setActiveTier(t.tier)}
+              style={{background:activeTier===t.tier?`linear-gradient(135deg,${t.color} 0%,${t.color}CC 100%)`:'white',
+                borderRadius:'12px',padding:'18px',cursor:'pointer',
+                boxShadow:activeTier===t.tier?`0 8px 24px ${t.color}30`:'0 2px 8px rgba(10,61,98,0.06)',
+                border:activeTier===t.tier?'none':'1px solid rgba(10,61,98,0.07)',transition:'all 0.2s'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}>
+                <span style={{fontSize:'14px',fontWeight:900,
+                  color:activeTier===t.tier?'white':t.color,fontFamily:'monospace'}}>{t.tier}</span>
+                <span style={{fontSize:'11px',fontWeight:800,
+                  color:activeTier===t.tier?'rgba(255,255,255,0.7)':'#696969'}}>{t.count} sources</span>
               </div>
-            ))}
-          </div>
+              <div style={{fontSize:'13px',fontWeight:700,
+                color:activeTier===t.tier?'white':'#0A3D62',marginBottom:'5px'}}>{t.label}</div>
+              <div style={{fontSize:'11px',lineHeight:'1.5',
+                color:activeTier===t.tier?'rgba(255,255,255,0.8)':'#696969'}}>{t.desc.slice(0,80)}…</div>
+            </div>
+          ))}
         </div>
 
-        {/* 6-step pipeline */}
-        <div>
-          <h2 className="text-lg font-extrabold mb-4" style={{color:'#0A3D62'}}>6-Step Verification Pipeline</h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {PIPELINE_STEPS.map(s=>(
-              <div key={s.num} className="gfm-card p-5" style={{borderLeft:'3px solid #FF6600'}}>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="text-xl font-extrabold font-data" style={{color:'#74BB65'}}>{s.num}</span>
-                  <span className="text-xl">{s.icon}</span>
-                  <span className="font-extrabold text-sm" style={{color:'#0A3D62'}}>{s.title}</span>
-                </div>
-                <p className="text-xs leading-relaxed" style={{color:'#696969'}}>{s.desc}</p>
+        {/* Source list */}
+        {current && (
+          <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
+            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
+              <Search size={13} color="#696969"/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter sources…"
+                style={{padding:'7px 12px',borderRadius:'7px',border:'1px solid rgba(10,61,98,0.15)',
+                  fontSize:'12px',outline:'none',color:'#000',background:'white',width:'200px'}}/>
+              <div style={{marginLeft:'8px',fontSize:'12px',color:'#696969'}}>
+                Verification: <b style={{color:current.color}}>{current.verif}</b>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* SCI formula */}
-        <div className="gfm-card p-6">
-          <h2 className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>Signal Confidence Index (SCI)</h2>
-          <div className="p-4 rounded-xl font-mono text-sm overflow-x-auto mb-4" style={{background:'rgba(10,61,98,0.04)0.8)',color:'#0A3D62'}}>
-            SCI = (Source_Weight × 0.30) + (Cross_Validation × 0.25) + (Recency × 0.25) + (Specificity × 0.20)
-          </div>
-          <div className="grid md:grid-cols-4 gap-4">
-            {[['Source Weight (30%)',   'T1=1.00, T2=0.92, T3=0.85, T4=0.76, T5=0.65','#74BB65'],
-              ['Cross-Validation (25%)','Independent source confirmation ratio','#74BB65'],
-              ['Recency (25%)',         '90-day half-life decay function','#0A3D62'],
-              ['Specificity (20%)',     'Company + amount + destination = maximum','#696969']
-            ].map(([t,d,c])=>(
-              <div key={t} className="p-3 rounded-xl" style={{background:'rgba(10,61,98,0.04)0.6)'}}>
-                <div className="text-xs font-bold mb-1" style={{color:c}}>{t}</div>
-                <div className="text-xs" style={{color:'#696969'}}>{d}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 text-xs" style={{color:'#696969'}}>
-            Grade thresholds: <span style={{color:'#0A3D62'}}>PLATINUM ≥90</span> · <span style={{color:'#74BB65'}}>GOLD 75–89</span> · <span style={{color:'#696969'}}>SILVER 60–74</span> · <span style={{color:'#696969'}}>BRONZE 40–59</span>
-          </div>
-        </div>
-
-        {/* 5 tiers */}
-        <div>
-          <h2 className="text-lg font-extrabold mb-4" style={{color:'#0A3D62'}}>Source Tiers</h2>
-          <div className="space-y-4">
-            {TIERS.map(t=>(
-              <div key={t.tier} className="gfm-card overflow-hidden">
-                <div className="p-5" style={{borderLeft:`4px solid ${t.color}`}}>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 text-center w-16">
-                      <div className="text-2xl font-extrabold font-data" style={{color:t.color}}>{t.tier}</div>
-                      <div className="text-xs" style={{color:'#696969'}}>w={t.weight}</div>
-                      <div className="text-xs mt-0.5" style={{color:'#696969'}}>{t.refresh}</div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-extrabold text-sm mb-1" style={{color:'#0A3D62'}}>{t.name}</div>
-                      <p className="text-xs leading-relaxed mb-3" style={{color:'#696969'}}>{t.desc}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {t.sources.map(s=>(
-                          <span key={s} className="text-xs px-2 py-0.5 rounded" style={{background:`${t.color}12`,color:t.color,border:`1px solid ${t.color}25`}}>{s}</span>
-                        ))}
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'10px'}}>
+              {allSources.map(src=>(
+                <div key={src.ref} style={{display:'flex',gap:'12px',alignItems:'flex-start',padding:'14px',
+                  background:'white',borderRadius:'10px',boxShadow:'0 2px 8px rgba(10,61,98,0.05)',
+                  border:'1px solid rgba(10,61,98,0.06)'}}>
+                  <div style={{width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,
+                    background:current.color,marginTop:'5px'}}/>
+                  <div style={{flex:1}}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'8px'}}>
+                      <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{src.name}</div>
+                      <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
+                        <span style={{fontSize:'10px',color:'#696969'}}>{src.freq}</span>
+                        <SourceBadge source={src.name} date="2026" accessed="20 Mar 2026" refCode={src.ref}>
+                          <span style={{fontSize:'10px',fontWeight:700,padding:'1px 6px',borderRadius:'6px',
+                            background:`${current.color}10`,color:current.color,cursor:'default'}}>
+                            {src.ref.split('-').pop()}
+                          </span>
+                        </SourceBadge>
                       </div>
                     </div>
+                    <div style={{fontSize:'11px',color:'#696969',marginTop:'2px'}}>{src.org}</div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="flex gap-3 flex-wrap">
-          <Link href="/signals"  className="gfm-btn-primary text-sm py-2 px-5">View Live Signals →</Link>
-          <Link href="/gfr/methodology" className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#696969'}}>GFR Methodology</Link>
-          <Link href="/contact"  className="gfm-btn-outline text-sm py-2 px-5" style={{color:'#696969'}}>Request Data Source</Link>
-        </div>
+        {/* Pipeline */}
+        <PreviewGate feature="full_profile">
+          <div className="gfm-card" style={{padding:'24px'}}>
+            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Shield size={14} color="#74BB65"/> 6-Step Verification Pipeline
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px'}}>
+              {PIPELINE_STEPS.map(step=>(
+                <div key={step.n} style={{textAlign:'center',padding:'14px 10px',borderRadius:'10px',
+                  background:`${step.color}05`,border:`1px solid ${step.color}15`}}>
+                  <div style={{width:'32px',height:'32px',borderRadius:'50%',background:step.color,
+                    color:'white',display:'flex',alignItems:'center',justifyContent:'center',
+                    fontSize:'13px',fontWeight:800,margin:'0 auto 8px'}}>
+                    {step.n}
+                  </div>
+                  <div style={{fontSize:'12px',fontWeight:700,color:step.color,marginBottom:'5px'}}>{step.title}</div>
+                  <div style={{fontSize:'10px',color:'#696969',lineHeight:'1.4'}}>{step.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </PreviewGate>
       </div>
+      <Footer/>
     </div>
   );
 }

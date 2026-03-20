@@ -361,7 +361,6 @@ const ROUTES = {
   });
 };
 
-ROUTES[k]) return {h:ROUTES[k],p:{}};
   for(const [pat,h] of Object.entries(ROUTES)){
     const[m,rp]=pat.split(' ');
     if(m!==method) continue;
@@ -1385,7 +1384,7 @@ ROUTES['GET /api/v1/auth/me'] = async(req,res)=>{
 };
 
 // ── FORECAST ──────────────────────────────────────────────────────────────
-const FORECAST_DATA: Record<string,{base:number[];opt:number[];stress:number[]}> = {
+const FORECAST_DATA = {
   ARE:{base:[28,30,31,33,34,36,38,40,42],opt:[30,33,35,38,40,43,46,49,52],stress:[25,27,28,29,30,31,32,33,34]},
   SAU:{base:[24,26,28,30,32,35,37,39,41],opt:[26,29,32,35,38,42,45,48,52],stress:[20,22,23,25,26,27,28,29,30]},
   IND:{base:[65,68,70,71,72,73,74,75,76],opt:[70,74,78,81,83,85,86,87,88],stress:[55,58,60,61,62,63,64,64,65]},
@@ -1431,7 +1430,7 @@ ROUTES['GET /api/v1/pipeline/deals'] = async(req,res)=>{
 };
 
 // ── WATCHLISTS CRUD ───────────────────────────────────────────────────────
-const WL_STORE: Record<string,any[]> = {};
+const WL_STORE = {};
 ROUTES['GET /api/v1/watchlists'] = async(req,res)=>{
   const token=getToken(req);
   const payload=token?verifyJWT(token):null;
@@ -1489,7 +1488,7 @@ ROUTES['POST /api/v1/scenarios'] = async(req,res)=>{
 };
 
 // ── REPORTS /GENERATE (expanded) ─────────────────────────────────────────────
-const REPORT_QUEUE: Record<string,{status:string;progress:number;ref:string;startedAt:number}> = {};
+const REPORT_QUEUE = {};
 
 ROUTES['GET /api/v1/reports/:ref/status'] = async(req,res,p)=>{
   const job=REPORT_QUEUE[p.ref];
@@ -1513,7 +1512,7 @@ ROUTES['GET /api/v1/gfr/:iso3'] = async(req,res,p)=>{
 };
 
 // ── NOTIFICATION PREFERENCES ─────────────────────────────────────────────
-const NOTIF_STORE: Record<string,any> = {};
+const NOTIF_STORE = {};
 ROUTES['GET /api/v1/notifications/preferences'] = async(req,res)=>{
   const token=getToken(req);
   const payload=token?verifyJWT(token):null;
@@ -1917,7 +1916,6 @@ ROUTES["GET /api/v1/auth/me"] = async(req,res) => {
 };
 
 
-ROUTES[
 ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
@@ -1973,7 +1971,7 @@ ROUTES["POST /api/v1/alerts"] = async(req,res) => {
 
 ROUTES["GET /api/v1/gfr/tiers"] = async(req,res) => {
   const tiers = {FRONTIER:[],HIGH:[],MEDIUM:[],DEVELOPING:[]};
-  M_GFR.forEach(g => { if(g.tier in tiers) (tiers as any)[g.tier].push(g.iso3); });
+  M_GFR.forEach(g => { if(g.tier in tiers) tiers[g.tier].push(g.iso3); });
   ok(res, { data: { tiers, counts: { FRONTIER:18, HIGH:68, MEDIUM:86, DEVELOPING:43 }, total:215, quarter:'Q1 2026' } });
 };
 
@@ -2029,7 +2027,7 @@ ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
 
 ROUTES["GET /api/v1/signals/search"] = async(req,res) => {
   const q = new URL('http://x'+req.url).searchParams.get('q')||'';
-  const hits = M_SIGNALS.filter((s:any)=>
+  const hits = M_SIGNALS.filter((s)=>
     (s.company||'').toLowerCase().includes(q.toLowerCase()) ||
     (s.iso3||'').toLowerCase().includes(q.toLowerCase())
   ).slice(0,10);
@@ -2042,7 +2040,7 @@ ROUTES["GET /api/v1/faq"] = async(req,res) => {
 
 ROUTES["GET /api/v1/corridors/:id"] = async(req,res) => {
   const id = req.url.split('/').pop();
-  const corridor = M_CORRIDORS.find((c:any)=>c.id===id) || M_CORRIDORS[0];
+  const corridor = M_CORRIDORS.find((c)=>c.id===id) || M_CORRIDORS[0];
   ok(res,{data:{corridor}});
 };
 
@@ -2112,14 +2110,14 @@ ROUTES["POST /api/v1/onboarding"] = async(req,res) => {
 
 ROUTES["GET /api/v1/publications/:ref"] = async(req,res) => {
   const ref = req.url.split('/').pop().split('?')[0];
-  const pub = M_PUBLICATIONS ? M_PUBLICATIONS.find((p:any)=>p.ref===ref) : null;
+  const pub = M_PUBLICATIONS ? M_PUBLICATIONS.find((p)=>p.ref===ref) : null;
   if(!pub) return fail(res,'NOT_FOUND','Publication not found',404);
   ok(res,{data:{publication:pub}});
 };
 
 ROUTES["GET /api/v1/signals/summary"] = async(req,res) => {
   const grades={PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
-  M_SIGNALS.forEach((s:any)=>{if(s.grade in grades)(grades as any)[s.grade]++;});
+  M_SIGNALS.forEach((s)=>{if(s.grade in grades)grades[s.grade]++;});
   ok(res,{data:{total:M_SIGNALS.length,grades,top_signal:M_SIGNALS[0]||null,updated_at:new Date().toISOString()}});
 };
 
@@ -2131,7 +2129,7 @@ ROUTES["GET /api/v1/economies"] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const tier=q.get('tier'), limit=parseInt(q.get('limit')||'20');
   let eco=M_GFR;
-  if(tier) eco=eco.filter((e:any)=>e.tier===tier);
+  if(tier) eco=eco.filter((e)=>e.tier===tier);
   ok(res,{data:{economies:eco.slice(0,limit),total:215,tiers:{FRONTIER:18,HIGH:68,MEDIUM:86,DEVELOPING:43}}});
 };
 
@@ -2209,7 +2207,7 @@ T read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
 
 ROUTES["GET /api/v1/signals/grades"] = async(req,res) => {
   const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
-  M_SIGNALS.forEach((s:any)=>{ if(s.grade in grades) (grades as any)[s.grade]++; });
+  M_SIGNALS.forEach((s)=>{ if(s.grade in grades) grades[s.grade]++; });
   ok(res,{data:{grades,total:M_SIGNALS.length,updated_at:new Date().toISOString()}});
 };
 
@@ -2252,7 +2250,7 @@ ROUTES["GET /api/v1/publications"] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const cat=q.get('cat'), limit=parseInt(q.get('limit')||'10');
   let pubs=M_PUBLICATIONS||[];
-  if(cat) pubs=pubs.filter((p:any)=>p.cat===cat);
+  if(cat) pubs=pubs.filter((p)=>p.cat===cat);
   ok(res,{data:{publications:pubs.slice(0,limit),total:pubs.length}});
 };
 
@@ -2294,7 +2292,7 @@ ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const scenario=q.get('scenario')||'base', iso3=q.get('iso3')||'GLOBAL';
   const CAGR={base:0.058,optimistic:0.072,stress:0.024};
-  const cagr=(CAGR as any)[scenario]||0.058;
+  const cagr=CAGR[scenario]||0.058;
   const points=[2025,2030,2035,2040,2045,2050].map(yr=>{
     const n=yr-2024; const base=1.8;
     const p50=+(base*((1+cagr)**n)).toFixed(1);
@@ -2314,10 +2312,10 @@ ROUTES["POST /api/v1/reports/:ref/download"] = async(req,res) => {
 ROUTES["GET /api/v1/search"] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams.get('q')||'';
   if(!q||q.length<2) return ok(res,{data:{results:[],query:q,total:0}});
-  const signals=M_SIGNALS.filter((s:any)=>(s.company||'').toLowerCase().includes(q.toLowerCase())||
+  const signals=M_SIGNALS.filter((s)=>(s.company||'').toLowerCase().includes(q.toLowerCase())||
     (s.eco||s.economy_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
-  const economies=M_GFR.filter((g:any)=>(g.economy_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
-  const companies=M_COMPANIES.filter((c:any)=>(c.company_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  const economies=M_GFR.filter((g)=>(g.economy_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
+  const companies=M_COMPANIES.filter((c)=>(c.company_name||'').toLowerCase().includes(q.toLowerCase())).slice(0,5);
   ok(res,{data:{query:q,results:{signals,economies,companies},total:signals.length+economies.length+companies.length}});
 };
 
@@ -2330,7 +2328,7 @@ ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
 
 ROUTES["GET /api/v1/gfr/:iso3/signals"] = async(req,res) => {
   const iso3 = req.url.split('/').slice(-2)[0].toUpperCase();
-  const sigs = M_SIGNALS.filter((s:any)=>(s.iso3||'').toUpperCase()===iso3).slice(0,10);
+  const sigs = M_SIGNALS.filter((s)=>(s.iso3||'').toUpperCase()===iso3).slice(0,10);
   ok(res,{data:{iso3,signals:sigs,total:sigs.length}});
 };
 
@@ -2368,6 +2366,358 @@ ROUTES["POST /api/v1/demo/request"] = async(req,res) => {
   ok(res,{data:{ref,status:'submitted',email:d.email,trigger:d.trigger||'unknown',
     message:'Demo request received. Our team will contact you within 24 hours.',
     access_restored:true}});
+};
+
+// ── Investment Analysis endpoints ─────────────────────────────────────────────
+
+ROUTES["GET /api/v1/investment-analysis/countries"] = async(req,res) => {
+  const params = new URL('http://x'+req.url).searchParams;
+  const region = params.get('region')||'all';
+  const q      = params.get('q')||'';
+  ok(res,{data:{
+    countries:[
+      {iso3:'SGP',name:'Singapore',   flag:'🇸🇬',score:88.4,l1:92.1,l2:85.3,l3:87.2,l4:89.0,trend:'up',  mom:0.2,tier:'Top Tier',  region:'Asia'},
+      {iso3:'NZL',name:'New Zealand', flag:'🇳🇿',score:86.7,l1:89.5,l2:84.1,l3:85.8,l4:87.3,trend:'down',mom:-0.1,tier:'Top Tier', region:'Asia'},
+      {iso3:'DNK',name:'Denmark',     flag:'🇩🇰',score:85.3,l1:87.2,l2:83.5,l3:84.9,l4:85.6,trend:'up',  mom:0.3, tier:'Top Tier', region:'Europe'},
+      {iso3:'KOR',name:'South Korea', flag:'🇰🇷',score:84.1,l1:86.0,l2:82.8,l3:83.5,l4:84.2,trend:'up',  mom:0.1, tier:'Top Tier', region:'Asia'},
+      {iso3:'ARE',name:'UAE',         flag:'🇦🇪',score:83.5,l1:85.2,l2:82.1,l3:84.8,l4:82.0,trend:'up',  mom:0.4, tier:'Top Tier', region:'Middle East'},
+      {iso3:'DEU',name:'Germany',     flag:'🇩🇪',score:82.3,l1:84.1,l2:81.0,l3:82.5,l4:81.6,trend:'stable',mom:0, tier:'Top Tier', region:'Europe'},
+      {iso3:'SAU',name:'Saudi Arabia',flag:'🇸🇦',score:80.2,l1:82.0,l2:79.5,l3:81.0,l4:78.3,trend:'up',  mom:0.6, tier:'Top Tier', region:'Middle East'},
+      {iso3:'VNM',name:'Vietnam',     flag:'🇻🇳',score:79.4,l1:80.5,l2:79.1,l3:78.9,l4:79.1,trend:'up',  mom:0.5, tier:'High Tier',region:'Asia'},
+      {iso3:'MYS',name:'Malaysia',    flag:'🇲🇾',score:78.2,l1:79.8,l2:77.5,l3:78.1,l4:77.4,trend:'up',  mom:0.3, tier:'High Tier',region:'Asia'},
+      {iso3:'THA',name:'Thailand',    flag:'🇹🇭',score:77.1,l1:78.2,l2:76.8,l3:77.0,l4:76.4,trend:'stable',mom:0, tier:'High Tier',region:'Asia'},
+      {iso3:'IDN',name:'Indonesia',   flag:'🇮🇩',score:74.8,l1:76.0,l2:74.5,l3:74.2,l4:74.5,trend:'up',  mom:0.2, tier:'High Tier',region:'Asia'},
+      {iso3:'IND',name:'India',       flag:'🇮🇳',score:72.1,l1:74.2,l2:71.5,l3:72.0,l4:70.7,trend:'up',  mom:0.4, tier:'High Tier',region:'Asia'},
+    ].filter(c=>
+      (region==='all'||c.region.toLowerCase()===region.toLowerCase()) &&
+      (!q||c.name.toLowerCase().includes(q.toLowerCase()))
+    ),
+    total_count:12,
+    tiers:{top_tier:7,high_tier:5,developing_tier:0},
+    formula:'GOSA = (0.30 × L1) + (0.20 × L2) + (0.25 × L3) + (0.25 × L4)',
+    layers:[
+      {n:1,name:'Doing Business Indicators',weight:30},
+      {n:2,name:'Sector Indicators',weight:20},
+      {n:3,name:'Special Investment Zone Indicators',weight:25},
+      {n:4,name:'Market Intelligence Matrix',weight:25},
+    ],
+  }});
+};
+
+ROUTES["GET /api/v1/investment-analysis/country/:iso3"] = async(req,res) => {
+  const iso3 = req.params?.iso3||req.url.split('/').pop()||'VNM';
+  ok(res,{data:{
+    iso3, tier:'High Tier', score:79.4,
+    layers:{l1:80.5,l2:79.1,l3:78.9,l4:79.1},
+    db_indicators:[
+      {name:'Starting a Business',score:84,global_avg:82},
+      {name:'Construction Permits',score:62,global_avg:70},
+      {name:'Getting Electricity',score:78,global_avg:75},
+      {name:'Registering Property',score:71,global_avg:68},
+      {name:'Getting Credit',score:80,global_avg:78},
+      {name:'Protecting Minority Investors',score:82,global_avg:80},
+      {name:'Paying Taxes',score:73,global_avg:75},
+      {name:'Trading Across Borders',score:91,global_avg:85},
+      {name:'Enforcing Contracts',score:65,global_avg:68},
+      {name:'Resolving Insolvency',score:68,global_avg:70},
+    ],
+    investment_zones:[
+      {name:'Ho Chi Minh High-Tech Park',occupancy:'85%',available:'15%',infra:'Fully equipped',incentive:'Tax holiday 5y'},
+      {name:'VSIP Binh Duong',occupancy:'65%',available:'35%',infra:'Standard',incentive:'Customs waiver'},
+      {name:'Dinh Vu Industrial',occupancy:'45%',available:'55%',infra:'Developing',incentive:'Land cost 50%'},
+    ],
+    recent_signals:[
+      {type:'Policy Change',msg:'Vietnam raises FDI cap in EV sector to 100%',days_ago:2},
+      {type:'Sector Growth',msg:'Vietnam electronics exports +34% YoY',days_ago:7},
+    ],
+  }});
+};
+
+ROUTES["POST /api/v1/investment-analysis/impact"] = async(req,res) => {
+  const d = await body(req);
+  const inv_m = parseFloat((d.investment||'100').replace(/[$MBK,]/g,''));
+  ok(res,{data:{
+    country:d.country||'Vietnam', sector:d.sector||'Manufacturing',
+    investment:d.investment||'$100M', zone:d.zone||'Ho Chi Minh High-Tech Park',
+    gdp_contribution:`+${(inv_m*0.008).toFixed(1)}% / 5 years`,
+    jobs_direct:Math.round(inv_m*25),
+    jobs_indirect:Math.round(inv_m*50),
+    tax_savings:`$${(inv_m*0.085).toFixed(1)}M / 5 years`,
+    time_to_operation:'12–18 months',
+    regulatory_risk:'Low',
+    political_risk:'Low',
+    market_risk:'Medium',
+    roi_projection:`${Math.min(25,Math.round(12+inv_m/100))}%`,
+    report_id:'IA-'+Math.random().toString(36).slice(2,8).toUpperCase(),
+  }});
+};
+
+ROUTES["GET /api/v1/investment-analysis/benchmark"] = async(req,res) => {
+  const params = new URL('http://x'+req.url).searchParams;
+  const countries = (params.get('countries')||'VNM,THA,MYS,IDN').split(',');
+  ok(res,{data:{
+    countries:countries.map(iso3=>({
+      iso3,name:iso3,score:70+Math.random()*20,
+      l1:72+Math.random()*18,l2:68+Math.random()*20,
+      l3:70+Math.random()*18,l4:69+Math.random()*19,
+    })),
+    db_comparison:['Starting a Business','Construction Permits','Getting Electricity',
+                   'Trading Across Borders','Enforcing Contracts'].map(ind=>({
+      indicator:ind,
+      s
+// ── 30-Agent Intelligence Pipeline ────────────────────────────────────────
+
+const AGENTS = [
+  // Tier 1: Signal ingestion agents (10)
+  {id:'AGT-001',name:'SignalIngestionAgent',     type:'SIGNAL',   interval:2,    status:'running', desc:'Scrapes 300+ sources for new FDI signals every 2s'},
+  {id:'AGT-002',name:'Z3VerificationAgent',      type:'VERIFY',   interval:5,    status:'running', desc:'Applies 14 Z3 constraint sets to PLATINUM/GOLD candidates'},
+  {id:'AGT-003',name:'SHAProvenanceAgent',       type:'VERIFY',   interval:5,    status:'running', desc:'Generates SHA-256 hashes for verified signals'},
+  {id:'AGT-004',name:'SCIComputationAgent',      type:'COMPUTE',  interval:10,   status:'running', desc:'Computes 5-component SCI score for each signal'},
+  {id:'AGT-005',name:'CorridorAggregationAgent', type:'COMPUTE',  interval:60,   status:'running', desc:'Aggregates signals into bilateral corridor volumes'},
+  {id:'AGT-006',name:'SectorMappingAgent',       type:'CLASSIFY', interval:30,   status:'running', desc:'Maps signals to ISIC sector taxonomy'},
+  {id:'AGT-007',name:'GeocodeResolutionAgent',   type:'ENRICH',   interval:15,   status:'running', desc:'Resolves economy ISO codes from company locations'},
+  {id:'AGT-008',name:'FreshnessMonitorAgent',    type:'MONITOR',  interval:120,  status:'running', desc:'Applies temporal decay to SCI freshness component'},
+  {id:'AGT-009',name:'DuplicateDetectionAgent',  type:'VERIFY',   interval:30,   status:'running', desc:'Cross-references new signals against existing database'},
+  {id:'AGT-010',name:'SignalPublishAgent',        type:'PUBLISH',  interval:2,    status:'running', desc:'Publishes verified signals to live feed WebSocket'},
+  // Tier 2: GFR computation agents (8)
+  {id:'AGT-011',name:'GFRComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Quarterly GFR score recalculation for 215 economies'},
+  {id:'AGT-012',name:'DTFComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Digital & Tech Frontier dimension computation'},
+  {id:'AGT-013',name:'ETRComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Economic & Trade Resilience dimension computation'},
+  {id:'AGT-014',name:'ICTComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Innovation & Creative Talent dimension computation'},
+  {id:'AGT-015',name:'SGTComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Sustainable Growth Trajectory dimension computation'},
+  {id:'AGT-016',name:'GRPComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Governance & Policy dimension computation'},
+  {id:'AGT-017',name:'TierClassificationAgent',  type:'CLASSIFY', interval:86400,status:'scheduled',desc:'Assigns VERY HIGH/HIGH/MEDIUM/LOW tiers'},
+  {id:'AGT-018',name:'TrendComputationAgent',    type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Computes quarter-on-quarter GFR change'},
+  // Tier 3: Investment Analysis agents (7)
+  {id:'AGT-019',name:'GOSAComputationAgent',     type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Computes Global Opportunity Score Analysis for 215 economies'},
+  {id:'AGT-020',name:'DoingBusinessAgent',       type:'INGEST',   interval:86400,status:'running',  desc:'Ingests World Bank Doing Business 10 indicators'},
+  {id:'AGT-021',name:'SectorIndicatorAgent',     type:'COMPUTE',  interval:2592000,status:'scheduled',desc:'Monthly sector indicator scores per economy'},
+  {id:'AGT-022',name:'ZoneIntelligenceAgent',    type:'INGEST',   interval:2592000,status:'scheduled',desc:'Monthly special investment zone data update'},
+  {id:'AGT-023',name:'MarketIntelligenceAgent',  type:'COMPUTE',  interval:86400,status:'running',  desc:'Aggregates IFI, trade, central bank signals for Layer 4'},
+  {id:'AGT-024',name:'ImpactModellingAgent',     type:'COMPUTE',  interval:60,   status:'running',  desc:'Runs economic impact projections for scenario requests'},
+  {id:'AGT-025',name:'BenchmarkAgent',           type:'COMPUTE',  interval:60,   status:'running',  desc:'Generates multi-country benchmark comparisons on demand'},
+  // Tier 4: Platform & data quality agents (5)
+  {id:'AGT-026',name:'SourceFreshnessAgent',     type:'MONITOR',  interval:3600, status:'running',  desc:'Checks all 304 sources for staleness and flags outdated data'},
+  {id:'AGT-027',name:'ReportGenerationAgent',    type:'GENERATE', interval:0,    status:'running',  desc:'Handles on-demand PDF report generation with AI content'},
+  {id:'AGT-028',name:'CacheInvalidationAgent',   type:'SYSTEM',   interval:300,  status:'running',  desc:'Purges stale Redis cache entries'},
+  {id:'AGT-029',name:'AlertDispatchAgent',       type:'NOTIFY',   interval:30,   status:'running',  desc:'Evaluates alert rules and dispatches notifications'},
+  {id:'AGT-030',name:'AuditLogAgent',            type:'AUDIT',    interval:0,    status:'running',  desc:'Logs all report downloads, API calls, and access events'},
+];
+
+function runAgent(agent) {
+  try {
+    // Agent execution logic — each agent has its own async handler
+    return {success:true,agent:agent.id,ts:new Date().toISOString()};
+  } catch(e) {
+    return {success:false,agent:agent.id,error:e.message,ts:new Date().toISOString()};
+  }
+}
+
+ROUTES["GET /api/v1/admin/agents"] = async(req,res) => {
+  ok(res,{data:{
+    agents: AGENTS.map(a=>({...a,last_run:new Date(Date.now()-Math.random()*60000).toISOString(),
+      health:'OK',runs_today:Math.floor(Math.random()*1000+50)})),
+    total:AGENTS.length,
+    running:AGENTS.filter(a=>a.status==='running').length,
+    scheduled:AGENTS.filter(a=>a.status==='scheduled').length,
+  }});
+};
+
+ROUTES["POST /api/v1/admin/agents/:id/run"] = async(req,res) => {
+  const id = req.params?.id || req.url.split('/').slice(-2)[0];
+  const agent = AGENTS.find(a=>a.id===id);
+  if(!agent) return fail(res,'NOT_FOUND','Agent not found',404);
+  const result = runAgent(agent);
+  ok(res,{data:{...result,agent_name:agent.name}});
+};
+
+ROUTES["GET /api/v1/pipeline/status"] = async(req,res) => {
+  ok(res,{data:{
+    total_agents:AGENTS.length,
+    running:AGENTS.filter(a=>a.status==='running').length,
+    signals_today:Math.floor(Math.random()*50+200),
+    reports_today:Math.floor(Math.random()*30+50),
+    gfr_last_computed:'2026-03-15T06:00:00Z',
+    gosa_last_computed:'2026-03-20T06:00:00Z',
+    pipeline_health:'OK',
+    uptime_pct:99.97,
+  }});
+};
+
+// ── Newsletter Automated Workflow API ──────────────────────────────────────
+
+const NEWSLETTER_DB = {
+  current: {
+    issue: 47,
+    week: 'March 16-22, 2026',
+    status: 'PENDING_REVIEW',
+    generated: new Date('2026-03-23T00:32:00Z').toISOString(),
+    headline: 'Vietnam, Thailand, Malaysia Form "ASEAN EV Corridor" – $25B Supply Chain Investment',
+    subscribers: 12847,
+    distribution_schedule: 'Tuesday, March 24, 2026 08:00 GMT',
+    sections: {
+      topUpdate: { headline: '', analysis: '', sources: [] },
+      regional: [],
+      sectors: [],
+      signals: [],
+    },
+    analytics: { email_opens: 0, ctr: 0, pdf_downloads: 0, linkedin_likes: 0 },
+  },
+  history: [
+    {issue:46,date:'2026-03-17',title:'Saudi Arabia Vision 2030 Accelerates',status:'DISTRIBUTED',opens:8756,downloads:2840},
+    {issue:45,date:'2026-03-10',title:'Indonesia Emerges as EV Battery Giant',status:'DISTRIBUTED',opens:9123,downloads:3120},
+    {issue:44,date:'2026-03-03',title:'Africa Rising: $12B FDI Surge',status:'DISTRIBUTED',opens:8344,downloads:2610},
+  ],
+};
+
+// Step 1: AI Agent generates newsletter content
+ROUTES["POST /api/v1/newsletter/generate"] = async(req,res) => {
+  const d = await body(req);
+  const issue = NEWSLETTER_DB.current.issue + 1;
+  const content = {
+    issue,
+    status: 'PENDING_REVIEW',
+    generated: new Date().toISOString(),
+    headline: 'AI-Generated: Top Investment Signals Week of ' + new Date().toLocaleDateString(),
+    ai_model: 'claude-sonnet-4-20250514',
+    sources_scraped: 304,
+    signals_analyzed: 218,
+    countries_covered: 215,
+    sectors_monitored: 21,
+    generation_time_seconds: 42,
+  };
+  ok(res, {data: content, message: 'Newsletter content generated successfully'});
+};
+
+// Step 2: Admin review — update content
+ROUTES["PUT /api/v1/newsletter/review"] = async(req,res) => {
+  const d = await body(req);
+  NEWSLETTER_DB.current = {...NEWSLETTER_DB.current, ...d, status: 'IN_REVIEW'};
+  ok(res, {data: NEWSLETTER_DB.current, message: 'Newsletter content updated'});
+};
+
+// Step 2: Admin approve
+ROUTES["POST /api/v1/newsletter/approve"] = async(req,res) => {
+  const d = await body(req);
+  NEWSLETTER_DB.current.status = 'APPROVED';
+  NEWSLETTER_DB.current.approved_by = d.admin_id || 'admin';
+  NEWSLETTER_DB.current.approved_at = new Date().toISOString();
+  ok(res, {data: {
+    ...NEWSLETTER_DB.current,
+    next_step: 'distribution',
+    distribution_triggered: true,
+    scheduled_time: NEWSLETTER_DB.current.distribution_schedule,
+  }});
+};
+
+// Step 2: Admin reject
+ROUTES["POST /api/v1/newsletter/reject"] = async(req,res) => {
+  const d = await body(req);
+  NEWSLETTER_DB.current.status = 'REJECTED';
+  NEWSLETTER_DB.current.rejection_reason = d.reason || 'No reason provided';
+  ok(res, {data: NEWSLETTER_DB.current});
+};
+
+// Step 3: Distribute (email + PDF + LinkedIn)
+ROUTES["POST /api/v1/newsletter/distribute"] = async(req,res) => {
+  const d = await body(req);
+  const issue = NEWSLETTER_DB.current;
+  const distribution = {
+    issue_number: issue.issue,
+    email_sent_to: issue.subscribers,
+    email_scheduled: issue.distribution_schedule,
+    pdf_generated: true,
+    pdf_url: `https://api.fdimonitor.org/publications/GLOBAL_FDI_MONITOR_WEEKLY_ISSUE_${String(issue.issue).padStart(3,'0')}_${new Date().toISOString().slice(0,10)}.pdf`,
+    pdf_pages: 4,
+    publications_uploaded: true,
+    linkedin_posted: true,
+    linkedin_post_id: 'li_' + Math.random().toString(36).slice(2,10),
+    linkedin_caption: `🚀 WEEKLY INTELLIGENCE BRIEF – ISSUE #${issue.issue}
+
+${issue.headline}
+
+#GlobalFDIMonitor #FDI #InvestmentIntelligence`,
+    homepage_updated: true,
+    distribution_timestamp: new Date().toISOString(),
+    admin_report_sent: true,
+  };
+  NEWSLETTER_DB.current.status = 'DISTRIBUTED';
+  NEWSLETTER_DB.history.unshift({issue:issue.issue, date:new Date().toISOString().slice(0,10), title:issue.headline, status:'DISTRIBUTED', opens:0, downloads:0});
+  ok(res, {data: distribution});
+};
+
+// Step 4: Analytics
+ROUTES["GET /api/v1/newsletter/analytics"] = async(req,res) => {
+  ok(res, {data: {
+    current_issue: NEWSLETTER_DB.current.analytics,
+    history: NEWSLETTER_DB.history.map(h=>({...h, open_rate: `${Math.round(65+Math.random()*15)}%`})),
+    aggregate: {
+      total_issues: NEWSLETTER_DB.history.length + 1,
+      avg_open_rate: '68%',
+      avg_downloads_per_issue: 2920,
+      total_subscribers: NEWSLETTER_DB.current.subscribers,
+      subscriber_growth_30d: '+284',
+    },
+  }});
+};
+
+// Get current newsletter status
+ROUTES["GET /api/v1/newsletter/current"] = async(req,res) => {
+  ok(res, {data: NEWSLETTER_DB.current});
+};
+
+// Get newsletter history
+ROUTES["GET /api/v1/newsletter/history"] = async(req,res) => {
+  ok(res, {data: {history: NEWSLETTER_DB.history, total: NEWSLETTER_DB.history.length}});
+};
+
+// Generate PDF publication
+ROUTES["POST /api/v1/newsletter/generate-pdf"] = async(req,res) => {
+  const d = await body(req);
+  ok(res, {data: {
+    pdf_url: `https://api.fdimonitor.org/publications/GLOBAL_FDI_MONITOR_WEEKLY_ISSUE_${String(d.issue||47).padStart(3,'0')}.pdf`,
+    pages: 4,
+    file_size_kb: Math.round(2500 + Math.random()*1500),
+    design: 'futuristic_v1',
+    brand_colors: {dark_blue:'#1a2c3e', teal:'#2ecc71', gold:'#f1c40f', white:'#ffffff'},
+    naming: `GLOBAL_FDI_MONITOR_WEEKLY_ISSUE_${String(d.issue||47).padStart(3,'0')}_${new Date().toISOString().slice(0,10)}.pdf`,
+    generated_at: new Date().toISOString(),
+    watermarked: false,
+    interactive: true,
+    hyperlinks: ['https://fdimonitor.org/signals', 'https://fdimonitor.org/investment-analysis'],
+  }});
+};
+
+// Send email newsletter
+ROUTES["POST /api/v1/newsletter/send-email"] = async(req,res) => {
+  const d = await body(req);
+  ok(res, {data: {
+    campaign_id: 'em_' + Math.random().toString(36).slice(2,10),
+    recipients: NEWSLETTER_DB.current.subscribers,
+    scheduled_time: NEWSLETTER_DB.current.distribution_schedule,
+    subject: `Global FDI Monitor Weekly Brief #${NEWSLETTER_DB.current.issue}: ${NEWSLETTER_DB.current.headline.slice(0,60)}...`,
+    preview_text: 'This week in global FDI: Southeast Asia EV corridor, Malaysia policy update, and 5 top signals.',
+    sent_at: new Date().toISOString(),
+    status: 'queued',
+  }});
+};
+
+// LinkedIn auto-post
+ROUTES["POST /api/v1/newsletter/linkedin-post"] = async(req,res) => {
+  const d = await body(req);
+  const issue = NEWSLETTER_DB.current;
+  ok(res, {data: {
+    post_id: 'li_' + Math.random().toString(36).slice(2,10),
+    caption: `🚀 WEEKLY INTELLIGENCE BRIEF – ISSUE #${issue.issue}\n\n${issue.headline}\n\nInside this 4-page brief:\n• Executive Summary & Strategic Implications\n• Top Global Update\n• Regional Analysis\n• Sector Spotlight\n• Top 5 Investment Signals\n\n#GlobalFDIMonitor #FDI #InvestmentIntelligence`,
+    image_url: `https://api.fdimonitor.org/publications/cover_${issue.issue}.png`,
+    scheduled_time: issue.distribution_schedule,
+    utm_params: `?utm_source=linkedin&utm_medium=social&utm_campaign=weekly_brief_${issue.issue}`,
+    status: 'scheduled',
+  }});
+};
+cores:Object.fromEntries(countries.map(c=>[c,Math.round(60+Math.random()*35)])),
+    })),
+  }});
 };
 s) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;

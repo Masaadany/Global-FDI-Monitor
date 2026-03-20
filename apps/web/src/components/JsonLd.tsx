@@ -9,7 +9,7 @@ export default function JsonLd({ type = 'Organization' }: { type?: string }) {
       alternateName: 'Global FDI Monitor',
       url: BASE,
       logo: `${BASE}/logo.svg`,
-      description: 'Global FDI intelligence platform: 215 economies, real-time signals, GFR rankings, AI reports.',
+      description: 'Global FDI intelligence platform: 215 economies, real-time signals, GFR assessments, AI reports.',
       foundingDate: '2018',
       address: { '@type':'PostalAddress', addressLocality:'Dubai', addressCountry:'AE', addressRegion:'DIFC' },
       contactPoint: { '@type':'ContactPoint', email:'info@fdimonitor.org', contactType:'customer support' },
@@ -36,7 +36,7 @@ export default function JsonLd({ type = 'Organization' }: { type?: string }) {
         priceCurrency: 'USD',
         priceSpecification: { '@type':'UnitPriceSpecification', price:799, priceCurrency:'USD', unitText:'MONTH' },
       },
-      featureList: ['Real-time FDI signals','GFR rankings for 215 economies','AI-generated intelligence reports','Foresight & scenario planning to 2050','Investment mission planning'],
+      featureList: ['Real-time FDI signals','GFR assessments for 215 economies','AI-generated intelligence reports','Foresight & scenario planning to 2050','Investment mission planning'],
     },
   };
 

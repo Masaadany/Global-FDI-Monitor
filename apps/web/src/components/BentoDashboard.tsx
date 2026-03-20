@@ -35,7 +35,7 @@ export default function BentoDashboard() {
         <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#696969'}}>GFR #1</div>
         <div className="text-2xl font-extrabold" style={{color:'#0A3D62'}}>🇸🇬 {stats.gfr_rank1}</div>
         <div className="text-3xl font-extrabold font-data mt-1" style={{color:'#0A3D62'}}>88.5</div>
-        <Link href="/gfr" className="text-xs font-bold mt-2" style={{color:'#74BB65'}}>View all rankings →</Link>
+        <Link href="/gfr" className="text-xs font-bold mt-2" style={{color:'#74BB65'}}>View all assessments →</Link>
       </div>
 
       {/* CapEx pipeline */}

@@ -1,80 +1,51 @@
 'use client';
-import { useEffect, useState } from 'react';
-import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
+import { CheckCircle, Zap, Download, Key, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function DashboardSuccessPage() {
-  const [seconds, setSeconds] = useState(5);
-  const [plan,    setPlan]    = useState('Professional');
-  const [credits, setCredits] = useState(200);
-  const [annual,  setAnnual]  = useState(false);
-
-  useEffect(() => {
-    try {
-      const p = localStorage.getItem('gfm_plan');
-      if (p) setPlan(p);
-      const tier = localStorage.getItem('gfm_tier');
-      if (tier === 'enterprise') setCredits(500);
-      const cycle = localStorage.getItem('gfm_billing_cycle');
-      if (cycle === 'annual') setAnnual(true);
-    } catch {}
-    const t = setInterval(() => setSeconds(s => {
-      if (s <= 1) { clearInterval(t); window.location.href = '/dashboard'; }
-      return s - 1;
-    }), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const [countdown, setCountdown] = useState(5);
+  useEffect(()=>{
+    const t = setInterval(()=>setCountdown(n=>{
+      if(n<=1){clearInterval(t);window.location.href='/dashboard';}
+      return n-1;
+    }),1000);
+    return()=>clearInterval(t);
+  },[]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{background:'#E2F2DF'}}>
-      <NavBar/>
-      <TrialBanner/>
-      <div className="gfm-card p-10 max-w-lg w-full text-center mt-14">
-        <div className="text-6xl mb-5">🎉</div>
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-5"
-          style={{background:'rgba(34,197,94,0.08)',border:'1px solid rgba(34,197,94,0.2)'}}>
-          <div className="w-2 h-2 rounded-full" style={{background:'#22c55e'}}/>
-          <span className="text-sm font-extrabold" style={{color:'#22c55e'}}>
-            {plan} — {annual ? 'Annual' : 'Monthly'} — Active
-          </span>
+    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',
+      display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
+      <div style={{background:'white',borderRadius:'20px',padding:'48px',maxWidth:'500px',width:'100%',textAlign:'center',
+        boxShadow:'0 24px 80px rgba(0,0,0,0.25)'}}>
+        <div style={{width:'72px',height:'72px',borderRadius:'50%',background:'rgba(116,187,101,0.12)',
+          border:'2px solid rgba(116,187,101,0.3)',display:'flex',alignItems:'center',
+          justifyContent:'center',margin:'0 auto 20px'}}>
+          <CheckCircle size={36} color="#74BB65"/>
         </div>
-
-        <h1 className="text-2xl font-extrabold mb-3" style={{color:'#0A3D62'}}>You are all set!</h1>
-        <p className="text-sm mb-5 leading-relaxed" style={{color:'#696969'}}>
-          Your subscription is active. PDF reports, data downloads, API access, and {credits} intelligence credits per month are all enabled.
+        <h2 style={{fontSize:'24px',fontWeight:800,color:'#0A3D62',marginBottom:'10px'}}>
+          Subscription Confirmed!
+        </h2>
+        <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.7',marginBottom:'24px'}}>
+          Your Professional plan is now active. Welcome to full Global FDI Monitor access — unlimited reports, API access, and mission planning.
         </p>
-
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {[
-            {icon:'📋', label:'Reports',    value:'Enabled'},
-            {icon:'📥', label:'Downloads',  value:'Enabled'},
-            {icon:'🔑', label:'API',        value:'500 req/min'},
-          ].map(({icon,label,value}) => (
-            <div key={label} className="p-3 rounded-xl" style={{background:'rgba(34,197,94,0.05)',border:'1px solid rgba(34,197,94,0.12)'}}>
-              <div className="text-2xl mb-1">{icon}</div>
-              <div className="text-xs font-bold" style={{color:'#0A3D62'}}>{label}</div>
-              <div className="text-xs mt-0.5" style={{color:'#22c55e'}}>{value}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px',marginBottom:'24px'}}>
+          {[{icon:Zap,label:'Unlimited Signals'},{icon:Download,label:'Unlimited Reports'},{icon:Key,label:'API Access'}].map(({icon:Icon,label})=>(
+            <div key={label} style={{padding:'12px',borderRadius:'10px',background:'rgba(116,187,101,0.06)',
+              border:'1px solid rgba(116,187,101,0.15)',textAlign:'center'}}>
+              <Icon size={18} color="#74BB65" style={{marginBottom:'5px'}}/>
+              <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62'}}>{label}</div>
             </div>
           ))}
         </div>
-
-        <div className="p-3 rounded-xl mb-5" style={{background:'rgba(116,187,101,0.06)',border:'1px solid rgba(116,187,101,0.15)'}}>
-          <div className="text-sm font-bold" style={{color:'#74BB65'}}>{credits} intelligence credits / month</div>
-          <div className="text-xs mt-0.5" style={{color:'#696969'}}>Generate reports · Export data · Credits never expire</div>
+        <div style={{marginBottom:'18px',fontSize:'13px',color:'#696969'}}>
+          Redirecting to dashboard in <b style={{color:'#74BB65'}}>{countdown}</b>s…
         </div>
-
-        <Link href="/dashboard" className="gfm-btn-primary w-full py-3 block text-center font-extrabold mb-3">
-          Enter Dashboard →
+        <Link href="/dashboard" style={{display:'inline-flex',alignItems:'center',gap:'7px',
+          padding:'12px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
+          textDecoration:'none',fontWeight:800,fontSize:'14px',boxShadow:'0 4px 16px rgba(116,187,101,0.3)'}}>
+          Go to Dashboard <ArrowRight size={14}/>
         </Link>
-        <div className="flex justify-center gap-4 text-xs">
-          <Link href="/reports"     style={{color:'#74BB65'}}>Generate Reports →</Link>
-          <span style={{color:'#696969'}}>·</span>
-          <Link href="/settings"    style={{color:'#696969'}}>Account Settings</Link>
-          <span style={{color:'#696969'}}>·</span>
-          <Link href="/fic/credits" style={{color:'#696969'}}>Buy Credits</Link>
-        </div>
-        <p className="text-xs mt-4" style={{color:'#696969'}}>Redirecting to dashboard in {seconds}s…</p>
       </div>
     </div>
   );

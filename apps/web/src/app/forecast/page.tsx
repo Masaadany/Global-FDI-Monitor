@@ -1,6 +1,8 @@
 'use client';
+import { TrendingUp, BarChart3, Globe, Activity, Target, Zap, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import NavBar from '@/components/NavBar';
+import Footer from '@/components/Footer';
 import TrialBanner from '@/components/TrialBanner';
 import PreviewGate from '@/components/PreviewGate';
 
@@ -65,6 +67,8 @@ function ForecastChart({scenario}: {scenario:Scenario}) {
     </svg>
   );
 }
+
+
 
 export default function ForecastPage() {
   const [tab,      setTab]      = useState<'foresight'|'scenario'>('foresight');
@@ -248,6 +252,7 @@ export default function ForecastPage() {
           </div>
         )}
       </div>
+      <Footer/>
     </div>
   );
 }

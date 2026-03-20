@@ -1,122 +1,102 @@
 'use client';
 import { useState } from 'react';
+import { Award, Globe, TrendingUp, BarChart3, Target, CheckCircle, ArrowRight, Shield, Search } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
+import Footer from '@/components/Footer';
+import RadarChart from '@/components/RadarChart';
+import SourceBadge from '@/components/SourceBadge';
 import PreviewGate from '@/components/PreviewGate';
-import DimensionWheel from '@/components/DimensionWheel';
 import Link from 'next/link';
 
-const DIMS  = ['ETR','ICT','TCM','DTF','SGT','GRP'];
-const TIERS = ['ALL','FRONTIER','HIGH','MEDIUM','DEVELOPING'];
-const REGIONS = ['All Regions','Americas','Europe','Asia-Pacific','Middle East','Africa','South Asia'];
+const DIMS = ['ETR','ICT','TCM','DTF','SGT','GRP'];
+const DIM_FULL: Record<string,{name:string,color:string,desc:string,weight:number}> = {
+  ETR:{name:'Economic & Trade Resilience',  color:'#0A3D62',desc:'Macro stability, trade openness, external balance, currency resilience.',weight:20},
+  ICT:{name:'Innovation & Creative Talent', color:'#74BB65',desc:'R&D spend, patent filings, STEM graduates, startup ecosystem.',     weight:18},
+  TCM:{name:'Trade & Capital Mobility',     color:'#1B6CA8',desc:'FDI inflows, capital controls, current account, trade facilitation.',weight:18},
+  DTF:{name:'Digital & Tech Frontier',      color:'#2E86AB',desc:'Broadband penetration, cloud adoption, digital government, AI readiness.',weight:16},
+  SGT:{name:'Sustainable Growth Trajectory',color:'#74BB65',desc:'Green investment share, carbon intensity, ESG governance, SDG progress.',weight:15},
+  GRP:{name:'Governance & Policy',          color:'#0A3D62',desc:'Rule of law, regulatory quality, political stability, anti-corruption.',weight:13},
+};
 
 const GFR_DATA = [
-  { r:1,  iso3:'SGP', name:'Singapore',     flag:'🇸🇬', score:100.0, ETR:98.2, ICT:97.5, TCM:96.8, DTF:95.4, SGT:94.2, GRP:93.8, tier:'FRONTIER', chg:+2,  region:'Asia-Pacific' },
-  { r:2,  iso3:'CHE', name:'Switzerland',   flag:'🇨🇭', score:98.4,  ETR:96.5, ICT:95.8, TCM:95.2, DTF:94.1, SGT:93.5, GRP:92.9, tier:'FRONTIER', chg:-1,  region:'Europe' },
-  { r:3,  iso3:'USA', name:'United States', flag:'🇺🇸', score:97.2,  ETR:95.8, ICT:98.9, TCM:94.5, DTF:96.2, SGT:92.8, GRP:91.5, tier:'FRONTIER', chg:0,   region:'Americas' },
-  { r:4,  iso3:'DEU', name:'Germany',       flag:'🇩🇪', score:95.8,  ETR:94.2, ICT:93.8, TCM:94.1, DTF:93.5, SGT:92.1, GRP:91.8, tier:'FRONTIER', chg:0,   region:'Europe' },
-  { r:5,  iso3:'ARE', name:'UAE',           flag:'🇦🇪', score:94.2,  ETR:93.5, ICT:92.8, TCM:93.1, DTF:92.5, SGT:91.8, GRP:90.5, tier:'FRONTIER', chg:+3,  region:'Middle East' },
-  { r:6,  iso3:'SWE', name:'Sweden',        flag:'🇸🇪', score:93.8,  ETR:92.8, ICT:93.5, TCM:92.1, DTF:91.8, SGT:92.5, GRP:91.2, tier:'FRONTIER', chg:+1,  region:'Europe' },
-  { r:7,  iso3:'CAN', name:'Canada',        flag:'🇨🇦', score:92.5,  ETR:91.8, ICT:92.1, TCM:91.5, DTF:92.8, SGT:91.2, GRP:90.8, tier:'FRONTIER', chg:0,   region:'Americas' },
-  { r:8,  iso3:'NLD', name:'Netherlands',   flag:'🇳🇱', score:91.8,  ETR:91.2, ICT:91.5, TCM:92.5, DTF:91.2, SGT:90.8, GRP:90.2, tier:'FRONTIER', chg:+1,  region:'Europe' },
-  { r:9,  iso3:'GBR', name:'UK',            flag:'🇬🇧', score:91.2,  ETR:90.8, ICT:91.8, TCM:91.2, DTF:90.5, SGT:90.2, GRP:89.8, tier:'FRONTIER', chg:-1,  region:'Europe' },
-  { r:10, iso3:'JPN', name:'Japan',         flag:'🇯🇵', score:90.5,  ETR:90.2, ICT:91.2, TCM:89.8, DTF:90.8, SGT:89.5, GRP:89.2, tier:'FRONTIER', chg:0,   region:'Asia-Pacific' },
-  { r:11, iso3:'KOR', name:'South Korea',   flag:'🇰🇷', score:89.8,  ETR:89.5, ICT:90.2, TCM:89.1, DTF:90.5, SGT:88.8, GRP:88.5, tier:'HIGH',     chg:+2,  region:'Asia-Pacific' },
-  { r:12, iso3:'FRA', name:'France',        flag:'🇫🇷', score:89.2,  ETR:89.1, ICT:88.8, TCM:89.5, DTF:88.9, SGT:88.2, GRP:87.8, tier:'HIGH',     chg:-1,  region:'Europe' },
-  { r:13, iso3:'AUS', name:'Australia',     flag:'🇦🇺', score:88.5,  ETR:88.2, ICT:88.5, TCM:88.1, DTF:88.8, SGT:87.9, GRP:87.5, tier:'HIGH',     chg:+1,  region:'Asia-Pacific' },
-  { r:14, iso3:'SAU', name:'Saudi Arabia',  flag:'🇸🇦', score:86.2,  ETR:85.8, ICT:84.5, TCM:86.1, DTF:84.8, SGT:83.5, GRP:82.9, tier:'HIGH',     chg:+8,  region:'Middle East' },
-  { r:15, iso3:'IND', name:'India',         flag:'🇮🇳', score:82.1,  ETR:81.5, ICT:80.8, TCM:82.5, DTF:79.8, SGT:78.5, GRP:77.9, tier:'HIGH',     chg:+4,  region:'South Asia' },
-  { r:16, iso3:'VNM', name:'Vietnam',       flag:'🇻🇳', score:79.4,  ETR:78.8, ICT:77.5, TCM:79.2, DTF:76.5, SGT:75.2, GRP:74.8, tier:'HIGH',     chg:+6,  region:'Asia-Pacific' },
-  { r:17, iso3:'POL', name:'Poland',        flag:'🇵🇱', score:82.5,  ETR:82.1, ICT:81.2, TCM:82.8, DTF:81.5, SGT:80.8, GRP:80.2, tier:'HIGH',     chg:+5,  region:'Europe' },
-  { r:18, iso3:'ZAF', name:'South Africa',  flag:'🇿🇦', score:62.4,  ETR:62.1, ICT:61.5, TCM:63.2, DTF:60.8, SGT:59.5, GRP:58.9, tier:'MEDIUM',   chg:+1,  region:'Africa' },
-  { r:19, iso3:'MAR', name:'Morocco',       flag:'🇲🇦', score:59.8,  ETR:59.5, ICT:58.8, TCM:60.2, DTF:57.5, SGT:56.8, GRP:56.2, tier:'MEDIUM',   chg:+2,  region:'Africa' },
-  { r:20, iso3:'EGY', name:'Egypt',         flag:'🇪🇬', score:58.2,  ETR:57.9, ICT:56.5, TCM:58.8, DTF:55.2, SGT:54.5, GRP:53.9, tier:'MEDIUM',   chg:+3,  region:'Africa' },
+  {iso3:'SGP',flag:'🇸🇬',name:'Singapore',   score:100.0,tier:'VERY HIGH',chg:'+0.2',ETR:98.2,ICT:97.5,TCM:96.8,DTF:95.4,SGT:94.2,GRP:93.8,fdi:'$18.5B',jobs:'82K'},
+  {iso3:'CHE',flag:'🇨🇭',name:'Switzerland', score:97.8, tier:'VERY HIGH',chg:'-0.1',ETR:96.4,ICT:98.1,TCM:94.2,DTF:96.8,SGT:92.1,GRP:97.2,fdi:'$14.2B',jobs:'55K'},
+  {iso3:'USA',flag:'🇺🇸',name:'USA',          score:96.4, tier:'VERY HIGH',chg:'+0.3',ETR:95.8,ICT:97.2,TCM:93.5,DTF:97.1,SGT:88.4,GRP:92.6,fdi:'$285B',jobs:'1.2M'},
+  {iso3:'DEU',flag:'🇩🇪',name:'Germany',     score:95.8, tier:'VERY HIGH',chg:'0.0', ETR:94.2,ICT:93.8,TCM:94.1,DTF:93.5,SGT:92.1,GRP:91.8,fdi:'$14.2B',jobs:'62K'},
+  {iso3:'ARE',flag:'🇦🇪',name:'UAE',          score:94.2, tier:'VERY HIGH',chg:'+0.4',ETR:93.5,ICT:92.8,TCM:93.1,DTF:92.5,SGT:91.8,GRP:90.5,fdi:'$25.3B',jobs:'98K'},
+  {iso3:'GBR',flag:'🇬🇧',name:'UK',           score:93.1, tier:'VERY HIGH',chg:'-0.2',ETR:92.4,ICT:93.5,TCM:92.8,DTF:91.9,SGT:90.2,GRP:92.4,fdi:'$58.2B',jobs:'214K'},
+  {iso3:'SAU',flag:'🇸🇦',name:'Saudi Arabia', score:86.2, tier:'HIGH',     chg:'+0.8',ETR:85.8,ICT:84.5,TCM:86.1,DTF:84.8,SGT:83.5,GRP:82.9,fdi:'$18.2B',jobs:'88K'},
+  {iso3:'KOR',flag:'🇰🇷',name:'South Korea', score:84.1, tier:'HIGH',     chg:'+0.1',ETR:86.0,ICT:88.2,TCM:82.8,DTF:91.5,SGT:79.4,GRP:83.8,fdi:'$12.8B',jobs:'45K'},
+  {iso3:'IND',flag:'🇮🇳',name:'India',        score:82.1, tier:'HIGH',     chg:'+0.4',ETR:81.5,ICT:80.8,TCM:82.5,DTF:79.8,SGT:78.5,GRP:77.9,fdi:'$12.3B',jobs:'320K'},
+  {iso3:'MYS',flag:'🇲🇾',name:'Malaysia',    score:78.2, tier:'HIGH',     chg:'+0.3',ETR:79.8,ICT:77.5,TCM:78.1,DTF:77.4,SGT:76.2,GRP:75.8,fdi:'$9.8B', jobs:'38K'},
+  {iso3:'VNM',flag:'🇻🇳',name:'Vietnam',     score:79.4, tier:'HIGH',     chg:'+0.5',ETR:80.5,ICT:78.2,TCM:79.1,DTF:76.5,SGT:75.2,GRP:74.8,fdi:'$8.9B', jobs:'180K'},
+  {iso3:'NGA',flag:'🇳🇬',name:'Nigeria',     score:52.4, tier:'MEDIUM',   chg:'+0.2',ETR:51.2,ICT:48.5,TCM:53.8,DTF:46.2,SGT:49.8,GRP:44.1,fdi:'$2.1B', jobs:'24K'},
+  {iso3:'ETH',flag:'🇪🇹',name:'Ethiopia',    score:44.8, tier:'LOW',      chg:'+0.6',ETR:43.1,ICT:38.4,TCM:46.2,DTF:35.8,SGT:42.1,GRP:40.5,fdi:'$1.2B', jobs:'18K'},
 ];
 
-const TIER_C: Record<string,string> = {
-  FRONTIER:'#0A3D62', HIGH:'#1B6CA8', MEDIUM:'#74BB65', DEVELOPING:'#696969'
-};
-const TIER_BG: Record<string,string> = {
-  FRONTIER:'rgba(10,61,98,0.1)', HIGH:'rgba(27,108,168,0.1)', MEDIUM:'rgba(116,187,101,0.12)', DEVELOPING:'rgba(105,105,105,0.1)'
-};
+const TIER_C: Record<string,string>  = {'VERY HIGH':'#74BB65','HIGH':'#0A3D62','MEDIUM':'#FFB347','LOW':'#E57373'};
+const TIER_BG: Record<string,string> = {'VERY HIGH':'rgba(116,187,101,0.1)','HIGH':'rgba(10,61,98,0.1)','MEDIUM':'rgba(255,179,71,0.1)','LOW':'rgba(229,115,115,0.1)'};
 
-const KEY_INSIGHTS = [
-  'Asia-Pacific dominates top 10 with 6 economies, averaging 18% growth in future readiness indicators since 2020.',
-  'GCC countries show strongest improvement: UAE (+12%), Saudi Arabia (+15%), Qatar (+8%) in economic resilience and competitiveness.',
-  'Digital infrastructure remains the strongest differentiator between top 20 and lower-ranked economies, with a 42% average score gap.',
-  'Small economies (<5M population) outperform larger peers in adaptability, scoring 18% higher on average in future readiness metrics.',
-];
-
-const TOP_BY_REGION = [
-  { region:'Americas',     entries:[{n:'🇺🇸 USA',r:3},{n:'🇨🇦 Canada',r:7},{n:'🇧🇷 Brazil',r:24}] },
-  { region:'Europe',       entries:[{n:'🇨🇭 Switzerland',r:2},{n:'🇩🇪 Germany',r:4},{n:'🇸🇪 Sweden',r:6}] },
-  { region:'Asia-Pacific', entries:[{n:'🇸🇬 Singapore',r:1},{n:'🇯🇵 Japan',r:10},{n:'🇰🇷 Korea',r:12}] },
-  { region:'Middle East',  entries:[{n:'🇦🇪 UAE',r:5},{n:'🇸🇦 Saudi Arabia',r:15},{n:'🇶🇦 Qatar',r:22}] },
-  { region:'Africa',       entries:[{n:'🇿🇦 South Africa',r:38},{n:'🇲🇦 Morocco',r:45},{n:'🇪🇬 Egypt',r:52}] },
-];
+function TierBadge({tier}:{tier:string}) {
+  return (
+    <span style={{fontSize:'10px',fontWeight:700,padding:'2px 8px',borderRadius:'10px',
+      background:TIER_BG[tier],color:TIER_C[tier],whiteSpace:'nowrap'}}>{tier}</span>
+  );
+}
 
 export default function GFRPage() {
-  const [tab,     setTab]     = useState<'results'|'ranking'|'profile'|'comparison'|'methodology'>('results');
-  const [year,    setYear]    = useState('2026');
-  const [region,  setRegion]  = useState('All Regions');
-  const [tier,    setTier]    = useState('ALL');
-  const [search,  setSearch]  = useState('');
-  const [profile, setProfile] = useState(GFR_DATA[4]); // UAE default
-  const [compare, setCompare] = useState<typeof GFR_DATA>([GFR_DATA[4], GFR_DATA[0], GFR_DATA[3]]);
-  const [showTop, setShowTop] = useState(10);
+  const [tab,      setTab]      = useState<'results'|'profile'|'compare'|'methodology'|'ia'>('results');
+  const [selected, setSelected] = useState('SGP');
+  const [compare,  setCompare]  = useState<string[]>(['SGP','ARE','SAU']);
+  const [search,   setSearch]   = useState('');
 
-  const filtered = GFR_DATA.filter(e => {
-    const mr = region === 'All Regions' || e.region === region;
-    const mt = tier === 'ALL' || e.tier === tier;
-    const ms = !search || e.name.toLowerCase().includes(search.toLowerCase());
-    return mr && mt && ms;
-  });
-
+  const profile = GFR_DATA.find(e=>e.iso3===selected);
   const TABS = [
-    {id:'results',     label:'Results & Key Findings'},
-    {id:'ranking',     label:'The Ranking'},
-    {id:'profile',     label:'Country Profile'},
-    {id:'comparison',  label:'Comparison'},
-    {id:'methodology', label:'Methodology & Framework'},
+    {id:'results',     label:'Assessment Results'},
+    {id:'profile',     label:'Economy Profile'},
+    {id:'compare',     label:'Compare Economies'},
+    {id:'methodology', label:'Methodology'},
+    {id:'ia',          label:'Investment Analysis →'},
   ];
+
+  const filtered = GFR_DATA.filter(e=>
+    !search || e.name.toLowerCase().includes(search.toLowerCase()) ||
+    e.iso3.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/>
-      <TrialBanner/>
-
-      {/* Page header */}
+      <NavBar/><TrialBanner/>
       <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px 0'}}>
         <div style={{maxWidth:'1400px',margin:'0 auto'}}>
-          <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'20px',lineHeight:'1.2'}}>
-            Global Investment Future Readiness &<br/>Competitiveness Ranking
-          </h1>
-          {/* Filters */}
-          <div style={{display:'flex',gap:'10px',flexWrap:'wrap',marginBottom:'20px'}}>
-            {[
-              ['Year', year, setYear, ['2026','2025','2024','2023']],
-              ['Region', region, setRegion, REGIONS],
-            ].map(([label,val,setter,opts]:[any,any,any,any]) => (
-              <div key={label} style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                <label style={{fontSize:'12px',color:'rgba(226,242,223,0.7)',fontWeight:600}}>{label}:</label>
-                <select value={val} onChange={e=>setter(e.target.value)}
-                  style={{padding:'5px 10px',borderRadius:'6px',border:'none',fontSize:'13px',
-                    background:'rgba(255,255,255,0.15)',color:'white',cursor:'pointer'}}>
-                  {opts.map((o:string) => <option key={o} style={{background:'#0A3D62'}}>{o}</option>)}
-                </select>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px',marginBottom:'20px'}}>
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+                <Award size={16} color="#74BB65"/>
+                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Global Future Readiness Assessment</span>
               </div>
-            ))}
+              <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>GFR Assessment 2026</h1>
+              <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
+                215 economies · 6 dimensions · 38 indicators · Quarterly recalculation
+              </p>
+            </div>
+            <div style={{display:'flex',gap:'20px'}}>
+              {[['215','Economies'],['6','Dimensions'],['38','Indicators'],['Q1 2026','Edition']].map(([v,l])=>(
+                <div key={l} style={{textAlign:'center'}}>
+                  <div style={{fontSize:'18px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                  <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          {/* Tabs */}
           <div style={{display:'flex',gap:'0',overflowX:'auto'}}>
             {TABS.map(t=>(
-              <button key={t.id} onClick={()=>setTab(t.id as any)}
-                style={{
-                  padding:'12px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
-                  whiteSpace:'nowrap',borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
-                  background:'transparent',color:tab===t.id?'white':'rgba(226,242,223,0.6)',
-                  transition:'all 0.2s',
-                }}>
+              <button key={t.id} onClick={()=>t.id==='ia' ? window.location.href='/investment-analysis' : setTab(t.id as any)}
+                style={{padding:'11px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
+                  whiteSpace:'nowrap',background:'transparent',
+                  borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
+                  color:tab===t.id?'white':t.id==='ia'?'#74BB65':'rgba(226,242,223,0.65)',transition:'all 0.2s'}}>
                 {t.label}
               </button>
             ))}
@@ -124,341 +104,286 @@ export default function GFRPage() {
         </div>
       </section>
 
-      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'28px 24px'}}>
+      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'24px'}}>
 
-        {/* TAB 1: RESULTS */}
+        {/* RESULTS TAB */}
         {tab==='results' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'24px'}}>
-            {/* Top performers */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
-              <div className="gfm-card" style={{padding:'24px'}}>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>🏆 Top Global Ranking</div>
-                {GFR_DATA.slice(0,5).map(e=>(
-                  <div key={e.iso3} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(10,61,98,0.06)'}}>
-                    <span style={{fontSize:'13px',fontWeight:800,color:'#74BB65',minWidth:'20px',fontFamily:'monospace'}}>{e.r}.</span>
-                    <span style={{fontSize:'18px'}}>{e.flag}</span>
-                    <span style={{flex:1,fontSize:'14px',fontWeight:600,color:'#0A3D62'}}>{e.name}</span>
-                    <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{e.score.toFixed(1)}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="gfm-card" style={{padding:'24px'}}>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>📈 Top Performance (Most Improved)</div>
-                {[...GFR_DATA].sort((a,b)=>b.chg-a.chg).slice(0,5).map(e=>(
-                  <div key={e.iso3} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(10,61,98,0.06)'}}>
-                    <span style={{fontSize:'18px'}}>{e.flag}</span>
-                    <span style={{flex:1,fontSize:'14px',fontWeight:600,color:'#0A3D62'}}>{e.name}</span>
-                    <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>+{e.chg}</span>
-                    <span style={{fontSize:'13px',color:'#696969',fontFamily:'monospace'}}>{e.score.toFixed(1)}</span>
-                  </div>
-                ))}
-              </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+            <div style={{display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}}>
+              <Search size={14} color="#696969"/>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search economy…"
+                style={{padding:'8px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
+                  fontSize:'13px',background:'white',color:'#000',outline:'none',minWidth:'200px'}}/>
+              <span style={{fontSize:'12px',color:'#696969',marginLeft:'auto'}}>{filtered.length} economies shown</span>
             </div>
-
-            {/* By region */}
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>🌍 Top Ranking by Region</div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr)',gap:'12px'}}>
-                {TOP_BY_REGION.map(rg=>(
-                  <div key={rg.region} style={{padding:'12px',borderRadius:'8px',background:'rgba(10,61,98,0.03)'}}>
-                    <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px'}}>{rg.region}</div>
-                    {rg.entries.map(e=>(
-                      <div key={e.n} style={{fontSize:'12px',color:'#696969',padding:'2px 0'}}>
-                        <span style={{fontWeight:600,color:'#0A3D62'}}>#{e.r}</span> {e.n}
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Dimension leaders - 8 cards */}
-            <div>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Top Global Ranking by Dimension & Factor</div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
-                {DIMS.map(dim=>(
-                  <div key={dim} className="gfm-card" style={{padding:'16px'}}>
-                    <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px'}}>
-                      {dim} — {dim==='ETR'?'Economic Resilience':dim==='ICT'?'Innovation Capacity':dim==='TCM'?'Trade & Capital':dim==='DTF'?'Digital & Tech':dim==='SGT'?'Sustainable Growth':'Governance & Policy'}
-                    </div>
-                    {[...GFR_DATA].sort((a,b)=>b[dim as keyof typeof a]-a[dim as keyof typeof a]).slice(0,5).map((e,i)=>(
-                      <div key={e.iso3} style={{display:'flex',gap:'6px',padding:'3px 0',fontSize:'11px'}}>
-                        <span style={{color:'#74BB65',fontWeight:700,minWidth:'12px'}}>{i+1}</span>
-                        <span>{e.flag}</span>
-                        <span style={{color:'#0A3D62',fontWeight:600,flex:1}}>{e.iso3}</span>
-                        <span style={{color:'#696969',fontFamily:'monospace'}}>{(e[dim as keyof typeof e] as number).toFixed(1)}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Key insights */}
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Key Insights & Analytics</div>
-              <ul style={{listStyle:'none',padding:0,margin:0}}>
-                {KEY_INSIGHTS.map((ins,i)=>(
-                  <li key={i} style={{display:'flex',gap:'10px',padding:'8px 0',borderBottom:i<KEY_INSIGHTS.length-1?'1px solid rgba(10,61,98,0.05)':'none'}}>
-                    <span style={{color:'#74BB65',flexShrink:0}}>•</span>
-                    <span style={{fontSize:'13px',color:'#696969',lineHeight:'1.6'}}>{ins}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 2: RANKING TABLE */}
-        {tab==='ranking' && (
-          <PreviewGate feature="full_profile">
-            <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
-              {/* Controls */}
-              <div style={{display:'flex',gap:'12px',alignItems:'center',flexWrap:'wrap'}}>
-                <input value={search} onChange={e=>setSearch(e.target.value)}
-                  placeholder="🔍 Search economy…"
-                  style={{padding:'8px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                    fontSize:'13px',background:'white',color:'#000',outline:'none'}}/>
-                <div style={{display:'flex',gap:'4px'}}>
-                  {TIERS.map(t=>(
-                    <button key={t} onClick={()=>setTier(t)}
-                      style={{padding:'6px 12px',borderRadius:'6px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:700,
-                        background:tier===t?TIER_C[t]||'#0A3D62':'rgba(10,61,98,0.06)',
-                        color:tier===t?'white':'#0A3D62',}}>
-                      {t}
-                    </button>
-                  ))}
+            <div className="gfm-card" style={{overflow:'hidden'}}>
+              <div style={{padding:'13px 20px',borderBottom:'1px solid rgba(10,61,98,0.06)',
+                display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',display:'flex',alignItems:'center',gap:'6px'}}>
+                  <BarChart3 size={14} color="#74BB65"/> GFR Assessment Results — Q1 2026
                 </div>
-                <div style={{display:'flex',gap:'6px',marginLeft:'auto'}}>
-                  {[10,20,50].map(n=>(
-                    <button key={n} onClick={()=>setShowTop(n)}
-                      style={{padding:'5px 10px',borderRadius:'5px',border:'none',cursor:'pointer',fontSize:'12px',
-                        background:showTop===n?'#0A3D62':'rgba(10,61,98,0.06)',
-                        color:showTop===n?'white':'#0A3D62',fontWeight:600}}>
-                      Top {n}
-                    </button>
-                  ))}
+                <div style={{fontSize:'11px',color:'#696969',fontStyle:'italic'}}>
+                  Sorted by GFR Score (highest first) · No assessment
                 </div>
               </div>
-              <div className="gfm-card" style={{overflow:'auto'}}>
-                <table className="gfm-table" style={{minWidth:'800px'}}>
-                  <thead><tr>
-                    <th>Rank</th><th>Economy</th><th>Score</th>
-                    {DIMS.map(d=><th key={d}>{d}</th>)}
-                    <th>Tier</th><th>vs 2025</th>
-                  </tr></thead>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr style={{background:'rgba(10,61,98,0.03)'}}>
+                      {['Economy','GFR Score','Tier','ETR','ICT','TCM','DTF','SGT','GRP','Δ Q/Q','FDI Inflows','Jobs'].map(h=>(
+                        <th key={h} style={{padding:'10px 12px',fontSize:'11px',fontWeight:700,color:'#696969',
+                          textAlign:'left',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
                   <tbody>
-                    {filtered.slice(0,showTop).map(e=>(
-                      <tr key={e.iso3} onClick={()=>{setProfile(e);setTab('profile');}} style={{cursor:'pointer'}}>
-                        <td style={{fontWeight:800,fontFamily:'monospace',color:'#0A3D62'}}>#{e.r}</td>
-                        <td>
+                    {filtered.sort((a,b)=>b.score-a.score).map((e,i)=>(
+                      <tr key={e.iso3}
+                        onClick={()=>{setSelected(e.iso3);setTab('profile');}}
+                        style={{borderBottom:'1px solid rgba(10,61,98,0.05)',cursor:'pointer',
+                          background:i%2===0?'white':'rgba(10,61,98,0.01)'}}
+                        onMouseEnter={ev=>ev.currentTarget.style.background='rgba(116,187,101,0.04)'}
+                        onMouseLeave={ev=>ev.currentTarget.style.background=i%2===0?'white':'rgba(10,61,98,0.01)'}>
+                        <td style={{padding:'11px 12px'}}>
                           <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                            <span style={{fontSize:'18px'}}>{e.flag}</span>
-                            <span style={{fontWeight:600,color:'#000'}}>{e.name}</span>
+                            <span style={{fontSize:'20px'}}>{e.flag}</span>
+                            <span style={{fontWeight:700,color:'#0A3D62',fontSize:'13px'}}>{e.name}</span>
                           </div>
                         </td>
-                        <td style={{fontWeight:800,fontFamily:'monospace',fontSize:'15px',color:'#0A3D62'}}>{e.score.toFixed(1)}</td>
+                        <td style={{padding:'11px 12px'}}>
+                          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                            <span style={{fontSize:'16px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{e.score.toFixed(1)}</span>
+                            <div style={{width:'48px',height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.07)'}}>
+                              <div style={{height:'100%',borderRadius:'3px',width:`${e.score}%`,background:TIER_C[e.tier]}}/>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{padding:'11px 12px'}}><TierBadge tier={e.tier}/></td>
                         {DIMS.map(d=>(
-                          <td key={d} style={{fontFamily:'monospace',fontSize:'12px',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</td>
+                          <td key={d} style={{padding:'11px 12px',fontFamily:'monospace',fontSize:'11px',
+                            color:DIM_FULL[d].color}}>{(e as any)[d].toFixed(1)}</td>
                         ))}
-                        <td>
-                          <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'12px',
-                            background:TIER_BG[e.tier],color:TIER_C[e.tier]}}>
-                            {e.tier}
-                          </span>
-                        </td>
-                        <td style={{fontFamily:'monospace',fontSize:'13px',fontWeight:700,
-                          color:e.chg>0?'#74BB65':e.chg<0?'#E57373':'#696969'}}>
-                          {e.chg>0?`▲+${e.chg}`:e.chg<0?`▼${e.chg}`:'▬ 0'}
-                        </td>
+                        <td style={{padding:'11px 12px',fontFamily:'monospace',fontWeight:700,fontSize:'12px',
+                          color:e.chg.startsWith('+')?'#74BB65':e.chg.startsWith('-')?'#E57373':'#696969'}}>{e.chg}</td>
+                        <td style={{padding:'11px 12px',fontSize:'12px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{e.fdi}</td>
+                        <td style={{padding:'11px 12px',fontSize:'12px',color:'#696969'}}>{e.jobs}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p style={{fontSize:'12px',color:'#696969',textAlign:'center'}}>
-                Showing {Math.min(filtered.length,showTop)} of 215 economies. Click any row for full country profile.
-              </p>
             </div>
-          </PreviewGate>
+            <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+              {Object.entries(TIER_C).map(([tier,color])=>{
+                const cnt = GFR_DATA.filter(e=>e.tier===tier).length;
+                return (
+                  <div key={tier} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 16px',
+                    borderRadius:'9px',background:'white',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
+                    <div style={{width:'10px',height:'10px',borderRadius:'50%',background:color}}/>
+                    <span style={{fontSize:'12px',fontWeight:700,color}}>{tier}</span>
+                    <span style={{fontSize:'12px',color:'#696969'}}>{cnt} economies</span>
+                  </div>
+                );
+              })}
+              <SourceBadge source="GFM Internal Computation" date="Q1 2026" accessed="20 Mar 2026" refCode="GFM-SRC-GFR-001">
+                <span style={{fontSize:'11px',color:'#696969',padding:'10px 16px',background:'white',
+                  borderRadius:'9px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)',cursor:'default'}}>
+                  Data source ℹ
+                </span>
+              </SourceBadge>
+            </div>
+          </div>
         )}
 
-        {/* TAB 3: COUNTRY PROFILE */}
-        {tab==='profile' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
-            {/* Selector */}
-            <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-              {GFR_DATA.slice(0,10).map(e=>(
-                <button key={e.iso3} onClick={()=>setProfile(e)}
-                  style={{padding:'7px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                    cursor:'pointer',fontSize:'13px',fontWeight:600,transition:'all 0.15s',
-                    background:profile.iso3===e.iso3?'#0A3D62':'white',
-                    color:profile.iso3===e.iso3?'white':'#0A3D62'}}>
-                  {e.flag} {e.iso3}
+        {/* PROFILE TAB */}
+        {tab==='profile' && profile && (
+          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+            <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+              {GFR_DATA.slice(0,8).map(e=>(
+                <button key={e.iso3} onClick={()=>setSelected(e.iso3)}
+                  style={{padding:'6px 12px',borderRadius:'8px',border:'none',cursor:'pointer',
+                    fontSize:'12px',fontWeight:600,transition:'all 0.15s',
+                    background:selected===e.iso3?TIER_C[e.tier]:'rgba(10,61,98,0.07)',
+                    color:selected===e.iso3?'white':'#0A3D62'}}>
+                  {e.flag} {e.name}
                 </button>
               ))}
             </div>
-
-            {/* Profile card */}
-            <div className="gfm-card" style={{padding:'28px'}}>
-              <div style={{display:'flex',alignItems:'flex-start',gap:'20px',marginBottom:'24px',flexWrap:'wrap'}}>
-                <div style={{fontSize:'64px'}}>{profile.flag}</div>
-                <div style={{flex:1}}>
-                  <h2 style={{fontSize:'24px',fontWeight:800,color:'#0A3D62',marginBottom:'4px'}}>{profile.name}</h2>
-                  <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
-                    <div>
-                      <span style={{fontSize:'32px',fontWeight:900,color:'#74BB65',fontFamily:'monospace'}}>#{profile.r}</span>
-                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>Global Rank</span>
-                    </div>
-                    <div>
-                      <span style={{fontSize:'32px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{profile.score.toFixed(1)}</span>
-                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>GFR Score</span>
-                    </div>
-                    <div>
-                      <span style={{fontSize:'20px',fontWeight:700,color:profile.chg>0?'#74BB65':'#E57373',fontFamily:'monospace'}}>
-                        {profile.chg>0?`▲ +${profile.chg}`:profile.chg<0?`▼ ${profile.chg}`:'▬ 0'}
-                      </span>
-                      <span style={{fontSize:'14px',color:'#696969',marginLeft:'6px'}}>vs 2025</span>
-                    </div>
-                    <span style={{padding:'5px 14px',borderRadius:'20px',fontSize:'12px',fontWeight:700,
-                      background:TIER_BG[profile.tier],color:TIER_C[profile.tier]}}>
-                      {profile.tier}
-                    </span>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
+              {/* Radar */}
+              <div className="gfm-card" style={{padding:'22px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'14px'}}>
+                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',display:'flex',alignItems:'center',gap:'6px'}}>
+                    <span style={{fontSize:'22px'}}>{profile.flag}</span>{profile.name}
+                  </div>
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontSize:'22px',fontWeight:900,color:TIER_C[profile.tier],fontFamily:'monospace'}}>{profile.score.toFixed(1)}</div>
+                    <TierBadge tier={profile.tier}/>
                   </div>
                 </div>
+                <RadarChart axes={DIMS.map(d=>({label:d,value:(profile as any)[d],max:100}))} size={260} animated/>
               </div>
-
-              {/* Dimension bars */}
-              <div style={{marginBottom:'20px'}}>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Dimension Scores</div>
-                {DIMS.map(dim=>{
-                  const val = profile[dim as keyof typeof profile] as number;
-                  const dimName = dim==='ETR'?'Economic Resilience':dim==='ICT'?'Innovation Capacity':dim==='TCM'?'Trade & Capital':dim==='DTF'?'Digital & Tech':dim==='SGT'?'Sustainable Growth':'Governance & Policy';
+              {/* Dimension breakdown */}
+              <div className="gfm-card" style={{padding:'22px'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                  <TrendingUp size={14} color="#74BB65"/> 6 Dimension Scores
+                </div>
+                {DIMS.map(d=>{
+                  const val = (profile as any)[d];
+                  const info = DIM_FULL[d];
                   return (
-                    <div key={dim} style={{marginBottom:'10px'}}>
+                    <div key={d} style={{marginBottom:'14px'}}>
                       <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
-                        <div style={{fontSize:'12px',color:'#696969'}}><b style={{color:'#0A3D62'}}>{dim}</b> — {dimName}</div>
-                        <span style={{fontSize:'13px',fontWeight:700,fontFamily:'monospace',color:'#0A3D62'}}>{val.toFixed(1)}</span>
+                        <div>
+                          <span style={{fontSize:'11px',fontWeight:800,color:info.color,marginRight:'6px'}}>{d}</span>
+                          <span style={{fontSize:'11px',color:'#696969'}}>{info.name}</span>
+                        </div>
+                        <span style={{fontSize:'13px',fontWeight:800,color:info.color,fontFamily:'monospace'}}>{val.toFixed(1)}</span>
                       </div>
-                      <div style={{height:'8px',borderRadius:'4px',background:'rgba(10,61,98,0.08)'}}>
-                        <div style={{height:'100%',borderRadius:'4px',width:`${val}%`,background:'linear-gradient(90deg,#74BB65,#0A3D62)',transition:'width 0.5s ease'}}/>
+                      <div style={{height:'8px',borderRadius:'4px',background:'rgba(10,61,98,0.06)'}}>
+                        <div style={{height:'100%',borderRadius:'4px',width:`${val}%`,background:info.color,transition:'width 0.4s ease'}}/>
                       </div>
+                      <div style={{fontSize:'10px',color:'#696969',marginTop:'2px'}}>{info.desc}</div>
+                    </div>
+                  );
+                })}
+                <div style={{display:'flex',gap:'8px',marginTop:'14px',paddingTop:'14px',borderTop:'1px solid rgba(10,61,98,0.06)'}}>
+                  <Link href="/investment-analysis" style={{display:'flex',alignItems:'center',gap:'5px',
+                    padding:'8px 16px',background:'#74BB65',color:'white',borderRadius:'8px',
+                    textDecoration:'none',fontSize:'12px',fontWeight:700}}>
+                    Investment Analysis <ArrowRight size={12}/>
+                  </Link>
+                  <Link href={`/country/${profile.iso3}`} style={{display:'flex',alignItems:'center',gap:'5px',
+                    padding:'8px 14px',border:'1px solid rgba(10,61,98,0.15)',color:'#0A3D62',borderRadius:'8px',
+                    textDecoration:'none',fontSize:'12px',fontWeight:600}}>
+                    Country Profile <ArrowRight size={12}/>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* COMPARE TAB */}
+        {tab==='compare' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+            <div className="gfm-card" style={{padding:'18px'}}>
+              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Select up to 5 economies</div>
+              <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
+                {GFR_DATA.map(e=>(
+                  <button key={e.iso3}
+                    onClick={()=>setCompare(s=>s.includes(e.iso3)?s.filter(x=>x!==e.iso3):s.length<5?[...s,e.iso3]:s)}
+                    style={{padding:'5px 11px',borderRadius:'7px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:600,transition:'all 0.15s',
+                      background:compare.includes(e.iso3)?TIER_C[e.tier]:'rgba(10,61,98,0.07)',
+                      color:compare.includes(e.iso3)?'white':'#0A3D62'}}>
+                    {e.flag} {e.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <PreviewGate feature="full_profile">
+              <div className="gfm-card" style={{padding:'22px'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>GFR Score Comparison</div>
+                {GFR_DATA.filter(e=>compare.includes(e.iso3)).sort((a,b)=>b.score-a.score).map(e=>(
+                  <div key={e.iso3} style={{marginBottom:'12px'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px'}}>
+                      <span style={{fontSize:'18px'}}>{e.flag}</span>
+                      <span style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',minWidth:'120px'}}>{e.name}</span>
+                      <div style={{flex:1,height:'12px',borderRadius:'6px',background:'rgba(10,61,98,0.06)'}}>
+                        <div style={{height:'100%',borderRadius:'6px',width:`${e.score}%`,background:TIER_C[e.tier]}}/>
+                      </div>
+                      <span style={{fontSize:'14px',fontWeight:900,color:TIER_C[e.tier],fontFamily:'monospace',minWidth:'40px'}}>{e.score.toFixed(1)}</span>
+                      <TierBadge tier={e.tier}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="gfm-card" style={{padding:'22px',overflow:'hidden'}}>
+                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Dimension Comparison</div>
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr style={{background:'rgba(10,61,98,0.03)'}}>
+                        <th style={{padding:'9px 12px',fontSize:'11px',fontWeight:700,color:'#696969',textAlign:'left'}}>Dimension</th>
+                        {GFR_DATA.filter(e=>compare.includes(e.iso3)).map(e=>(
+                          <th key={e.iso3} style={{padding:'9px 12px',fontSize:'11px',fontWeight:700,color:'#0A3D62',textAlign:'center',whiteSpace:'nowrap'}}>
+                            {e.flag} {e.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {DIMS.map(d=>{
+                        const sel = GFR_DATA.filter(e=>compare.includes(e.iso3));
+                        const maxV = Math.max(...sel.map(e=>(e as any)[d]));
+                        return (
+                          <tr key={d} style={{borderBottom:'1px solid rgba(10,61,98,0.05)'}}>
+                            <td style={{padding:'9px 12px',fontSize:'12px',fontWeight:700,color:DIM_FULL[d].color}}>{d}: {DIM_FULL[d].name}</td>
+                            {sel.map(e=>{
+                              const v=(e as any)[d]; const isMax=v===maxV;
+                              return (
+                                <td key={e.iso3} style={{padding:'9px 12px',textAlign:'center'}}>
+                                  <span style={{fontSize:'12px',fontWeight:isMax?900:600,fontFamily:'monospace',
+                                    color:isMax?DIM_FULL[d].color:'#696969',
+                                    background:isMax?`${DIM_FULL[d].color}10`:'transparent',
+                                    padding:isMax?'2px 6px':'0',borderRadius:'5px'}}>{v.toFixed(1)}</span>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </PreviewGate>
+          </div>
+        )}
+
+        {/* METHODOLOGY TAB */}
+        {tab==='methodology' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
+            <div className="gfm-card" style={{padding:'24px'}}>
+              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+                <Shield size={14} color="#74BB65"/> GFR Methodology — 6 Dimensions
+              </div>
+              <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.75',marginBottom:'16px'}}>
+                The Global Future Readiness (GFR) Assessment evaluates 215 economies across 6 dimensions using 38 indicators. Scores are normalized using a Distance-to-Frontier approach and aggregated using dimension-specific weights.
+              </p>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px'}}>
+                {DIMS.map(d=>{
+                  const info = DIM_FULL[d];
+                  return (
+                    <div key={d} style={{padding:'16px',borderRadius:'10px',background:`${info.color}06`,
+                      border:`1px solid ${info.color}20`,borderLeft:`4px solid ${info.color}`}}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
+                        <span style={{fontSize:'13px',fontWeight:800,color:info.color}}>{d}</span>
+                        <span style={{fontSize:'11px',fontWeight:700,color:info.color,
+                          background:`${info.color}12`,padding:'2px 8px',borderRadius:'8px'}}>{info.weight}%</span>
+                      </div>
+                      <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{info.name}</div>
+                      <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.4'}}>{info.desc}</div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* TAB 4: COMPARISON */}
-        {tab==='comparison' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
-            <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
-              <span style={{fontSize:'13px',fontWeight:600,color:'#696969'}}>Selected:</span>
-              {compare.map(e=>(
-                <span key={e.iso3} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',
-                  borderRadius:'6px',background:'rgba(10,61,98,0.08)',fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>
-                  {e.flag} {e.iso3}
-                  <button onClick={()=>setCompare(compare.filter(x=>x.iso3!==e.iso3))}
-                    style={{border:'none',background:'transparent',cursor:'pointer',color:'#E57373',fontSize:'14px',lineHeight:1}}>×</button>
-                </span>
-              ))}
-              {compare.length < 5 && (
-                <select onChange={e=>{
-                  const found = GFR_DATA.find(x=>x.iso3===e.target.value);
-                  if(found&&!compare.find(x=>x.iso3===found.iso3)) setCompare([...compare,found]);
-                  e.target.value='';
-                }} style={{padding:'6px 10px',borderRadius:'6px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'12px',color:'#0A3D62',background:'white'}}>
-                  <option value="">➕ Add country…</option>
-                  {GFR_DATA.filter(x=>!compare.find(c=>c.iso3===x.iso3)).map(e=>(
-                    <option key={e.iso3} value={e.iso3}>{e.flag} {e.name}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Individual cards */}
-            <div style={{display:'grid',gridTemplateColumns:`repeat(${compare.length},1fr)`,gap:'14px'}}>
-              {compare.map(e=>(
-                <div key={e.iso3} className="gfm-card" style={{padding:'18px'}}>
-                  <div style={{textAlign:'center',marginBottom:'12px'}}>
-                    <div style={{fontSize:'32px'}}>{e.flag}</div>
-                    <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>{e.name}</div>
-                    <div style={{fontSize:'24px',fontWeight:800,fontFamily:'monospace',color:'#74BB65'}}>{e.score.toFixed(1)}</div>
-                  </div>
-                  {DIMS.map(d=>(
-                    <div key={d} style={{display:'flex',justifyContent:'space-between',fontSize:'11px',padding:'3px 0',borderBottom:'1px solid rgba(10,61,98,0.04)'}}>
-                      <span style={{fontWeight:700,color:'#0A3D62'}}>{d}</span>
-                      <span style={{fontFamily:'monospace',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            {/* Comparison table */}
-            <div className="gfm-card" style={{overflow:'auto'}}>
-              <table className="gfm-table">
-                <thead><tr>
-                  <th>Economy</th><th>Score</th>
-                  {DIMS.map(d=><th key={d}>{d}</th>)}
-                  <th>vs 2025</th>
-                </tr></thead>
-                <tbody>
-                  {compare.map(e=>(
-                    <tr key={e.iso3}>
-                      <td><span style={{fontSize:'20px'}}>{e.flag}</span> <b style={{color:'#0A3D62'}}>{e.name}</b></td>
-                      <td style={{fontWeight:800,fontFamily:'monospace',color:'#0A3D62'}}>{e.score.toFixed(1)}</td>
-                      {DIMS.map(d=>(
-                        <td key={d} style={{fontFamily:'monospace',fontSize:'12px',color:'#696969'}}>{(e[d as keyof typeof e] as number).toFixed(1)}</td>
-                      ))}
-                      <td style={{fontFamily:'monospace',fontWeight:700,color:e.chg>0?'#74BB65':e.chg<0?'#E57373':'#696969'}}>
-                        {e.chg>0?`▲+${e.chg}`:e.chg<0?`▼${e.chg}`:'▬ 0'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: METHODOLOGY */}
-        {tab==='methodology' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'24px'}}>
-            <div className="gfm-card" style={{padding:'28px'}}>
-              <h2 style={{fontSize:'18px',fontWeight:700,color:'#0A3D62',marginBottom:'6px'}}>Ranking Framework — 6 Dimensions</h2>
-              <p style={{fontSize:'13px',color:'#696969',marginBottom:'20px'}}>Click dimensions to expand sub-indicators.</p>
-              <DimensionWheel/>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
-              {[
-                {t:'Scoring Methodology',pts:['All indicators normalised 0–100','Min-max with 5-year historical bounds','Outlier caps at 3σ','Ties broken by ICT then ETR']},
-                {t:'Calculation Process',pts:['Dimension = weighted avg of sub-indicators','Overall = weighted avg of 6 dimensions','Quarterly recalculation cycle','Version-controlled with audit trail']},
-                {t:'Data Sources (15+)',pts:['World Bank · IMF · UNCTAD · OECD','GII · CCPI · WJP · Oxford Economics','300+ trusted primary sources','Real-time signal integration']},
-                {t:'Verification Process',pts:['Cross-source validation (min 2 sources)','Outlier detection & analyst review','Annual methodology update','Expert panel validation']},
-              ].map(({t,pts})=>(
-                <div key={t} className="gfm-card" style={{padding:'20px'}}>
-                  <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'10px'}}>{t}</div>
-                  <ul style={{listStyle:'none',padding:0,margin:0}}>
-                    {pts.map(p=>(
-                      <li key={p} style={{display:'flex',gap:'6px',padding:'4px 0',fontSize:'12px',color:'#696969'}}>
-                        <span style={{color:'#74BB65',flexShrink:0}}>•</span>{p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div style={{textAlign:'center'}}>
-              <Link href="/gfr/methodology" className="gfm-btn-primary" style={{padding:'12px 28px',textDecoration:'none',fontSize:'14px'}}>
-                Download Full Methodology Report →
+            <div className="gfm-card" style={{padding:'24px',borderLeft:'4px solid #74BB65'}}>
+              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Related: Investment Analysis</div>
+              <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.7',marginBottom:'14px'}}>
+                For a deeper investment evaluation, the Investment Analysis module combines GFR dimension data with Doing Business indicators, sector intelligence, and investment zone data using the Global Opportunity Score Analysis formula.
+              </p>
+              <Link href="/investment-analysis" style={{display:'inline-flex',alignItems:'center',gap:'6px',
+                padding:'10px 20px',background:'#0A3D62',color:'white',borderRadius:'8px',
+                textDecoration:'none',fontSize:'13px',fontWeight:700}}>
+                Open Investment Analysis <ArrowRight size={13}/>
               </Link>
             </div>
           </div>
         )}
       </div>
+      <Footer/>
     </div>
   );
 }

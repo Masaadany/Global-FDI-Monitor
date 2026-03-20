@@ -20,7 +20,7 @@ const QUOTES = [
 
 const FEATURES = [
   { icon: Zap,       title:'Live Market Signals',        desc:'218+ real-time FDI signals graded PLATINUM to BRONZE. Z3 verified, SHA-256 provenance, 2-second updates.', href:'/signals',         color:'#74BB65' },
-  { icon: Award,     title:'Future Readiness Ranking',   desc:'GFR rankings for 215 economies across 6 dimensions. Quarterly recalculation with full methodology.', href:'/gfr',              color:'#0A3D62' },
+  { icon: Award,     title:'Future Readiness assessment',   desc:'GFR assessments for 215 economies across 6 dimensions. Quarterly recalculation with full methodology.', href:'/gfr',              color:'#0A3D62' },
   { icon: Target,    title:'Investment Mission Planning', desc:'Match destination economies, target companies, government entities and sector leads for IPA missions.', href:'/pmp',             color:'#1B6CA8' },
   { icon: BookOpen,  title:'Custom Intelligence Reports', desc:'10 AI-powered report types. Market briefs to flagship GFR reports. PDF only, dynamically watermarked.', href:'/reports',        color:'#74BB65' },
   { icon: TrendingUp,title:'Foresight & Outlook 2050',   desc:'Probabilistic FDI forecasts to 2050. Optimistic, base, and stress scenarios with what-if analysis.', href:'/forecast',        color:'#0A3D62' },
@@ -39,7 +39,7 @@ const SECTORS_DATA = [
 ];
 
 const TESTIMONIALS = [
-  { org:'Investment Promotion Agency',  role:'Director General', quote:'GFR rankings transformed how we benchmark national competitiveness and target inward investment missions.' },
+  { org:'Investment Promotion Agency',  role:'Director General', quote:'GFR assessments transformed how we benchmark national competitiveness and target inward investment missions.' },
   { org:'Sovereign Wealth Fund',        role:'Head of Strategy',  quote:'The signal intelligence and corridor analysis gives us an edge in identifying greenfield opportunities.' },
   { org:'Strategy Consulting Firm',     role:'Senior Partner',    quote:'Our clients rely on FDI Monitor\'s 2050 foresight engine for long-horizon strategic planning.' },
 ];
@@ -331,7 +331,7 @@ export default function HomePage() {
             Ready to elevate your<br/>investment intelligence?
           </h2>
           <p style={{color:'rgba(226,242,223,0.82)',marginBottom:'32px',fontSize:'16px',lineHeight:'1.7'}}>
-            Start with a free 7-day trial — no credit card required. Full access to signals, GFR rankings, benchmarking, and foresight tools.
+            Start with a free 7-day trial — no credit card required. Full access to signals, GFR assessments, benchmarking, and foresight tools.
           </p>
           <div style={{display:'flex',gap:'14px',justifyContent:'center',flexWrap:'wrap'}}>
             <Link href="/register" style={{

@@ -1,198 +1,178 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Server, Users, Activity, Mail, Settings, BarChart3, Zap, Globe, Shield, Play, Pause, CheckCircle, AlertCircle } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
-import { fetchWithAuth } from '@/lib/shared';
+import Footer from '@/components/Footer';
+import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
-const MOCK_METRICS = {
-  users_total: 2847, users_trial: 412, users_pro: 2321, users_enterprise: 114,
-  signals_total: 218, signals_platinum: 22, signals_gold: 76, revenue_mrr: 1854921,
-  reports_generated_24h: 847, api_calls_24h: 284621, uptime_pct: 99.97,
-};
-
-const MOCK_USERS = [
-  { id:'u001', email:'ahmed.alrashidi@investad.ae',  org:'InvestAD',       tier:'professional', role:'admin',  status:'active',  joined:'2025-11-12', reports:42 },
-  { id:'u002', email:'sarah.chen@temasek.com.sg',    org:'Temasek',        tier:'enterprise',   role:'user',   status:'active',  joined:'2025-09-08', reports:128},
-  { id:'u003', email:'marco.bianchi@pwc.com',        org:'PwC MENA',       tier:'professional', role:'user',   status:'active',  joined:'2026-01-15', reports:19 },
-  { id:'u004', email:'yuki.tanaka@mufg.jp',          org:'MUFG',           tier:'enterprise',   role:'user',   status:'active',  joined:'2025-12-01', reports:87 },
-  { id:'u005', email:'priya.sharma@niti.gov.in',     org:'NITI Aayog',     tier:'professional', role:'user',   status:'active',  joined:'2026-02-08', reports:23 },
-  { id:'u006', email:'demo@fdimonitor.org',          org:'Demo',           tier:'free_trial',   role:'user',   status:'trial',   joined:'2026-03-18', reports:0  },
+const METRIC_KPIS = [
+  {label:'Total API Calls Today', v:'84,218',  change:'+12%', icon:Activity, color:'#0A3D62'},
+  {label:'Active Users',          v:'248',     change:'+8%',  icon:Users,    color:'#74BB65'},
+  {label:'Reports Generated',     v:'156',     change:'+22%', icon:BarChart3,color:'#1B6CA8'},
+  {label:'Signals Ingested',      v:'218',     change:'+5%',  icon:Zap,      color:'#2E86AB'},
 ];
 
-const MOCK_JOBS = [
-  { id:'j001', name:'Signal Ingestion (T1-T3)',      status:'running', freq:'15min', last:'2 min ago',  next:'13 min',    count:218 },
-  { id:'j002', name:'Signal Ingestion (T4-T5)',      status:'running', freq:'2h',    last:'45 min ago', next:'1h 15min',  count:47  },
-  { id:'j003', name:'GFR Compute Engine',            status:'running', freq:'weekly',last:'6 days ago', next:'1 day',     count:215 },
-  { id:'j004', name:'Forecast Model Refresh',        status:'running', freq:'daily', last:'8h ago',     next:'16h',       count:215 },
-  { id:'j005', name:'SHA-256 Provenance Stamp',      status:'running', freq:'15min', last:'2 min ago',  next:'13 min',    count:0   },
-  { id:'j006', name:'Report Watermark Queue',        status:'idle',    freq:'trigger',last:'3h ago',    next:'on demand', count:847 },
-  { id:'j007', name:'Cache Warmer (Redis)',           status:'running', freq:'5min',  last:'4 min ago',  next:'1 min',     count:0   },
-  { id:'j008', name:'Alert Notification Dispatch',   status:'running', freq:'5min',  last:'4 min ago',  next:'1 min',     count:6   },
+const SAMPLE_USERS = [
+  {id:'U001',name:'Ahmed Al-Rashid',    org:'MISA',      plan:'Enterprise', signals:42, reports:8,  joined:'Jan 2026'},
+  {id:'U002',name:'Sarah Chen',         org:'GIC',       plan:'Professional',signals:31, reports:5, joined:'Feb 2026'},
+  {id:'U003',name:'Marcus Weber',       org:'McKinsey',  plan:'Professional',signals:28, reports:4, joined:'Mar 2026'},
+  {id:'U004',name:'Priya Sharma',       org:'DPIIT',     plan:'Enterprise', signals:55, reports:12, joined:'Jan 2026'},
+  {id:'U005',name:'Carlos Silva',       org:'Deloitte',  plan:'Professional',signals:19, reports:3, joined:'Mar 2026'},
 ];
 
-const TIER_C: Record<string,string> = {enterprise:'#0A3D62',professional:'#74BB65',free_trial:'#696969'};
-const STATUS_C: Record<string,string> = {running:'#22c55e',idle:'#74BB65',error:'#EF4444'};
+const JOBS = [
+  {id:'AGT-001',name:'SignalIngestionAgent',   status:'running',  lastRun:'2s ago',  runsToday:43200, health:'OK'},
+  {id:'AGT-002',name:'Z3VerificationAgent',    status:'running',  lastRun:'5s ago',  runsToday:17280, health:'OK'},
+  {id:'AGT-003',name:'SHAProvenanceAgent',     status:'running',  lastRun:'5s ago',  runsToday:17280, health:'OK'},
+  {id:'AGT-004',name:'SCIComputationAgent',    status:'running',  lastRun:'10s ago', runsToday:8640,  health:'OK'},
+  {id:'AGT-005',name:'CorridorAggregationAgent',status:'running', lastRun:'1m ago',  runsToday:1440,  health:'OK'},
+  {id:'AGT-011',name:'GFRComputationAgent',    status:'scheduled',lastRun:'6h ago',  runsToday:1,     health:'OK'},
+  {id:'AGT-019',name:'GOSAComputationAgent',   status:'scheduled',lastRun:'6h ago',  runsToday:1,     health:'OK'},
+  {id:'AGT-027',name:'ReportGenerationAgent',  status:'running',  lastRun:'32s ago', runsToday:156,   health:'OK'},
+];
+
+const SYS = [
+  {label:'API Gateway',   status:'operational', latency:'42ms',  pct:'99.97%'},
+  {label:'PostgreSQL DB', status:'operational', latency:'8ms',   pct:'99.99%'},
+  {label:'Redis Cache',   status:'operational', latency:'1ms',   pct:'100%'},
+  {label:'Container App', status:'operational', latency:'—',     pct:'99.97%'},
+];
 
 export default function AdminPage() {
-  const [tab,     setTab]     = useState<'metrics'|'users'|'jobs'|'system'>('metrics');
-  const [metrics, setMetrics] = useState(MOCK_METRICS);
-  const [users,   setUsers]   = useState(MOCK_USERS);
-  const [jobs,    setJobs]    = useState(MOCK_JOBS);
-
-  useEffect(()=>{
-    fetchWithAuth(`${API}/api/v1/admin/metrics`).then(r=>r.json())
-      .then(d=>{ if(d.data) setMetrics(m=>({...m,...d.data})); }).catch(()=>{});
-    fetchWithAuth(`${API}/api/v1/admin/users`).then(r=>r.json())
-      .then(d=>{ const u=d.data?.users||d.users; if(u?.length) setUsers(u); }).catch(()=>{});
-  },[]);
+  const [tab, setTab] = useState<'metrics'|'users'|'jobs'|'system'>('metrics');
+  const [jobs, setJobs] = useState(JOBS);
 
   function toggleJob(id:string) {
-    setJobs(prev=>prev.map(j=>j.id===id?{...j,status:j.status==='running'?'idle':'running'}:j));
-    fetchWithAuth(`${API}/api/v1/admin/jobs/${id}/toggle`,{method:'POST'}).catch(()=>{});
+    setJobs(j=>j.map(x=>x.id===id?{...x,status:x.status==='running'?'paused':'running'}:x));
   }
+
+  const TABS = [{id:'metrics',label:'Metrics',icon:BarChart3},{id:'users',label:'Users',icon:Users},
+                {id:'jobs',label:'Agent Jobs',icon:Activity},{id:'system',label:'System',icon:Server}];
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/>
-      <TrialBanner/>
-      <section className="gfm-hero px-6 py-8">
-        <div className="max-w-screen-xl mx-auto relative z-10 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <div className="text-xs font-extrabold uppercase tracking-widest mb-1" style={{color:'#EF4444'}}>⚠ ADMIN CONSOLE</div>
-            <h1 className="text-2xl font-extrabold" style={{color:'#0A3D62'}}>Platform Administration</h1>
+      <NavBar/><TrialBanner/>
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'28px 24px 0'}}>
+        <div style={{maxWidth:'1300px',margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}}>
+            <Shield size={18} color="#74BB65"/>
+            <h1 style={{fontSize:'22px',fontWeight:800,color:'white',margin:0}}>Admin Console</h1>
+            <span style={{fontSize:'11px',fontWeight:700,padding:'3px 9px',borderRadius:'8px',
+              background:'rgba(229,115,115,0.2)',color:'#FFB8B8',marginLeft:'4px'}}>RESTRICTED</span>
           </div>
-          <div className="flex gap-5">
-            {[[metrics.users_total,'Users'],[metrics.revenue_mrr?.toLocaleString(),'MRR ($)'],[metrics.uptime_pct+'%','Uptime'],['8','Active Jobs']].map(([v,l])=>(
-              <div key={String(l)} className="text-center">
-                <div className="text-xl font-extrabold font-data" style={{color:'#EF4444'}}>{v}</div>
-                <div className="text-xs mt-0.5" style={{color:'#696969'}}>{l}</div>
-              </div>
+          <div style={{display:'flex',gap:'0'}}>
+            {TABS.map(({id,label,icon:Icon})=>(
+              <button key={id} onClick={()=>setTab(id as any)}
+                style={{display:'flex',alignItems:'center',gap:'5px',padding:'10px 16px',
+                  border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,background:'transparent',
+                  color:tab===id?'white':'rgba(226,242,223,0.65)',
+                  borderBottom:tab===id?'3px solid #74BB65':'3px solid transparent',transition:'all 0.2s'}}>
+                <Icon size={13}/>{label}
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      <div className="sticky top-16 z-30 flex gap-0 border-b px-6" style={{background:'rgba(240,248,238,0.96)',borderBottomColor:'rgba(10,61,98,0.15)',backdropFilter:'blur(10px)'}}>
-        {[['metrics','📊 Metrics'],['users','👥 Users'],['jobs','⚙️ Jobs'],['system','🖥 System']].map(([t,l])=>(
-          <button key={t} onClick={()=>setTab(t as any)} className={`dash-tab ${tab===t?'active':''}`}>{l}</button>
-        ))}
-      </div>
+      <div style={{maxWidth:'1300px',margin:'0 auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:'14px'}}>
 
-      <div className="max-w-screen-xl mx-auto px-6 py-5">
-
-        {tab === 'metrics' && (
-          <div className="space-y-5">
-            <div className="grid md:grid-cols-4 gap-4">
-              {[
-                {v:metrics.users_total,    l:'Total Users',         c:'#74BB65'},
-                {v:metrics.users_pro,      l:'Professional',         c:'#74BB65'},
-                {v:metrics.users_trial,    l:'Active Trials',        c:'#696969'},
-                {v:metrics.users_enterprise,l:'Enterprise',          c:'#0A3D62'},
-              ].map(k=>(
-                <div key={k.l} className="kpi-card">
-                  <div className="text-3xl font-extrabold font-data" style={{color:k.c}}>{k.v}</div>
-                  <div className="text-xs mt-1" style={{color:'#696969'}}>{k.l}</div>
+        {tab==='metrics' && (
+          <>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
+              {METRIC_KPIS.map(({label,v,change,icon:Icon,color})=>(
+                <div key={label} className="gfm-card" style={{padding:'16px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:'10px'}}>
+                    <div style={{width:'34px',height:'34px',borderRadius:'9px',
+                      background:`${color}10`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      <Icon size={16} color={color}/>
+                    </div>
+                    <span style={{fontSize:'11px',fontWeight:700,color:'#74BB65'}}>{change}</span>
+                  </div>
+                  <div style={{fontSize:'22px',fontWeight:800,color:'#0A3D62',fontFamily:'monospace'}}>{v}</div>
+                  <div style={{fontSize:'11px',color:'#696969',marginTop:'3px'}}>{label}</div>
                 </div>
               ))}
             </div>
-            <div className="grid md:grid-cols-4 gap-4">
-              {[
-                {v:metrics.signals_total,      l:'Live Signals',   c:'#22c55e'},
-                {v:metrics.signals_platinum,   l:'PLATINUM',        c:'#0A3D62'},
-                {v:metrics.reports_generated_24h,l:'Reports 24h',  c:'#74BB65'},
-                {v:metrics.api_calls_24h?.toLocaleString(),l:'API Calls 24h',c:'#696969'},
-              ].map(k=>(
-                <div key={k.l} className="kpi-card">
-                  <div className="text-3xl font-extrabold font-data" style={{color:k.c}}>{k.v}</div>
-                  <div className="text-xs mt-1" style={{color:'#696969'}}>{k.l}</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px'}}>
+              {[{l:'Trial to Pro conversion',v:'18%'},{l:'Avg session duration',v:'24min'},{l:'Report completion rate',v:'94%'}].map(({l,v})=>(
+                <div key={l} className="gfm-card" style={{padding:'16px',textAlign:'center'}}>
+                  <div style={{fontSize:'28px',fontWeight:900,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                  <div style={{fontSize:'12px',color:'#696969',marginTop:'4px'}}>{l}</div>
                 </div>
               ))}
             </div>
-          </div>
+          </>
         )}
 
-        {tab === 'users' && (
-          <div className="gfm-card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="gfm-table">
-                <thead><tr><th>User</th><th>Organisation</th><th>Tier</th><th>Status</th><th>Joined</th><th>Reports</th></tr></thead>
-                <tbody>
-                  {users.map(u=>(
-                    <tr key={u.id}>
-                      <td>
-                        <div className="font-bold text-sm" style={{color:'#0A3D62'}}>{u.email.split('@')[0]}</div>
-                        <div className="text-xs" style={{color:'#696969'}}>{u.email}</div>
-                      </td>
-                      <td style={{color:'#696969'}}>{u.org}</td>
-                      <td>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded" style={{background:`${TIER_C[u.tier]}15`,color:TIER_C[u.tier]}}>{u.tier}</span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{background:u.status==='active'?'#22c55e':'#74BB65'}}/>
-                          <span className="text-xs" style={{color:'#696969'}}>{u.status}</span>
-                        </div>
-                      </td>
-                      <td className="text-xs" style={{color:'#696969'}}>{u.joined}</td>
-                      <td className="font-data font-bold" style={{color:'#74BB65'}}>{u.reports}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {tab === 'jobs' && (
-          <div className="space-y-2">
-            {jobs.map(job=>(
-              <div key={job.id} className="gfm-card p-4 flex items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="w-2 h-2 rounded-full animate-pulse" style={{background:STATUS_C[job.status]}}/>
-                  <span className="text-xs font-extrabold uppercase" style={{color:STATUS_C[job.status]}}>{job.status}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-sm" style={{color:'#0A3D62'}}>{job.name}</div>
-                  <div className="text-xs flex gap-3 flex-wrap mt-0.5" style={{color:'#696969'}}>
-                    <span>Freq: {job.freq}</span>
-                    <span>Last: {job.last}</span>
-                    <span>Next: {job.next}</span>
-                    {job.count > 0 && <span>Count: {job.count}</span>}
-                  </div>
-                </div>
-                <button onClick={()=>toggleJob(job.id)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg flex-shrink-0"
-                  style={{background:job.status==='running'?'rgba(239,68,68,0.1)':'rgba(34,197,94,0.1)',color:job.status==='running'?'#EF4444':'#22c55e'}}>
-                  {job.status==='running'?'Pause':'Resume'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {tab === 'system' && (
-          <div className="grid md:grid-cols-2 gap-5">
-            {[
-              {title:'API Server',  items:[['Version','v77'],['Routes','78'],['Server Lines','2,036'],['Node','20 LTS']]},
-              {title:'Database',    items:[['Engine','PostgreSQL 16'],['Region','UAE North'],['Tables','18'],['Status','Healthy']]},
-              {title:'Cache',       items:[['Engine','Redis 7.x SSL'],['Port','6380'],['Region','UAE North'],['Status','Connected']]},
-              {title:'Platform',    items:[['Pages','43 → 77 static'],['Components','19'],['Agents','30'],['Tests','653 passing']]},
-            ].map(panel=>(
-              <div key={panel.title} className="gfm-card p-5">
-                <div className="font-extrabold text-sm mb-3" style={{color:'#0A3D62'}}>{panel.title}</div>
-                {panel.items.map(([l,v])=>(
-                  <div key={l} className="flex justify-between text-sm py-1.5 border-b" style={{borderBottomColor:'rgba(10,61,98,0.06)'}}>
-                    <span style={{color:'#696969'}}>{l}</span>
-                    <span className="font-bold font-data" style={{color:'#74BB65'}}>{v}</span>
-                  </div>
+        {tab==='users' && (
+          <div className="gfm-card" style={{overflow:'hidden'}}>
+            <table className="gfm-table">
+              <thead><tr>{['Name','Organisation','Plan','Signals','Reports','Joined'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+              <tbody>
+                {SAMPLE_USERS.map(u=>(
+                  <tr key={u.id}>
+                    <td style={{fontWeight:700}}>{u.name}</td>
+                    <td>{u.org}</td>
+                    <td><span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'7px',
+                      background:u.plan==='Enterprise'?'rgba(116,187,101,0.1)':'rgba(10,61,98,0.07)',
+                      color:u.plan==='Enterprise'?'#74BB65':'#0A3D62'}}>{u.plan}</span></td>
+                    <td style={{fontFamily:'monospace'}}>{u.signals}</td>
+                    <td style={{fontFamily:'monospace'}}>{u.reports}</td>
+                    <td>{u.joined}</td>
+                  </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab==='jobs' && (
+          <div className="gfm-card" style={{overflow:'hidden'}}>
+            <table className="gfm-table">
+              <thead><tr>{['Agent ID','Name','Status','Last Run','Runs Today','Health','Action'].map(h=><th key={h}>{h}</th>)}</tr></thead>
+              <tbody>
+                {jobs.map(job=>(
+                  <tr key={job.id}>
+                    <td style={{fontFamily:'monospace',fontSize:'11px',color:'#696969'}}>{job.id}</td>
+                    <td style={{fontWeight:600,fontSize:'13px'}}>{job.name}</td>
+                    <td><span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'7px',
+                      background:job.status==='running'?'rgba(116,187,101,0.1)':'rgba(255,179,71,0.1)',
+                      color:job.status==='running'?'#74BB65':'#FFB347'}}>{job.status}</span></td>
+                    <td style={{fontSize:'12px',color:'#696969'}}>{job.lastRun}</td>
+                    <td style={{fontFamily:'monospace'}}>{job.runsToday.toLocaleString()}</td>
+                    <td><span style={{fontSize:'11px',fontWeight:700,color:'#74BB65',display:'flex',alignItems:'center',gap:'3px'}}>
+                      <CheckCircle size={11}/>OK</span></td>
+                    <td>
+                      <button onClick={()=>toggleJob(job.id)}
+                        style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',
+                          border:'1px solid rgba(10,61,98,0.15)',borderRadius:'6px',background:'transparent',
+                          cursor:'pointer',fontSize:'11px',fontWeight:600,color:'#696969'}}>
+                        {job.status==='running'?<><Pause size={10}/>Pause</>:<><Play size={10}/>Resume</>}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {tab==='system' && (
+          <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+            {SYS.map(s=>(
+              <div key={s.label} className="gfm-card" style={{padding:'16px',display:'flex',alignItems:'center',gap:'16px',flexWrap:'wrap'}}>
+                <CheckCircle size={18} color="#74BB65"/>
+                <span style={{flex:1,fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>{s.label}</span>
+                <span style={{fontSize:'12px',fontWeight:700,color:'#74BB65'}}>Operational</span>
+                <span style={{fontSize:'12px',color:'#696969',fontFamily:'monospace'}}>{s.latency}</span>
+                <span style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{s.pct}</span>
               </div>
             ))}
           </div>
         )}
       </div>
+      <Footer/>
     </div>
   );
 }

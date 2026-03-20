@@ -1,7 +1,10 @@
 'use client';
+import { Mail, MapPin, Clock, Linkedin, ArrowRight, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NavBar from '@/components/NavBar';
+import TrialBanner from '@/components/TrialBanner';
+import Footer from '@/components/Footer';
 import { useTrial } from '@/lib/trialContext';
 
 const API = process.env.NEXT_PUBLIC_API_URL || '';
@@ -18,6 +21,8 @@ const TRIGGER_LABELS: Record<string,{icon:string,title:string,body:string}> = {
   reports: { icon:'📋', title:'Report Download Limit Reached', body:'You have used both report downloads included in your free trial. Request a demo to unlock unlimited reports.' },
   searches:{ icon:'🔍', title:'Search Limit Reached',         body:'You have completed 3 search and result views included in your free trial. Request a demo to continue.' },
 };
+
+
 
 export default function ContactPage() {
   const params  = useSearchParams();
@@ -67,6 +72,7 @@ export default function ContactPage() {
   if (sent) return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
+      <TrialBanner/>
       <div style={{maxWidth:'560px',margin:'0 auto',padding:'60px 24px',textAlign:'center'}}>
         <div style={{fontSize:'72px',marginBottom:'20px'}}>✅</div>
         <h2 style={{fontSize:'26px',fontWeight:800,color:'#0A3D62',marginBottom:'10px'}}>Demo Request Submitted</h2>
@@ -99,6 +105,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
+      <TrialBanner/>
 
       {/* Contextual expiry banner */}
       {isExpiry && triggerCtx && (
@@ -249,6 +256,7 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

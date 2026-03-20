@@ -1,38 +1,23 @@
-import type { Metadata } from 'next';
+'use client';
+import { Shield, Lock, Eye, Globe, CheckCircle, Mail } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
-import Link from 'next/link';
-
-export const metadata: Metadata = {
-  title: 'Privacy Policy — FDI Monitor',
-  description: 'FDI Monitor Privacy Policy. GDPR, DIFC Law No.5/2020, UAE Federal Law No.45/2021. Data retention, watermarks, your rights.',
-};
+import Footer from '@/components/Footer';
 
 const SECTIONS = [
-  { n:'1', t:'Data Controller',
-    b:'FDI Monitor operates this platform. For privacy matters contact privacy@fdimonitor.org. Registered in the Dubai International Financial Centre (DIFC), Dubai, UAE.' },
-  { n:'2', t:'Data We Collect',
-    b:'Account data: name, work email, organisation, role, password (bcrypt with salt). Usage data: pages, features, API calls, session timestamps. Payment data: processed entirely by Stripe — we store only subscription tier and status. Technical data: IP address, browser type, device identifiers. Communications: support requests and contact form submissions.' },
-  { n:'3', t:'Purposes & Legal Bases',
-    b:'We process your data to: provide and personalise the Platform (contract performance); process subscriptions and credit purchases (contract); apply report watermarks — email + timestamp + IP + SHA-256 reference (legitimate interests); send service notifications (legitimate interests); prevent fraud and ensure security (legitimate interests); comply with legal obligations (legal obligation). Marketing relies on consent, withdrawable at any time.' },
-  { n:'4', t:'Report Watermarks',
-    b:'Every generated PDF report contains a dynamic watermark with your registered email, generation timestamp (UTC), IP address at generation, and a unique SHA-256 committed reference code. This watermark is immutable and forms part of our signal provenance system. Generating a report constitutes acceptance of this watermark processing.' },
-  { n:'5', t:'GDPR & DIFC Compliance',
-    b:'For EEA users: we comply with the EU General Data Protection Regulation (GDPR). For DIFC users: we comply with DIFC Law No. 5 of 2020 on the Protection of Personal Data. For UAE users: we comply with UAE Federal Law No. 45 of 2021 on Personal Data Protection. We conduct Data Protection Impact Assessments for high-risk processing activities.' },
-  { n:'6', t:'Third-Party Processors',
-    b:'Data is shared only with: Stripe (payments, USA — EU Standard Contractual Clauses); Azure UAE North (cloud hosting — data residency preserved); Anthropic (AI report generation — anonymised where possible). All processors are bound by Data Processing Agreements and prohibited from using your data for their own purposes. We never sell personal data.' },
-  { n:'7', t:'International Transfers',
-    b:'Primary data is hosted in Azure UAE North. AI processing may involve US-based services protected by Standard Contractual Clauses and Transfer Impact Assessments. We apply appropriate safeguards as required by GDPR Art. 46 and DIFC Law No. 5 of 2020 Chapter 8.' },
-  { n:'8', t:'Data Retention',
-    b:'Account data: subscription duration + 2 years. Watermark audit logs: 7 years (legal compliance). API call logs: 12 months then anonymised. Billing records: 7 years (tax). Support communications: 3 years. You may request deletion at any time, subject to legal retention obligations we cannot override.' },
-  { n:'9', t:'Your Rights',
-    b:'You have the right to: access your personal data; correct inaccurate data; request deletion (right to be forgotten); restrict or object to processing; data portability (structured, machine-readable format); withdraw consent at any time. Submit requests to privacy@fdimonitor.org — we respond within 30 days. You may also lodge a complaint with the DIFC Commissioner of Data Protection.' },
-  { n:'10', t:'Cookies & Tracking',
-    b:'Essential cookies: authentication tokens, session management, CSRF protection — cannot be disabled without breaking core functionality. Optional analytics: anonymised usage analysis to improve the platform — manageable via the cookie banner on first visit. We do not use advertising cookies or share cookie data with advertising networks.' },
-  { n:'11', t:'Security Measures',
-    b:'TLS 1.3 for all data in transit. AES-256 encryption at rest. bcrypt with salt for password hashing. JWT tokens with 15-minute expiry and rotation. SHA-256 signal provenance hashes. Z3 formal verification on all intelligence signals. Azure SOC 2 Type II compliant infrastructure in UAE North. Annual penetration testing.' },
-  { n:'12', t:'Policy Changes',
-    b:'Material changes are communicated by email to all registered users at least 14 days before taking effect. Continued use of the Platform after the effective date constitutes acceptance. Historical versions are available on request from privacy@fdimonitor.org.' },
+  {id:'1', title:'Information We Collect', content:`We collect information you provide directly: name, email, organisation, and country when you register. We collect usage data including pages visited, signals viewed, and reports generated. We collect technical data: IP address, browser type, device, and session identifiers. We do not sell, rent, or share your personal data with third parties for marketing purposes.`},
+  {id:'2', title:'How We Use Your Information', content:`We use your information to provide and improve the Global FDI Monitor platform, deliver reports and intelligence content you request, send transactional emails (account confirmation, report delivery), enforce our Trial terms (tracking 7-day period, report quota, and search quota), and respond to support requests. We use aggregated, anonymised data to improve our investment intelligence algorithms.`},
+  {id:'3', title:'Trial Account Monitoring', content:`During your free trial, we track: (a) days elapsed since registration; (b) number of PDF report downloads (maximum 2); and (c) number of search or result views (maximum 3). When any limit is reached, your account transitions to read-only mode and you are redirected to our demo request page. This monitoring is necessary to enforce our trial terms as described at /pricing.`},
+  {id:'4', title:'Report Security & Watermarking', content:`All PDF reports are secured with dynamic watermarks containing your email address, generation timestamp, IP address, and a unique reference code. Reports are protected against copying, printing, and screenshots. We maintain an audit trail of all generated and downloaded reports. This is to protect our intellectual property and your data.`},
+  {id:'5', title:'Data Storage & Security', content:`Your data is stored on Microsoft Azure infrastructure in the UAE North (Dubai) region. We use industry-standard encryption in transit (TLS 1.3) and at rest (AES-256). Access controls follow the principle of least privilege. We perform regular security audits and penetration testing. Report PDFs are stored for 30 days then automatically deleted.`},
+  {id:'6', title:'Cookies & Tracking', content:`We use essential cookies for authentication and session management. We use analytics cookies (Google Analytics) to understand platform usage. You can disable non-essential cookies through our cookie consent banner. We do not use advertising cookies or share data with advertising platforms.`},
+  {id:'7', title:'GDPR & DIFC Compliance', content:`For users in the European Union, we comply with GDPR. You have rights to: access your data, correct inaccuracies, request deletion, data portability, and withdraw consent. For users in the Dubai International Financial Centre (DIFC), we comply with DIFC Data Protection Law No. 5 of 2020. To exercise your rights, contact privacy@fdimonitor.org.`},
+  {id:'8', title:'API Data Usage', content:`If you use our API (Professional and Enterprise plans), API call logs are retained for 90 days for security and billing purposes. API keys are hashed using SHA-256 before storage. You are responsible for securing your API keys. Report any suspected compromise immediately to security@fdimonitor.org.`},
+  {id:'9', title:'Third-Party Integrations', content:`We use: Microsoft Azure (infrastructure), Stripe (payment processing — we do not store card details), PostHog (analytics), and Resend (transactional email). Each provider processes data under their own privacy policies and our data processing agreements.`},
+  {id:'10', title:'Data Retention', content:`Account data is retained while your account is active and for 90 days after deletion. Usage logs are retained for 12 months. Report audit trails are retained for 5 years for compliance purposes. Anonymised analytics data may be retained indefinitely.`},
+  {id:'11', title:'Children\'s Privacy', content:`Global FDI Monitor is intended for professional use only. We do not knowingly collect data from individuals under 18 years of age. If you believe we have collected data from a minor, contact privacy@fdimonitor.org immediately.`},
+  {id:'12', title:'Changes to This Policy', content:`We will notify you of material changes to this Privacy Policy via email and a prominent notice on the platform. Continued use of the platform after changes constitutes acceptance of the updated policy.`},
+  {id:'13', title:'Contact', content:`Data Controller: Global FDI Monitor, DIFC, Dubai, UAE. Privacy enquiries: privacy@fdimonitor.org. Security issues: security@fdimonitor.org. Response time: within 5 business days.`},
 ];
 
 export default function PrivacyPage() {
@@ -40,31 +25,41 @@ export default function PrivacyPage() {
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
       <TrialBanner/>
-      <section className="gfm-hero px-6 py-10">
-        <div className="max-w-3xl mx-auto relative z-10">
-          <div className="text-xs font-extrabold uppercase tracking-widest mb-2" style={{color:'#74BB65'}}>Legal</div>
-          <h1 className="text-3xl font-extrabold mb-1" style={{color:'#0A3D62'}}>Privacy Policy</h1>
-          <p className="text-sm" style={{color:'#696969'}}>Effective: 1 January 2026 · FDI Monitor · DIFC, Dubai, UAE</p>
-          <div className="flex gap-3 mt-3 flex-wrap text-xs" style={{color:'#696969'}}>
-            <span>✓ GDPR</span><span>·</span>
-            <span>✓ DIFC Law No. 5/2020</span><span>·</span>
-            <span>✓ UAE Federal Law No. 45/2021</span>
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'40px 24px'}}>
+        <div style={{maxWidth:'860px',margin:'0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+            <Shield size={16} color="#74BB65"/>
+            <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Legal</span>
           </div>
+          <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>Privacy Policy</h1>
+          <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>Last updated: March 2026 · GDPR & DIFC compliant</p>
         </div>
       </section>
-      <div className="max-w-3xl mx-auto px-6 py-6 space-y-3">
-        {SECTIONS.map(s=>(
-          <div key={s.n} className="gfm-card p-5">
-            <h2 className="font-extrabold text-sm mb-2" style={{color:'#74BB65'}}>{s.n}. {s.t}</h2>
-            <p className="text-sm leading-relaxed" style={{color:'#696969'}}>{s.b}</p>
+      <div style={{maxWidth:'860px',margin:'0 auto',padding:'32px 24px',display:'flex',flexDirection:'column',gap:'0'}}>
+        {SECTIONS.map((s,i)=>(
+          <div key={s.id} style={{padding:'22px 0',borderBottom:i<SECTIONS.length-1?'1px solid rgba(10,61,98,0.08)':'none'}}>
+            <div style={{display:'flex',gap:'12px',alignItems:'flex-start'}}>
+              <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(116,187,101,0.1)',
+                flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',marginTop:'2px'}}>
+                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65'}}>{s.id}</span>
+              </div>
+              <div>
+                <h2 style={{fontSize:'15px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>{s.title}</h2>
+                <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.75',margin:0}}>{s.content}</p>
+              </div>
+            </div>
           </div>
         ))}
-        <div className="pt-3 flex gap-4 text-sm flex-wrap" style={{color:'#696969'}}>
-          <span>Privacy: <span style={{color:'#74BB65'}}>privacy@fdimonitor.org</span></span>
-          <span>·</span>
-          <Link href="/terms" style={{color:'#74BB65'}}>Terms of Service →</Link>
+        <div style={{marginTop:'24px',padding:'16px',borderRadius:'10px',
+          background:'rgba(10,61,98,0.04)',border:'1px solid rgba(10,61,98,0.1)',
+          display:'flex',alignItems:'center',gap:'10px'}}>
+          <Mail size={16} color="#74BB65"/>
+          <div style={{fontSize:'13px',color:'#696969'}}>
+            Questions? Contact <a href="mailto:privacy@fdimonitor.org" style={{color:'#0A3D62',fontWeight:700}}>privacy@fdimonitor.org</a> · DIFC, Dubai, UAE
+          </div>
         </div>
       </div>
+      <Footer/>
     </div>
   );
 }

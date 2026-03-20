@@ -8,7 +8,7 @@ const { Client } = require('pg');
 
 const client = new Client({
   connectionString: process.env.DATABASE_URL ||
-    'postgresql://fdiuser:Ash@#2020@localhost:5432/gfm?sslmode=prefer',
+    'postgresql://fdiuser:DB_PASSWORD_REDACTED@localhost:5432/gfm?sslmode=prefer',
 });
 
 const MIGRATIONS = [

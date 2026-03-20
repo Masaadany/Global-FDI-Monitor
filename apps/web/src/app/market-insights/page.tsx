@@ -1,53 +1,45 @@
 'use client';
 import { useState } from 'react';
+import { BookOpen, TrendingUp, Globe, Filter, Search, ArrowRight, BarChart3, Tag, Calendar, Clock } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import TrialBanner from '@/components/TrialBanner';
 import PreviewGate from '@/components/PreviewGate';
+import Footer from '@/components/Footer';
+import Link from 'next/link';
 
-const TYPES    = ['All','Sector Analysis','Regional Brief','Policy Note','Investment Signal','Market Insight','Country Report'];
-const TOPICS   = ['All Topics','Technology','Energy','Real Estate','Finance','Manufacturing','Infrastructure','Healthcare'];
-const REGIONS2 = ['All Regions','MENA','Asia-Pacific','Europe','Americas','Africa','South Asia'];
+const CATEGORIES = ['All','Market Brief','Sector Analysis','Country Intelligence','Policy Update','FDI Data','Signal Watch'];
 
-const PUBS = [
-  { id:1,  type:'Sector Analysis',  topic:'Technology',      region:'MENA',          title:'UAE ICT Investment Surge Q1 2026',                  date:'2026-03-18', readMin:5,  icon:'💻', featured:true,
-    summary:'Technology FDI into the UAE surged 45% in Q1 2026, driven by cloud and AI infrastructure projects from Microsoft, Oracle and AWS.' },
-  { id:2,  type:'Sector Analysis',  topic:'Energy',          region:'Asia-Pacific',   title:'Southeast Asia Battery Manufacturing Boom',           date:'2026-03-15', readMin:7,  icon:'⚡', featured:true,
-    summary:'CATL, BYD and Samsung SDI are driving $12B in greenfield battery manufacturing FDI across Indonesia, Vietnam and Thailand.' },
-  { id:3,  type:'Regional Brief',   topic:'All Topics',      region:'MENA',           title:'GCC Investment Climate Report Q1 2026',               date:'2026-03-12', readMin:8,  icon:'🌍', featured:false,
-    summary:'GCC economies attracted $42.5B in FDI in Q1 2026, with UAE and Saudi Arabia accounting for 72% of total inflows.' },
-  { id:4,  type:'Market Insight',   topic:'Technology',      region:'All Regions',    title:'GFR Quarterly Update: FRONTIER Movers',              date:'2026-03-10', readMin:6,  icon:'🏆', featured:false,
-    summary:'UAE (+3 ranks), Saudi Arabia (+8) and Vietnam (+6) achieved the strongest GFR improvements in Q1 2026.' },
-  { id:5,  type:'Policy Note',      topic:'Energy',          region:'Europe',         title:'EU Green Deal FDI Implications 2026',                 date:'2026-03-08', readMin:9,  icon:'🌱', featured:false,
-    summary:'The EU Green Deal is reshaping FDI patterns in renewable energy, with offshore wind investments up 38% year-on-year.' },
-  { id:6,  type:'Investment Signal', topic:'Finance',        region:'Asia-Pacific',   title:'Singapore FinTech Investment Signal Analysis',        date:'2026-03-05', readMin:4,  icon:'💰', featured:false,
-    summary:'Singapore recorded 12 PLATINUM-grade FinTech signals in February 2026, signalling continued dominance in APAC financial services FDI.' },
-  { id:7,  type:'Regional Brief',   topic:'Manufacturing',   region:'Asia-Pacific',   title:'ASEAN Manufacturing FDI Review 2026',                 date:'2026-02-28', readMin:10, icon:'🏭', featured:false,
-    summary:'ASEAN attracted $38.2B in manufacturing FDI in 2025, with Vietnam and Indonesia leading greenfield investment activity.' },
-  { id:8,  type:'Country Report',   topic:'All Topics',      region:'MENA',           title:'Saudi Vision 2030 FDI Progress Report',              date:'2026-02-25', readMin:12, icon:'🇸🇦', featured:false,
-    summary:'Saudi Arabia achieved 78% of its FDI targets under Vision 2030 by end of 2025, with the non-oil sector contributing 65% of new inflows.' },
+const INSIGHTS = [
+  {id:'I001',type:'Market Brief',   title:'MENA FDI Outlook Q1 2026: Technology & Renewables Lead Growth',      date:'Mar 18 2026',readMin:8, featured:true,  region:'MENA',       color:'#0A3D62'},
+  {id:'I002',type:'Signal Watch',   title:'PLATINUM Signals Surge: Microsoft, AWS, CATL Drive $14B in 3 Weeks', date:'Mar 15 2026',readMin:5, featured:true,  region:'Global',     color:'#74BB65'},
+  {id:'I003',type:'Sector Analysis',title:'EV Battery Manufacturing: Top 10 Investment Destinations 2026',       date:'Mar 12 2026',readMin:12,featured:false, region:'Asia',       color:'#1B6CA8'},
+  {id:'I004',type:'Policy Update',  title:'Saudi Arabia Raises FDI Cap in Digital Economy Sectors to 100%',     date:'Mar 10 2026',readMin:4, featured:false, region:'MENA',       color:'#2E86AB'},
+  {id:'I005',type:'Country Intelligence','title':'Vietnam 2026: Why Southeast Asia\'s Manufacturing Star Keeps Rising',date:'Mar 8 2026',readMin:10,featured:false,region:'Asia', color:'#0A3D62'},
+  {id:'I006',type:'FDI Data',       title:'Global FDI Flows Q4 2025: Final Data Shows 14% YoY Growth',           date:'Mar 5 2026',readMin:6, featured:false, region:'Global',     color:'#74BB65'},
+  {id:'I007',type:'Market Brief',   title:'UAE vs Saudi Arabia: Investment Climate Comparison 2026',             date:'Mar 3 2026',readMin:9, featured:false, region:'MENA',       color:'#0A3D62'},
+  {id:'I008',type:'Sector Analysis',title:'Renewable Energy FDI: The $2.2T Opportunity to 2050',               date:'Feb 28 2026',readMin:14,featured:false, region:'Global',    color:'#74BB65'},
+  {id:'I009',type:'Signal Watch',   title:'Weekly Signal Digest: 48 New Signals Across 22 Economies',           date:'Feb 24 2026',readMin:3, featured:false, region:'Global',     color:'#1B6CA8'},
+  {id:'I010',type:'Policy Update',  title:'New RCEP Implementation Rules: Impact on Manufacturing FDI',          date:'Feb 20 2026',readMin:7, featured:false, region:'Asia',       color:'#2E86AB'},
 ];
 
-const TYPE_C: Record<string,string> = {
-  'Sector Analysis':'#0A3D62','Regional Brief':'#1B6CA8','Policy Note':'#74BB65',
-  'Investment Signal':'#E57373','Market Insight':'#696969','Country Report':'#74BB65'
+const TYPE_ICONS: Record<string,string> = {
+  'Market Brief':'📊','Sector Analysis':'⚙','Country Intelligence':'🌍',
+  'Policy Update':'📋','FDI Data':'📈','Signal Watch':'⚡'
 };
 
+
+
 export default function MarketInsightsPage() {
-  const [type,   setType]   = useState('All');
-  const [topic,  setTopic]  = useState('All Topics');
-  const [region, setRegion] = useState('All Regions');
+  const [cat,    setCat]    = useState('All');
   const [search, setSearch] = useState('');
 
-  const filtered = PUBS.filter(p => {
-    const mt = type   === 'All'         || p.type   === type;
-    const mp = topic  === 'All Topics'  || p.topic  === topic || p.topic === 'All Topics';
-    const mr = region === 'All Regions' || p.region === region || p.region === 'All Regions';
-    const ms = !search || p.title.toLowerCase().includes(search.toLowerCase());
-    return mt && mp && mr && ms;
+  const filtered = INSIGHTS.filter(i=>{
+    const mc = cat==='All'||i.type===cat;
+    const ms = !search||i.title.toLowerCase().includes(search.toLowerCase());
+    return mc && ms;
   });
-
-  const featured = filtered.filter(p=>p.featured);
-  const rest     = filtered.filter(p=>!p.featured);
+  const featured = filtered.filter(i=>i.featured);
+  const regular  = filtered.filter(i=>!i.featured);
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
@@ -55,94 +47,132 @@ export default function MarketInsightsPage() {
       <TrialBanner/>
 
       <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'40px 24px'}}>
-        <div style={{maxWidth:'1200px',margin:'0 auto'}}>
-          <h1 style={{fontSize:'32px',fontWeight:800,color:'white',marginBottom:'6px'}}>Resources & Insights</h1>
-          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'20px'}}>
-            Sector analysis · Regional briefs · Policy notes · Investment signals · Country reports
-          </p>
-          {/* Search + filters */}
-          <div style={{display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}}>
-            <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="🔍 Search publications…"
-              style={{padding:'9px 16px',borderRadius:'8px',border:'none',fontSize:'13px',
-                background:'rgba(255,255,255,0.15)',color:'white',outline:'none',minWidth:'200px'}}/>
-            {[
-              [TYPES, type, setType, 'Type'],
-              [TOPICS, topic, setTopic, 'Topic'],
-              [REGIONS2, region, setRegion, 'Region'],
-            ].map(([opts,val,setter,label]:[any,any,any,any])=>(
-              <select key={label} value={val} onChange={e=>setter(e.target.value)}
-                style={{padding:'8px 12px',borderRadius:'8px',border:'none',fontSize:'13px',
-                  background:'rgba(255,255,255,0.15)',color:'white',cursor:'pointer',outline:'none'}}>
-                {opts.map((o:string)=><option key={o} style={{background:'#0A3D62'}}>{o}</option>)}
-              </select>
+        <div style={{maxWidth:'1200px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
+              <BookOpen size={16} color="#74BB65"/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Resources & Insights</span>
+            </div>
+            <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>FDI Intelligence Hub</h1>
+            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
+              Market briefs · Sector deep dives · Policy updates · Signal watches · Country intelligence
+            </p>
+          </div>
+          <div style={{display:'flex',gap:'20px'}}>
+            {[['10+','This month'],['6','Categories'],['Weekly','Briefings']].map(([v,l])=>(
+              <div key={l} style={{textAlign:'center'}}>
+                <div style={{fontSize:'20px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
+                <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
+              </div>
             ))}
-            <span style={{marginLeft:'auto',fontSize:'13px',color:'rgba(226,242,223,0.7)'}}>{filtered.length} publications</span>
           </div>
         </div>
       </section>
 
-      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'28px 24px'}}>
+      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'flex',flexDirection:'column',gap:'20px'}}>
+        {/* Filters */}
+        <div style={{display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
+          <Filter size={14} color="#696969"/>
+          <div style={{display:'flex',gap:'4px',flexWrap:'wrap'}}>
+            {CATEGORIES.map(c=>(
+              <button key={c} onClick={()=>setCat(c)}
+                style={{padding:'6px 13px',borderRadius:'16px',border:'none',cursor:'pointer',
+                  fontSize:'12px',fontWeight:700,transition:'all 0.15s',
+                  background:cat===c?'#0A3D62':'rgba(10,61,98,0.07)',
+                  color:cat===c?'white':'#0A3D62'}}>
+                {c!=='All' && <span style={{marginRight:'4px'}}>{TYPE_ICONS[c]}</span>}{c}
+              </button>
+            ))}
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:'6px',marginLeft:'auto'}}>
+            <Search size={13} color="#696969"/>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="Search insights…"
+              style={{padding:'6px 12px',borderRadius:'7px',border:'1px solid rgba(10,61,98,0.15)',
+                fontSize:'12px',outline:'none',color:'#000',background:'white',width:'160px'}}/>
+          </div>
+          <span style={{fontSize:'12px',color:'#696969'}}>{filtered.length} articles</span>
+        </div>
 
         {/* Featured */}
         {featured.length > 0 && (
-          <div style={{marginBottom:'28px'}}>
-            <div style={{fontSize:'12px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#0A3D62',marginBottom:'14px'}}>
-              Featured Publications
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
-              {featured.map(pub=>(
-                <div key={pub.id} className="gfm-card" style={{padding:'24px',borderTop:'4px solid #74BB65'}}>
-                  <div style={{display:'flex',gap:'12px',marginBottom:'12px'}}>
-                    <span style={{fontSize:'32px'}}>{pub.icon}</span>
-                    <div>
-                      <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'12px',
-                        background:`${TYPE_C[pub.type]}12`,color:TYPE_C[pub.type],display:'inline-block',marginBottom:'5px'}}>
-                        {pub.type}
-                      </span>
-                      <h3 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',lineHeight:'1.3',margin:0}}>{pub.title}</h3>
-                    </div>
-                  </div>
-                  <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.6',marginBottom:'14px'}}>{pub.summary}</p>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <div style={{fontSize:'11px',color:'#696969'}}>{pub.date} · {pub.readMin} min read · {pub.region}</div>
-                    <button className="gfm-btn-primary" style={{padding:'7px 16px',fontSize:'12px'}}>Read More →</button>
-                  </div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'16px'}}>
+            {featured.map(ins=>(
+              <div key={ins.id} style={{background:`linear-gradient(135deg,${ins.color} 0%,${ins.color}CC 100%)`,
+                borderRadius:'14px',padding:'28px',position:'relative',overflow:'hidden',cursor:'pointer'}}>
+                <div style={{position:'absolute',top:'-30px',right:'-30px',width:'150px',height:'150px',
+                  borderRadius:'50%',background:'rgba(255,255,255,0.06)'}}/>
+                <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'10px'}}>
+                  <span>{TYPE_ICONS[ins.type]}</span>
+                  <span style={{fontSize:'10px',fontWeight:800,color:'rgba(255,255,255,0.8)',
+                    textTransform:'uppercase',letterSpacing:'0.07em'}}>{ins.type} · FEATURED</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* All publications */}
-        <div style={{fontSize:'12px',fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#0A3D62',marginBottom:'14px'}}>
-          {type==='All' && region==='All Regions' && topic==='All Topics' && !search ? 'Recent Publications' : `${filtered.length} Results`}
-        </div>
-        <PreviewGate feature="downloads">
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px'}}>
-            {(featured.length>0 ? rest : filtered).map(pub=>(
-              <div key={pub.id} className="gfm-card" style={{padding:'18px',cursor:'pointer'}}>
-                <div style={{fontSize:'28px',marginBottom:'10px'}}>{pub.icon}</div>
-                <span style={{fontSize:'10px',fontWeight:700,padding:'2px 7px',borderRadius:'10px',
-                  background:`${TYPE_C[pub.type]}12`,color:TYPE_C[pub.type],display:'inline-block',marginBottom:'7px'}}>
-                  {pub.type}
-                </span>
-                <h4 style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',lineHeight:'1.3',marginBottom:'8px'}}>{pub.title}</h4>
-                <p style={{fontSize:'11px',color:'#696969',lineHeight:'1.5',marginBottom:'10px'}}>{pub.summary.slice(0,80)}…</p>
-                <div style={{fontSize:'10px',color:'#696969'}}>{pub.date} · {pub.readMin} min</div>
+                <h3 style={{fontSize:'16px',fontWeight:700,color:'white',lineHeight:'1.4',marginBottom:'12px'}}>{ins.title}</h3>
+                <div style={{display:'flex',gap:'12px',alignItems:'center',fontSize:'11px',color:'rgba(255,255,255,0.65)'}}>
+                  <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Calendar size={10}/>{ins.date}</span>
+                  <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Clock size={10}/>{ins.readMin} min read</span>
+                  <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Globe size={10}/>{ins.region}</span>
+                </div>
+                <div style={{display:'flex',alignItems:'center',gap:'4px',marginTop:'14px',fontSize:'12px',
+                  fontWeight:700,color:'rgba(255,255,255,0.85)'}}>
+                  Read more <ArrowRight size={12}/>
+                </div>
               </div>
             ))}
           </div>
-        </PreviewGate>
-
-        {filtered.length === 0 && (
-          <div style={{textAlign:'center',padding:'48px',color:'#696969'}}>
-            <div style={{fontSize:'40px',marginBottom:'12px'}}>📚</div>
-            <div style={{fontWeight:700,color:'#0A3D62'}}>No publications found</div>
-            <div style={{fontSize:'13px',marginTop:'4px'}}>Try adjusting your filters</div>
-          </div>
         )}
+
+        {/* Article grid */}
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
+          {regular.map(ins=>(
+            <div key={ins.id} style={{background:'white',borderRadius:'12px',padding:'18px',
+              boxShadow:'0 2px 8px rgba(10,61,98,0.06)',cursor:'pointer',
+              borderTop:`3px solid ${ins.color}`,transition:'all 0.15s'}}
+              onMouseEnter={e=>(e.currentTarget.style.boxShadow='0 6px 20px rgba(10,61,98,0.12)')}
+              onMouseLeave={e=>(e.currentTarget.style.boxShadow='0 2px 8px rgba(10,61,98,0.06)')}>
+              <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'8px'}}>
+                <span>{TYPE_ICONS[ins.type]}</span>
+                <span style={{fontSize:'10px',fontWeight:700,color:ins.color,textTransform:'uppercase',letterSpacing:'0.05em'}}>{ins.type}</span>
+              </div>
+              <h4 style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',lineHeight:'1.45',marginBottom:'10px'}}>{ins.title}</h4>
+              <div style={{display:'flex',gap:'10px',fontSize:'10px',color:'#696969',flexWrap:'wrap'}}>
+                <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Calendar size={9}/>{ins.date}</span>
+                <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Clock size={9}/>{ins.readMin} min</span>
+                <span style={{display:'flex',alignItems:'center',gap:'3px'}}><Globe size={9}/>{ins.region}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:'4px',marginTop:'12px',
+                fontSize:'11px',fontWeight:700,color:ins.color}}>
+                Read more <ArrowRight size={11}/>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Newsletter CTA */}
+        <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'14px',padding:'32px',
+          display:'flex',justifyContent:'space-between',alignItems:'center',gap:'20px',flexWrap:'wrap'}}>
+          <div>
+            <div style={{fontSize:'15px',fontWeight:700,color:'white',marginBottom:'5px'}}>
+              Get weekly FDI intelligence delivered to your inbox
+            </div>
+            <div style={{fontSize:'12px',color:'rgba(226,242,223,0.7)'}}>
+              Join 2,400+ investment professionals. No spam, unsubscribe anytime.
+            </div>
+          </div>
+          <div style={{display:'flex',gap:'0'}}>
+            <input placeholder="your@email.com"
+              style={{padding:'11px 16px',borderRadius:'8px 0 0 8px',border:'none',
+                fontSize:'13px',background:'rgba(255,255,255,0.1)',color:'white',
+                outline:'none',minWidth:'200px'}}/>
+            <button style={{padding:'11px 18px',background:'#74BB65',color:'white',border:'none',
+              borderRadius:'0 8px 8px 0',cursor:'pointer',fontSize:'13px',fontWeight:700,
+              display:'flex',alignItems:'center',gap:'5px',whiteSpace:'nowrap'}}>
+              Subscribe <ArrowRight size={13}/>
+            </button>
+          </div>
+        </div>
       </div>
+      <Footer/>
     </div>
   );
 }
