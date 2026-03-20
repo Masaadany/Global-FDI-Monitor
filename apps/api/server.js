@@ -328,7 +328,7 @@ const ROUTES = {
   },
 
   // ── REPORTS ────────────────────────────────────────────────────────────
-  ROUTES["POST /api/v1/reports/generate"] = async(req,res) => {
+  'POST /api/v1/reports/generate': async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   
@@ -359,8 +359,11 @@ const ROUTES = {
     generated_at: new Date().toISOString(),
     download_url: `https://api.fdimonitor.org/api/v1/reports/${ref}/download`,
   });
-};
+},
+};  // end ROUTES object
 
+
+function routeMatch(method,path){
   for(const [pat,h] of Object.entries(ROUTES)){
     const[m,rp]=pat.split(' ');
     if(m!==method) continue;
@@ -374,27 +377,27 @@ const ROUTES = {
   return null;
 }
 
-ROUTES["GET /api/v1/admin/metrics"] = async(req,res) => {
+ROUTES['GET /api/v1/admin/metrics'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
   ok(res,{ data:{ metrics:{ total_users:147, active_users:134, trial_users:13, total_signals:218, platinum_signals:22, total_reports:1842, reports_today:34, api_calls_24h:48200 } } });
 };
 
-ROUTES["GET /api/v1/admin/users"] = async(req,res) => {
+ROUTES['GET /api/v1/admin/users'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
   const [users] = await dbQ('SELECT id,email,full_name,role,tier,last_active_at,is_active FROM auth.users LIMIT 50',[],[]);
   ok(res,{ data:{ users: users||[], total: users?.length||0 } });
 };
 
-ROUTES["POST /api/v1/admin/jobs/:id/toggle"] = async(req,res) => {
+ROUTES['POST /api/v1/admin/jobs/:id/toggle'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload || payload.role !== 'admin') return fail(res,'FORBIDDEN','Admin only',403);
   const id = req.params?.id || getParam(req,'id');
   ok(res,{ data:{ job:id, status:'toggled', ts: new Date().toISOString() } });
 };
 
-ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/reset-request'] = async(req,res) => {
   const d = await body(req);
   if (d.email) {
     const ref = 'RST-' + Math.random().toString(36).slice(2,10).toUpperCase();
@@ -405,14 +408,14 @@ ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/subscription"] = async(req,res) => {
+ROUTES['GET /api/v1/subscription'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const [org] = await dbQ('SELECT tier, stripe_subscription_id, billing_cycle FROM auth.organisations WHERE id=$1',[payload.org],[]);
   ok(res,{ data:{ tier: org?.tier||'free_trial', cycle: org?.billing_cycle||'monthly', stripe_id: org?.stripe_subscription_id||null } });
 };
 
-ROUTES["POST /api/v1/billing/subscribe"] = async(req,res) => {
+ROUTES['POST /api/v1/billing/subscribe'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d = await body(req);
@@ -420,7 +423,7 @@ ROUTES["POST /api/v1/billing/subscribe"] = async(req,res) => {
   ok(res,{ data:{ ref, plan: d.plan||'professional', status:'redirect', checkout_url: 'https://checkout.stripe.com/pay/demo_'+ref } });
 };
 
-ROUTES["GET /api/v1/faq"] = async(req,res) => {
+ROUTES['GET /api/v1/faq'] = async(req,res) => {
   ok(res,{ data:{ sections:[
     { section:'General', count:3 },
     { section:'Dashboard & Features', count:4 },
@@ -430,7 +433,7 @@ ROUTES["GET /api/v1/faq"] = async(req,res) => {
   ], total_questions:17 } });
 };
 
-ROUTES["PATCH /api/v1/pipeline/deals/:id"] = async(req,res) => {
+ROUTES['PATCH /api/v1/pipeline/deals/:id'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.params?.id || getParam(req,'id');
@@ -444,28 +447,28 @@ ROUTES["PATCH /api/v1/pipeline/deals/:id"] = async(req,res) => {
 
 
 // ── MISSING ROUTES ────────────────────────────────────────────────────────
-ROUTES["DELETE /api/v1/watchlists/:id"] = async(req,res) => {
+ROUTES['DELETE /api/v1/watchlists/:id'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.params?.id || getParam(req,'id');
   ok(res,{ deleted:true, id });
 };
 
-ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+ROUTES['GET /api/v1/market-insights'] = async(req,res) => {
   ok(res,{ data:{ insights: M_INSIGHTS, total: M_INSIGHTS.length }, meta:{ page:1, limit:10 } });
 };
 
-ROUTES["GET /api/v1/gfr/methodology"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/methodology'] = async(req,res) => {
   ok(res,{ data:{ version:'Q1 2026', dimensions:6, weights:{ macro:20, policy:18, digital:15, human:15, infra:15, sustain:17 }, sources:300, verified:'Z3 + SHA-256' } });
 };
 
-ROUTES["GET /api/v1/pipeline/summary"] = async(req,res) => {
+ROUTES['GET /api/v1/pipeline/summary'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{ data:{ total_deals:8, total_capex_bn:12.4, by_stage:{ Prospecting:2, Qualified:2, Proposal:2, Negotiation:1, Committed:1, Active:0 } } });
 };
 
-ROUTES["GET /api/v1/sectors"] = async(req,res) => {
+ROUTES['GET /api/v1/sectors'] = async(req,res) => {
   const sectors = [
     {isic:'J',name:'ICT / Technology',signals:89,fdi_bn:1.55,growth:22,icon:'💻'},
     {isic:'D',name:'Energy',signals:42,fdi_bn:1.08,growth:18,icon:'⚡'},
@@ -479,11 +482,11 @@ ROUTES["GET /api/v1/sectors"] = async(req,res) => {
   ok(res,{ data:{ sectors, total:sectors.length } });
 };
 
-ROUTES["GET /api/v1/publications"] = async(req,res) => {
+ROUTES['GET /api/v1/publications'] = async(req,res) => {
   ok(res,{ data:{ publications: M_PUBLICATIONS, total: M_PUBLICATIONS.length } });
 };
 
-ROUTES["GET /api/v1/companies"] = async(req,res) => {
+ROUTES['GET /api/v1/companies'] = async(req,res) => {
   const q  = new URL('http://x'+req.url).searchParams;
   const grade = q.get('grade'); const sector = q.get('sector'); const limit = parseInt(q.get('limit')||'20');
   let companies = M_COMPANIES;
@@ -492,16 +495,16 @@ ROUTES["GET /api/v1/companies"] = async(req,res) => {
   ok(res,{ data:{ companies: companies.slice(0,limit), total: companies.length, page:1 } });
 };
 
-ROUTES["GET /api/v1/companies/:cic"] = async(req,res) => {
+ROUTES['GET /api/v1/companies/:cic'] = async(req,res) => {
   const cic = req.url.split('/').pop();
   const co = M_COMPANIES.find(c=>c.cic===cic) || M_COMPANIES[0];
   ok(res,{ data:{ company: co } });
 };
 
-ROUTES["GET /api/v1/corridors"] = async(req,res) => {
+ROUTES['GET /api/v1/corridors'] = async(req,res) => {
   ok(res,{ data:{ corridors: M_CORRIDORS, total: M_CORRIDORS.length } });
 };
-ROUTES["GET /api/v1/corridors_old"] = async(req,res) => {
+ROUTES['GET /api/v1/corridors_old'] = async(req,res) => {
   const corridors = M_SIGNALS.slice(0,10).map((s,i)=>({
     id: 'CRD-'+i, from_iso: s.iso3||'USA', to_iso: ['ARE','SGP','IND','DEU','GBR'][i%5],
     fdi_bn: parseFloat((Math.random()*40+8).toFixed(1)), growth: (Math.random()*20+2).toFixed(1)+'%',
@@ -510,7 +513,7 @@ ROUTES["GET /api/v1/corridors_old"] = async(req,res) => {
   ok(res,{ data:{ corridors, total: corridors.length } });
 };
 
-ROUTES["GET /api/v1/pipeline/deals"] = async(req,res) => {
+ROUTES['GET /api/v1/pipeline/deals'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const deals = [
@@ -524,33 +527,33 @@ ROUTES["GET /api/v1/pipeline/deals"] = async(req,res) => {
   ok(res,{ data:{ deals, total:deals.length } });
 };
 
-ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+ROUTES['GET /api/v1/market-insights'] = async(req,res) => {
   ok(res,{ data:{ insights: M_INSIGHTS, total: M_INSIGHTS.length } });
 };
 
 
-ROUTES["GET /api/v1/signals/summary"] = async(req,res) => {
+ROUTES['GET /api/v1/signals/summary'] = async(req,res) => {
   const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
   M_SIGNALS.forEach(s=>{ if(s.grade in grades) grades[s.grade]++; });
   const total_capex = M_SIGNALS.reduce((a,s)=>a+(s.capex_m||0),0);
   ok(res,{ data:{ total: M_SIGNALS.length, grades, total_capex_bn:(total_capex/1000).toFixed(1), active_economies:47 } });
 };
 
-ROUTES["GET /api/v1/gfr/summary"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/summary'] = async(req,res) => {
   const tiers = {FRONTIER:0,HIGH:0,MEDIUM:0,DEVELOPING:0};
   M_GFR.forEach(g=>{ if(g.tier in tiers) tiers[g.tier]++; });
   const top3 = [...M_GFR].sort((a,b)=>(b.gfr_composite||0)-(a.gfr_composite||0)).slice(0,3);
   ok(res,{ data:{ total:215, tiers, top3, quarter:'Q1 2026', updated_at: new Date().toISOString() } });
 };
 
-ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+ROUTES['POST /api/v1/watchlists/:id/signals'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.url.split('/').slice(-2)[0];
   ok(res,{ data:{ watchlist_id:id, signals: M_SIGNALS.slice(0,5), count:5 } });
 };
 
-ROUTES["GET /api/v1/users/profile"] = async(req,res) => {
+ROUTES['GET /api/v1/users/profile'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const [user] = await dbQ('SELECT id,email,full_name,role,tier,created_at FROM auth.users WHERE id=$1',[payload.sub],[]);
@@ -558,7 +561,7 @@ ROUTES["GET /api/v1/users/profile"] = async(req,res) => {
 };
 
 
-ROUTES["POST /api/v1/contact"] = async(req,res) => {
+ROUTES['POST /api/v1/contact'] = async(req,res) => {
   const d = await body(req);
   const ref = 'GFM-CNT-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
   log('CONTACT', JSON.stringify({...d, ref, ts: new Date().toISOString()}));
@@ -726,26 +729,7 @@ function checkRateLimit(ip, path) {
   return {limited:false};
 }
 
-// ── RATE LIMITER (append to existing server.js) ───────────────────────────
-const RATE_LIMITS = new Map(); // ip -> {count, reset}
 
-function rateLimit(req, res, max=100, windowMs=60000) {
-  const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'unknown';
-  const now = Date.now();
-  const entry = RATE_LIMITS.get(ip) || {count:0, reset:now+windowMs};
-  if (now > entry.reset) { entry.count=0; entry.reset=now+windowMs; }
-  entry.count++;
-  RATE_LIMITS.set(ip, entry);
-  res.setHeader('X-RateLimit-Limit', max);
-  res.setHeader('X-RateLimit-Remaining', Math.max(0, max-entry.count));
-  res.setHeader('X-RateLimit-Reset', Math.ceil(entry.reset/1000));
-  if (entry.count > max) {
-    res.writeHead(429, {'Content-Type':'application/json'});
-    res.end(JSON.stringify({success:false,error:{code:'RATE_LIMITED',message:'Too many requests'}}));
-    return false;
-  }
-  return true;
-}
 
 // ── WEBSOCKET — live signal push ──────────────────────────────────────────
 let wsClients = new Set();
@@ -992,7 +976,7 @@ ROUTES['GET /api/v1/corridors'] = async(req,res)=>{
 };
 
 // ── INSIGHTS ─────────────────────────────────────────────────────────────
-ROUTES[ROUTES["GET /api/v1/insights"] = async(req,res) => {
+ROUTES['GET /api/v1/insights'] = async(req,res) => {
   const params = new URLSearchParams(req.url.split('?')[1]||'');
   const category = params.get('category');
   let data = [...M_INSIGHTS];
@@ -1397,7 +1381,7 @@ const FORECAST_DATA = {
 };
 const HORIZONS=['2025Q4','2026Q1','2026Q2','2026Q3','2026Q4','2027','2028','2029','2030'];
 
-ROUTES["GET /api/v1/forecast"] = async(req,res) => {
+ROUTES['GET /api/v1/forecast'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const params = new URLSearchParams(req.url.split('?')[1]||'');
@@ -1567,7 +1551,7 @@ const CORRIDORS_DATA = [
 // ── MARKET SIGNALS ALIAS ─────────────────────────────────────────────────
 
 // ── REPORTS LIST ───────────────────────────────────────────────────────────
-const REPORTS_STORE: any[] = [];
+const REPORTS_STORE = [];
 ROUTES['GET /api/v1/reports'] = async(req,res)=>{
   const token=getToken(req);
   const payload=token?verifyJWT(token):null;
@@ -1577,7 +1561,7 @@ ROUTES['GET /api/v1/reports'] = async(req,res)=>{
 };
 
 // ── SCENARIOS STORE ───────────────────────────────────────────────────────
-ROUTES[ROUTES["GET /api/v1/scenarios"] = async(req,res) => {
+ROUTES['GET /api/v1/scenarios'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const params = new URLSearchParams(req.url.split('?')[1]||'');
@@ -1628,7 +1612,7 @@ ROUTES['GET /api/v1/health'] = async(req,res)=>{
 
 // ── OPENAPI JSON ─────────────────────────────────────────────────────────
 // ── GFR LIST ──────────────────────────────────────────────────────────────
-ROUTES[ROUTES["GET /api/v1/gfr"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr'] = async(req,res) => {
   const params = new URLSearchParams(req.url.split('?')[1]||'');
   const page  = parseInt(params.get('page')||'1');
   const limit = parseInt(params.get('limit')||'30');
@@ -1652,7 +1636,7 @@ ROUTES[ROUTES["GET /api/v1/gfr"] = async(req,res) => {
   ok(res, { rankings:slice, total:data.length, page, limit, quarter:'Q1-2026', economies:data.length });
 };
 
-ROUTES["POST /api/v1/auth/login"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/login'] = async(req,res) => {
   const d = await body(req);
   if(!d.email || !d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
   // Check DB or use demo mode
@@ -1673,7 +1657,7 @@ ROUTES["POST /api/v1/auth/login"] = async(req,res) => {
   }
 };
 
-ROUTES["POST /api/v1/auth/register"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/register'] = async(req,res) => {
   const d = await body(req);
   if(!d.email || !d.password) return fail(res,'VALIDATION_ERROR','Email and password required');
   const userId = 'usr_' + Date.now();
@@ -1693,7 +1677,7 @@ ROUTES["POST /api/v1/auth/register"] = async(req,res) => {
   ok(res,{access_token:token,refresh_token:'rt_'+token.slice(-20),user:{id:userId,email:d.email,full_name:d.full_name||'',role:'admin'},org:{id:orgId,name:d.org_name||'New Organisation',tier:'free_trial',fic_balance:5}},{status:201});
 };
 
-ROUTES["POST /api/v1/auth/refresh"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/refresh'] = async(req,res) => {
   const d = await body(req);
   const payload = d.refresh_token ? verifyJWT(d.refresh_token.replace('rt_','')) : null;
   if(!payload) return fail(res,'UNAUTHORIZED','Invalid refresh token',401);
@@ -1702,7 +1686,7 @@ ROUTES["POST /api/v1/auth/refresh"] = async(req,res) => {
 };
 
 // ── STRIPE WEBHOOK ────────────────────────────────────────────────────────
-ROUTES["POST /api/v1/billing/webhook"] = async(req,res) => {
+ROUTES['POST /api/v1/billing/webhook'] = async(req,res) => {
   const chunks = [];
   req.on('data', c => chunks.push(c));
   req.on('end', async () => {
@@ -1750,7 +1734,7 @@ ROUTES["GET /api/v1/market-signals"] = (req,res) => { return ROUTES["GET /api/v1
 
 // ── ENHANCED FORECAST ROUTE WITH DB + FALLBACK ─────────────────────────
 // Override existing forecast with enhanced version that reads from DB
-ROUTES["GET /api/v1/forecast/v2"] = async(req,res) => {
+ROUTES['GET /api/v1/forecast/v2'] = async(req,res) => {
   const token = getToken(req);
   const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
@@ -1805,7 +1789,7 @@ ROUTES["GET /api/v1/forecast/v2"] = async(req,res) => {
 };
 
 // ── CORRIDOR INTELLIGENCE ENHANCED ─────────────────────────────────────
-ROUTES["GET /api/v1/corridors/v2"] = async(req,res) => {
+ROUTES['GET /api/v1/corridors/v2'] = async(req,res) => {
   const params = new URLSearchParams(req.url.split('?')[1]||'');
   const from = params.get('from') || 'USA'; 
   const to   = params.get('to')   || 'ARE';
@@ -1825,7 +1809,7 @@ ROUTES["GET /api/v1/corridors/v2"] = async(req,res) => {
 };
 
 // ── BENCHMARKING ────────────────────────────────────────────────────────────
-ROUTES["GET /api/v1/benchmarking"] = async(req,res) => {
+ROUTES['GET /api/v1/benchmarking'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const params = new URLSearchParams(req.url.split('?')[1]||'');
@@ -1856,7 +1840,7 @@ ROUTES["GET /api/v1/benchmarking"] = async(req,res) => {
 };
 
 // ── ANALYTICS DATA ENDPOINT ──────────────────────────────────────────────
-ROUTES["GET /api/v1/analytics"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   
@@ -1902,21 +1886,21 @@ ROUTES["GET /api/v1/analytics"] = async(req,res) => {
 
 // ── NOTIFICATIONS / ALERTS MARK READ ────────────────────────────────────
 // ── AUTH REFRESH + ME ────────────────────────────────────────────────────
-ROUTES["PUT /api/v1/auth/refresh"] = async(req,res) => {
+ROUTES['PUT /api/v1/auth/refresh'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Token required',401);
   const fresh = signJWT({ sub:payload.sub, email:payload.email, role:payload.role, tier:payload.tier, org:payload.org });
   ok(res, { data: { token: fresh, expires_in: 900, refreshed_at: new Date().toISOString() } });
 };
 
-ROUTES["GET /api/v1/auth/me"] = async(req,res) => {
+ROUTES['GET /api/v1/auth/me'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res, { data: { user: { id:payload.sub, email:payload.email, role:payload.role, tier:payload.tier } } });
 };
 
 
-ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
+ROUTES['POST /api/v1/scenario/run'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d = await body(req);
@@ -1926,7 +1910,7 @@ ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
   ok(res,{ data:{ p10, p50, p90, unit:'T USD', cagr_p50:((((p50/base)**(1/11))-1)*100).toFixed(1)+'%', inputs:{gdp_growth_adj:gdp,tech_mult:tech,energy_tr:energy}, model:'Monte-Carlo-10k-VAR' } });
 };
 
-ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
+ROUTES['POST /api/v1/pmp/dossier'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   if (payload.tier==='free_trial') return fail(res,'PAYMENT_REQUIRED','Subscription required for Mission Planning dossiers',402);
@@ -1936,7 +1920,7 @@ ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
   ok(res,{ data:{ ref, type:'PMP', pages: 42, format:'PDF', watermark_applied:true, sha256:sha, generated_at:new Date().toISOString() } });
 };
 
-ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics/forecast'] = async(req,res) => {
   const q = new URL('http://x'+req.url).searchParams;
   const iso3=q.get('iso3')||'GLOBAL', horizon=parseInt(q.get('horizon')||'2035'), scenario=q.get('scenario')||'base';
   const CAGR={base:0.058,optimistic:0.072,stress:0.024};
@@ -1946,7 +1930,7 @@ ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/stats"] = async(req,res) => {
+ROUTES['GET /api/v1/stats'] = async(req,res) => {
   ok(res, { data: {
     total_signals:  M_SIGNALS.length,
     platinum_count: M_SIGNALS.filter(s=>s.grade==='PLATINUM').length,
@@ -1961,7 +1945,7 @@ ROUTES["GET /api/v1/stats"] = async(req,res) => {
   }});
 };
 
-ROUTES["POST /api/v1/alerts"] = async(req,res) => {
+ROUTES['POST /api/v1/alerts'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d = await body(req);
@@ -1969,55 +1953,55 @@ ROUTES["POST /api/v1/alerts"] = async(req,res) => {
   ok(res, { data: { ref, type: d.type||'SIGNAL', condition: d.condition||{}, created_at: new Date().toISOString() } });
 };
 
-ROUTES["GET /api/v1/gfr/tiers"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/tiers'] = async(req,res) => {
   const tiers = {FRONTIER:[],HIGH:[],MEDIUM:[],DEVELOPING:[]};
   M_GFR.forEach(g => { if(g.tier in tiers) tiers[g.tier].push(g.iso3); });
   ok(res, { data: { tiers, counts: { FRONTIER:18, HIGH:68, MEDIUM:86, DEVELOPING:43 }, total:215, quarter:'Q1 2026' } });
 };
 
-ROUTES["DELETE /api/v1/alerts/:id"] = async(req,res) => {
+ROUTES['DELETE /api/v1/alerts/:id'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.url.split('/').pop();
   ok(res, { data: { deleted: true, id } });
 };
 
-ROUTES["GET /api/v1/publications/:ref"] = async(req,res) => {
+ROUTES['GET /api/v1/publications/:ref'] = async(req,res) => {
   const ref = req.url.split('/').pop();
-  const pub = M_PUBLICATIONS.find((p: any)=>p.ref===ref) || M_PUBLICATIONS[0];
+  const pub = M_PUBLICATIONS.find((p)=>p.ref===ref) || M_PUBLICATIONS[0];
   ok(res, { data: { publication: pub } });
 };
 
 
-ROUTES["GET /api/v1/company-profiles"] = async(req,res) => {
+ROUTES['GET /api/v1/company-profiles'] = async(req,res) => {
   const q = new URL('http://x'+req.url).searchParams;
   const grade = q.get('grade'), sector = q.get('sector');
   let profiles = M_COMPANIES;
-  if (grade)  profiles = profiles.filter((c: any) => c.signal_grade === grade);
-  if (sector) profiles = profiles.filter((c: any) => c.sector === sector);
+  if (grade)  profiles = profiles.filter((c) => c.signal_grade === grade);
+  if (sector) profiles = profiles.filter((c) => c.sector === sector);
   ok(res, { data: { profiles, total: profiles.length } });
 };
 
-ROUTES["GET /api/v1/company-profiles/:cic"] = async(req,res) => {
+ROUTES['GET /api/v1/company-profiles/:cic'] = async(req,res) => {
   const cic = req.url.split('/').pop();
-  const co  = M_COMPANIES.find((c: any) => c.cic === cic) || M_COMPANIES[0];
+  const co  = M_COMPANIES.find((c) => c.cic === cic) || M_COMPANIES[0];
   ok(res, { data: { profile: co } });
 };
 
-ROUTES["GET /api/v1/signals/:ref"] = async(req,res) => {
+ROUTES['GET /api/v1/signals/:ref'] = async(req,res) => {
   const ref = req.url.split('/').pop();
-  const sig = M_SIGNALS.find((s: any) => s.reference_code === ref) || M_SIGNALS[0];
+  const sig = M_SIGNALS.find((s) => s.reference_code === ref) || M_SIGNALS[0];
   ok(res, { data: { signal: sig } });
 };
 
-ROUTES["GET /api/v1/gfr/:iso3"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/:iso3'] = async(req,res) => {
   const iso3 = req.url.split('/').pop();
-  const eco  = M_GFR.find((g: any) => g.iso3 === iso3);
+  const eco  = M_GFR.find((g) => g.iso3 === iso3);
   if (!eco) return fail(res,'NOT_FOUND','Economy not found',404);
   ok(res, { data: { ranking: eco } });
 };
 
-ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+ROUTES['POST /api/v1/watchlists/:id/signals'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.url.split('/').slice(-2)[0];
@@ -2025,7 +2009,7 @@ ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/signals/search"] = async(req,res) => {
+ROUTES['GET /api/v1/signals/search'] = async(req,res) => {
   const q = new URL('http://x'+req.url).searchParams.get('q')||'';
   const hits = M_SIGNALS.filter((s)=>
     (s.company||'').toLowerCase().includes(q.toLowerCase()) ||
@@ -2034,17 +2018,17 @@ ROUTES["GET /api/v1/signals/search"] = async(req,res) => {
   ok(res,{data:{signals:hits,query:q,total:hits.length}});
 };
 
-ROUTES["GET /api/v1/faq"] = async(req,res) => {
+ROUTES['GET /api/v1/faq'] = async(req,res) => {
   ok(res,{data:{sections:5,questions:15,topics:['getting_started','signals','gfr','reports','api']}});
 };
 
-ROUTES["GET /api/v1/corridors/:id"] = async(req,res) => {
+ROUTES['GET /api/v1/corridors/:id'] = async(req,res) => {
   const id = req.url.split('/').pop();
   const corridor = M_CORRIDORS.find((c)=>c.id===id) || M_CORRIDORS[0];
   ok(res,{data:{corridor}});
 };
 
-ROUTES["GET /api/v1/sectors"] = async(req,res) => {
+ROUTES['GET /api/v1/sectors'] = async(req,res) => {
   const sectors=[
     {num:1,name:'Agriculture, Forestry & Fishing',signals:12,capex_bn:8.4,growth:14},
     {num:10,name:'Information & Communication (ICT)',signals:56,capex_bn:94.8,growth:28},
@@ -2053,25 +2037,28 @@ ROUTES["GET /api/v1/sectors"] = async(req,res) => {
   ok(res,{data:{sectors,total:21}});
 };
 
-ROUTES["GET /api/v1/gfr/summary"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/summary'] = async(req,res) => {
   const tiers={FRONTIER:18,HIGH:68,MEDIUM:86,DEVELOPING:43};
-  const top3 = [...M_GFR].sort((a:any,b:any)=>(b.gfr_composite||0)-(a.gfr_composite||0)).slice(0,3);
+  const top3 = [...M_GFR].sort((a,b)=>(b.gfr_composite||0)-(a.gfr_composite||0)).slice(0,3);
   ok(res,{data:{tiers,top3,total:215,quarter:'Q1 2026',z3_verified:true}});
 };
 
-"PUT /api/v1/alerts/:id/read"] = async(req,res) => {
+ROUTES['PUT /api/v1/alerts/:id/read'] = async(req,res) => {
   const token = getToken(req); const payload = token ? verifyJWT(token) : null;
   if (!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id = req.url.split('/').slice(-2)[0];
-  await dbQ('UPDATE notifications.alerts SE
-ROUTES["GET /api/v1/analytics/signals"] = async(req,res) => {
+  await dbQ('UPDATE intelligence.alerts SET is_read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
+  ok(res,{data:{id,read:true}});
+};
+
+ROUTES['GET /api/v1/analytics/signals'] = async(req,res) => {
   const q = new URL('http://x'+req.url).searchParams;
   const period = q.get('period')||'7d';
   const data = [{date:'2026-03-12',count:18},{date:'2026-03-13',count:24},{date:'2026-03-14',count:21},{date:'2026-03-15',count:28},{date:'2026-03-16',count:32},{date:'2026-03-17',count:19},{date:'2026-03-18',count:22}];
   ok(res,{data:{period,signals:data,total:164,by_grade:{PLATINUM:22,GOLD:76,SILVER:48,BRONZE:18}}});
 };
 
-ROUTES["GET /api/v1/analytics/regions"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics/regions'] = async(req,res) => {
   ok(res,{data:{regions:[
     {name:'Asia-Pacific',pct:33,fdi_bn:1.72,growth:8},
     {name:'North America',pct:24,fdi_bn:1.25,growth:3},
@@ -2083,7 +2070,7 @@ ROUTES["GET /api/v1/analytics/regions"] = async(req,res) => {
   ],quarter:'Q1 2026'}});
 };
 
-ROUTES["GET /api/v1/analytics/sectors"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics/sectors'] = async(req,res) => {
   ok(res,{data:{sectors:[
     {name:'ICT',pct:30,fdi_bn:1.56,growth:22},
     {name:'Energy',pct:21,fdi_bn:1.09,growth:18},
@@ -2094,13 +2081,13 @@ ROUTES["GET /api/v1/analytics/sectors"] = async(req,res) => {
   ],quarter:'Q1 2026'}});
 };
 
-ROUTES["GET /api/v1/onboarding"] = async(req,res) => {
+ROUTES['GET /api/v1/onboarding'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{data:{steps:5,completed:0,preferences:null,tour_done:false}});
 };
 
-ROUTES["POST /api/v1/onboarding"] = async(req,res) => {
+ROUTES['POST /api/v1/onboarding'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
@@ -2108,24 +2095,24 @@ ROUTES["POST /api/v1/onboarding"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/publications/:ref"] = async(req,res) => {
+ROUTES['GET /api/v1/publications/:ref'] = async(req,res) => {
   const ref = req.url.split('/').pop().split('?')[0];
   const pub = M_PUBLICATIONS ? M_PUBLICATIONS.find((p)=>p.ref===ref) : null;
   if(!pub) return fail(res,'NOT_FOUND','Publication not found',404);
   ok(res,{data:{publication:pub}});
 };
 
-ROUTES["GET /api/v1/signals/summary"] = async(req,res) => {
+ROUTES['GET /api/v1/signals/summary'] = async(req,res) => {
   const grades={PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
   M_SIGNALS.forEach((s)=>{if(s.grade in grades)grades[s.grade]++;});
   ok(res,{data:{total:M_SIGNALS.length,grades,top_signal:M_SIGNALS[0]||null,updated_at:new Date().toISOString()}});
 };
 
-ROUTES["GET /api/v1/version"] = async(req,res) => {
+ROUTES['GET /api/v1/version'] = async(req,res) => {
   ok(res,{data:{version:'v91',build:'2026-03-19',api_routes:86,pages:43,agents:30,tests_passing:740,status:'production'}});
 };
 
-ROUTES["GET /api/v1/economies"] = async(req,res) => {
+ROUTES['GET /api/v1/economies'] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const tier=q.get('tier'), limit=parseInt(q.get('limit')||'20');
   let eco=M_GFR;
@@ -2133,7 +2120,7 @@ ROUTES["GET /api/v1/economies"] = async(req,res) => {
   ok(res,{data:{economies:eco.slice(0,limit),total:215,tiers:{FRONTIER:18,HIGH:68,MEDIUM:86,DEVELOPING:43}}});
 };
 
-ROUTES["GET /api/v1/alerts"] = async(req,res) => {
+ROUTES['GET /api/v1/alerts'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{data:{alerts:[
@@ -2143,25 +2130,25 @@ ROUTES["GET /api/v1/alerts"] = async(req,res) => {
 };
 
 
-ROUTES["PUT /api/v1/alerts/:id/read"] = async(req,res) => {
+ROUTES['PUT /api/v1/alerts/:id/read'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id=req.url.split('/').slice(-2)[0];
   ok(res,{data:{id,read:true,updated_at:new Date().toISOString()}});
 };
 
-ROUTES["DELETE /api/v1/alerts/:id"] = async(req,res) => {
+ROUTES['DELETE /api/v1/alerts/:id'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id=req.url.split('/').pop();
   ok(res,{data:{id,deleted:true}});
 };
 
-ROUTES["GET /api/v1/stats"] = async(req,res) => {
+ROUTES['GET /api/v1/stats'] = async(req,res) => {
   ok(res,{data:{signals:M_SIGNALS.length,economies:215,companies:M_COMPANIES.length,corridors:M_CORRIDORS.length,reports_generated:1247,api_calls_24h:284621,uptime_pct:99.97,version:'v91'}});
 };
 
-ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
+ROUTES['POST /api/v1/scenario/run'] = async(req,res) => {
   const d=await body(req);
   const scenario=d.scenario||'base', gdp_boost=parseFloat(d.gdp_boost||'0'), policy_reform=d.policy_reform||false;
   const multiplier=scenario==='optimistic'?1.25:scenario==='stress'?0.72:1.0;
@@ -2170,63 +2157,69 @@ ROUTES["POST /api/v1/scenario/run"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/users/profile"] = async(req,res) => {
+ROUTES['GET /api/v1/users/profile'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{data:{id:payload.sub,email:payload.email,role:payload.role||'user',tier:payload.tier||'free_trial',credits:200,org:'Demo Organisation',seats:1,created_at:'2026-01-15T00:00:00Z'}});
 };
 
-ROUTES["POST /api/v1/billing/subscribe"] = async(req,res) => {
+ROUTES['POST /api/v1/billing/subscribe'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
   ok(res,{data:{checkout_url:'https://checkout.stripe.com/demo',plan_id:d.plan_id,billing_cycle:d.billing_cycle||'monthly',status:'pending'}});
 };
 
-ROUTES["GET /api/v1/watchlists/:id"] = async(req,res) => {
+ROUTES['GET /api/v1/watchlists/:id'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id=req.url.split('/').slice(-1)[0].split('?')[0];
   ok(res,{data:{id,name:'My Watchlist',type:'ECONOMY',signals:[],items:[],created_at:new Date().toISOString()}});
 };
 
-ROUTES["POST /api/v1/watchlists/:id/signals"] = async(req,res) => {
+ROUTES['POST /api/v1/watchlists/:id/signals'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
   ok(res,{data:{added:true,signal_ref:d.signal_ref,watchlist_id:req.url.split('/').slice(-2)[0]}});
 };
 
-ROUTES["POST /api/v1/auth/logout"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/logout'] = async(req,res) => {
   ok(res,{data:{logged_out:true,ts:new Date().toISOString()}});
 };
 
-T read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
+// SYNTAX_FIX: T read=true WHERE id=$1 AND org_id=$2',[id,payload.org],[]);
   ok(res, { updated: true, alert_id: id });
-};
+// SYNTAX_FIX: };
 
-ROUTES["GET /api/v1/signals/grades"] = async(req,res) => {
+ROUTES['GET /api/v1/signals/grades'] = async(req,res) => {
   const grades = {PLATINUM:0,GOLD:0,SILVER:0,BRONZE:0};
   M_SIGNALS.forEach((s)=>{ if(s.grade in grades) grades[s.grade]++; });
   ok(res,{data:{grades,total:M_SIGNALS.length,updated_at:new Date().toISOString()}});
 };
 
 
-ROUTES["GET /api/v1/watchlists/:id/signals"] = async(req,res) => {
+ROUTES['GET /api/v1/watchlists/:id/signals'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const id=req.url.split('/').slice(-2)[0].split('?')[0];
   ok(res,{data:{watchlist_id:id,signals:M_SIGNALS.slice(0,5),total:M_SIGNALS.length}});
 };
 
-ROUTES["GET /api/v1/users/api-keys"] = async(req,res) => {
+ROUTES['GET /api/v1/users/api-keys'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{data:{keys:[{id:'key-001',name:'Production Key',prefix:'gfm_sk_live_',created_at:'2026-01-15T00:00:00Z',last_used:'2026-03-18T12:00:00Z',scopes:['signals:read','gfr:read','analytics:read']}],total:1}});
 };
 
-ROUTES["POST /api/v1/users/api-keys"] = async(req,re
-ROUTES["GET /api/v1/demo/signals"] = async(req,res) => {
+ROUTES['POST /api/v1/users/api-keys'] = async(req,res) => {
+  const token=getToken(req); const payload=token?verifyJWT(token):null;
+  if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
+  const d = await body(req);
+  ok(res,{data:{id:'key-'+Math.random().toString(36).slice(2,8),name:d.name||'New Key',prefix:'gfm_sk_live_',created_at:new Date().toISOString()}});
+};
+
+ROUTES['GET /api/v1/demo/signals'] = async(req,res) => {
   const demo=[
     {ref:'GFM-SIG-UAE-001',grade:'PLATINUM',company:'Microsoft',eco:'UAE',sector:'ICT',capex_m:850,sci:96.2,flag:'AE'},
     {ref:'GFM-SIG-IDN-002',grade:'PLATINUM',company:'CATL',eco:'Indonesia',sector:'Manufacturing',capex_m:3200,sci:94.8,flag:'ID'},
@@ -2235,7 +2228,7 @@ ROUTES["GET /api/v1/demo/signals"] = async(req,res) => {
   ok(res,{data:{signals:demo,total:3,demo:true,note:'Demo data only — subscribe for live intelligence'}});
 };
 
-ROUTES["GET /api/v1/demo/gfr"] = async(req,res) => {
+ROUTES['GET /api/v1/demo/gfr'] = async(req,res) => {
   const demo=[
     {rank:1,iso3:'SGP',eco:'Singapore',score:84.2,tier:'FRONTIER',change:+0.4},
     {rank:2,iso3:'ARE',eco:'UAE',score:80.0,tier:'FRONTIER',change:+4.2},
@@ -2246,7 +2239,7 @@ ROUTES["GET /api/v1/demo/gfr"] = async(req,res) => {
   ok(res,{data:{rankings:demo,total:215,demo:true,note:'Top 5 shown — subscribe for full 215 economies'}});
 };
 
-ROUTES["GET /api/v1/publications"] = async(req,res) => {
+ROUTES['GET /api/v1/publications'] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const cat=q.get('cat'), limit=parseInt(q.get('limit')||'10');
   let pubs=M_PUBLICATIONS||[];
@@ -2254,7 +2247,7 @@ ROUTES["GET /api/v1/publications"] = async(req,res) => {
   ok(res,{data:{publications:pubs.slice(0,limit),total:pubs.length}});
 };
 
-ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
+ROUTES['POST /api/v1/pmp/dossier'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
@@ -2263,7 +2256,7 @@ ROUTES["POST /api/v1/pmp/dossier"] = async(req,res) => {
   ok(res,{data:{ref,status:'generating',target_economies:d.economies||[],estimated_pages:40,estimated_time:'45 seconds',credits_used:30}});
 };
 
-ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
+ROUTES['GET /api/v1/market-insights'] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const cat=q.get('cat'), region=q.get('region'), limit=parseInt(q.get('limit')||'10');
   const insights=[
@@ -2275,20 +2268,20 @@ ROUTES["GET /api/v1/market-insights"] = async(req,res) => {
 };
 
 
-ROUTES["GET /api/v1/settings"] = async(req,res) => {
+ROUTES['GET /api/v1/settings'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   ok(res,{data:{profile:{name:'Demo User',email:payload.email,org:'Demo Org',role:'user'},notifications:{platinum_signals:true,gold_signals:true,gfr_changes:true,report_ready:true,billing:true,newsletter:false},api:{rate_limit_rpm:500,daily_calls:0},billing:{plan:'professional',billing_cycle:'monthly',credits_remaining:142,credits_total:200,next_renewal:'2026-04-18'}}});
 };
 
-ROUTES["PATCH /api/v1/settings"] = async(req,res) => {
+ROUTES['PATCH /api/v1/settings'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
   ok(res,{data:{updated:true,fields:Object.keys(d),updated_at:new Date().toISOString()}});
 };
 
-ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics/forecast'] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams;
   const scenario=q.get('scenario')||'base', iso3=q.get('iso3')||'GLOBAL';
   const CAGR={base:0.058,optimistic:0.072,stress:0.024};
@@ -2301,7 +2294,7 @@ ROUTES["GET /api/v1/analytics/forecast"] = async(req,res) => {
   ok(res,{data:{iso3,scenario,cagr:+(cagr*100).toFixed(1)+'%',forecast:points}});
 };
 
-ROUTES["POST /api/v1/reports/:ref/download"] = async(req,res) => {
+ROUTES['POST /api/v1/reports/:ref/download'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   if(payload.tier==='free_trial') return fail(res,'PAYMENT_REQUIRED','Professional subscription required',402);
@@ -2309,7 +2302,7 @@ ROUTES["POST /api/v1/reports/:ref/download"] = async(req,res) => {
   ok(res,{data:{ref,download_url:`https://cdn.fdimonitor.org/reports/${ref}.pdf`,expires_in:3600,watermarked:true,sha256:'a1b2c3d4'}});
 };
 
-ROUTES["GET /api/v1/search"] = async(req,res) => {
+ROUTES['GET /api/v1/search'] = async(req,res) => {
   const q=new URL('http://x'+req.url).searchParams.get('q')||'';
   if(!q||q.length<2) return ok(res,{data:{results:[],query:q,total:0}});
   const signals=M_SIGNALS.filter((s)=>(s.company||'').toLowerCase().includes(q.toLowerCase())||
@@ -2320,26 +2313,26 @@ ROUTES["GET /api/v1/search"] = async(req,res) => {
 };
 
 
-ROUTES["POST /api/v1/auth/reset-request"] = async(req,res) => {
+ROUTES['POST /api/v1/auth/reset-request'] = async(req,res) => {
   const d = await body(req);
   if(!d.email) return fail(res,'VALIDATION_ERROR','email required',400);
   ok(res,{data:{sent:true,email:d.email,message:'If an account exists for this email, a reset link has been sent.',expires_in:3600}});
 };
 
-ROUTES["GET /api/v1/gfr/:iso3/signals"] = async(req,res) => {
+ROUTES['GET /api/v1/gfr/:iso3/signals'] = async(req,res) => {
   const iso3 = req.url.split('/').slice(-2)[0].toUpperCase();
   const sigs = M_SIGNALS.filter((s)=>(s.iso3||'').toUpperCase()===iso3).slice(0,10);
   ok(res,{data:{iso3,signals:sigs,total:sigs.length}});
 };
 
 
-ROUTES["GET /api/v1/analytics/corridors"] = async(req,res) => {
+ROUTES['GET /api/v1/analytics/corridors'] = async(req,res) => {
   ok(res,{data:{corridors:M_CORRIDORS.slice(0,10),total:M_CORRIDORS.length,
     top_by_capex:M_CORRIDORS.slice(0,3),updated_at:new Date().toISOString()}});
 };
 
 
-ROUTES["GET /api/v1/trial/status"] = async(req,res) => {
+ROUTES['GET /api/v1/trial/status'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return ok(res,{data:{tier:'free_trial',daysLeft:7,reportsUsed:0,reportsMax:2,searchesUsed:0,searchesMax:3,isSoftLocked:false}});
   ok(res,{data:{
@@ -2351,7 +2344,7 @@ ROUTES["GET /api/v1/trial/status"] = async(req,res) => {
   }});
 };
 
-ROUTES["POST /api/v1/trial/consume"] = async(req,res) => {
+ROUTES['POST /api/v1/trial/consume'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);
@@ -2359,7 +2352,7 @@ ROUTES["POST /api/v1/trial/consume"] = async(req,res) => {
   ok(res,{data:{consumed:true,type,redirectNow:false,message:`${type} consumed`}});
 };
 
-ROUTES["POST /api/v1/demo/request"] = async(req,res) => {
+ROUTES['POST /api/v1/demo/request'] = async(req,res) => {
   const d=await body(req);
   if(!d.email) return fail(res,'VALIDATION_ERROR','email required',400);
   const ref='GFM-DEMO-'+new Date().toISOString().slice(0,10).replace(/-/g,'').slice(2)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
@@ -2370,7 +2363,7 @@ ROUTES["POST /api/v1/demo/request"] = async(req,res) => {
 
 // ── Investment Analysis endpoints ─────────────────────────────────────────────
 
-ROUTES["GET /api/v1/investment-analysis/countries"] = async(req,res) => {
+ROUTES['GET /api/v1/investment-analysis/countries'] = async(req,res) => {
   const params = new URL('http://x'+req.url).searchParams;
   const region = params.get('region')||'all';
   const q      = params.get('q')||'';
@@ -2404,7 +2397,7 @@ ROUTES["GET /api/v1/investment-analysis/countries"] = async(req,res) => {
   }});
 };
 
-ROUTES["GET /api/v1/investment-analysis/country/:iso3"] = async(req,res) => {
+ROUTES['GET /api/v1/investment-analysis/country/:iso3'] = async(req,res) => {
   const iso3 = req.params?.iso3||req.url.split('/').pop()||'VNM';
   ok(res,{data:{
     iso3, tier:'High Tier', score:79.4,
@@ -2433,7 +2426,7 @@ ROUTES["GET /api/v1/investment-analysis/country/:iso3"] = async(req,res) => {
   }});
 };
 
-ROUTES["POST /api/v1/investment-analysis/impact"] = async(req,res) => {
+ROUTES['POST /api/v1/investment-analysis/impact'] = async(req,res) => {
   const d = await body(req);
   const inv_m = parseFloat((d.investment||'100').replace(/[$MBK,]/g,''));
   ok(res,{data:{
@@ -2452,7 +2445,7 @@ ROUTES["POST /api/v1/investment-analysis/impact"] = async(req,res) => {
   }});
 };
 
-ROUTES["GET /api/v1/investment-analysis/benchmark"] = async(req,res) => {
+ROUTES['GET /api/v1/investment-analysis/benchmark'] = async(req,res) => {
   const params = new URL('http://x'+req.url).searchParams;
   const countries = (params.get('countries')||'VNM,THA,MYS,IDN').split(',');
   ok(res,{data:{
@@ -2464,46 +2457,49 @@ ROUTES["GET /api/v1/investment-analysis/benchmark"] = async(req,res) => {
     db_comparison:['Starting a Business','Construction Permits','Getting Electricity',
                    'Trading Across Borders','Enforcing Contracts'].map(ind=>({
       indicator:ind,
-      s
+      scores:Object.fromEntries(countries.map(c=>[c,Math.round(60+Math.random()*35)])),
+    })),
+  }});
+};
+
 // ── 30-Agent Intelligence Pipeline ────────────────────────────────────────
 
 const AGENTS = [
-  // Tier 1: Signal ingestion agents (10)
-  {id:'AGT-001',name:'SignalIngestionAgent',     type:'SIGNAL',   interval:2,    status:'running', desc:'Scrapes 300+ sources for new FDI signals every 2s'},
-  {id:'AGT-002',name:'Z3VerificationAgent',      type:'VERIFY',   interval:5,    status:'running', desc:'Applies 14 Z3 constraint sets to PLATINUM/GOLD candidates'},
-  {id:'AGT-003',name:'SHAProvenanceAgent',       type:'VERIFY',   interval:5,    status:'running', desc:'Generates SHA-256 hashes for verified signals'},
-  {id:'AGT-004',name:'SCIComputationAgent',      type:'COMPUTE',  interval:10,   status:'running', desc:'Computes 5-component SCI score for each signal'},
-  {id:'AGT-005',name:'CorridorAggregationAgent', type:'COMPUTE',  interval:60,   status:'running', desc:'Aggregates signals into bilateral corridor volumes'},
-  {id:'AGT-006',name:'SectorMappingAgent',       type:'CLASSIFY', interval:30,   status:'running', desc:'Maps signals to ISIC sector taxonomy'},
-  {id:'AGT-007',name:'GeocodeResolutionAgent',   type:'ENRICH',   interval:15,   status:'running', desc:'Resolves economy ISO codes from company locations'},
-  {id:'AGT-008',name:'FreshnessMonitorAgent',    type:'MONITOR',  interval:120,  status:'running', desc:'Applies temporal decay to SCI freshness component'},
-  {id:'AGT-009',name:'DuplicateDetectionAgent',  type:'VERIFY',   interval:30,   status:'running', desc:'Cross-references new signals against existing database'},
-  {id:'AGT-010',name:'SignalPublishAgent',        type:'PUBLISH',  interval:2,    status:'running', desc:'Publishes verified signals to live feed WebSocket'},
-  // Tier 2: GFR computation agents (8)
-  {id:'AGT-011',name:'GFRComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Quarterly GFR score recalculation for 215 economies'},
-  {id:'AGT-012',name:'DTFComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Digital & Tech Frontier dimension computation'},
-  {id:'AGT-013',name:'ETRComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Economic & Trade Resilience dimension computation'},
-  {id:'AGT-014',name:'ICTComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Innovation & Creative Talent dimension computation'},
-  {id:'AGT-015',name:'SGTComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Sustainable Growth Trajectory dimension computation'},
-  {id:'AGT-016',name:'GRPComputationAgent',      type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Governance & Policy dimension computation'},
-  {id:'AGT-017',name:'TierClassificationAgent',  type:'CLASSIFY', interval:86400,status:'scheduled',desc:'Assigns VERY HIGH/HIGH/MEDIUM/LOW tiers'},
-  {id:'AGT-018',name:'TrendComputationAgent',    type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Computes quarter-on-quarter GFR change'},
-  // Tier 3: Investment Analysis agents (7)
-  {id:'AGT-019',name:'GOSAComputationAgent',     type:'COMPUTE',  interval:86400,status:'scheduled',desc:'Computes Global Opportunity Score Analysis for 215 economies'},
-  {id:'AGT-020',name:'DoingBusinessAgent',       type:'INGEST',   interval:86400,status:'running',  desc:'Ingests World Bank Doing Business 10 indicators'},
-  {id:'AGT-021',name:'SectorIndicatorAgent',     type:'COMPUTE',  interval:2592000,status:'scheduled',desc:'Monthly sector indicator scores per economy'},
-  {id:'AGT-022',name:'ZoneIntelligenceAgent',    type:'INGEST',   interval:2592000,status:'scheduled',desc:'Monthly special investment zone data update'},
-  {id:'AGT-023',name:'MarketIntelligenceAgent',  type:'COMPUTE',  interval:86400,status:'running',  desc:'Aggregates IFI, trade, central bank signals for Layer 4'},
-  {id:'AGT-024',name:'ImpactModellingAgent',     type:'COMPUTE',  interval:60,   status:'running',  desc:'Runs economic impact projections for scenario requests'},
-  {id:'AGT-025',name:'BenchmarkAgent',           type:'COMPUTE',  interval:60,   status:'running',  desc:'Generates multi-country benchmark comparisons on demand'},
-  // Tier 4: Platform & data quality agents (5)
-  {id:'AGT-026',name:'SourceFreshnessAgent',     type:'MONITOR',  interval:3600, status:'running',  desc:'Checks all 304 sources for staleness and flags outdated data'},
-  {id:'AGT-027',name:'ReportGenerationAgent',    type:'GENERATE', interval:0,    status:'running',  desc:'Handles on-demand PDF report generation with AI content'},
-  {id:'AGT-028',name:'CacheInvalidationAgent',   type:'SYSTEM',   interval:300,  status:'running',  desc:'Purges stale Redis cache entries'},
-  {id:'AGT-029',name:'AlertDispatchAgent',       type:'NOTIFY',   interval:30,   status:'running',  desc:'Evaluates alert rules and dispatches notifications'},
-  {id:'AGT-030',name:'AuditLogAgent',            type:'AUDIT',    interval:0,    status:'running',  desc:'Logs all report downloads, API calls, and access events'},
-];
-
+  // Tier 1: Signal ingestion (10)
+  {id:'AGT-001',name:'SignalIngestionAgent',type:'SIGNAL',interval:2,status:'running',desc:'Scrapes 300+ sources every 2s'},
+  {id:'AGT-002',name:'Z3VerificationAgent',type:'VERIFY',interval:5,status:'running',desc:'Z3 formal verification of signals'},
+  {id:'AGT-003',name:'SHAProvenanceAgent',type:'VERIFY',interval:5,status:'running',desc:'SHA-256 provenance hashing'},
+  {id:'AGT-004',name:'SCIComputationAgent',type:'COMPUTE',interval:10,status:'running',desc:'Computes Signal Confidence Index'},
+  {id:'AGT-005',name:'CorridorAggregationAgent',type:'COMPUTE',interval:60,status:'running',desc:'Aggregates corridor flows'},
+  {id:'AGT-006',name:'SectorMappingAgent',type:'CLASSIFY',interval:30,status:'running',desc:'Maps signals to ISIC sectors'},
+  {id:'AGT-007',name:'GeocodeResolutionAgent',type:'ENRICH',interval:15,status:'running',desc:'Resolves geocodes'},
+  {id:'AGT-008',name:'FreshnessMonitorAgent',type:'MONITOR',interval:120,status:'running',desc:'Monitors data freshness'},
+  {id:'AGT-009',name:'DuplicateDetectionAgent',type:'VERIFY',interval:30,status:'running',desc:'Detects duplicate signals'},
+  {id:'AGT-010',name:'SignalPublishAgent',type:'PUBLISH',interval:2,status:'running',desc:'Publishes verified signals'},
+  // Tier 2: GFR computation (8)
+  {id:'AGT-011',name:'GFRComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Full GFR composite score'},
+  {id:'AGT-012',name:'DTFComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Distance-to-Frontier'},
+  {id:'AGT-013',name:'ETRComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Effective Tax Rate dimension'},
+  {id:'AGT-014',name:'ICTComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'ICT dimension'},
+  {id:'AGT-015',name:'TCMComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Trade & Capital Markets'},
+  {id:'AGT-016',name:'SGTComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Strategic & Geopolitical'},
+  {id:'AGT-017',name:'GRPComputationAgent',type:'COMPUTE',interval:86400,status:'scheduled',desc:'Governance & Regulatory'},
+  {id:'AGT-018',name:'TierClassificationAgent',type:'CLASSIFY',interval:86400,status:'scheduled',desc:'Tier classification'},
+  // Tier 3: Investment Analysis (7)
+  {id:'AGT-019',name:'GOSAComputationAgent',type:'COMPUTE',interval:3600,status:'running',desc:'GOSA score computation'},
+  {id:'AGT-020',name:'DoingBusinessAgent',type:'INGEST',interval:86400,status:'scheduled',desc:'World Bank data ingestion'},
+  {id:'AGT-021',name:'SectorIndicatorAgent',type:'INGEST',interval:3600,status:'running',desc:'Sector indicator ingestion'},
+  {id:'AGT-022',name:'ZoneIndicatorAgent',type:'INGEST',interval:3600,status:'running',desc:'Investment zone data'},
+  {id:'AGT-023',name:'MarketIntelligenceAgent',type:'COMPUTE',interval:1800,status:'running',desc:'Market intelligence matrix'},
+  {id:'AGT-024',name:'ImpactModelAgent',type:'COMPUTE',interval:3600,status:'running',desc:'Impact modelling'},
+  {id:'AGT-025',name:'BenchmarkAgent',type:'COMPUTE',interval:1800,status:'running',desc:'Benchmark analysis'},
+  // Tier 4: Platform (5)
+  {id:'AGT-026',name:'SourceFreshnessAgent',type:'MONITOR',interval:300,status:'running',desc:'Source freshness monitoring'},
+  {id:'AGT-027',name:'ReportGenerationAgent',type:'PUBLISH',interval:0,status:'on-demand',desc:'PDF report generation'},
+  {id:'AGT-028',name:'CacheInvalidationAgent',type:'SYSTEM',interval:60,status:'running',desc:'Cache invalidation'},
+  {id:'AGT-029',name:'AlertDispatchAgent',type:'PUBLISH',interval:30,status:'running',desc:'Alert dispatch'},
+  {id:'AGT-030',name:'AuditLogAgent',type:'SYSTEM',interval:0,status:'on-demand',desc:'Audit logging'},
+]
 function runAgent(agent) {
   try {
     // Agent execution logic — each agent has its own async handler
@@ -2513,7 +2509,7 @@ function runAgent(agent) {
   }
 }
 
-ROUTES["GET /api/v1/admin/agents"] = async(req,res) => {
+ROUTES['GET /api/v1/admin/agents'] = async(req,res) => {
   ok(res,{data:{
     agents: AGENTS.map(a=>({...a,last_run:new Date(Date.now()-Math.random()*60000).toISOString(),
       health:'OK',runs_today:Math.floor(Math.random()*1000+50)})),
@@ -2523,7 +2519,7 @@ ROUTES["GET /api/v1/admin/agents"] = async(req,res) => {
   }});
 };
 
-ROUTES["POST /api/v1/admin/agents/:id/run"] = async(req,res) => {
+ROUTES['POST /api/v1/admin/agents/:id/run'] = async(req,res) => {
   const id = req.params?.id || req.url.split('/').slice(-2)[0];
   const agent = AGENTS.find(a=>a.id===id);
   if(!agent) return fail(res,'NOT_FOUND','Agent not found',404);
@@ -2531,7 +2527,7 @@ ROUTES["POST /api/v1/admin/agents/:id/run"] = async(req,res) => {
   ok(res,{data:{...result,agent_name:agent.name}});
 };
 
-ROUTES["GET /api/v1/pipeline/status"] = async(req,res) => {
+ROUTES['GET /api/v1/pipeline/status'] = async(req,res) => {
   ok(res,{data:{
     total_agents:AGENTS.length,
     running:AGENTS.filter(a=>a.status==='running').length,
@@ -2571,7 +2567,7 @@ const NEWSLETTER_DB = {
 };
 
 // Step 1: AI Agent generates newsletter content
-ROUTES["POST /api/v1/newsletter/generate"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/generate'] = async(req,res) => {
   const d = await body(req);
   const issue = NEWSLETTER_DB.current.issue + 1;
   const content = {
@@ -2590,14 +2586,14 @@ ROUTES["POST /api/v1/newsletter/generate"] = async(req,res) => {
 };
 
 // Step 2: Admin review — update content
-ROUTES["PUT /api/v1/newsletter/review"] = async(req,res) => {
+ROUTES['PUT /api/v1/newsletter/review'] = async(req,res) => {
   const d = await body(req);
   NEWSLETTER_DB.current = {...NEWSLETTER_DB.current, ...d, status: 'IN_REVIEW'};
   ok(res, {data: NEWSLETTER_DB.current, message: 'Newsletter content updated'});
 };
 
 // Step 2: Admin approve
-ROUTES["POST /api/v1/newsletter/approve"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/approve'] = async(req,res) => {
   const d = await body(req);
   NEWSLETTER_DB.current.status = 'APPROVED';
   NEWSLETTER_DB.current.approved_by = d.admin_id || 'admin';
@@ -2611,7 +2607,7 @@ ROUTES["POST /api/v1/newsletter/approve"] = async(req,res) => {
 };
 
 // Step 2: Admin reject
-ROUTES["POST /api/v1/newsletter/reject"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/reject'] = async(req,res) => {
   const d = await body(req);
   NEWSLETTER_DB.current.status = 'REJECTED';
   NEWSLETTER_DB.current.rejection_reason = d.reason || 'No reason provided';
@@ -2619,7 +2615,7 @@ ROUTES["POST /api/v1/newsletter/reject"] = async(req,res) => {
 };
 
 // Step 3: Distribute (email + PDF + LinkedIn)
-ROUTES["POST /api/v1/newsletter/distribute"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/distribute'] = async(req,res) => {
   const d = await body(req);
   const issue = NEWSLETTER_DB.current;
   const distribution = {
@@ -2647,7 +2643,7 @@ ${issue.headline}
 };
 
 // Step 4: Analytics
-ROUTES["GET /api/v1/newsletter/analytics"] = async(req,res) => {
+ROUTES['GET /api/v1/newsletter/analytics'] = async(req,res) => {
   ok(res, {data: {
     current_issue: NEWSLETTER_DB.current.analytics,
     history: NEWSLETTER_DB.history.map(h=>({...h, open_rate: `${Math.round(65+Math.random()*15)}%`})),
@@ -2662,17 +2658,17 @@ ROUTES["GET /api/v1/newsletter/analytics"] = async(req,res) => {
 };
 
 // Get current newsletter status
-ROUTES["GET /api/v1/newsletter/current"] = async(req,res) => {
+ROUTES['GET /api/v1/newsletter/current'] = async(req,res) => {
   ok(res, {data: NEWSLETTER_DB.current});
 };
 
 // Get newsletter history
-ROUTES["GET /api/v1/newsletter/history"] = async(req,res) => {
+ROUTES['GET /api/v1/newsletter/history'] = async(req,res) => {
   ok(res, {data: {history: NEWSLETTER_DB.history, total: NEWSLETTER_DB.history.length}});
 };
 
 // Generate PDF publication
-ROUTES["POST /api/v1/newsletter/generate-pdf"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/generate-pdf'] = async(req,res) => {
   const d = await body(req);
   ok(res, {data: {
     pdf_url: `https://api.fdimonitor.org/publications/GLOBAL_FDI_MONITOR_WEEKLY_ISSUE_${String(d.issue||47).padStart(3,'0')}.pdf`,
@@ -2689,7 +2685,7 @@ ROUTES["POST /api/v1/newsletter/generate-pdf"] = async(req,res) => {
 };
 
 // Send email newsletter
-ROUTES["POST /api/v1/newsletter/send-email"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/send-email'] = async(req,res) => {
   const d = await body(req);
   ok(res, {data: {
     campaign_id: 'em_' + Math.random().toString(36).slice(2,10),
@@ -2703,7 +2699,7 @@ ROUTES["POST /api/v1/newsletter/send-email"] = async(req,res) => {
 };
 
 // LinkedIn auto-post
-ROUTES["POST /api/v1/newsletter/linkedin-post"] = async(req,res) => {
+ROUTES['POST /api/v1/newsletter/linkedin-post'] = async(req,res) => {
   const d = await body(req);
   const issue = NEWSLETTER_DB.current;
   ok(res, {data: {
@@ -2715,11 +2711,8 @@ ROUTES["POST /api/v1/newsletter/linkedin-post"] = async(req,res) => {
     status: 'scheduled',
   }});
 };
-cores:Object.fromEntries(countries.map(c=>[c,Math.round(60+Math.random()*35)])),
-    })),
-  }});
-};
-s) => {
+
+ROUTES['POST /api/v1/users/api-keys'] = async(req,res) => {
   const token=getToken(req); const payload=token?verifyJWT(token):null;
   if(!payload) return fail(res,'UNAUTHORIZED','Auth required',401);
   const d=await body(req);

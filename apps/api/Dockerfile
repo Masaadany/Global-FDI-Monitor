@@ -2,7 +2,7 @@ FROM node:20-alpine
 WORKDIR /app
 RUN apk add --no-cache python3 make g++
 COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev --no-audit --no-fund
 COPY . .
 RUN addgroup -S gfm && adduser -S gfmapi -G gfm
 USER gfmapi
