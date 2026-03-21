@@ -15,7 +15,7 @@ const STRIPE_WHSEC= process.env.STRIPE_WEBHOOK_SECRET;
 const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;
 
 // ── DB + REDIS INIT ────────────────────────────────────────────────────────
-let db = null, redis = null;
+let db = null, redis = null, wss_server = null;
 async function initDB() {
   if (!DB_URL) return log('DB','No DATABASE_URL — demo mode');
   try {
@@ -737,8 +737,8 @@ let wsClients = new Set();
 function initWebSocket(httpServer) {
   try {
     const {WebSocketServer} = require('ws');
-    const wss = new WebSocketServer({server:httpServer});
-    wss.on('connection', (ws, req) => {
+    wss_server = new WebSocketServer({server:httpServer});
+    wss_server.on('connection', (ws, req) => {
       wsClients.add(ws);
       log('WS', `Client connected (${wsClients.size} total)`);
       ws.send(JSON.stringify({type:'connected',ts:new Date().toISOString(),message:'GFM Live Feed connected'}));

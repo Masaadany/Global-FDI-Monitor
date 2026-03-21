@@ -1,0 +1,53 @@
+{
+  "name": "FDI Monitor",
+  "short_name": "FDI Monitor",
+  "description": "Global FDI Intelligence Platform — 218+ live signals, GFR rankings for 215 economies, AI-powered reports.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0F0A0A",
+  "theme_color": "#FF6600",
+  "orientation": "any",
+  "categories": ["business", "finance", "productivity"],
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "180x180",
+      "purpose": "apple touch icon"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "FDI Monitor Dashboard"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "FDI Signals",
+      "url": "/signals",
+      "description": "Live FDI signal feed"
+    },
+    {
+      "name": "GFR Rankings",
+      "url": "/gfr",
+      "description": "Global Future Readiness rankings"
+    },
+    {
+      "name": "Generate Report",
+      "url": "/reports",
+      "description": "AI-powered FDI reports"
+    }
+  ]
+}

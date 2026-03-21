@@ -1,0 +1,67 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#030D1A"/>
+      <stop offset="50%" style="stop-color:#0A2540"/>
+      <stop offset="100%" style="stop-color:#0A66C2"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#0A66C2" stroke-width="0.5" opacity="0.3"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#0A66C2" stroke-width="0.5" opacity="0.3"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#0A66C2" stroke-width="0.5" opacity="0.3"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#0A66C2" stroke-width="0.5" opacity="0.3"/>
+  <!-- Glow orb -->
+  <circle cx="960" cy="200" r="280" fill="#0A66C2" opacity="0.08"/>
+  <!-- Logo mark -->
+  <rect x="80" y="80" width="60" height="60" rx="14" fill="url(#accent)" opacity="0.9"/>
+  <text x="110" y="122" font-family="Arial Black,sans-serif" font-size="32" font-weight="900" fill="white" text-anchor="middle">G</text>
+  <!-- Brand -->
+  <text x="80" y="210" font-family="Arial,sans-serif" font-size="16" font-weight="700" fill="#0A66C2" letter-spacing="4">GLOBAL FDI MONITOR</text>
+  <!-- Headline -->
+  <text x="80" y="290" font-family="Arial Black,sans-serif" font-size="52" font-weight="900" fill="white">Real-Time &amp; Live</text>
+  <text x="80" y="355">
+    <tspan font-family="Arial Black,sans-serif" font-size="52" font-weight="900" fill="url(#accent)">Global Investment</tspan>
+  </text>
+  <text x="80" y="420">
+    <tspan font-family="Arial Black,sans-serif" font-size="52" font-weight="900" fill="url(#accent)">Intelligence</tspan>
+  </text>
+  <!-- Stats row -->
+  <rect x="80" y="460" width="180" height="60" rx="10" fill="white" opacity="0.08"/>
+  <text x="170" y="485" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.6" text-anchor="middle">ECONOMIES</text>
+  <text x="170" y="508" font-family="Arial Black,sans-serif" font-size="22" fill="white" font-weight="900" text-anchor="middle">215</text>
+  <rect x="274" y="460" width="180" height="60" rx="10" fill="white" opacity="0.08"/>
+  <text x="364" y="485" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.6" text-anchor="middle">AI AGENTS</text>
+  <text x="364" y="508" font-family="Arial Black,sans-serif" font-size="22" fill="white" font-weight="900" text-anchor="middle">50</text>
+  <rect x="468" y="460" width="180" height="60" rx="10" fill="white" opacity="0.08"/>
+  <text x="558" y="485" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.6" text-anchor="middle">LIVE SIGNALS</text>
+  <text x="558" y="508" font-family="Arial Black,sans-serif" font-size="22" fill="white" font-weight="900" text-anchor="middle">218+</text>
+  <!-- URL -->
+  <text x="80" y="585" font-family="Arial,sans-serif" font-size="16" fill="white" opacity="0.4">fdimonitor.org</text>
+  <!-- Live indicator -->
+  <circle cx="1080" cy="100" r="8" fill="#34D399"/>
+  <text x="1060" y="104" font-family="Arial,sans-serif" font-size="13" fill="#34D399" text-anchor="middle">LIVE</text>
+  <!-- Right side: signal cards illustration -->
+  <rect x="820" y="240" width="320" height="60" rx="10" fill="white" opacity="0.06"/>
+  <circle cx="850" cy="270" r="6" fill="#F59E0B"/>
+  <text x="870" y="266" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.7">Microsoft → UAE</text>
+  <text x="870" y="282" font-family="Arial,sans-serif" font-size="10" fill="white" opacity="0.4">$850M · ICT · SCI 91.2</text>
+  <text x="1100" y="274" font-family="Arial Black,sans-serif" font-size="11" fill="#F59E0B" text-anchor="middle">PLATINUM</text>
+  <rect x="820" y="312" width="320" height="60" rx="10" fill="white" opacity="0.06"/>
+  <circle cx="850" cy="342" r="6" fill="#059669"/>
+  <text x="870" y="338" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.7">Siemens Energy → Egypt</text>
+  <text x="870" y="354" font-family="Arial,sans-serif" font-size="10" fill="white" opacity="0.4">$340M · Energy · SCI 86.1</text>
+  <text x="1100" y="346" font-family="Arial Black,sans-serif" font-size="11" fill="#059669" text-anchor="middle">GOLD</text>
+  <rect x="820" y="384" width="320" height="60" rx="10" fill="white" opacity="0.06"/>
+  <circle cx="850" cy="414" r="6" fill="#F59E0B"/>
+  <circle cx="850" cy="414" r="10" fill="#F59E0B" opacity="0.2"/>
+  <text x="870" y="410" font-family="Arial,sans-serif" font-size="11" fill="white" opacity="0.7">CATL → Indonesia</text>
+  <text x="870" y="426" font-family="Arial,sans-serif" font-size="10" fill="white" opacity="0.4">$3.2B · Manufacturing · SCI 85.4</text>
+  <text x="1100" y="418" font-family="Arial Black,sans-serif" font-size="11" fill="#F59E0B" text-anchor="middle">PLATINUM</text>
+</svg>
