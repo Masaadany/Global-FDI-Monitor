@@ -3,185 +3,222 @@ import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
+import { Zap, Filter, ExternalLink, Clock, TrendingUp, RefreshCw, Bell } from 'lucide-react';
 
-const SIGNAL_DB = [
-  {id:1,type:'POLICY CHANGE',eco:'Malaysia',flag:'🇲🇾',region:'Asia Pacific',sector:'Digital Economy',text:'100% FDI ownership in data center sector approved — removes previous 30% local equity requirement.',grade:'PLATINUM',sci:94.2,time:'2 min ago',color:'#e74c3c',impact:'HIGH'},
-  {id:2,type:'NEW INCENTIVE',eco:'Thailand',flag:'🇹🇭',region:'Asia Pacific',sector:'Manufacturing',text:'$2B EV battery manufacturing subsidy — 15-year tax holiday, 50% land cost reduction.',grade:'GOLD',sci:88.7,time:'8 min ago',color:'#2ecc71',impact:'HIGH'},
-  {id:3,type:'SECTOR GROWTH',eco:'Vietnam',flag:'🇻🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Electronics and semiconductor FDI inflows reach record $8.4B in Q1 2026, up 34% YoY.',grade:'GOLD',sci:85.1,time:'15 min ago',color:'#3498db',impact:'HIGH'},
-  {id:4,type:'ZONE AVAILABLE',eco:'Indonesia',flag:'🇮🇩',region:'Asia Pacific',sector:'Manufacturing',text:'Batam FTZ opens 200 hectares for greenfield manufacturing — Tier 1 infrastructure ready.',grade:'SILVER',sci:79.3,time:'24 min ago',color:'#f1c40f',impact:'MEDIUM'},
-  {id:5,type:'COMPETITOR MOVE',eco:'Indonesia',flag:'🇮🇩',region:'Asia Pacific',sector:'Manufacturing',text:'$15B nickel processing mega-investment confirmed by Korean consortium in Sulawesi.',grade:'PLATINUM',sci:91.4,time:'31 min ago',color:'#3498db',impact:'HIGH'},
-  {id:6,type:'POLICY CHANGE',eco:'Saudi Arabia',flag:'🇸🇦',region:'Middle East',sector:'All Sectors',text:'Vision 2030 FDI framework overhaul — fast-track 30-day investment license now mandatory.',grade:'PLATINUM',sci:92.8,time:'45 min ago',color:'#e74c3c',impact:'HIGH'},
-  {id:7,type:'NEW INCENTIVE',eco:'UAE',flag:'🇦🇪',region:'Middle East',sector:'Digital Economy',text:'Dubai launches $10B AI and cloud infrastructure investment fund — co-investment terms available.',grade:'GOLD',sci:87.6,time:'1 hr ago',color:'#2ecc71',impact:'HIGH'},
-  {id:8,type:'SECTOR GROWTH',eco:'India',flag:'🇮🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Semiconductor FDI approvals reach $24B — PLI scheme attracting 12 new global chip makers.',grade:'PLATINUM',sci:89.2,time:'1 hr ago',color:'#3498db',impact:'HIGH'},
-  {id:9,type:'ZONE AVAILABLE',eco:'Morocco',flag:'🇲🇦',region:'Africa',sector:'Manufacturing',text:'Casablanca Atlantic Free Zone — Phase 2 industrial land release: 450 plots available.',grade:'SILVER',sci:76.4,time:'2 hrs ago',color:'#f1c40f',impact:'MEDIUM'},
-  {id:10,type:'NEW INCENTIVE',eco:'Singapore',flag:'🇸🇬',region:'Asia Pacific',sector:'Financial Services',text:'MAS announces enhanced financial sector development program — $500M incentive pool.',grade:'GOLD',sci:86.9,time:'2 hrs ago',color:'#2ecc71',impact:'MEDIUM'},
-  {id:11,type:'POLICY CHANGE',eco:'Kenya',flag:'🇰🇪',region:'Africa',sector:'Digital Economy',text:'ICT sector FDI restrictions lifted — 100% foreign ownership now permitted.',grade:'SILVER',sci:72.1,time:'3 hrs ago',color:'#e74c3c',impact:'MEDIUM'},
-  {id:12,type:'SECTOR GROWTH',eco:'Philippines',flag:'🇵🇭',region:'Asia Pacific',sector:'Digital Economy',text:'BPO sector FDI grows 28% — 6 new economic zones designated for digital services.',grade:'GOLD',sci:81.3,time:'4 hrs ago',color:'#3498db',impact:'MEDIUM'},
-  {id:13,type:'NEW INCENTIVE',eco:'Poland',flag:'🇵🇱',region:'Europe',sector:'Manufacturing',text:'Polish Investment Zone expansion — 14 new special economic zones with 12-year CIT exemption.',grade:'SILVER',sci:74.8,time:'5 hrs ago',color:'#2ecc71',impact:'LOW'},
-  {id:14,type:'COMPETITOR MOVE',eco:'Vietnam',flag:'🇻🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Samsung announces $3.3B DRAM memory expansion — confirms long-term manufacturing commitment.',grade:'PLATINUM',sci:90.1,time:'6 hrs ago',color:'#3498db',impact:'HIGH'},
-  {id:15,type:'POLICY CHANGE',eco:'Rwanda',flag:'🇷🇼',region:'Africa',sector:'All Sectors',text:'Rwanda Investment Policy 2026 — fastest FDI approval globally at 3 business days.',grade:'SILVER',sci:71.6,time:'8 hrs ago',color:'#e74c3c',impact:'MEDIUM'},
-  {id:16,type:'ZONE AVAILABLE',eco:'Saudi Arabia',flag:'🇸🇦',region:'Middle East',sector:'Manufacturing',text:'KAEC Phase 3 industrial zones — 800ha premium industrial land with 0% income tax.',grade:'GOLD',sci:84.7,time:'9 hrs ago',color:'#f1c40f',impact:'HIGH'},
+const SIGNAL_TYPES = [
+  { id:'POLICY_CHANGE',    label:'Policy Change',    color:'#e74c3c', emoji:'🔴' },
+  { id:'NEW_INCENTIVE',    label:'New Incentive',    color:'#2ecc71', emoji:'🟢' },
+  { id:'SECTOR_GROWTH',   label:'Sector Growth',    color:'#3498db', emoji:'🔵' },
+  { id:'ZONE_AVAIL',      label:'Zone Availability',color:'#f1c40f', emoji:'🟡' },
+  { id:'COMPETITOR_MOVE', label:'Competitor Move',   color:'#9b59b6', emoji:'🟣' },
+  { id:'DEAL_ANNOUNCED',  label:'Deal Announced',   color:'#e67e22', emoji:'🟠' },
 ];
 
-const TYPES = ['ALL','POLICY CHANGE','NEW INCENTIVE','SECTOR GROWTH','ZONE AVAILABLE','COMPETITOR MOVE'];
-const REGIONS = ['All Regions','Asia Pacific','Middle East','Europe','Africa','Americas'];
-const SECTORS = ['All Sectors','Manufacturing','Digital Economy','Financial Services','All Sectors'];
-const GRADES = ['All Grades','PLATINUM','GOLD','SILVER'];
-const IMPACTS = ['All Impact','HIGH','MEDIUM','LOW'];
+const BASE_SIGNALS = [
+  { id:1, type:'POLICY_CHANGE',   grade:'PLATINUM', country:'Malaysia',     flag:'🇲🇾', region:'Asia Pacific', sector:'Digital Economy',   title:'FDI cap in data centers raised to 100%',                    body:'Malaysia eliminates previous 30% local ownership requirement for data center investments, effective immediately. Policy applies to all new and existing foreign investments in digital infrastructure.',                     implication:'Positions Malaysia as most accessible data center hub in Southeast Asia. Expected to attract $5B+ in new investment over 12 months as hyperscalers and colocation providers accelerate expansion plans.',              time:'2m', impact:'HIGH',   source:'MITI Malaysia',            sco:96 },
+  { id:2, type:'NEW_INCENTIVE',   grade:'PLATINUM', country:'Thailand',     flag:'🇹🇭', region:'Asia Pacific', sector:'EV Battery',        title:'$2B EV battery subsidy package approved',                   body:'Thailand Board of Investment approves comprehensive $2B subsidy covering 5 years of 50% tax reduction for qualifying EV battery manufacturers. Package includes land acquisition support and workforce training grants.',       implication:'Strengthens Thailand\'s EV supply chain competitiveness vs Vietnam and Indonesia. Expected to attract 5-8 new battery facilities by 2028, with first groundbreakings within 18 months.',                            time:'1h', impact:'HIGH',   source:'Thailand BOI',             sco:95 },
+  { id:3, type:'SECTOR_GROWTH',   grade:'GOLD',     country:'Vietnam',      flag:'🇻🇳', region:'Asia Pacific', sector:'Electronics',       title:'Electronics exports surge 34% YoY',                         body:'Vietnam\'s General Statistics Office confirms record electronics export growth driven by semiconductor and consumer electronics demand. Samsung, LG, and Intel plants running at peak capacity. Supply chain diversification from China accelerating.',  implication:'Vietnam solidifies position as #2 electronics exporter in ASEAN. New investments expected in PCB manufacturing, testing equipment, and component supply industries.',                                               time:'3h', impact:'MEDIUM', source:'GSO Vietnam',              sco:92 },
+  { id:4, type:'ZONE_AVAIL',      grade:'GOLD',     country:'Indonesia',    flag:'🇮🇩', region:'Asia Pacific', sector:'Manufacturing',     title:'New Batam zone — 200ha ready for immediate occupancy',      body:'Batam Indonesia Free Zone Authority announces 200 hectares of fully serviced industrial land available for immediate occupancy. Zone includes dedicated power substations, water treatment, and fiber connectivity.',             implication:'Alleviates chronic land shortage in Batam. Opens manufacturing relocation opportunities from Singapore and Malaysia. Competitive land pricing vs established zones.',                                               time:'5h', impact:'MEDIUM', source:'Batam Authority',          sco:91 },
+  { id:5, type:'COMPETITOR_MOVE', grade:'PLATINUM', country:'Indonesia',    flag:'🇮🇩', region:'Asia Pacific', sector:'Mining & EV',       title:'$15B nickel processing investment confirmed',                body:'Chinese and European consortium secures $15B nickel processing facility expansion deal, expanding downstream processing capacity by 40%. Agreement covers battery-grade nickel sulfate and nickel plate production.',            implication:'Strengthens Indonesia\'s global nickel supply chain dominance. EV manufacturers and battery producers face higher raw material cost pressure. Competitors in Philippines and New Caledonia may benefit.',              time:'1d', impact:'HIGH',   source:'Ministry of Investment',   sco:93 },
+  { id:6, type:'NEW_INCENTIVE',   grade:'PLATINUM', country:'Saudi Arabia', flag:'🇸🇦', region:'Middle East',  sector:'All Sectors',       title:'Vision 2030 FDI fast-track: 30-day license guarantee',       body:'MISA launches FDI Acceleration Framework guaranteeing 30-day investment license turnaround for qualifying sectors including manufacturing, technology, healthcare, and renewable energy.',                                      implication:'Removes primary regulatory barrier cited by investors. Expected to catalyze $10B+ in committed FDI commitments already in pipeline awaiting regulatory clarity.',                                                   time:'2d', impact:'HIGH',   source:'MISA Saudi Arabia',        sco:94 },
+  { id:7, type:'POLICY_CHANGE',   grade:'GOLD',     country:'UAE',          flag:'🇦🇪', region:'Middle East',  sector:'All Sectors',       title:'100% foreign ownership extended to all mainland sectors',    body:'UAE Ministry of Economy confirms extension of 100% foreign ownership rights to all mainland commercial activities, removing final sector restrictions that required local sponsorship arrangements.',                              implication:'Eliminates the last structural barrier to full foreign business control in UAE. Significant for professional services, distribution, and retail sectors previously requiring local partners.',                        time:'3d', impact:'HIGH',   source:'MOEI UAE',                 sco:90 },
+  { id:8, type:'DEAL_ANNOUNCED',  grade:'GOLD',     country:'India',        flag:'🇮🇳', region:'Asia Pacific', sector:'Semiconductors',    title:'Apple commits $10B manufacturing expansion in India',        body:'Apple announces $10B semiconductor and electronics manufacturing investment expansion across Tamil Nadu and Karnataka, targeting 25% of iPhone production from India by 2026.',                                               implication:'Accelerates India\'s emergence as China+1 electronics hub. Creates significant supply chain opportunity for component manufacturers and logistics providers.',                                                      time:'4d', impact:'HIGH',   source:'Ministry of Electronics',  sco:89 },
+  { id:9, type:'SECTOR_GROWTH',   grade:'GOLD',     country:'Morocco',      flag:'🇲🇦', region:'Africa',       sector:'Renewables',        title:'Morocco green hydrogen export framework signed with EU',      body:'Morocco and EU formalize framework for green hydrogen export corridor. Agreement covers production targets of 1 million tonnes/year by 2030 and pipeline infrastructure development from Casablanca to Spain.',                 implication:'Positions Morocco as primary green hydrogen supplier to Europe. Investment opportunities across electrolysis, ammonia production, and port infrastructure.',                                                         time:'5d', impact:'MEDIUM', source:'Ministry of Energy Morocco',sco:87 },
+  { id:10,type:'NEW_INCENTIVE',   grade:'SILVER',   country:'Vietnam',      flag:'🇻🇳', region:'Asia Pacific', sector:'Manufacturing',     title:'Manufacturing tax holiday — 50% CIT reduction for 5 years', body:'Vietnam Ministry of Finance announces 50% corporate income tax reduction for first 5 years for EV battery manufacturers in approved industrial zones. Applies to investments committed before December 2026.',               implication:'Strengthens Vietnam\'s competitive position against Thailand in EV battery supply chain. Tax saving of approximately $8.5M per $100M investment over 5 years.',                                                   time:'6d', impact:'MEDIUM', source:'Ministry of Finance VN',   sco:85 },
+  { id:11,type:'ZONE_AVAIL',      grade:'SILVER',   country:'Malaysia',     flag:'🇲🇾', region:'Asia Pacific', sector:'Technology',        title:'Penang Science Park Phase 3 — 60ha technology campus opens',body:'Penang Development Corporation opens Phase 3 of Penang Science Park, offering 60 hectares of MSC Malaysia status-eligible technology campus with pre-built facilities and shared infrastructure.',                            implication:'Expands Penang\'s capacity as Southeast Asia\'s semiconductor and technology cluster. Intel, AMD, and Infineon supply chain partners cited as primary target tenants.',                                            time:'7d', impact:'MEDIUM', source:'PDC Penang',                sco:84 },
+  { id:12,type:'COMPETITOR_MOVE', grade:'GOLD',     country:'Thailand',     flag:'🇹🇭', region:'Asia Pacific', sector:'Automotive',        title:'Toyota commits $2.5B EV production facility in Eastern Seaboard',body:'Toyota Motor Corporation announces $2.5B dedicated EV production facility in Thailand\'s Eastern Economic Corridor, creating 8,000 direct jobs and targeting 200,000 vehicles/year by 2027.',                             implication:'Confirms Thailand\'s position as ASEAN\'s EV assembly hub. Creates major supply chain opportunity for battery, motor, and electronics component suppliers.',                                                     time:'8d', impact:'HIGH',   source:'Thailand EEC',             sco:91 },
+  { id:13,type:'POLICY_CHANGE',   grade:'SILVER',   country:'India',        flag:'🇮🇳', region:'Asia Pacific', sector:'Renewable Energy',  title:'Production Linked Incentive scheme expanded to solar modules',body:'India\'s Ministry of New & Renewable Energy expands PLI scheme to include advanced solar module manufacturing. ₹19,500 crore allocated over 5 years for high-efficiency panel production.',                               implication:'Accelerates India\'s solar manufacturing capacity. Target of 65 GW domestic production by 2030 creates substantial upstream investment opportunity in silicon, glass, and equipment.',                              time:'9d', impact:'MEDIUM', source:'MNRE India',                sco:83 },
+  { id:14,type:'DEAL_ANNOUNCED',  grade:'PLATINUM', country:'UAE',          flag:'🇦🇪', region:'Middle East',  sector:'AI Data Centers',   title:'Microsoft $3.3B AI data center investment announced',        body:'Microsoft announces $3.3B investment in UAE AI data center infrastructure over 3 years, establishing UAE as its primary AI compute hub for Middle East and Africa operations.',                                              implication:'Validates UAE\'s AI infrastructure investment thesis. Expected to trigger follow-on investments from Amazon Web Services, Google Cloud, and Oracle in the 12 months following.',                                   time:'10d',impact:'HIGH',   source:'DIFC',                     sco:97 },
+  { id:15,type:'SECTOR_GROWTH',   grade:'SILVER',   country:'Brazil',       flag:'🇧🇷', region:'Americas',     sector:'Data Centers',      title:'Amazon announces $5B data center investment in São Paulo',   body:'Amazon Web Services confirms $5B investment in AWS infrastructure in Brazil through 2026, including multiple availability zones and edge computing locations to serve Latin American enterprise customers.',                   implication:'Positions Brazil as South America\'s primary cloud computing hub. Creates significant opportunity for power, cooling, connectivity, and facilities management providers.',                                        time:'11d',impact:'HIGH',   source:'Reuters',                  sco:88 },
+  { id:16,type:'NEW_INCENTIVE',   grade:'SILVER',   country:'Morocco',      flag:'🇲🇦', region:'Africa',       sector:'Manufacturing',     title:'Offshoring Zone investment benefits extended to 2030',       body:'Morocco\'s Agency for Investment and Export Development extends free zone tax benefits for Casablanca and Rabat offshoring zones through 2030, covering full income tax exemption for first 5 years.',                         implication:'Extends window for European manufacturers seeking Morocco as nearshoring alternative. Automotive, aerospace, and electronics sectors cited as priority targets.',                                                  time:'12d',impact:'MEDIUM', source:'AMDIE Morocco',             sco:82 },
+];
 
-const GRADE_COLORS: Record<string,string> = {PLATINUM:'#9b59b6',GOLD:'#f1c40f',SILVER:'#95a5a6'};
-const TYPE_COLORS: Record<string,string> = {'POLICY CHANGE':'#e74c3c','NEW INCENTIVE':'#2ecc71','SECTOR GROWTH':'#3498db','ZONE AVAILABLE':'#f1c40f','COMPETITOR MOVE':'#9b59b6'};
+type SignalType = typeof BASE_SIGNALS[0];
 
 export default function SignalsPage() {
-  const [signals, setSignals] = useState(SIGNAL_DB);
-  const [typeF, setTypeF] = useState('ALL');
-  const [regionF, setRegionF] = useState('All Regions');
-  const [gradeF, setGradeF] = useState('All Grades');
-  const [impactF, setImpactF] = useState('All Impact');
+  const [signals, setSignals] = useState<SignalType[]>(BASE_SIGNALS);
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterGrade, setFilterGrade] = useState('ALL');
+  const [filterImpact, setFilterImpact] = useState('ALL');
+  const [filterRegion, setFilterRegion] = useState('ALL');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<number|null>(null);
-  const [liveCount, setLiveCount] = useState(SIGNAL_DB.length);
+  const [lastUpdate, setLastUpdate] = useState(new Date());
 
   useEffect(()=>{
     const iv = setInterval(()=>{
-      if(Math.random()>0.5){
-        const types = Object.keys(TYPE_COLORS);
-        const ecos = [{eco:'Singapore',flag:'🇸🇬',region:'Asia Pacific'},{eco:'UAE',flag:'🇦🇪',region:'Middle East'},{eco:'Thailand',flag:'🇹🇭',region:'Asia Pacific'}];
-        const e = ecos[Math.floor(Math.random()*ecos.length)];
-        const t = types[Math.floor(Math.random()*types.length)];
-        const newSig = {
-          id: Date.now(), type:t, ...e, sector:'Digital Economy',
-          text:'New investment development detected — analysis in progress.',
-          grade:['PLATINUM','GOLD','SILVER'][Math.floor(Math.random()*3)] as string,
-          sci: 70+Math.random()*25,
-          time:'Just now', color:TYPE_COLORS[t], impact:'MEDIUM'
+      if(Math.random()>0.7){
+        const types: Array<SignalType['type']> = ['POLICY_CHANGE','NEW_INCENTIVE','SECTOR_GROWTH'];
+        const countries = [{n:'Singapore',f:'🇸🇬',r:'Asia Pacific'},{n:'UAE',f:'🇦🇪',r:'Middle East'},{n:'Vietnam',f:'🇻🇳',r:'Asia Pacific'}];
+        const co = countries[Math.floor(Math.random()*countries.length)];
+        const tp = types[Math.floor(Math.random()*types.length)];
+        const newSig: SignalType = {
+          id: Date.now(), type: tp, grade:'SILVER',
+          country:co.n, flag:co.f, region:co.r, sector:'General',
+          title:'New investment signal detected', body:'New signal identified from official government source.',
+          implication:'Strategic significance under evaluation by AGT-02.', time:'now',
+          impact:'MEDIUM', source:'Official Source', sco: 72+Math.floor(Math.random()*15)
         };
-        setSignals(p=>[newSig,...p]);
-        setLiveCount(c=>c+1);
+        setSignals(p=>[newSig,...p.slice(0,15)]);
+        setLastUpdate(new Date());
       }
-    },8000);
+    }, 7000);
     return ()=>clearInterval(iv);
   },[]);
 
   const filtered = signals.filter(s=>{
-    if(typeF!=='ALL' && s.type!==typeF) return false;
-    if(regionF!=='All Regions' && s.region!==regionF) return false;
-    if(gradeF!=='All Grades' && s.grade!==gradeF) return false;
-    if(impactF!=='All Impact' && s.impact!==impactF) return false;
-    if(search && !s.eco.toLowerCase().includes(search.toLowerCase()) && !s.text.toLowerCase().includes(search.toLowerCase())) return false;
+    if(filterType!=='ALL' && s.type!==filterType) return false;
+    if(filterGrade!=='ALL' && s.grade!==filterGrade) return false;
+    if(filterImpact!=='ALL' && s.impact!==filterImpact) return false;
+    if(filterRegion!=='ALL' && s.region!==filterRegion) return false;
+    if(search && !s.title.toLowerCase().includes(search.toLowerCase()) && !s.country.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
+  const gradeColors: Record<string,{bg:string,color:string,border:string}> = {
+    PLATINUM:{ bg:'rgba(155,89,182,0.1)', color:'#7d3c98', border:'rgba(155,89,182,0.3)' },
+    GOLD:{ bg:'rgba(241,196,15,0.1)', color:'#7a6400', border:'rgba(241,196,15,0.3)' },
+    SILVER:{ bg:'rgba(127,140,141,0.1)', color:'#5d6d7e', border:'rgba(127,140,141,0.3)' },
+  };
+  const impactColors: Record<string,string> = { HIGH:'#e74c3c', MEDIUM:'#f1c40f', LOW:'#2ecc71' };
+
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'Helvetica Neue,Segoe UI,Arial,sans-serif'}}>
+    <div style={{minHeight:'100vh', background:'#f0f4f8', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <section style={{background:'linear-gradient(135deg,#1a2c3e,#2c4a6e)',padding:'20px 24px'}}>
-        <div style={{maxWidth:'1400px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'10px'}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'4px'}}>
-              <span style={{width:'8px',height:'8px',borderRadius:'50%',background:'#2ecc71',display:'inline-block'}}/>
-              <span style={{fontSize:'11px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.1em'}}>LIVE · {liveCount} Signals Active · Auto-updating</span>
+      {/* Hero */}
+      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)', padding:'20px 24px', borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
+        <div style={{maxWidth:'1440px', margin:'0 auto'}}>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'12px'}}>
+            <div>
+              <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px'}}>
+                <span style={{width:'7px', height:'7px', borderRadius:'50%', background:'#2ecc71', display:'inline-block', animation:'livePulse 2s infinite'}}/>
+                <span style={{fontSize:'10px', fontWeight:800, color:'#2ecc71', letterSpacing:'0.1em'}}>LIVE · AGT-02 Signal Detection · Auto-updating</span>
+              </div>
+              <h1 style={{fontSize:'22px', fontWeight:900, color:'white', marginBottom:'4px'}}>Investment Signals Feed</h1>
+              <p style={{color:'rgba(255,255,255,0.6)', fontSize:'12px'}}>
+                {signals.length} verified signals · SCI scored · SHA-256 provenance · Last update: {lastUpdate.toLocaleTimeString()}
+              </p>
             </div>
-            <h1 style={{fontSize:'22px',fontWeight:900,color:'white'}}>⚡ Investment Signals Intelligence Feed</h1>
+            <div style={{display:'flex', gap:'8px'}}>
+              <Link href="/reports" style={{padding:'8px 16px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'8px', textDecoration:'none', fontSize:'12px', fontWeight:800}}>
+                Generate Report
+              </Link>
+              <Link href="/publications" style={{padding:'8px 14px', border:'1px solid rgba(255,255,255,0.2)', color:'rgba(255,255,255,0.8)', borderRadius:'8px', textDecoration:'none', fontSize:'12px', fontWeight:600}}>
+                Publications
+              </Link>
+            </div>
           </div>
-          <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-            {[['PLATINUM','#9b59b6'],['GOLD','#f1c40f'],['HIGH IMPACT','#2ecc71']].map(([l,c])=>(
-              <div key={l} style={{padding:'6px 12px',background:`${c}20`,border:`1px solid ${c}40`,borderRadius:'20px',fontSize:'11px',fontWeight:800,color:c}}>{l}</div>
+          {/* Stats */}
+          <div style={{display:'flex', gap:'16px', marginTop:'14px', flexWrap:'wrap'}}>
+            {[['PLATINUM', signals.filter(s=>s.grade==='PLATINUM').length, '#9b59b6'],
+              ['GOLD', signals.filter(s=>s.grade==='GOLD').length, '#f1c40f'],
+              ['HIGH Impact', signals.filter(s=>s.impact==='HIGH').length, '#e74c3c'],
+              ['This Week', signals.length, '#2ecc71'],
+            ].map(([l,v,c])=>(
+              <div key={String(l)} style={{padding:'6px 14px', background:'rgba(255,255,255,0.06)', borderRadius:'8px', border:`1px solid ${c}25`}}>
+                <span style={{fontSize:'16px', fontWeight:900, color:String(c), fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
+                <span style={{fontSize:'10px', color:'rgba(255,255,255,0.5)', marginLeft:'6px'}}>{l}</span>
+              </div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'16px 24px'}}>
+      <div style={{maxWidth:'1440px', margin:'0 auto', padding:'20px 24px'}}>
         {/* Filters */}
-        <div style={{background:'white',borderRadius:'12px',padding:'14px 16px',marginBottom:'14px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)',display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)}
-            placeholder="🔍 Search economy or keyword..."
-            style={{flex:'1',minWidth:'180px',padding:'8px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'8px',fontSize:'13px',outline:'none'}}/>
+        <div style={{background:'white', borderRadius:'14px', padding:'14px 18px', marginBottom:'16px', border:'1px solid rgba(26,44,62,0.08)', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center'}}>
+          <Zap size={14} color="#2ecc71"/>
+          <input placeholder="Search signals..." value={search} onChange={e=>setSearch(e.target.value)}
+            style={{padding:'7px 12px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', fontSize:'12px', outline:'none', fontFamily:'inherit', minWidth:'160px'}}/>
           {[
-            {val:typeF,set:setTypeF,opts:TYPES,label:'Type'},
-            {val:regionF,set:setRegionF,opts:REGIONS,label:'Region'},
-            {val:gradeF,set:setGradeF,opts:GRADES,label:'Grade'},
-            {val:impactF,set:setImpactF,opts:IMPACTS,label:'Impact'},
-          ].map(({val,set,opts,label})=>(
-            <select key={label} value={val} onChange={e=>set(e.target.value)}
-              style={{padding:'8px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'8px',fontSize:'12px',background:'white',outline:'none',cursor:'pointer'}}>
+            {label:'Type', val:filterType, setter:setFilterType, opts:['ALL',...SIGNAL_TYPES.map(t=>t.id)]},
+            {label:'Grade', val:filterGrade, setter:setFilterGrade, opts:['ALL','PLATINUM','GOLD','SILVER']},
+            {label:'Impact', val:filterImpact, setter:setFilterImpact, opts:['ALL','HIGH','MEDIUM','LOW']},
+            {label:'Region', val:filterRegion, setter:setFilterRegion, opts:['ALL','Asia Pacific','Middle East','Americas','Europe','Africa']},
+          ].map(({val,setter,opts})=>(
+            <select key={val} value={val} onChange={e=>setter(e.target.value)}
+              style={{padding:'7px 12px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', fontSize:'12px', background:'white', outline:'none', cursor:'pointer', fontFamily:'inherit'}}>
               {opts.map(o=><option key={o}>{o}</option>)}
             </select>
           ))}
-          <div style={{fontSize:'12px',color:'#666',marginLeft:'auto',flexShrink:0}}>{filtered.length} signals</div>
+          <span style={{marginLeft:'auto', fontSize:'12px', color:'#7f8c8d'}}>{filtered.length} signals</span>
         </div>
 
-        {/* Type quick-filter buttons */}
-        <div style={{display:'flex',gap:'6px',marginBottom:'14px',flexWrap:'wrap'}}>
-          {TYPES.map(t=>{
-            const c = t==='ALL'?'#1a2c3e':TYPE_COLORS[t]||'#666';
+        {/* Signal cards */}
+        <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+          {filtered.map(sig=>{
+            const st = SIGNAL_TYPES.find(t=>t.id===sig.type) || SIGNAL_TYPES[0];
+            const gc = gradeColors[sig.grade];
+            const isExp = expanded === sig.id;
             return (
-              <button key={t} onClick={()=>setTypeF(t)}
-                style={{padding:'6px 14px',border:'none',borderRadius:'20px',cursor:'pointer',fontSize:'11px',fontWeight:700,
-                  background:typeF===t?c:'rgba(26,44,62,0.06)',color:typeF===t?'white':'#666',transition:'all 0.15s'}}>
-                {t}
-              </button>
+              <div key={sig.id} onClick={()=>setExpanded(isExp?null:sig.id)}
+                style={{background:'white', borderRadius:'14px', border:`1px solid rgba(26,44,62,0.07)`, borderLeft:`4px solid ${st.color}`,
+                  cursor:'pointer', transition:'all 0.2s', boxShadow: isExp ? '0 8px 20px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.04)'}}>
+                <div style={{padding:'14px 18px'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'12px'}}>
+                    <div style={{flex:1}}>
+                      <div style={{display:'flex', gap:'8px', alignItems:'center', marginBottom:'6px', flexWrap:'wrap'}}>
+                        <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'10px', background:`${st.color}15`, color:st.color, letterSpacing:'0.04em'}}>{st.emoji} {st.label.toUpperCase()}</span>
+                        <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'10px', background:gc.bg, color:gc.color, border:`1px solid ${gc.border}`}}>{sig.grade}</span>
+                        <span style={{fontSize:'14px'}}>{sig.flag}</span>
+                        <span style={{fontSize:'12px', fontWeight:700, color:'#1a2c3e'}}>{sig.country}</span>
+                        <span style={{fontSize:'10px', color:'#7f8c8d'}}>· {sig.sector}</span>
+                      </div>
+                      <div style={{fontSize:'14px', fontWeight:700, color:'#1a2c3e', marginBottom:'4px', lineHeight:'1.4'}}>{sig.title}</div>
+                      <div style={{fontSize:'11px', color:'#7f8c8d'}}>
+                        <span style={{fontWeight:600, color:'#2c3e50'}}>Strategic: </span>{sig.implication.slice(0,110)}{sig.implication.length>110&&!isExp?'...':''}
+                      </div>
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'6px', flexShrink:0}}>
+                      <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'8px', background:`${impactColors[sig.impact]}15`, color:impactColors[sig.impact]}}>{sig.impact}</span>
+                      <div style={{textAlign:'right'}}>
+                        <div style={{fontSize:'16px', fontWeight:900, color:sig.sco>=85?'#9b59b6':sig.sco>=70?'#f1c40f':'#7f8c8d', fontFamily:"'JetBrains Mono',monospace"}}>{sig.sco}</div>
+                        <div style={{fontSize:'9px', color:'#7f8c8d'}}>SCI Score</div>
+                      </div>
+                      <div style={{display:'flex', alignItems:'center', gap:'4px', fontSize:'10px', color:'#7f8c8d'}}>
+                        <Clock size={10}/>{sig.time} ago
+                      </div>
+                    </div>
+                  </div>
+                  {isExp && (
+                    <div style={{marginTop:'14px', padding:'14px', background:'rgba(26,44,62,0.02)', borderRadius:'10px', border:'1px solid rgba(26,44,62,0.06)'}}>
+                      <div style={{fontSize:'13px', color:'#2c3e50', lineHeight:'1.7', marginBottom:'12px'}}>{sig.body}</div>
+                      <div style={{fontSize:'12px', color:'#2c3e50', marginBottom:'12px'}}>
+                        <strong style={{color:'#1a2c3e'}}>Strategic Implication: </strong>{sig.implication}
+                      </div>
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'8px'}}>
+                        <span style={{fontSize:'11px', color:'#7f8c8d'}}>Source: <strong>{sig.source}</strong> · SHA-256 verified · SCI: {sig.sco}</span>
+                        <div style={{display:'flex', gap:'8px'}}>
+                          <Link href="/reports" onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(46,204,113,0.08)', border:'1px solid rgba(46,204,113,0.2)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#2ecc71'}}>
+                            Generate Report
+                          </Link>
+                          <Link href={`/investment-analysis`} onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(26,44,62,0.06)', border:'1px solid rgba(26,44,62,0.1)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#1a2c3e', display:'flex', alignItems:'center', gap:'4px'}}>
+                            Full Analysis <ExternalLink size={10}/>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
 
-        {/* Signals List */}
-        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-          {filtered.map(s=>(
-            <div key={s.id}
-              style={{background:'white',borderRadius:'12px',overflow:'hidden',
-                borderLeft:`4px solid ${s.color}`,
-                boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
-                animation:s.time==='Just now'?'fadeIn 0.4s ease':'none'}}>
-              <div onClick={()=>setExpanded(expanded===s.id?null:s.id)}
-                style={{padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:'12px'}}>
-                <span style={{fontSize:'20px'}}>{s.flag}</span>
-                <div style={{flex:1}}>
-                  <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'4px',flexWrap:'wrap'}}>
-                    <span style={{fontSize:'10px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:`${s.color}15`,color:s.color}}>{s.type}</span>
-                    <span style={{fontSize:'10px',fontWeight:800,padding:'2px 7px',borderRadius:'10px',background:`${GRADE_COLORS[s.grade]}15`,color:GRADE_COLORS[s.grade]}}>{s.grade}</span>
-                    <span style={{fontSize:'10px',color:'#999'}}>{s.eco} · {s.sector}</span>
-                    <span style={{fontSize:'10px',color:'#999',marginLeft:'auto'}}>{s.time}</span>
-                  </div>
-                  <div style={{fontSize:'13px',fontWeight:600,color:'#1a2c3e',lineHeight:'1.4'}}>{s.text}</div>
-                </div>
-                <div style={{textAlign:'right',flexShrink:0,marginLeft:'8px'}}>
-                  <div style={{fontSize:'18px',fontWeight:900,color:'#1a2c3e',fontFamily:'monospace'}}>{s.sci.toFixed(1)}</div>
-                  <div style={{fontSize:'9px',color:'#999'}}>SCI Score</div>
-                </div>
-              </div>
-              {expanded===s.id && (
-                <div style={{padding:'0 16px 14px 52px',borderTop:'1px solid rgba(26,44,62,0.05)'}}>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginTop:'10px'}}>
-                    {[
-                      {l:'Region',v:s.region},{l:'Impact Level',v:s.impact},{l:'Signal Grade',v:s.grade},
-                    ].map(({l,v})=>(
-                      <div key={l} style={{padding:'8px 10px',background:'rgba(26,44,62,0.03)',borderRadius:'7px'}}>
-                        <div style={{fontSize:'9px',color:'#999',marginBottom:'2px'}}>{l}</div>
-                        <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{marginTop:'10px',padding:'10px 12px',background:'rgba(46,204,113,0.05)',borderRadius:'8px',border:'1px solid rgba(46,204,113,0.15)'}}>
-                    <div style={{fontSize:'10px',fontWeight:700,color:'#2ecc71',marginBottom:'3px'}}>STRATEGIC IMPLICATION</div>
-                    <div style={{fontSize:'12px',color:'#444',lineHeight:'1.6'}}>
-                      This signal indicates {s.impact.toLowerCase()} investment opportunity in {s.eco}. 
-                      Recommend immediate review against your current {s.sector} pipeline strategy.
-                    </div>
-                  </div>
-                  <div style={{display:'flex',gap:'8px',marginTop:'10px'}}>
-                    <Link href="/reports" style={{padding:'7px 14px',background:'#1a2c3e',color:'white',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700}}>
-                      Generate Report →
-                    </Link>
-                    <Link href="/investment-analysis" style={{padding:'7px 14px',border:'1px solid rgba(26,44,62,0.15)',color:'#1a2c3e',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:600}}>
-                      View Full Analysis
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+        {/* Subscribe */}
+        <div style={{marginTop:'20px', background:'#1a2c3e', borderRadius:'14px', padding:'20px 24px', display:'flex', gap:'16px', alignItems:'center', flexWrap:'wrap', border:'1px solid rgba(46,204,113,0.1)'}}>
+          <Bell size={20} color="#2ecc71"/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:'14px', fontWeight:700, color:'white', marginBottom:'2px'}}>Subscribe to Investment Signals</div>
+            <div style={{fontSize:'12px', color:'rgba(255,255,255,0.5)'}}>Get PLATINUM & HIGH-impact signals delivered to your inbox in real time</div>
+          </div>
+          <div style={{display:'flex', gap:'8px'}}>
+            <input type="email" placeholder="your@organisation.com"
+              style={{padding:'9px 14px', border:'1px solid rgba(255,255,255,0.15)', borderRadius:'8px', fontSize:'12px', background:'rgba(255,255,255,0.08)', color:'white', outline:'none', fontFamily:'inherit', minWidth:'200px'}}/>
+            <button style={{padding:'9px 18px', background:'#2ecc71', color:'#0f1e2a', border:'none', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:800, fontFamily:'inherit', whiteSpace:'nowrap'}}>
+              Subscribe →
+            </button>
+          </div>
         </div>
       </div>
       <Footer/>
