@@ -1,281 +1,119 @@
 'use client';
 import { useState } from 'react';
-import { Settings, User, Bell, CreditCard, Key, Shield, Eye, EyeOff, Globe, CheckCircle, ArrowRight } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
 import Footer from '@/components/Footer';
-import { useTrial } from '@/lib/trialContext';
-
-const LANGUAGES = ['English','Arabic (العربية)','French (Français)','Spanish (Español)','German (Deutsch)','Chinese (中文)','Japanese (日本語)'];
-const NOTIF_TYPES = [
-  {id:'platinum_signals',  label:'PLATINUM signals',         desc:'Instant alert for every PLATINUM-grade FDI signal',    default:true},
-  {id:'gold_signals',      label:'GOLD signals',             desc:'Alert for GOLD-grade signals',                          default:true},
-  {id:'gfr_changes',       label:'GFR Assessment changes',   desc:'When economy tier or score changes',                    default:true},
-  {id:'watchlist',         label:'Watchlist updates',        desc:'New signals for your watched economies/companies',     default:true},
-  {id:'report_ready',      label:'Report ready',             desc:'When a PDF report finishes generating',                 default:true},
-  {id:'weekly_brief',      label:'Weekly intelligence brief',desc:'Curated FDI intelligence email every Monday',          default:false},
-  {id:'product_updates',   label:'Product updates',          desc:'New features and platform improvements',                default:false},
-];
+import { CheckCircle, Bell, Globe, BarChart3, Lock, Mail, Zap } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [tab,     setTab]     = useState<'profile'|'notifications'|'api'|'billing'>('profile');
-  const [name,    setName]    = useState('');
-  const [org,     setOrg]     = useState('');
-  const [email,   setEmail]   = useState('');
-  const [lang,    setLang]    = useState('English');
-  const [country, setCountry] = useState('UAE');
-  const [showKey, setShowKey] = useState(false);
-  const [notifs,  setNotifs]  = useState<Record<string,boolean>>(
-    Object.fromEntries(NOTIF_TYPES.map(n=>[n.id,n.default]))
-  );
-  const [saved,   setSaved]   = useState(false);
-  const trial = useTrial();
+  const [saved, setSaved] = useState(false);
+  const [prefs, setPrefs] = useState({
+    emailDigest: true, signalAlerts: true, weeklyBrief: true, pricingAlerts: false,
+    defaultRegion: 'Asia Pacific', defaultView: 'dashboard', defaultSector: 'EV Battery',
+    currency: 'USD', dateFormat: 'DD/MM/YYYY',
+    theme: 'dark', compactMode: false, animationsEnabled: true,
+    platinumOnly: false, highImpactOnly: false, minSco: '70',
+  });
 
-  function saveProfile() {
+  function toggle(key: string) { setPrefs(p => ({...p, [key]: !(p as any)[key]})); }
+  function set(key: string, val: string) { setPrefs(p => ({...p, [key]: val})); }
+
+  function save() {
     setSaved(true);
-    setTimeout(()=>setSaved(false), 3000);
+    setTimeout(() => setSaved(false), 2500);
   }
 
-  const TABS = [
-    {id:'profile',       label:'Profile',       icon:User},
-    {id:'notifications', label:'Notifications', icon:Bell},
-    {id:'api',           label:'API Access',    icon:Key},
-    {id:'billing',       label:'Billing',       icon:CreditCard},
-  ];
+  const Toggle = ({k}: {k:string}) => (
+    <button onClick={()=>toggle(k)}
+      style={{width:'44px',height:'24px',borderRadius:'12px',position:'relative',background:(prefs as any)[k]?'#00ffc8':'rgba(255,255,255,0.1)',border:'none',cursor:'pointer',transition:'background 200ms ease',flexShrink:0}}>
+      <div style={{position:'absolute',top:'3px',left:(prefs as any)[k]?'23px':'3px',width:'18px',height:'18px',borderRadius:'50%',background:'white',transition:'left 200ms ease',boxShadow:'0 1px 4px rgba(0,0,0,0.3)'}}/>
+    </button>
+  );
+
+  const Section = ({icon,title,children}: {icon:any,title:string,children:any}) => (
+    <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',overflow:'hidden',marginBottom:'14px'}}>
+      <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',alignItems:'center',gap:'9px',background:'rgba(0,0,0,0.2)'}}>
+        <span style={{color:'#00ffc8',display:'flex',alignItems:'center'}}>{icon}</span>
+        <span style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.8)',textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:"'Orbitron','Inter',sans-serif"}}>{title}</span>
+      </div>
+      <div style={{padding:'16px 18px'}}>{children}</div>
+    </div>
+  );
+
+  const Row = ({label,sub,children}: {label:string,sub?:string,children:any}) => (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+      <div>
+        <div style={{fontSize:'13px',fontWeight:500,color:'rgba(232,244,248,0.75)'}}>{label}</div>
+        {sub && <div style={{fontSize:'11px',color:'rgba(232,244,248,0.35)',marginTop:'2px'}}>{sub}</div>}
+      </div>
+      <div style={{flexShrink:0,marginLeft:'16px'}}>{children}</div>
+    </div>
+  );
+
+  const Sel = ({k, opts}: {k:string, opts:string[]}) => (
+    <select value={(prefs as any)[k]} onChange={e=>set(k,e.target.value)}
+      style={{padding:'6px 10px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',fontSize:'12px',color:'#e8f4f8',outline:'none',cursor:'pointer',fontFamily:"'Inter',sans-serif"}}>
+      {opts.map(o=><option key={o} style={{background:'#0a1628'}}>{o}</option>)}
+    </select>
+  );
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <TrialBanner/>
-
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'28px 24px 0'}}>
-        <div style={{maxWidth:'900px',margin:'0 auto'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}}>
-            <Settings size={18} color="#74BB65"/>
-            <h1 style={{fontSize:'24px',fontWeight:800,color:'white',margin:0}}>Account Settings</h1>
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{maxWidth:'800px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',position:'relative'}}>
+          <div>
+            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:"'Orbitron','Inter',sans-serif"}}>SETTINGS</div>
+            <h1 style={{fontSize:'22px',fontWeight:900,color:'#e8f4f8'}}>Account Preferences</h1>
           </div>
-          <div style={{display:'flex',gap:'0'}}>
-            {TABS.map(({id,label,icon:Icon})=>(
-              <button key={id} onClick={()=>setTab(id as any)}
-                style={{display:'flex',alignItems:'center',gap:'6px',padding:'10px 18px',
-                  border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
-                  borderBottom:tab===id?'3px solid #74BB65':'3px solid transparent',
-                  background:'transparent',color:tab===id?'white':'rgba(226,242,223,0.6)',transition:'all 0.2s'}}>
-                <Icon size={13}/>{label}
-              </button>
-            ))}
-          </div>
+          <button onClick={save} style={{display:'flex',alignItems:'center',gap:'7px',padding:'10px 22px',background:saved?'rgba(0,255,200,0.1)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:saved?'#00ffc8':'#020c14',border:saved?'1px solid rgba(0,255,200,0.25)':'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",transition:'all 200ms',boxShadow:saved?'none':'0 4px 14px rgba(0,255,200,0.25)'}}>
+            {saved?<><CheckCircle size={14}/>Saved!</>:<>Save Changes</>}
+          </button>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'900px',margin:'0 auto',padding:'24px'}}>
+      <div style={{maxWidth:'800px',margin:'0 auto',padding:'28px 24px'}}>
+        <Section icon={<Bell size={14}/>} title="Notifications">
+          <Row label="Weekly Intelligence Brief" sub="Every Tuesday 08:00 GMT — 12,847 subscribers"><Toggle k="weeklyBrief"/></Row>
+          <Row label="Signal Alerts" sub="PLATINUM and HIGH-impact signals in real time"><Toggle k="signalAlerts"/></Row>
+          <Row label="Email Digest" sub="Daily summary of top signals"><Toggle k="emailDigest"/></Row>
+          <Row label="Pricing Change Alerts" sub="Plan updates and promotions"><Toggle k="pricingAlerts"/></Row>
+        </Section>
 
-        {/* PROFILE */}
-        {tab==='profile' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'18px',display:'flex',alignItems:'center',gap:'6px'}}>
-                <User size={14} color="#74BB65"/> Profile Information
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'14px'}}>
-                {[{l:'Full Name',v:name,s:setName,p:'Your full name',a:'name'},
-                  {l:'Email Address',v:email,s:setEmail,p:'your@email.com',a:'email'},
-                  {l:'Organisation',v:org,s:setOrg,p:'Your organisation',a:'organization'},
-                ].map(({l,v,s,p,a})=>(
-                  <div key={l}>
-                    <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>{l}</label>
-                    <input value={v} onChange={e=>s(e.target.value)} autoComplete={a}
-                      placeholder={p}
-                      style={{width:'100%',padding:'10px 13px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                        fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
-                  </div>
-                ))}
-                <div>
-                  <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>Country</label>
-                  <input value={country} onChange={e=>setCountry(e.target.value)}
-                    style={{width:'100%',padding:'10px 13px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                      fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
-                </div>
-              </div>
-              <div style={{marginBottom:'14px'}}>
-                <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>
-                  <Globe size={11} style={{marginRight:'4px',verticalAlign:'middle'}}/> Platform Language
-                </label>
-                <select value={lang} onChange={e=>setLang(e.target.value)}
-                  style={{padding:'10px 13px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                    fontSize:'14px',color:'#0A3D62',background:'white',minWidth:'220px'}}>
-                  {LANGUAGES.map(l=><option key={l}>{l}</option>)}
-                </select>
-              </div>
-              <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-                <button onClick={saveProfile} className="gfm-btn-primary" style={{padding:'10px 24px',fontSize:'14px'}}>
-                  Save Changes
-                </button>
-                {saved && (
-                  <div style={{display:'flex',alignItems:'center',gap:'6px',fontSize:'13px',color:'#74BB65',fontWeight:600}}>
-                    <CheckCircle size={14}/> Saved successfully
-                  </div>
-                )}
-              </div>
-            </div>
+        <Section icon={<Globe size={14}/>} title="Default Views">
+          <Row label="Default Region" sub="Pre-filter dashboards to your focus region"><Sel k="defaultRegion" opts={['All Regions','Asia Pacific','Middle East','Americas','Europe','Africa','Oceania']}/></Row>
+          <Row label="Default Sector" sub="Pre-filter signal feed to preferred sector"><Sel k="defaultSector" opts={['All Sectors','EV Battery','Data Centers','Semiconductors','Renewables','Manufacturing','AI & Technology']}/></Row>
+          <Row label="Home Page" sub="First page after login"><Sel k="defaultView" opts={['dashboard','signals','gfr','investment-analysis']}/></Row>
+          <Row label="Currency Display"><Sel k="currency" opts={['USD','EUR','GBP','AED','SAR','MYR','SGD']}/></Row>
+          <Row label="Date Format"><Sel k="dateFormat" opts={['DD/MM/YYYY','MM/DD/YYYY','YYYY-MM-DD']}/></Row>
+        </Section>
 
-            {/* Password */}
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
-                <Shield size={14} color="#74BB65"/> Security
-              </div>
-              <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
-                {['Change Password','Enable 2FA','Active Sessions'].map(a=>(
-                  <button key={a} style={{padding:'9px 16px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'8px',
-                    background:'transparent',cursor:'pointer',fontSize:'13px',fontWeight:600,color:'#0A3D62',
-                    display:'flex',alignItems:'center',gap:'5px'}}>
-                    {a} <ArrowRight size={12}/>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        <Section icon={<Zap size={14}/>} title="Signal Filters">
+          <Row label="PLATINUM Signals Only" sub="Hide GOLD and SILVER signals from feed"><Toggle k="platinumOnly"/></Row>
+          <Row label="HIGH Impact Only" sub="Filter out MED and LOW impact signals"><Toggle k="highImpactOnly"/></Row>
+          <Row label="Minimum SCI Score" sub="Only show signals above this threshold">
+            <input type="range" min="60" max="95" value={prefs.minSco} onChange={e=>set('minSco',e.target.value)}
+              style={{width:'80px',accentColor:'#00ffc8',cursor:'pointer'}}/>
+            <span style={{fontSize:'13px',fontWeight:800,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",marginLeft:'8px',minWidth:'24px'}}>{prefs.minSco}</span>
+          </Row>
+        </Section>
 
-        {/* NOTIFICATIONS */}
-        {tab==='notifications' && (
-          <div className="gfm-card" style={{padding:'24px'}}>
-            <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'18px',display:'flex',alignItems:'center',gap:'6px'}}>
-              <Bell size={14} color="#74BB65"/> Notification Preferences
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:'0'}}>
-              {NOTIF_TYPES.map((n,i)=>(
-                <div key={n.id} style={{display:'flex',alignItems:'center',gap:'14px',
-                  padding:'14px 0',borderBottom:i<NOTIF_TYPES.length-1?'1px solid rgba(10,61,98,0.06)':'none'}}>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:'13px',fontWeight:600,color:'#0A3D62',marginBottom:'2px'}}>{n.label}</div>
-                    <div style={{fontSize:'11px',color:'#696969'}}>{n.desc}</div>
-                  </div>
-                  <label style={{position:'relative',display:'inline-block',width:'44px',height:'24px',cursor:'pointer',flexShrink:0}}>
-                    <input type="checkbox" checked={notifs[n.id]||false}
-                      onChange={e=>setNotifs(p=>({...p,[n.id]:e.target.checked}))}
-                      style={{opacity:0,width:0,height:0}}/>
-                    <span style={{
-                      position:'absolute',top:0,left:0,right:0,bottom:0,
-                      background:notifs[n.id]?'#74BB65':'rgba(10,61,98,0.15)',
-                      borderRadius:'12px',transition:'background 0.2s',
-                    }}>
-                      <span style={{
-                        position:'absolute',top:'3px',
-                        left:notifs[n.id]?'22px':'3px',
-                        width:'18px',height:'18px',borderRadius:'50%',
-                        background:'white',transition:'left 0.2s',
-                        boxShadow:'0 1px 4px rgba(0,0,0,0.2)',
-                      }}/>
-                    </span>
-                  </label>
-                </div>
-              ))}
-            </div>
-            <button className="gfm-btn-primary" style={{marginTop:'16px',padding:'10px 24px',fontSize:'14px'}}>
-              Save Notification Settings
-            </button>
-          </div>
-        )}
+        <Section icon={<BarChart3 size={14}/>} title="Display Preferences">
+          <Row label="Enable Animations" sub="Globe, counters, and transitions"><Toggle k="animationsEnabled"/></Row>
+          <Row label="Compact Mode" sub="Reduce padding for more data density"><Toggle k="compactMode"/></Row>
+        </Section>
 
-        {/* API */}
-        {tab==='api' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
-                <Key size={14} color="#74BB65"/> API Access
-              </div>
-              {trial.isProfessional ? (
-                <>
-                  <div style={{marginBottom:'14px'}}>
-                    <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>API Key</label>
-                    <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                      <input readOnly value={showKey?'gfm_live_a1b2c3d4e5f6g7h8i9j0':'••••••••••••••••••••••••••••'}
-                        style={{flex:1,padding:'10px 13px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                          fontSize:'13px',fontFamily:'monospace',color:'#0A3D62',background:'rgba(10,61,98,0.02)'}}/>
-                      <button onClick={()=>setShowKey(s=>!s)}
-                        style={{padding:'10px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                          background:'transparent',cursor:'pointer',color:'#696969'}}>
-                        {showKey?<EyeOff size={14}/>:<Eye size={14}/>}
-                      </button>
-                      <button style={{padding:'10px 14px',borderRadius:'8px',background:'#0A3D62',color:'white',
-                        border:'none',cursor:'pointer',fontSize:'12px',fontWeight:700}}>Copy</button>
-                    </div>
-                  </div>
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px',marginBottom:'14px'}}>
-                    {[['Credits Used','2,401 / 4,800'],['Reset Date','Apr 1, 2026'],['Rate Limit','100 req/min']].map(([l,v])=>(
-                      <div key={l} style={{padding:'12px',borderRadius:'8px',background:'rgba(10,61,98,0.03)',border:'1px solid rgba(10,61,98,0.07)',textAlign:'center'}}>
-                        <div style={{fontSize:'15px',fontWeight:800,color:'#0A3D62',fontFamily:'monospace'}}>{v}</div>
-                        <div style={{fontSize:'10px',color:'#696969',marginTop:'3px'}}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <a href="/api-docs" style={{display:'inline-flex',alignItems:'center',gap:'5px',
-                    fontSize:'13px',fontWeight:600,color:'#74BB65',textDecoration:'none'}}>
-                    View API Documentation <ArrowRight size={13}/>
-                  </a>
-                </>
-              ) : (
-                <div style={{textAlign:'center',padding:'32px'}}>
-                  <Key size={36} color="#696969" style={{marginBottom:'12px'}}/>
-                  <div style={{fontSize:'15px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>API access requires Professional plan</div>
-                  <p style={{fontSize:'13px',color:'#696969',marginBottom:'16px'}}>Upgrade to Professional to get your API key and 4,800 credits/year.</p>
-                  <a href="/contact" style={{display:'inline-flex',alignItems:'center',gap:'6px',
-                    padding:'10px 22px',background:'#74BB65',color:'white',borderRadius:'8px',
-                    textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
-                    Request Demo <ArrowRight size={14}/>
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* BILLING */}
-        {tab==='billing' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
-                <CreditCard size={14} color="#74BB65"/> Subscription & Billing
-              </div>
-              <div style={{padding:'16px',borderRadius:'10px',background:'rgba(116,187,101,0.06)',
-                border:'1px solid rgba(116,187,101,0.2)',marginBottom:'16px'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'10px'}}>
-                  <div>
-                    <div style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',marginBottom:'3px'}}>
-                      {trial.isProfessional?'Professional Plan':'Free Trial'}
-                    </div>
-                    <div style={{fontSize:'13px',color:'#696969'}}>
-                      {trial.isProfessional?'$9,588/year · Next renewal: Apr 1, 2027':`${trial.daysLeft} day${trial.daysLeft!==1?'s':''} remaining · ${trial.reportsLeft} reports left`}
-                    </div>
-                  </div>
-                  {!trial.isProfessional && (
-                    <a href="/contact" style={{padding:'8px 18px',background:'#74BB65',color:'white',
-                      borderRadius:'8px',textDecoration:'none',fontWeight:700,fontSize:'13px',
-                      display:'flex',alignItems:'center',gap:'5px'}}>
-                      Upgrade <ArrowRight size={13}/>
-                    </a>
-                  )}
-                </div>
-              </div>
-              {trial.isProfessional && (
-                <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#696969',marginBottom:'4px'}}>Recent Invoices</div>
-                  {['Apr 1, 2026 — $9,588','Apr 1, 2025 — $9,588'].map(inv=>(
-                    <div key={inv} style={{display:'flex',justifyContent:'space-between',alignItems:'center',
-                      padding:'10px 14px',borderRadius:'8px',background:'rgba(10,61,98,0.03)',border:'1px solid rgba(10,61,98,0.07)'}}>
-                      <span style={{fontSize:'13px',color:'#0A3D62'}}>{inv}</span>
-                      <button style={{padding:'5px 12px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'6px',
-                        background:'transparent',cursor:'pointer',fontSize:'11px',fontWeight:600,color:'#696969'}}>
-                        Download PDF
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        <Section icon={<Lock size={14}/>} title="Account">
+          <Row label="Subscription" sub="Professional — $9,588/year · Renews Jan 2027">
+            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,255,200,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'6px',color:'#00ffc8'}}>Active</span>
+          </Row>
+          <Row label="API Access" sub="1,000 calls/day · api.fdimonitor.org">
+            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.2)',borderRadius:'6px',color:'#00b4d8'}}>Enabled</span>
+          </Row>
+          <Row label="Change Password">
+            <button style={{padding:'6px 14px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.6)',fontFamily:"'Inter',sans-serif"}}>Update</button>
+          </Row>
+        </Section>
       </div>
       <Footer/>
     </div>

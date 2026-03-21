@@ -23,12 +23,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/corridors`, priority: 0.8, changeFrequency: 'weekly' as const },
     { url: `${base}/watchlists`, priority: 0.6, changeFrequency: 'monthly' as const },
     { url: `${base}/faq`, priority: 0.7, changeFrequency: 'monthly' as const },
+    { url: `${base}/insights`, priority: 0.8, changeFrequency: 'weekly' as const },
+    { url: `${base}/pipeline`, priority: 0.7, changeFrequency: 'weekly' as const },
+    { url: `${base}/scenario-planner`, priority: 0.7, changeFrequency: 'monthly' as const },
+    { url: `${base}/settings`, priority: 0.4, changeFrequency: 'monthly' as const },
+    { url: `${base}/alerts`, priority: 0.5, changeFrequency: 'daily' as const },
+    { url: `${base}/onboarding`, priority: 0.6, changeFrequency: 'monthly' as const },
     { url: `${base}/register`, priority: 0.8, changeFrequency: 'monthly' as const },
     { url: `${base}/terms`, priority: 0.4, changeFrequency: 'yearly' as const },
     { url: `${base}/privacy`, priority: 0.4, changeFrequency: 'yearly' as const },
   ];
 
-  const countryIds = ['SGP','MYS','THA','VNM','ARE','SAU','IND','IDN','BRA','MAR','DNK','CHE','NLD','KOR','NZL','GBR','DEU','USA','JPN','CAN'];
+  const countryIds = ['SGP','MYS','THA','VNM','ARE','SAU','IND','IDN','BRA','MAR','DNK','CHE','NLD','KOR','NZL','GBR','DEU','USA','JPN','CAN','AUS','FRA','CHN'];
   const countryPages = countryIds.map(id => ({
     url: `${base}/country/${id}`,
     priority: 0.8,

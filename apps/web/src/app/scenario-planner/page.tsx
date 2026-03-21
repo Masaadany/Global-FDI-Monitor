@@ -1,216 +1,196 @@
 'use client';
 import { useState } from 'react';
-import { TrendingUp, Activity, BarChart3, Globe, Zap, Target, ArrowRight, RefreshCw } from 'lucide-react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import TrialBanner from '@/components/TrialBanner';
-import PreviewGate from '@/components/PreviewGate';
+import ScrollableSelect from '@/components/ScrollableSelect';
+import Link from 'next/link';
+import { Zap, RefreshCw, TrendingUp, Download } from 'lucide-react';
 
-const PRESETS = [
-  {id:'base',       label:'Base Case',   color:'#0A3D62', prob:60, fdi:'$9.2T', tech:'+72%', renew:'+68%', gdp:2.8},
-  {id:'optimistic', label:'Optimistic',  color:'#74BB65', prob:25, fdi:'$10.8T',tech:'+85%', renew:'+78%', gdp:4.2},
-  {id:'stress',     label:'Stress',      color:'#E57373', prob:15, fdi:'$6.8T', tech:'+28%', renew:'+22%', gdp:0.8},
-];
+const ECONOMIES = ['Vietnam','Malaysia','Thailand','Indonesia','UAE','Saudi Arabia','India','Singapore','South Korea','Morocco','Brazil','Germany'];
+const SECTORS = ['EV Battery','Data Centers','Semiconductors','Renewables','Manufacturing','Financial Services','AI & Technology'];
+const SIZES = ['$10M','$50M','$100M','$250M','$500M','$1B','$2B','$5B'];
+const TIMELINES = ['2 years','3 years','5 years','7 years','10 years'];
+const FINANCING = ['100% Equity','70/30 Equity/Debt','50/50 Equity/Debt','30/70 Equity/Debt'];
 
-const LEVERS = [
-  {id:'gdp',    label:'Global GDP Growth Rate',   min:-2,  max:6,   step:0.1, default:2.8,  unit:'% CAGR',  suffix:'%'},
-  {id:'tech',   label:'Technology Adoption Speed', min:0,   max:100, step:5,   default:60,   unit:'index',   suffix:''},
-  {id:'energy', label:'Green Energy Transition',   min:0,   max:100, step:5,   default:50,   unit:'pace',    suffix:''},
-  {id:'trade',  label:'Trade Openness',            min:0,   max:100, step:5,   default:70,   unit:'index',   suffix:''},
-  {id:'gov',    label:'Governance Reform',         min:0,   max:100, step:5,   default:55,   unit:'index',   suffix:''},
-];
-
-function ScenarioBar({ label, val, max, color }: {label:string,val:number,max:number,color:string}) {
-  return (
-    <div style={{marginBottom:'8px'}}>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px',fontSize:'11px'}}>
-        <span style={{color:'#696969'}}>{label}</span>
-        <span style={{fontWeight:700,color,fontFamily:'monospace'}}>{val}</span>
-      </div>
-      <div style={{height:'7px',borderRadius:'4px',background:'rgba(10,61,98,0.08)'}}>
-        <div style={{height:'100%',borderRadius:'4px',width:`${(val/max)*100}%`,background:color,transition:'width 0.4s ease'}}/>
-      </div>
-    </div>
-  );
+interface Scenario {
+  id: string; name: string;
+  economy: string; sector: string; size: string; timeline: string; financing: string;
+  gosa: number; irr: number; npv: string; jobs: number; taxRev: string; incentives: string;
 }
 
-export default function ScenarioPlannerPage() {
-  const [preset,  setPreset]  = useState<string|null>(null);
-  const [levers,  setLevers]  = useState<Record<string,number>>({gdp:2.8,tech:60,energy:50,trade:70,gov:55});
-  const [ran,     setRan]     = useState(false);
-  const [running, setRunning] = useState(false);
+const GOSA_MAP: Record<string,number> = {Vietnam:79.4,Malaysia:81.2,Thailand:80.7,Indonesia:77.8,UAE:82.1,'Saudi Arabia':79.1,India:73.2,Singapore:88.4,'South Korea':84.1,Morocco:66.8,Brazil:71.3,Germany:83.1};
 
-  function setLever(id:string, v:number) {
-    setLevers(l=>({...l,[id]:v}));
-    setPreset(null); setRan(false);
+function calcIRR(gosa: number, size: string, timeline: string, sector: string, financing: string): number {
+  const base = (gosa - 60) * 0.3 + 12;
+  const sizeAdj: Record<string,number> = {'$10M':2,'$50M':1,'$100M':0,'$250M':-0.5,'$500M':-1,'$1B':-1.5,'$2B':-2,'$5B':-2.5};
+  const sectorAdj: Record<string,number> = {'EV Battery':3,'Data Centers':2.5,'AI & Technology':3.5,'Semiconductors':2,'Renewables':1.5,'Manufacturing':-0.5,'Financial Services':1};
+  const yearAdj: Record<string,number> = {'2 years':-1,'3 years':0,'5 years':1.5,'7 years':2,'10 years':2.5};
+  const finAdj: Record<string,number> = {'100% Equity':0,'70/30 Equity/Debt':1,'50/50 Equity/Debt':1.8,'30/70 Equity/Debt':2.5};
+  return Math.max(6, Math.min(42, base + (sizeAdj[size]||0) + (sectorAdj[sector]||0) + (yearAdj[timeline]||0) + (finAdj[financing]||0))).toFixed(1) as unknown as number;
+}
+
+function calcNPV(size: string, irr: number, timeline: string): string {
+  const inv: Record<string,number> = {'$10M':10,'$50M':50,'$100M':100,'$250M':250,'$500M':500,'$1B':1000,'$2B':2000,'$5B':5000};
+  const years: Record<string,number> = {'2 years':2,'3 years':3,'5 years':5,'7 years':7,'10 years':10};
+  const i = inv[size]||100; const y = years[timeline]||5;
+  const npv = i * ((1 + irr/100) ** y - 1) * 0.6;
+  return npv >= 1000 ? `$${(npv/1000).toFixed(1)}B` : `$${Math.round(npv)}M`;
+}
+
+function calcJobs(size: string, sector: string): number {
+  const base: Record<string,number> = {'$10M':120,'$50M':480,'$100M':850,'$250M':1800,'$500M':3200,'$1B':5500,'$2B':9000,'$5B':18000};
+  const mult: Record<string,number> = {'EV Battery':1.4,'Data Centers':0.4,'AI & Technology':0.6,'Semiconductors':0.9,'Manufacturing':1.6,'Renewables':0.8,'Financial Services':0.5};
+  return Math.round((base[size]||1000)*(mult[sector]||1));
+}
+
+export default function ScenarioPlanner() {
+  const [economy, setEconomy] = useState('Vietnam');
+  const [sector, setSector] = useState('EV Battery');
+  const [size, setSize] = useState('$250M');
+  const [timeline, setTimeline] = useState('5 years');
+  const [financing, setFinancing] = useState('70/30 Equity/Debt');
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [scenarioName, setScenarioName] = useState('');
+
+  const gosa = GOSA_MAP[economy]||75;
+  const irr = calcIRR(gosa, size, timeline, sector, financing);
+  const npv = calcNPV(size, irr, timeline);
+  const jobs = calcJobs(size, sector);
+
+  async function runScenario() {
+    setLoading(true);
+    await new Promise(r=>setTimeout(r,1200));
+    const name = scenarioName || `${economy} ${sector} ${size}`;
+    const newScen: Scenario = { id: Date.now().toString(), name, economy, sector, size, timeline, financing, gosa, irr, npv, jobs, taxRev: `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.08)}M/yr`, incentives: `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.12)}M over 5yr` };
+    setScenarios(prev => [newScen, ...prev.slice(0,3)]);
+    setScenarioName('');
+    setLoading(false);
   }
-
-  function applyPreset(p:typeof PRESETS[0]) {
-    setPreset(p.id);
-    setLevers({gdp:p.gdp, tech:p.id==='optimistic'?80:p.id==='stress'?25:60,
-               energy:p.id==='optimistic'?75:p.id==='stress'?20:50, trade:70, gov:55});
-    setRan(false);
-  }
-
-  function runScenario() {
-    setRunning(true);
-    setTimeout(()=>{setRunning(false);setRan(true);},1200);
-  }
-
-  function resetAll() {
-    setLevers({gdp:2.8,tech:60,energy:50,trade:70,gov:55});
-    setPreset(null); setRan(false);
-  }
-
-  // Derived outputs
-  const fdiT = +(9.2*(1+(levers.gdp-2.8)/100*12)*(1+levers.tech/100*0.25)*(1+levers.energy/100*0.18)).toFixed(1);
-  const techT = +(3.8*(1+levers.tech/100*0.35)).toFixed(1);
-  const renewT= +(2.2*(1+levers.energy/100*0.45)).toFixed(1);
-  const topWinners = levers.gdp>3 ? '🇦🇪 UAE · 🇮🇳 India · 🇸🇬 Singapore' : levers.energy>70 ? '🇩🇪 Germany · 🇦🇺 Australia · 🇸🇪 Sweden' : '🇺🇸 USA · 🇨🇳 China · 🇩🇪 Germany';
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <TrialBanner/>
-
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px'}}>
-        <div style={{maxWidth:'1200px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'12px'}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
-              <Activity size={16} color="#74BB65"/>
-              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Scenario Planner</span>
-            </div>
-            <h1 style={{fontSize:'28px',fontWeight:800,color:'white'}}>FDI Scenario Planning 2050</h1>
-            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px',marginTop:'4px'}}>
-              Model optimistic, base, and stress scenarios or build your custom 2050 projection.
-            </p>
-          </div>
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
+          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'6px',fontFamily:"'Orbitron','Inter',sans-serif"}}>SCENARIO PLANNER</div>
+          <h1 style={{fontSize:'26px',fontWeight:900,color:'#e8f4f8',marginBottom:'4px'}}>What-If Investment Modeller</h1>
+          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>Configure parameters · Get live projections · Save and compare up to 4 scenarios</p>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'flex',flexDirection:'column',gap:'20px'}}>
-
-        {/* Preset cards */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
-          {PRESETS.map(p=>(
-            <div key={p.id} onClick={()=>applyPreset(p)}
-              style={{background:'white',borderRadius:'12px',padding:'20px',cursor:'pointer',
-                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
-                border:preset===p.id?`2px solid ${p.color}`:'1px solid rgba(10,61,98,0.06)',
-                borderTop:`4px solid ${p.color}`,transition:'all 0.15s'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:p.color,marginBottom:'3px'}}>{p.label}</div>
-              <div style={{fontSize:'11px',color:'#696969',marginBottom:'12px',fontStyle:'italic'}}>
-                {p.id==='base'?'"Moderate Growth Continuation"':p.id==='optimistic'?'"Accelerated Global Growth"':'"Geopolitical Fragmentation"'}
-              </div>
-              {[['Global FDI 2050',p.fdi],['Technology',p.tech],['Renewable',p.renew]].map(([l,v])=>(
-                <div key={l} style={{display:'flex',justifyContent:'space-between',fontSize:'12px',
-                  padding:'4px 0',borderBottom:'1px solid rgba(10,61,98,0.04)'}}>
-                  <span style={{color:'#696969'}}>{l}</span>
-                  <span style={{fontWeight:700,color:p.color,fontFamily:'monospace'}}>{v}</span>
-                </div>
-              ))}
-              <div style={{marginTop:'10px'}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px',fontSize:'11px'}}>
-                  <span style={{color:'#696969'}}>Probability</span>
-                  <span style={{fontWeight:700,color:p.color}}>{p.prob}%</span>
-                </div>
-                <div style={{height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.07)'}}>
-                  <div style={{height:'100%',borderRadius:'3px',width:`${p.prob}%`,background:p.color}}/>
-                </div>
-              </div>
+      <div style={{maxWidth:'1540px',margin:'0 auto',padding:'20px 24px',display:'grid',gridTemplateColumns:'380px 1fr',gap:'20px',alignItems:'start'}}>
+        {/* Config panel */}
+        <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',padding:'22px',position:'sticky',top:'130px'}}>
+          <div style={{fontSize:'11px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.1em',marginBottom:'18px',textTransform:'uppercase',fontFamily:"'Orbitron','Inter',sans-serif"}}>Configure Scenario</div>
+          {[
+            {label:'Target Economy', key:'economy',  val:economy,  setter:setEconomy,  opts:ECONOMIES.map(e=>({value:e,label:e,sub:'GOSA '+(GOSA_MAP[e]||'—')})), accent:'#00ffc8'},
+            {label:'Sector',        key:'sector',   val:sector,   setter:setSector,   opts:SECTORS.map(s=>({value:s,label:s})), accent:'#00d4ff'},
+            {label:'Investment Size',key:'size',    val:size,     setter:setSize,     opts:SIZES.map(s=>({value:s,label:s})), accent:'#ffd700'},
+            {label:'Timeline',      key:'timeline', val:timeline, setter:setTimeline, opts:TIMELINES.map(t=>({value:t,label:t})), accent:'#9b59b6'},
+            {label:'Financing Mix', key:'financing',val:financing,setter:setFinancing,opts:FINANCING.map(f=>({value:f,label:f})), accent:'#e67e22'},
+          ].map(({label,key,val,setter,opts,accent}) => (
+            <div key={key} style={{marginBottom:'13px'}}>
+              <ScrollableSelect label={label} value={val} onChange={setter} width="100%" options={opts} accentColor={accent}/>
             </div>
           ))}
+          <div style={{marginBottom:'14px'}}>
+            <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.4)',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Scenario Name (optional)</label>
+            <input value={scenarioName} onChange={e=>setScenarioName(e.target.value)} placeholder={`${economy} ${sector} ${size}`}
+              style={{width:'100%',padding:'8px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'12px',color:'#e8f4f8',outline:'none',fontFamily:"'Inter',sans-serif"}}/>
+          </div>
+          <button onClick={runScenario} disabled={loading}
+            style={{width:'100%',padding:'12px',background:loading?'rgba(0,255,200,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:loading?'rgba(232,244,248,0.4)':'#020c14',border:'none',borderRadius:'10px',cursor:loading?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:loading?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
+            {loading?<><RefreshCw size={14} style={{animation:'spin 1s linear infinite'}}/> Modelling...</>:<><Zap size={14}/> Run Scenario</>}
+          </button>
         </div>
 
-        {/* Custom levers */}
-        <div style={{background:'white',borderRadius:'12px',padding:'24px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px',flexWrap:'wrap',gap:'10px'}}>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <Target size={16} color="#74BB65"/>
-              <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>What-If Analysis — Adjust Levers</span>
+        {/* Live preview + saved scenarios */}
+        <div>
+          {/* Live metrics */}
+          <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'20px',marginBottom:'14px',boxShadow:'0 0 0 1px rgba(0,255,200,0.05)'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px',flexWrap:'wrap',gap:'8px'}}>
+              <div style={{fontSize:'11px',fontWeight:700,color:'rgba(0,255,200,0.6)',textTransform:'uppercase',letterSpacing:'0.1em'}}>Live Projection Preview</div>
+              <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+                <span style={{fontSize:'12px',color:'rgba(232,244,248,0.5)'}}>{economy} · {sector} · {size} · {timeline}</span>
+              </div>
             </div>
-            <div style={{display:'flex',gap:'8px'}}>
-              <button onClick={resetAll} style={{display:'flex',alignItems:'center',gap:'5px',
-                padding:'7px 14px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'7px',
-                background:'transparent',cursor:'pointer',fontSize:'12px',color:'#696969',fontWeight:600}}>
-                <RefreshCw size={12}/> Reset
-              </button>
-              <button onClick={runScenario} disabled={running}
-                style={{display:'flex',alignItems:'center',gap:'5px',
-                  padding:'8px 18px',background:'#74BB65',border:'none',borderRadius:'7px',
-                  color:'white',cursor:'pointer',fontSize:'13px',fontWeight:700,
-                  opacity:running?0.7:1}}>
-                {running ? <><RefreshCw size={13} style={{animation:'spin 0.8s linear infinite'}}/> Running…</> : <><Zap size={13}/> Run Scenario</>}
-              </button>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginBottom:'14px'}}>
+              {[
+                ['Projected IRR',     irr+'%',   '(post-incentive)',  '#00ffc8'],
+                ['NPV (discounted)',  npv,        `${timeline} horizon`,'#ffd700'],
+                ['Direct Jobs',      jobs.toLocaleString(), '+ 2× indirect', '#9b59b6'],
+                ['GOSA Score',       gosa,       `${economy} composite`,'#00d4ff'],
+                ['Tax Revenue',      `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.08)}M/yr`,'5-yr avg','#e67e22'],
+                ['Incentive Value',  `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.12)}M`,'Over 5 years','#00ffc8'],
+              ].map(([l,v,s,c]) => (
+                <div key={String(l)} style={{padding:'14px',background:'rgba(255,255,255,0.02)',borderRadius:'10px',border:'1px solid '+c+'12'}}>
+                  <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.07em'}}>{l as string}</div>
+                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace",textShadow:`0 0 12px ${c}40`}}>{v}</div>
+                  <div style={{fontSize:'10px',color:'rgba(232,244,248,0.3)',marginTop:'2px'}}>{s as string}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'12px 14px',background:irr>=18?'rgba(0,255,200,0.05)':irr>=12?'rgba(255,215,0,0.05)':'rgba(255,68,102,0.05)',borderRadius:'10px',border:`1px solid ${irr>=18?'rgba(0,255,200,0.12)':irr>=12?'rgba(255,215,0,0.12)':'rgba(255,68,102,0.12)'}`}}>
+              <div style={{fontSize:'11px',fontWeight:800,color:irr>=18?'#00ffc8':irr>=12?'#ffd700':'#ff4466',marginBottom:'4px'}}>
+                {irr>=20?'🟢 STRONG CASE':irr>=15?'🟡 VIABLE CASE':irr>=10?'🟠 MARGINAL CASE':'🔴 CHALLENGING'}
+              </div>
+              <div style={{fontSize:'12px',color:'rgba(232,244,248,0.65)',lineHeight:1.65}}>
+                {economy} {sector} investment at {size} over {timeline} projects IRR of {irr}% with {jobs.toLocaleString()} direct jobs. {irr>=18?'Strong fundamentals — proceed to site selection.':irr>=12?'Viable case — consider incentive optimisation.':'Review size or location to improve economics.'}
+              </div>
             </div>
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
-            {LEVERS.map(l=>(
-              <div key={l.id}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
-                  <label style={{fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{l.label}</label>
-                  <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>
-                    {levers[l.id]?.toFixed(l.step<1?1:0)}{l.suffix}
-                  </span>
-                </div>
-                <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                  <span style={{fontSize:'10px',color:'#696969',minWidth:'24px'}}>{l.min}</span>
-                  <input type="range" min={l.min} max={l.max} step={l.step} value={levers[l.id]||l.default}
-                    onChange={e=>setLever(l.id,+e.target.value)}
-                    style={{flex:1,accentColor:'#74BB65',height:'4px'}}/>
-                  <span style={{fontSize:'10px',color:'#696969',minWidth:'24px',textAlign:'right'}}>{l.max}</span>
-                </div>
+          {/* Saved scenarios comparison */}
+          {scenarios.length > 0 && (
+            <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',padding:'20px'}}>
+              <div style={{fontSize:'11px',fontWeight:700,color:'rgba(232,244,248,0.4)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'14px'}}>Saved Scenarios — Comparison</div>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
+                  <thead>
+                    <tr style={{background:'rgba(0,0,0,0.2)'}}>
+                      {['Scenario','Economy','Sector','Size','Timeline','GOSA','IRR','NPV','Jobs'].map(h=>(
+                        <th key={h} style={{padding:'8px 12px',textAlign:h==='Scenario'?'left':'center',fontWeight:700,color:'rgba(232,244,248,0.3)',textTransform:'uppercase',fontSize:'9px',letterSpacing:'0.07em',borderBottom:'1px solid rgba(0,255,200,0.06)',whiteSpace:'nowrap',fontFamily:"'JetBrains Mono',monospace"}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scenarios.map((sc,i) => {
+                      const bestIrr = Math.max(...scenarios.map(s=>s.irr));
+                      const cols = ['#00ffc8','#00d4ff','#ffd700','#9b59b6'];
+                      return (
+                        <tr key={sc.id} style={{borderBottom:'1px solid rgba(255,255,255,0.025)'}}>
+                          <td style={{padding:'10px 12px',fontWeight:700,color:cols[i%4]}}>{sc.name}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.7)'}}>{sc.economy}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.55)',fontSize:'11px'}}>{sc.sector}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>{sc.size}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.45)',fontSize:'11px'}}>{sc.timeline}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace"}}>{sc.gosa}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:sc.irr===bestIrr?900:700,color:sc.irr===bestIrr?'#00ffc8':'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>
+                            {sc.irr===bestIrr?'★ ':''}{sc.irr}%
+                          </td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'#ffd700',fontFamily:"'JetBrains Mono',monospace"}}>{sc.npv}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>{sc.jobs.toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Results */}
-        <PreviewGate feature="full_profile">
-          {ran && (
-            <div style={{background:'white',borderRadius:'12px',padding:'24px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
-              border:'1px solid rgba(116,187,101,0.25)'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'20px'}}>
-                <TrendingUp size={16} color="#74BB65"/>
-                <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>Your Custom Scenario Results · 2050</span>
-                <span style={{marginLeft:'auto',fontSize:'11px',padding:'3px 10px',borderRadius:'10px',
-                  background:'rgba(116,187,101,0.1)',color:'#74BB65',fontWeight:700}}>Custom</span>
-              </div>
-
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px',marginBottom:'20px'}}>
-                {[{l:'Global FDI 2050',v:`$${fdiT}T`,c:'#0A3D62'},{l:'Technology FDI',v:`$${techT}T`,c:'#74BB65'},{l:'Renewable FDI',v:`$${renewT}T`,c:'#1B6CA8'}].map(({l,v,c})=>(
-                  <div key={l} style={{textAlign:'center',padding:'16px',borderRadius:'10px',background:'rgba(10,61,98,0.03)'}}>
-                    <div style={{fontSize:'26px',fontWeight:900,color:c,fontFamily:'monospace'}}>{v}</div>
-                    <div style={{fontSize:'11px',color:'#696969',marginTop:'4px'}}>{l}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{marginBottom:'16px'}}>
-                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'10px'}}>Outcome Indicators</div>
-                <ScenarioBar label="FDI Volume vs Base" val={Math.round((fdiT/9.2)*100)} max={130} color="#74BB65"/>
-                <ScenarioBar label="Technology Share"   val={Math.round(levers.tech)}     max={100} color="#0A3D62"/>
-                <ScenarioBar label="Green Economy"      val={Math.round(levers.energy)}   max={100} color="#1B6CA8"/>
-              </div>
-
-              <div style={{padding:'12px 16px',borderRadius:'10px',background:'rgba(116,187,101,0.06)',
-                border:'1px solid rgba(116,187,101,0.15)',fontSize:'13px'}}>
-                <span style={{color:'#696969'}}>Top FDI Winners: </span>
-                <span style={{fontWeight:700,color:'#0A3D62'}}>{topWinners}</span>
-              </div>
-
-              <div style={{display:'flex',gap:'8px',marginTop:'16px'}}>
-                <button style={{display:'flex',alignItems:'center',gap:'5px',padding:'9px 18px',
-                  background:'#0A3D62',border:'none',borderRadius:'8px',color:'white',
-                  cursor:'pointer',fontSize:'13px',fontWeight:700}}>
-                  <ArrowRight size={14}/> Export Scenario Report
+              <div style={{display:'flex',gap:'10px',marginTop:'12px'}}>
+                <Link href="/reports" style={{padding:'8px 18px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'9px',textDecoration:'none',fontSize:'12px',fontWeight:800,display:'flex',alignItems:'center',gap:'6px',boxShadow:'0 4px 12px rgba(0,255,200,0.2)'}}>
+                  <Download size={13}/> Export Full Report
+                </Link>
+                <button onClick={()=>setScenarios([])} style={{padding:'8px 16px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.5)',fontFamily:"'Inter',sans-serif"}}>
+                  Clear All
                 </button>
               </div>
             </div>
           )}
-        </PreviewGate>
+        </div>
       </div>
+      <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       <Footer/>
     </div>
   );

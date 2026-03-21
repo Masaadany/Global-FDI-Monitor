@@ -226,6 +226,84 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ══════════════════ WORLD PRESENCE MAP ════════════════════════ */}
+      <section style={{ padding:'60px 24px 20px', position:'relative' }}>
+        <div style={{ maxWidth:'1540px', margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:'32px' }}>
+            <div style={{ fontSize:'10px', fontWeight:800, color:'rgba(0,255,200,0.4)', letterSpacing:'0.2em', marginBottom:'8px', fontFamily:"'Orbitron','Inter',sans-serif" }}>GLOBAL COVERAGE</div>
+            <h2 style={{ fontSize:'26px', fontWeight:900, color:'#e8f4f8' }}>Tracking investments across every region</h2>
+          </div>
+          <div style={{ position:'relative', background:'rgba(6,15,26,0.8)', border:'1px solid rgba(0,255,200,0.08)', borderRadius:'16px', padding:'24px', overflow:'hidden' }}>
+            {/* SVG world dot map */}
+            <svg viewBox="0 0 900 420" style={{ width:'100%', maxHeight:'320px' }}>
+              {/* Background */}
+              <rect width="900" height="420" fill="transparent"/>
+              {/* Grid lines */}
+              {[0,1,2,3,4,5].map(i=><line key={'h'+i} x1="0" y1={i*84} x2="900" y2={i*84} stroke="rgba(0,255,200,0.04)" strokeWidth="0.5"/>)}
+              {[0,1,2,3,4,5,6,7,8].map(i=><line key={'v'+i} x1={i*128} y1="0" x2={i*128} y2="420" stroke="rgba(0,255,200,0.04)" strokeWidth="0.5"/>)}
+              {/* Country dots */}
+              {[
+                // Asia Pacific
+                {x:750,y:200,name:'Singapore',    gosa:88.4,c:'#00ffc8',r:8},
+                {x:730,y:195,name:'Malaysia',     gosa:81.2,c:'#00ffc8',r:6},
+                {x:720,y:185,name:'Thailand',     gosa:80.7,c:'#00d4ff',r:6},
+                {x:735,y:175,name:'Vietnam',      gosa:79.4,c:'#00d4ff',r:5},
+                {x:760,y:160,name:'South Korea',  gosa:84.1,c:'#00ffc8',r:6},
+                {x:780,y:165,name:'Japan',        gosa:81.4,c:'#00ffc8',r:6},
+                {x:700,y:185,name:'Indonesia',    gosa:77.8,c:'#00d4ff',r:5},
+                {x:680,y:160,name:'India',        gosa:73.2,c:'#ffd700',r:6},
+                {x:740,y:150,name:'China',        gosa:64.2,c:'#ffd700',r:7},
+                {x:810,y:310,name:'Australia',    gosa:82.8,c:'#00ffc8',r:6},
+                {x:860,y:340,name:'New Zealand',  gosa:86.7,c:'#00ffc8',r:5},
+                // Middle East
+                {x:580,y:175,name:'UAE',          gosa:82.1,c:'#00ffc8',r:6},
+                {x:570,y:185,name:'Saudi Arabia', gosa:79.1,c:'#e67e22',r:6},
+                // Europe
+                {x:460,y:120,name:'UK',           gosa:82.5,c:'#00ffc8',r:6},
+                {x:480,y:115,name:'Germany',      gosa:83.1,c:'#00ffc8',r:6},
+                {x:465,y:110,name:'France',       gosa:81.6,c:'#00d4ff',r:5},
+                {x:455,y:108,name:'Netherlands',  gosa:84.6,c:'#00ffc8',r:5},
+                {x:455,y:102,name:'Denmark',      gosa:85.3,c:'#00ffc8',r:5},
+                {x:468,y:105,name:'Switzerland',  gosa:84.8,c:'#00ffc8',r:5},
+                // Americas
+                {x:185,y:155,name:'USA',          gosa:83.9,c:'#00ffc8',r:7},
+                {x:170,y:145,name:'Canada',       gosa:80.8,c:'#00ffc8',r:6},
+                {x:220,y:250,name:'Brazil',       gosa:71.3,c:'#ffd700',r:6},
+                // Africa
+                {x:460,y:220,name:'Morocco',      gosa:66.8,c:'#ffd700',r:5},
+              ].map(dot => (
+                <g key={dot.name}>
+                  <circle cx={dot.x} cy={dot.y} r={dot.r+4} fill={dot.c+'08'} stroke={dot.c+'20'} strokeWidth="1">
+                    <animate attributeName="r" values={`${dot.r+4};${dot.r+8};${dot.r+4}`} dur={`${2+Math.random()*2}s`} repeatCount="indefinite"/>
+                    <animate attributeName="opacity" values="0.8;0.2;0.8" dur={`${2+Math.random()*2}s`} repeatCount="indefinite"/>
+                  </circle>
+                  <circle cx={dot.x} cy={dot.y} r={dot.r} fill={dot.c} opacity="0.85" style={{filter:`drop-shadow(0 0 ${dot.r}px ${dot.c})`}}/>
+                  <text x={dot.x} y={dot.y+dot.r+10} textAnchor="middle" fontSize="6" fill={dot.c+'80'} fontFamily="'JetBrains Mono',monospace">{dot.gosa}</text>
+                </g>
+              ))}
+              {/* Region labels */}
+              {[
+                {x:750,y:240,label:'ASIA PACIFIC'},
+                {x:575,y:215,label:'MIDDLE EAST'},
+                {x:460,y:140,label:'EUROPE'},
+                {x:195,y:185,label:'AMERICAS'},
+                {x:460,y:245,label:'AFRICA'},
+              ].map(({x,y,label}) => (
+                <text key={label} x={x} y={y} textAnchor="middle" fontSize="8" fill="rgba(232,244,248,0.15)" fontFamily="'Orbitron','Inter',sans-serif" letterSpacing="0.1em">{label}</text>
+              ))}
+            </svg>
+            <div style={{ display:'flex', justifyContent:'center', gap:'20px', marginTop:'12px', flexWrap:'wrap' }}>
+              {[['#00ffc8','TOP Tier (≥80)'],['#00d4ff','HIGH Tier (70-79)'],['#ffd700','HIGH Tier (60-69)'],['#e67e22','HIGH Tier (60-79) ME']].map(([c,l])=>(
+                <div key={l} style={{ display:'flex', alignItems:'center', gap:'6px', fontSize:'10px', color:'rgba(232,244,248,0.35)' }}>
+                  <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:c as string }}/>
+                  {l}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ══════════════════ FEATURES ══════════════════════════════════ */}
       <section style={{ padding:'100px 24px', position:'relative' }}>
         <div style={{ maxWidth:'1540px', margin:'0 auto' }}>
@@ -316,6 +394,44 @@ export default function HomePage() {
                 <span style={{ fontSize:'13px', fontWeight:700, color:'#e8f4f8' }}>{title}</span>
                 <span style={{ fontSize:'11px', color:`${color}80` }}>{desc}</span>
               </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════ SOCIAL PROOF ═════════════════════════════ */}
+      <section style={{ padding:'80px 24px', background:'rgba(4,10,20,0.8)', position:'relative' }}>
+        <div style={{ maxWidth:'1540px', margin:'0 auto' }}>
+          <div style={{ textAlign:'center', marginBottom:'48px' }}>
+            <div style={{ fontSize:'10px', fontWeight:800, color:'rgba(0,255,200,0.4)', letterSpacing:'0.2em', marginBottom:'8px', fontFamily:"'Orbitron','Inter',sans-serif" }}>TRUSTED BY</div>
+            <h2 style={{ fontSize:'28px', fontWeight:900, color:'#e8f4f8', marginBottom:'8px' }}>Used by 12,847 investment professionals</h2>
+            <p style={{ fontSize:'14px', color:'rgba(232,244,248,0.4)' }}>From IPAs to sovereign wealth funds, private equity to corporate strategy teams</p>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'18px', marginBottom:'56px' }}>
+            {[
+              {quote:'"The GOSA scoring gives us a single comparable metric across markets. We use it every Monday morning."', name:'Head of Investment Strategy', org:'Southeast Asian Sovereign Wealth Fund', flag:'🇸🇬'},
+              {quote:'"GFR Ranking is now part of our annual competitiveness assessment. Comparable to IMD and Kearney, but with live data."', name:'Director of FDI Policy', org:'Middle East Investment Promotion Agency', flag:'🇦🇪'},
+              {quote:'"We evaluated 11 locations in 6 countries. The Benchmark Tool saved 3 weeks of analyst time."', name:'VP Corporate Development', org:'European Manufacturing Group', flag:'🇩🇪'},
+            ].map(({quote,name,org,flag}) => (
+              <div key={name} style={{ padding:'24px', background:'rgba(13,29,48,0.8)', border:'1px solid rgba(0,255,200,0.1)', borderRadius:'14px', position:'relative' }}>
+                <div style={{ fontSize:'28px', color:'rgba(0,255,200,0.3)', lineHeight:1, marginBottom:'12px', fontFamily:'Georgia,serif' }}>"</div>
+                <p style={{ fontSize:'13px', color:'rgba(232,244,248,0.7)', lineHeight:1.8, marginBottom:'16px', fontStyle:'italic' }}>{quote}</p>
+                <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+                  <span style={{ fontSize:'24px' }}>{flag}</span>
+                  <div>
+                    <div style={{ fontSize:'12px', fontWeight:700, color:'rgba(232,244,248,0.85)' }}>{name}</div>
+                    <div style={{ fontSize:'10px', color:'rgba(0,255,200,0.5)' }}>{org}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:'14px' }}>
+            {[['Investment Promotion Agencies','62+ IPAs use GFM for inbound FDI intelligence'],['Sovereign Wealth Funds','SWF teams track GOSA for portfolio screening'],['Private Equity','PE firms use GFR for jurisdiction selection'],['Corporate Strategy','MNCs use benchmark tool for site selection'],['Economic Development','Government bodies track competing economies'],['Law & Advisory','International advisors cite GFM in reports']].map(([title,desc]) => (
+              <div key={title} style={{ padding:'16px', background:'rgba(13,29,48,0.6)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:'10px', textAlign:'center' }}>
+                <div style={{ fontSize:'12px', fontWeight:700, color:'rgba(232,244,248,0.75)', marginBottom:'6px' }}>{title}</div>
+                <div style={{ fontSize:'10px', color:'rgba(232,244,248,0.35)', lineHeight:1.6 }}>{desc}</div>
+              </div>
             ))}
           </div>
         </div>

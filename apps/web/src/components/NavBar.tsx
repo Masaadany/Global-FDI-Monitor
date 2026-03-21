@@ -6,25 +6,36 @@ import { Search, X, Menu, Zap, Bell, ChevronDown } from 'lucide-react';
 import { SearchOverlay } from './GlobalSearch';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',           href: '/dashboard',           hot: false },
+  { label: 'Dashboard', href: '/dashboard', hot: false },
   { label: 'Investment Analysis', href: '/investment-analysis', hot: false },
   {
     label: 'Intelligence',
     href: '#',
     hot: true,
     children: [
-      { label: '⚡ Market Signals',    href: '/signals',    desc: 'Live signal feed' },
-      { label: '🏆 GFR Ranking',       href: '/gfr',        desc: '25 economies scored' },
-      { label: '🌍 Country Profiles',  href: '/country/MYS',desc: '20+ country deep-dives' },
-      { label: '🏭 Sector Monitor',    href: '/sectors',    desc: '9 sectors tracked' },
-      { label: '🔀 Corridor Intel',    href: '/corridors',  desc: '12 bilateral routes' },
-      { label: '⭐ Watchlists',         href: '/watchlists', desc: 'Track economies' },
+      { label: '⚡ Market Signals',   href: '/signals',       desc: 'Live signal feed' },
+      { label: '🏆 GFR Ranking',      href: '/gfr',           desc: '25 economies' },
+      { label: '🌍 Country Profiles', href: '/country/MYS',   desc: '20+ deep-dives' },
+      { label: '🏭 Sector Monitor',   href: '/sectors',       desc: '9 sectors' },
+      { label: '🔀 Corridor Intel',   href: '/corridors',     desc: '12 bilateral routes' },
+      { label: '📈 Market Insights',  href: '/insights',      desc: 'Macro & sector trends' },
+      { label: '⭐ Watchlists',        href: '/watchlists',    desc: 'Track economies' },
+    ],
+  },
+  {
+    label: 'Tools',
+    href: '#',
+    hot: false,
+    children: [
+      { label: '🎯 Mission Planning',  href: '/pmp',              desc: '4 guided workflows' },
+      { label: '🔬 Scenario Planner',  href: '/scenario-planner', desc: 'What-if modelling' },
+      { label: '📋 Pipeline Tracker',  href: '/pipeline',         desc: 'Deal pipeline board' },
+      { label: '📄 PDF Reports',       href: '/reports',          desc: 'AI reports' },
       { label: '📊 Impact Analysis',   href: '/investment-analysis?tab=impact', desc: 'Model ROI' },
     ],
   },
-  { label: 'Mission Planning',    href: '/pmp',                 hot: false },
-  { label: 'Publications',        href: '/publications',        hot: false },
-  { label: 'Pricing',             href: '/pricing',             hot: false },
+  { label: 'Publications', href: '/publications', hot: false },
+  { label: 'Pricing',      href: '/pricing',      hot: false },
 ];
 
 export default function NavBar() {
@@ -150,12 +161,20 @@ export default function NavBar() {
             <SearchOverlay open={searchOverlayOpen} onClose={()=>setSearchOverlayOpen(false)}/>
 
             {/* Notifications */}
-            <button style={{position:'relative',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)'}}>
+            <Link href="/alerts" style={{position:'relative',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)',textDecoration:'none',transition:'all 150ms ease'}}
+              onMouseEnter={(e:any)=>{e.currentTarget.style.borderColor='rgba(255,68,102,0.4)';e.currentTarget.style.color='#ff4466';}}
+              onMouseLeave={(e:any)=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='rgba(232,244,248,0.6)';}}>
               <Bell size={14}/>
               <span style={{position:'absolute',top:'6px',right:'6px',width:'6px',height:'6px',borderRadius:'50%',background:'#ff4466',border:'1px solid rgba(2,12,20,0.8)',boxShadow:'0 0 6px rgba(255,68,102,0.8)'}}/>
-            </button>
+            </Link>
 
             {/* Auth CTAs */}
+            <Link href="/settings"
+              style={{width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.5)',textDecoration:'none',transition:'all 150ms ease',fontSize:'14px'}}
+              onMouseEnter={(e:any)=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.3)';e.currentTarget.style.color='#00ffc8';}}
+              onMouseLeave={(e:any)=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='rgba(232,244,248,0.5)';}}>
+              ⚙
+            </Link>
             <Link href="/auth/login"
               style={{padding:'7px 14px',background:'transparent',border:'1px solid rgba(232,244,248,0.12)',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.7)',letterSpacing:'0.02em',transition:'all 150ms ease'}}
               onMouseEnter={(e:any)=>{e.target.style.borderColor='rgba(0,255,200,0.3)';e.target.style.color='#00ffc8';}}

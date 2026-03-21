@@ -6,7 +6,9 @@ const COLS = {
     {l:'Dashboard',h:'/dashboard'},{l:'Investment Analysis',h:'/investment-analysis'},
     {l:'Market Signals',h:'/signals'},{l:'GFR Ranking',h:'/gfr'},
     {l:'Sector Monitor',h:'/sectors'},{l:'Corridor Intel',h:'/corridors'},
-    {l:'Watchlists',h:'/watchlists'},{l:'PDF Reports',h:'/reports'},
+    {l:'Alerts Centre',h:'/alerts'},{l:'Onboarding',h:'/onboarding'},
+    {l:'Market Insights',h:'/insights'},{l:'Pipeline Tracker',h:'/pipeline'},
+    {l:'Scenario Planner',h:'/scenario-planner'},{l:'PDF Reports',h:'/reports'},
   ],
   Intelligence:[
     {l:'Sector Monitor',h:'/sectors'},
@@ -17,6 +19,7 @@ const COLS = {
   Company:[
     {l:'About Us',h:'/about'},{l:'Pricing',h:'/pricing'},
     {l:'Contact',h:'/contact'},{l:'FAQ',h:'/faq'},
+    {l:'Settings',h:'/settings'},{l:'FAQ',h:'/faq'},
     {l:'Privacy Policy',h:'/privacy'},{l:'Terms of Service',h:'/terms'},
   ],
 };

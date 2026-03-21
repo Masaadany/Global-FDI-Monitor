@@ -120,6 +120,24 @@ const COUNTRY_DATA: Record<string, any> = {
     zones:['Tokyo Bay Innovation Zone','Osaka Life Science Hub','Kyushu Semiconductor Valley','Hokkaido Green Tech'],
     signals:[{g:'GOLD',t:'DEAL',title:'TSMC Kumamoto Fab 2 announced — $20B',sco:91},{g:'GOLD',t:'INCENTIVE',title:'Semiconductor subsidies doubled to $26B',sco:89}],
     summary:'Japan is experiencing a semiconductor renaissance driven by massive government subsidies. TSMC, Samsung, Micron, and Western Digital are establishing or expanding Japan operations. Rapid depreciation allowances and JPY weakness improve investment economics significantly.'},
+  AUS:{name:'Australia',     flag:'🇦🇺',region:'Oceania',capital:'Canberra',pop:'26M',gdp:'$1.7T',gdpg:'2.0%',fdi:'$68B',currency:'AUD',tier:'TOP',gosa:82.8,gfr:84.1,trend:+0.1,l1:83.2,l2:82.4,l3:81.8,l4:83.6,color:'#00ffc8',
+    db:{start:90.4,permit:83.2,elec:94.2,prop:82.6,credit:78.0,investors:80.0,tax:84.2,trade:86.8,contracts:78.4,insolvency:88.2},
+    sectors:['Mining','Agriculture','LNG','Fintech','Defence'],
+    zones:['Sydney Technology Hub','Perth Resources Corridor','Melbourne Biomedical','Darwin Special Economic Zone'],
+    signals:[{g:'GOLD',t:'INCENTIVE',title:'Critical minerals fast-track investment pathway launched',sco:89},{g:'SILVER',t:'GROWTH',title:'LNG export revenues hit record A$90B',sco:84}],
+    summary:'Australia is a top-tier investment destination anchored by world-class critical minerals, LNG, and agricultural exports. The Critical Minerals Strategy and AUKUS defence partnership are driving new FDI into resources, defence, and deep technology sectors.'},
+  FRA:{name:'France',        flag:'🇫🇷',region:'Europe',capital:'Paris',pop:'68M',gdp:'$3.1T',gdpg:'0.9%',fdi:'$40B',currency:'EUR',tier:'TOP',gosa:81.6,gfr:82.8,trend:+0.2,l1:82.4,l2:81.8,l3:80.4,l4:81.8,color:'#00d4ff',
+    db:{start:88.4,permit:82.6,elec:88.4,prop:74.6,credit:76.0,investors:78.0,tax:82.8,trade:87.4,contracts:74.2,insolvency:86.4},
+    sectors:['Aerospace','Luxury Goods','Nuclear Energy','AI & Technology','Agri-Food'],
+    zones:['La Défense Business District','Saclay Technology Cluster','Toulouse Aerospace Valley','French Riviera Tech'],
+    signals:[{g:'GOLD',t:'POLICY',title:'Choose France Summit — €15B commitments confirmed',sco:88},{g:'SILVER',t:'GROWTH',title:'AI investment hub: €6B committed 2026',sco:85}],
+    summary:'France has become Europe\'s leading FDI destination by project count, driven by the Choose France summit, industrial renaissance policies, and EU single market access. Nuclear energy infrastructure provides competitive energy costs for manufacturing.'},
+  CHN:{name:'China',         flag:'🇨🇳',region:'Asia Pacific',capital:'Beijing',pop:'1.41B',gdp:'$17.5T',gdpg:'4.6%',fdi:'$163B',currency:'CNY',tier:'HIGH',gosa:64.2,gfr:68.4,trend:-0.4,l1:72.4,l2:66.8,l3:68.2,l4:49.4,color:'#ffd700',
+    db:{start:90.2,permit:68.4,elec:97.4,prop:60.4,credit:55.0,investors:58.0,tax:76.4,trade:64.8,contracts:72.4,insolvency:62.4},
+    sectors:['Manufacturing','EVs','AI','Semiconductors','Clean Energy'],
+    zones:['Shanghai FTZ','Shenzhen High-Tech','Beijing Zhongguancun','Hainan FTP','CDFTZ Chengdu'],
+    signals:[{g:'SILVER',t:'POLICY',title:'Foreign investment negative list further reduced',sco:74},{g:'SILVER',t:'GROWTH',title:'EV exports cross $60B — global share 35%',sco:78}],
+    summary:'China remains the world\'s second-largest FDI recipient despite geopolitical headwinds. Key sectors attracting inbound FDI include high-tech manufacturing, clean energy, and services. Outbound FDI increasingly focused on ASEAN and MENA as China+1 strategy reshapes global supply chains.'},
   CAN:{name:'Canada',       flag:'🇨🇦',region:'Americas',capital:'Ottawa',pop:'40M',gdp:'$2.2T',gdpg:'1.4%',fdi:'$61B',currency:'CAD',tier:'TOP',gosa:80.8,gfr:80.8,trend:0.0,l1:78.4,l2:82.6,l3:82.4,l4:81.6,color:'#00d4ff',
     db:{start:91.6,permit:76.2,elec:84.2,prop:80.6,credit:82.0,investors:84.0,tax:82.4,trade:82.8,contracts:78.4,insolvency:86.4},
     sectors:['Clean Energy','Mining','AI Research','Automotive EV','Financial Services'],
@@ -127,6 +145,7 @@ const COUNTRY_DATA: Record<string, any> = {
     signals:[{g:'GOLD',t:'INCENTIVE',title:'Canada EV battery investment tax credit — 30%',sco:88},{g:'SILVER',t:'GROWTH',title:'AI sector investment up 42% — Montreal hub',sco:84}],
     summary:'Canada offers a compelling combination of natural resource depth, AI research leadership (Montreal/Toronto/Vancouver AI clusters), and clean energy abundance. The EV supply chain opportunity is massive — Canada holds lithium, cobalt, and nickel reserves critical to battery manufacturing.'},
 };
+
 
 const DB_LABELS = ['Starting a Business','Construction Permits','Getting Electricity','Registering Property','Getting Credit','Protecting Investors','Paying Taxes','Trading Across Borders','Enforcing Contracts','Resolving Insolvency'];
 

@@ -1,193 +1,140 @@
 'use client';
-import { useState } from 'react';
-import { Bell, BellOff, CheckCircle, X, Zap, Globe, Settings, Plus, ArrowRight, Filter } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
 import Footer from '@/components/Footer';
-import PreviewGate from '@/components/PreviewGate';
 import Link from 'next/link';
+import { Bell, BellOff, Check, Trash2, Filter, Zap, Globe, TrendingUp, AlertTriangle } from 'lucide-react';
 
-const ALERTS = [
-  {id:'A001',pri:'HIGH',   type:'Signal',    title:'PLATINUM: CATL $3.2B greenfield in Indonesia',   eco:'🇮🇩 Indonesia', time:'2h ago',  read:false},
-  {id:'A002',pri:'HIGH',   type:'Signal',    title:'PLATINUM: Google Data Centre $2.1B in Singapore', eco:'🇸🇬 Singapore', time:'5h ago',  read:false},
-  {id:'A003',pri:'MEDIUM', type:'GFR',       title:'UAE GFR score updated: 94.2 → 94.6 (+0.4)',        eco:'🇦🇪 UAE',       time:'1d ago',  read:false},
-  {id:'A004',pri:'MEDIUM', type:'Signal',    title:'GOLD: Hyundai Motor $1.8B expansion in Indonesia', eco:'🇮🇩 Indonesia', time:'1d ago',  read:true},
-  {id:'A005',pri:'LOW',    type:'Watchlist', title:'ASEAN Emerging watchlist: 8 new signals',           eco:'ASEAN',        time:'2d ago',  read:true},
-  {id:'A006',pri:'LOW',    type:'GFR',       title:'Saudi Arabia GFR tier change: HIGH → VERY HIGH',   eco:'🇸🇦 S. Arabia', time:'3d ago',  read:true},
-  {id:'A007',pri:'HIGH',   type:'Signal',    title:'PLATINUM: Microsoft Azure $5.2B UAE expansion',    eco:'🇦🇪 UAE',       time:'4d ago',  read:true},
+interface Alert {
+  id: number; type: 'SIGNAL'|'GOSA_CHANGE'|'WATCHLIST'|'SYSTEM';
+  grade?: string; title: string; body: string; country?: string; flag?: string;
+  read: boolean; time: string; priority: 'HIGH'|'MED'|'LOW'; link: string;
+}
+
+const INITIAL_ALERTS: Alert[] = [
+  {id:1, type:'SIGNAL',grade:'PLATINUM',title:'PLATINUM Signal: Malaysia FDI cap lifted',body:'FDI cap in Malaysian data centers raised to 100%. SCI Score: 96. AGT-02 verified from MITI Malaysia official source.',country:'Malaysia',flag:'🇲🇾',read:false,time:'2m ago',priority:'HIGH',link:'/signals'},
+  {id:2, type:'SIGNAL',grade:'PLATINUM',title:'PLATINUM Signal: UAE Microsoft $3.3B AI investment',body:'Microsoft commits $3.3B to UAE AI data center infrastructure. SCI Score: 97. Verified from DIFC official announcement.',country:'UAE',flag:'🇦🇪',read:false,time:'1h ago',priority:'HIGH',link:'/signals'},
+  {id:3, type:'GOSA_CHANGE',title:'GOSA Update: Saudi Arabia +2.1 pts',body:'Saudi Arabia GOSA score increased from 77.0 to 79.1 (+2.1 points). Driver: Policy reform — 30-day license guarantee. New tier: HIGH.',country:'Saudi Arabia',flag:'🇸🇦',read:false,time:'3h ago',priority:'HIGH',link:'/country/SAU'},
+  {id:4, type:'WATCHLIST',title:'Watchlist Alert: Vietnam approaching GOSA 80',body:'Vietnam GOSA score is now 79.4, approaching your alert threshold of 80.0. Score has increased +0.5 pts this week.',country:'Vietnam',flag:'🇻🇳',read:true,time:'6h ago',priority:'MED',link:'/watchlists'},
+  {id:5, type:'SIGNAL',grade:'GOLD',title:'GOLD Signal: Thailand $2B EV battery package',body:'Thailand BOI approves $2B EV battery subsidy covering 5-year 50% CIT reduction. SCI Score: 95.',country:'Thailand',flag:'🇹🇭',read:true,time:'1d ago',priority:'HIGH',link:'/signals'},
+  {id:6, type:'GOSA_CHANGE',title:'GOSA Update: UAE +1.2 pts (weekly update)',body:'UAE GOSA score updated to 82.1 (+1.2 pts). Driven by L4 Market Intelligence improvements: 2 new PLATINUM signals.',country:'UAE',flag:'🇦🇪',read:true,time:'2d ago',priority:'MED',link:'/country/ARE'},
+  {id:7, type:'SYSTEM',title:'Weekly Intelligence Brief #47 ready for review',body:'AGT-06 has generated Intelligence Brief #47 for the week of March 16-22. 5 PLATINUM signals included. Awaiting your approval before distribution.',read:false,time:'3d ago',priority:'HIGH',link:'/newsletter'},
+  {id:8, type:'SIGNAL',grade:'GOLD',title:'GOLD Signal: Indonesia $15B nickel investment',body:'Chinese-European consortium secures $15B nickel processing expansion. SCI Score: 93. Batam FTZ primary zone.',country:'Indonesia',flag:'🇮🇩',read:true,time:'4d ago',priority:'HIGH',link:'/signals'},
+  {id:9, type:'WATCHLIST',title:'Pipeline Alert: UAE deal stage update due',body:'Your UAE AI & Technology deal in pipeline has been in Negotiation stage for 21 days. Time to update?',read:true,time:'5d ago',priority:'LOW',link:'/pipeline'},
+  {id:10,type:'SYSTEM',title:'Trial period: 4 days remaining',body:'Your 7-day free trial expires in 4 days. Upgrade to Professional for unlimited access including API, unlimited reports, and weekly Intelligence Brief.',read:false,time:'5d ago',priority:'MED',link:'/pricing'},
 ];
 
-const RULES = [
-  {id:'R001',name:'PLATINUM Signals — MENA',       type:'Signal',    active:true,  criteria:'Grade = PLATINUM AND Region = MENA'},
-  {id:'R002',name:'GFR Score Changes — ASEAN',     type:'GFR',       active:true,  criteria:'GFR change > 0.3 AND Region = ASEAN'},
-  {id:'R003',name:'All GOLD+ — Technology sector', type:'Signal',    active:false, criteria:'Grade >= GOLD AND Sector = Technology'},
-];
-
-const PRI_C: Record<string,string> = {HIGH:'#E57373',MEDIUM:'#FFB347',LOW:'#74BB65'};
-const PRI_BG: Record<string,string> = {HIGH:'rgba(229,115,115,0.08)',MEDIUM:'rgba(255,179,71,0.08)',LOW:'rgba(116,187,101,0.08)'};
-const TYPE_ICON: Record<string,any> = {Signal:Zap, GFR:Globe, Watchlist:Bell};
+const TYPE_ICON: Record<string,any> = {
+  SIGNAL: <Zap size={14} color="#ffd700"/>,
+  GOSA_CHANGE: <TrendingUp size={14} color="#00ffc8"/>,
+  WATCHLIST: <Globe size={14} color="#00d4ff"/>,
+  SYSTEM: <AlertTriangle size={14} color="#ff4466"/>,
+};
+const TYPE_COLOR: Record<string,string> = {SIGNAL:'#ffd700',GOSA_CHANGE:'#00ffc8',WATCHLIST:'#00d4ff',SYSTEM:'#ff4466'};
+const GRADE_COL: Record<string,string> = {PLATINUM:'#c39bd3',GOLD:'#ffd700',SILVER:'#94a8b3'};
 
 export default function AlertsPage() {
-  const [tab,   setTab]   = useState<'inbox'|'rules'>('inbox');
-  const [filter,setFilter]= useState('All');
-  const [alerts,setAlerts]= useState(ALERTS);
-  const [rules, setRules] = useState(RULES);
+  const [alerts, setAlerts] = useState(INITIAL_ALERTS);
+  const [filter, setFilter] = useState('ALL');
+  const [showUnread, setShowUnread] = useState(false);
 
   const unread = alerts.filter(a=>!a.read).length;
-  const filtered = filter==='All' ? alerts : alerts.filter(a=>a.pri===filter||a.type===filter);
 
-  function markRead(id:string) {
-    setAlerts(a=>a.map(x=>x.id===id?{...x,read:true}:x));
-  }
-  function markAllRead() {
-    setAlerts(a=>a.map(x=>({...x,read:true})));
-  }
-  function toggleRule(id:string) {
-    setRules(r=>r.map(x=>x.id===id?{...x,active:!x.active}:x));
-  }
+  const filtered = alerts.filter(a => {
+    if (showUnread && a.read) return false;
+    if (filter !== 'ALL' && a.type !== filter) return false;
+    return true;
+  });
+
+  function markRead(id: number) { setAlerts(p=>p.map(a=>a.id===id?{...a,read:true}:a)); }
+  function markAllRead() { setAlerts(p=>p.map(a=>({...a,read:true}))); }
+  function remove(id: number) { setAlerts(p=>p.filter(a=>a.id!==id)); }
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/><TrialBanner/>
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'28px 24px 0'}}>
-        <div style={{maxWidth:'1100px',margin:'0 auto'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'12px',marginBottom:'20px'}}>
-            <div>
-              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'6px'}}>
-                <Bell size={16} color="#74BB65"/>
-                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Alerts</span>
-                {unread>0 && <span style={{background:'#E57373',color:'white',fontSize:'10px',fontWeight:800,
-                  width:'18px',height:'18px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  {unread}
-                </span>}
-              </div>
-              <h1 style={{fontSize:'22px',fontWeight:800,color:'white',margin:0}}>Alerts & Notifications</h1>
-            </div>
-            <div style={{display:'flex',gap:'8px'}}>
-              <button onClick={markAllRead} style={{display:'flex',alignItems:'center',gap:'5px',
-                padding:'8px 14px',border:'1px solid rgba(255,255,255,0.25)',borderRadius:'8px',
-                background:'transparent',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'rgba(226,242,223,0.8)'}}>
-                <CheckCircle size={12}/> Mark all read
-              </button>
-            </div>
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+      <NavBar/>
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'20px 24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{maxWidth:'900px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px',position:'relative'}}>
+          <div>
+            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:"'Orbitron','Inter',sans-serif"}}>ALERTS CENTRE</div>
+            <h1 style={{fontSize:'22px',fontWeight:900,color:'#e8f4f8',display:'flex',alignItems:'center',gap:'10px'}}>
+              Notifications
+              {unread > 0 && <span style={{fontSize:'13px',fontWeight:900,padding:'2px 10px',borderRadius:'12px',background:'rgba(255,68,102,0.15)',color:'#ff4466',border:'1px solid rgba(255,68,102,0.3)'}}>{unread} unread</span>}
+            </h1>
           </div>
-          <div style={{display:'flex',gap:'0'}}>
-            {[{id:'inbox',label:`Inbox (${unread} unread)`},{id:'rules',label:'Alert Rules'}].map(t=>(
-              <button key={t.id} onClick={()=>setTab(t.id as any)}
-                style={{padding:'10px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,
-                  background:'transparent',color:tab===t.id?'white':'rgba(226,242,223,0.6)',
-                  borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',transition:'all 0.2s'}}>
-                {t.label}
-              </button>
-            ))}
-          </div>
+          {unread > 0 && (
+            <button onClick={markAllRead} style={{display:'flex',alignItems:'center',gap:'7px',padding:'8px 18px',background:'rgba(0,255,200,0.07)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:700,color:'#00ffc8',fontFamily:"'Inter',sans-serif"}}>
+              <Check size={13}/> Mark all read
+            </button>
+          )}
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'20px 24px',display:'flex',flexDirection:'column',gap:'14px'}}>
-        {tab==='inbox' && (
-          <>
-            {/* Filter chips */}
-            <div style={{display:'flex',gap:'6px',flexWrap:'wrap',alignItems:'center'}}>
-              <Filter size={13} color="#696969"/>
-              {['All','HIGH','MEDIUM','LOW','Signal','GFR','Watchlist'].map(f=>(
-                <button key={f} onClick={()=>setFilter(f)}
-                  style={{padding:'5px 12px',borderRadius:'16px',border:'none',cursor:'pointer',
-                    fontSize:'11px',fontWeight:700,
-                    background:filter===f?'#0A3D62':'rgba(10,61,98,0.07)',
-                    color:filter===f?'white':'#0A3D62'}}>
-                  {f}
-                </button>
-              ))}
-              <span style={{fontSize:'12px',color:'#696969',marginLeft:'4px'}}>{filtered.length} alerts</span>
-            </div>
+      <div style={{maxWidth:'900px',margin:'0 auto',padding:'20px 24px'}}>
+        {/* Filters */}
+        <div style={{display:'flex',gap:'8px',marginBottom:'14px',flexWrap:'wrap',alignItems:'center'}}>
+          {[['ALL','All'],['SIGNAL','Signals'],['GOSA_CHANGE','GOSA Updates'],['WATCHLIST','Watchlist'],['SYSTEM','System']].map(([v,l])=>(
+            <button key={v} onClick={()=>setFilter(v)}
+              style={{padding:'6px 14px',borderRadius:'20px',border:`1px solid ${filter===v?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.07)'}`,background:filter===v?'rgba(0,255,200,0.08)':'rgba(255,255,255,0.03)',cursor:'pointer',fontSize:'11px',fontWeight:filter===v?700:400,color:filter===v?'#00ffc8':'rgba(232,244,248,0.45)',fontFamily:"'Inter',sans-serif",transition:'all 150ms'}}>
+              {l}
+            </button>
+          ))}
+          <button onClick={()=>setShowUnread(!showUnread)}
+            style={{display:'flex',alignItems:'center',gap:'6px',padding:'6px 14px',borderRadius:'20px',border:`1px solid ${showUnread?'rgba(255,68,102,0.3)':'rgba(255,255,255,0.07)'}`,background:showUnread?'rgba(255,68,102,0.08)':'rgba(255,255,255,0.03)',cursor:'pointer',fontSize:'11px',fontWeight:showUnread?700:400,color:showUnread?'#ff4466':'rgba(232,244,248,0.45)',fontFamily:"'Inter',sans-serif",transition:'all 150ms'}}>
+            <Bell size={11}/>{showUnread?'Unread only':'All'}
+          </button>
+          <span style={{marginLeft:'auto',fontSize:'10px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>{filtered.length} alerts</span>
+        </div>
 
-            <PreviewGate feature="view">
-              <div className="gfm-card" style={{overflow:'hidden'}}>
-                {filtered.map((alert,i)=>{
-                  const Icon = TYPE_ICON[alert.type] || Bell;
-                  return (
-                    <div key={alert.id}
-                      onClick={()=>markRead(alert.id)}
-                      style={{display:'flex',alignItems:'flex-start',gap:'12px',padding:'14px 18px',
-                        borderBottom:i<filtered.length-1?'1px solid rgba(10,61,98,0.05)':'none',
-                        cursor:'pointer',background:!alert.read?PRI_BG[alert.pri]:'white',
-                        transition:'background 0.15s'}}>
-                      {!alert.read && (
-                        <div style={{width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,
-                          background:PRI_C[alert.pri],marginTop:'6px'}}/>
-                      )}
-                      {alert.read && <div style={{width:'8px',flexShrink:0}}/>}
-                      <div style={{width:'32px',height:'32px',borderRadius:'8px',flexShrink:0,
-                        background:`${PRI_C[alert.pri]}15`,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                        <Icon size={14} color={PRI_C[alert.pri]}/>
-                      </div>
-                      <div style={{flex:1}}>
-                        <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'3px',flexWrap:'wrap'}}>
-                          <span style={{fontSize:'13px',fontWeight:alert.read?600:700,color:'#0A3D62',lineHeight:'1.3'}}>{alert.title}</span>
-                          <span style={{fontSize:'10px',fontWeight:700,padding:'1px 6px',borderRadius:'6px',flexShrink:0,
-                            background:`${PRI_C[alert.pri]}15`,color:PRI_C[alert.pri]}}>{alert.pri}</span>
-                        </div>
-                        <div style={{display:'flex',gap:'12px',fontSize:'11px',color:'#696969'}}>
-                          <span>{alert.eco}</span>
-                          <span style={{color:alert.read?'#696969':'#74BB65',fontWeight:600}}>{alert.type}</span>
-                          <span>{alert.time}</span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </PreviewGate>
-          </>
-        )}
-
-        {tab==='rules' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-            <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <button style={{display:'flex',alignItems:'center',gap:'6px',padding:'9px 18px',
-                background:'#74BB65',color:'white',border:'none',borderRadius:'8px',
-                cursor:'pointer',fontSize:'13px',fontWeight:700}}>
-                <Plus size={13}/> New Rule
-              </button>
-            </div>
-            {rules.map(rule=>(
-              <div key={rule.id} className="gfm-card" style={{padding:'18px',
-                opacity:rule.active?1:0.6,transition:'opacity 0.2s'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',flexWrap:'wrap',gap:'10px'}}>
-                  <div style={{flex:1}}>
-                    <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'5px'}}>
-                      <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62'}}>{rule.name}</span>
-                      <span style={{fontSize:'10px',fontWeight:700,padding:'2px 7px',borderRadius:'7px',
-                        background:'rgba(10,61,98,0.07)',color:'#696969'}}>{rule.type}</span>
-                    </div>
-                    <div style={{fontFamily:'monospace',fontSize:'11px',color:'#696969',
-                      background:'rgba(10,61,98,0.03)',padding:'6px 10px',borderRadius:'6px',
-                      border:'1px solid rgba(10,61,98,0.06)'}}>{rule.criteria}</div>
+        {/* Alert list */}
+        <div style={{display:'flex',flexDirection:'column',gap:'7px'}}>
+          {filtered.map(alert => {
+            const tc = TYPE_COLOR[alert.type];
+            return (
+              <div key={alert.id} style={{background:alert.read?'rgba(10,22,40,0.5)':'rgba(10,22,40,0.85)',border:`1px solid ${alert.read?'rgba(255,255,255,0.04)':tc+'20'}`,borderLeft:`3px solid ${alert.read?'rgba(255,255,255,0.08)':tc}`,borderRadius:'10px',padding:'14px 16px',transition:'all 200ms ease',position:'relative',overflow:'hidden'}}>
+                {!alert.read && <div style={{position:'absolute',top:'12px',right:'14px',width:'7px',height:'7px',borderRadius:'50%',background:tc,boxShadow:`0 0 8px ${tc}`}}/>}
+                <div style={{display:'flex',gap:'12px',alignItems:'flex-start'}}>
+                  <div style={{width:'32px',height:'32px',borderRadius:'8px',background:`${tc}10`,border:`1px solid ${tc}20`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:'2px'}}>
+                    {TYPE_ICON[alert.type]}
                   </div>
-                  <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:rule.active?'#74BB65':'#696969'}}>
-                      {rule.active?'Active':'Paused'}
-                    </span>
-                    <label style={{position:'relative',display:'inline-block',width:'40px',height:'22px',cursor:'pointer'}}>
-                      <input type="checkbox" checked={rule.active} onChange={()=>toggleRule(rule.id)}
-                        style={{opacity:0,width:0,height:0}}/>
-                      <span style={{position:'absolute',top:0,left:0,right:0,bottom:0,
-                        background:rule.active?'#74BB65':'rgba(10,61,98,0.15)',borderRadius:'11px',transition:'background 0.2s'}}>
-                        <span style={{position:'absolute',top:'3px',left:rule.active?'21px':'3px',
-                          width:'16px',height:'16px',borderRadius:'50%',background:'white',
-                          transition:'left 0.2s',boxShadow:'0 1px 4px rgba(0,0,0,0.2)'}}/>
-                      </span>
-                    </label>
-                    <button style={{background:'transparent',border:'none',cursor:'pointer',padding:'4px',opacity:0.5}}>
-                      <Settings size={14} color="#696969"/>
-                    </button>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',gap:'7px',alignItems:'center',marginBottom:'4px',flexWrap:'wrap'}}>
+                      {alert.grade && <span style={{fontSize:'9px',fontWeight:800,padding:'1px 7px',borderRadius:'4px',background:GRADE_COL[alert.grade]+'15',color:GRADE_COL[alert.grade],letterSpacing:'0.04em'}}>{alert.grade}</span>}
+                      <span style={{fontSize:'9px',fontWeight:700,color:tc+'90',padding:'1px 7px',background:tc+'10',borderRadius:'4px'}}>{alert.type.replace('_',' ')}</span>
+                      {alert.flag && <span style={{fontSize:'14px'}}>{alert.flag}</span>}
+                      {alert.country && <span style={{fontSize:'11px',color:'rgba(232,244,248,0.6)',fontWeight:600}}>{alert.country}</span>}
+                      <span style={{fontSize:'10px',color:'rgba(232,244,248,0.25)',fontFamily:"'JetBrains Mono',monospace",marginLeft:'auto'}}>{alert.time}</span>
+                    </div>
+                    <div style={{fontSize:'13px',fontWeight:alert.read?500:700,color:alert.read?'rgba(232,244,248,0.6)':'rgba(232,244,248,0.9)',marginBottom:'5px',lineHeight:1.35}}>{alert.title}</div>
+                    <div style={{fontSize:'11px',color:'rgba(232,244,248,0.4)',lineHeight:1.65}}>{alert.body}</div>
+                    <div style={{display:'flex',gap:'8px',marginTop:'10px'}}>
+                      <Link href={alert.link} onClick={()=>markRead(alert.id)} style={{padding:'5px 14px',background:tc+'0a',border:`1px solid ${tc}18`,borderRadius:'6px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:tc}}>
+                        View →
+                      </Link>
+                      {!alert.read && (
+                        <button onClick={()=>markRead(alert.id)} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'6px',cursor:'pointer',fontSize:'11px',fontWeight:600,color:'rgba(232,244,248,0.5)',fontFamily:"'Inter',sans-serif"}}>
+                          <Check size={10}/>Mark read
+                        </button>
+                      )}
+                      <button onClick={()=>remove(alert.id)} style={{padding:'5px 8px',background:'rgba(255,68,102,0.05)',border:'1px solid rgba(255,68,102,0.12)',borderRadius:'6px',cursor:'pointer',color:'rgba(255,68,102,0.5)',lineHeight:1,marginLeft:'auto'}}
+                        onMouseEnter={e=>{e.currentTarget.style.color='#ff4466';e.currentTarget.style.borderColor='rgba(255,68,102,0.25)';}}
+                        onMouseLeave={e=>{e.currentTarget.style.color='rgba(255,68,102,0.5)';e.currentTarget.style.borderColor='rgba(255,68,102,0.12)';}}>
+                        <Trash2 size={12}/>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+          {filtered.length === 0 && (
+            <div style={{textAlign:'center',padding:'48px',color:'rgba(232,244,248,0.3)',fontSize:'13px'}}>
+              <BellOff size={32} color="rgba(0,255,200,0.2)" style={{display:'block',margin:'0 auto 14px'}}/>
+              No alerts to show
+            </div>
+          )}
+        </div>
       </div>
       <Footer/>
     </div>

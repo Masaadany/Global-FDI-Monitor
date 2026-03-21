@@ -25,6 +25,9 @@ const SEARCH_INDEX = [
   {type:'economy',id:'NLD',name:'Netherlands',flag:'🇳🇱',sub:'GOSA 84.6 · Europe · TOP',href:'/country/NLD',score:84.6},
   {type:'economy',id:'CAN',name:'Canada',flag:'🇨🇦',sub:'GOSA 80.8 · Americas · TOP',href:'/country/CAN',score:80.8},
   {type:'economy',id:'NZL',name:'New Zealand',flag:'🇳🇿',sub:'GOSA 86.7 · Oceania · TOP',href:'/country/NZL',score:86.7},
+  {type:'economy',id:'AUS',name:'Australia',  flag:'🇦🇺',sub:'GOSA 82.8 · Oceania · TOP',href:'/country/AUS',score:82.8},
+  {type:'economy',id:'FRA',name:'France',     flag:'🇫🇷',sub:'GOSA 81.6 · Europe · TOP', href:'/country/FRA',score:81.6},
+  {type:'economy',id:'CHN',name:'China',      flag:'🇨🇳',sub:'GOSA 64.2 · Asia Pacific · HIGH',href:'/country/CHN',score:64.2},
   // Pages
   {type:'page',name:'Dashboard',sub:'7 live HUD widgets',href:'/dashboard',icon:'📊'},
   {type:'page',name:'Investment Analysis',sub:'15 economies · GOSA scoring',href:'/investment-analysis',icon:'🌍'},

@@ -1,224 +1,141 @@
 'use client';
 import { useState } from 'react';
-import { Globe, CheckCircle, ArrowRight, Target, Zap, BarChart3 } from 'lucide-react';
-import NavBar from '@/components/NavBar';
 import Link from 'next/link';
+import { CheckCircle, ChevronRight, Globe, Zap, BarChart3, Target } from 'lucide-react';
 
 const STEPS = [
-  {id:'welcome',    title:'Welcome to Global FDI Monitor',    subtitle:'Your investment intelligence platform'},
-  {id:'language',   title:'Choose Your Language',             subtitle:'We support 10 official languages'},
-  {id:'use-case',   title:'What best describes your role?',   subtitle:'We\'ll personalise your experience'},
-  {id:'regions',    title:'Select your focus regions',        subtitle:'Which regions matter most to you?'},
-  {id:'sectors',    title:'Your key investment sectors',      subtitle:'Filter intelligence to what matters'},
-];
-
-const LANGUAGES = [
-  {code:'en',name:'English',    native:'English',    flag:'🇺🇸'},
-  {code:'ar',name:'Arabic',     native:'العربية',    flag:'🇸🇦',dir:'rtl'},
-  {code:'zh',name:'Chinese',    native:'中文',        flag:'🇨🇳'},
-  {code:'fr',name:'French',     native:'Français',   flag:'🇫🇷'},
-  {code:'es',name:'Spanish',    native:'Español',    flag:'🇪🇸'},
-  {code:'de',name:'German',     native:'Deutsch',    flag:'🇩🇪'},
-  {code:'ja',name:'Japanese',   native:'日本語',      flag:'🇯🇵'},
-  {code:'ko',name:'Korean',     native:'한국어',      flag:'🇰🇷'},
-  {code:'pt',name:'Portuguese', native:'Português',  flag:'🇧🇷'},
-  {code:'ru',name:'Russian',    native:'Русский',    flag:'🇷🇺'},
+  { id:'role',    icon:'👤', title:'Tell us about yourself',   sub:'Personalise your experience' },
+  { id:'regions', icon:'🌍', title:'Select your focus regions', sub:'We\'ll surface the most relevant intelligence' },
+  { id:'sectors', icon:'🏭', title:'Choose investment sectors', sub:'Tailor your signal feed and reports' },
+  { id:'done',    icon:'🚀', title:'You\'re all set!',          sub:'Your platform is ready' },
 ];
 
 const ROLES = [
-  {id:'ipa',       label:'Investment Promotion Agency (IPA)',    icon:'🏛'},
-  {id:'gov',       label:'Government / Ministry',               icon:'🏢'},
-  {id:'swf',       label:'Sovereign Wealth Fund',               icon:'💰'},
-  {id:'consulting',label:'Strategy / Consulting Firm',          icon:'📊'},
-  {id:'pe',        label:'Private Equity / Venture Capital',    icon:'📈'},
-  {id:'corporate', label:'Corporate / Multinational',           icon:'🌐'},
-  {id:'academic',  label:'Research / Academic Institution',     icon:'📚'},
-  {id:'other',     label:'Other Professional',                  icon:'👤'},
+  {id:'ipa',    label:'Investment Promotion Agency', icon:'🏛', desc:'Attract FDI to your country or region'},
+  {id:'pe',     label:'Private Equity / VC',         icon:'💼', desc:'Screen and evaluate investment opportunities'},
+  {id:'corp',   label:'Corporate Strategy',          icon:'🏢', desc:'Site selection and market entry decisions'},
+  {id:'swf',    label:'Sovereign Wealth Fund',       icon:'🏦', desc:'Portfolio screening and country allocation'},
+  {id:'govt',   label:'Government / Economic Dev',  icon:'🏗', desc:'Policy benchmarking and competitiveness'},
+  {id:'consult',label:'Advisory / Consulting',       icon:'📊', desc:'Client intelligence and research'},
 ];
 
-const REGIONS_LIST = ['Middle East & North Africa','Asia-Pacific','Europe','Americas','Sub-Saharan Africa','South Asia'];
-const SECTORS_LIST = ['Technology','Renewable Energy','Manufacturing','Financial Services','Healthcare','Logistics & Infrastructure','Agriculture','Real Estate'];
+const REGIONS = ['Asia Pacific','Middle East','Americas','Europe','Africa','Oceania'];
+const SECTORS_LIST = ['EV Battery','Data Centers','Semiconductors','Renewables','Manufacturing','AI & Technology','Financial Services','Pharmaceutical'];
 
 export default function OnboardingPage() {
-  const [step,     setStep]     = useState(0);
-  const [lang,     setLang]     = useState('en');
-  const [role,     setRole]     = useState('');
-  const [regions,  setRegions]  = useState<string[]>([]);
-  const [sectors,  setSectors]  = useState<string[]>([]);
+  const [step, setStep] = useState(0);
+  const [role, setRole] = useState('');
+  const [regions, setRegions] = useState<string[]>([]);
+  const [sectors, setSectors] = useState<string[]>([]);
 
-  const STEP = STEPS[step];
-  const isLast = step === STEPS.length - 1;
-
-  function next() { if (step < STEPS.length - 1) setStep(s=>s+1); }
-  function back() { if (step > 0) setStep(s=>s-1); }
-
-  const canNext = () => {
-    if (step===1) return true;
-    if (step===2) return !!role;
-    if (step===3) return regions.length > 0;
-    if (step===4) return sectors.length > 0;
-    return true;
-  };
+  function toggleRegion(r: string) { setRegions(p => p.includes(r)?p.filter(x=>x!==r):[...p,r]); }
+  function toggleSector(s: string) { setSectors(p => p.includes(s)?p.filter(x=>x!==s):[...p,s]); }
 
   return (
-    <div className="min-h-screen" style={{background:'linear-gradient(135deg,#0A3D62 0%,#0E4F7A 100%)',
-      display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'24px',
-      position:'relative',overflow:'hidden'}}>
-      {/* Grid overlay */}
-      <div style={{position:'absolute',inset:0,
-        backgroundImage:'linear-gradient(rgba(116,187,101,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(116,187,101,0.05) 1px,transparent 1px)',
-        backgroundSize:'40px 40px'}}/>
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"'Inter','Helvetica Neue',sans-serif",position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+      <div style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',width:'800px',height:'400px',background:'radial-gradient(ellipse, rgba(0,80,120,0.1), transparent)',pointerEvents:'none'}}/>
 
-      <div style={{position:'relative',zIndex:1,width:'100%',maxWidth:'580px'}}>
-        {/* Logo */}
-        <div style={{textAlign:'center',marginBottom:'28px'}}>
-          <Link href="/" style={{textDecoration:'none',display:'inline-flex',alignItems:'baseline',gap:'2px'}}>
-            <span style={{fontSize:'22px',fontWeight:900,color:'white'}}>GLOBAL</span>
-            <span style={{fontSize:'22px',fontWeight:900,color:'#74BB65',marginLeft:'4px'}}>FDI</span>
-            <span style={{fontSize:'22px',fontWeight:900,color:'white',marginLeft:'4px'}}>MONITOR</span>
-          </Link>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{display:'flex',gap:'4px',marginBottom:'28px'}}>
-          {STEPS.map((_,i)=>(
-            <div key={i} style={{flex:1,height:'4px',borderRadius:'2px',
-              background:i<=step?'#74BB65':'rgba(255,255,255,0.15)',transition:'background 0.3s'}}/>
+      <div style={{width:'100%',maxWidth:'640px',position:'relative'}}>
+        {/* Progress */}
+        <div style={{display:'flex',gap:'8px',marginBottom:'32px',justifyContent:'center'}}>
+          {STEPS.map((s,i) => (
+            <div key={s.id} style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <div style={{width:'28px',height:'28px',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:800,transition:'all 300ms',background:i<step?'#00ffc8':i===step?'rgba(0,255,200,0.15)':'rgba(255,255,255,0.06)',color:i<step?'#020c14':i===step?'#00ffc8':'rgba(232,244,248,0.3)',border:`1px solid ${i<=step?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.07)'}`,boxShadow:i===step?'0 0 12px rgba(0,255,200,0.3)':'none'}}>
+                {i < step ? '✓' : i+1}
+              </div>
+              {i < STEPS.length-1 && <div style={{width:'40px',height:'1px',background:`linear-gradient(90deg, ${i<step?'#00ffc8':'rgba(255,255,255,0.1)'}, ${i<step-1?'#00ffc8':'rgba(255,255,255,0.06)'})`}}/>}
+            </div>
           ))}
         </div>
 
-        {/* Card */}
-        <div style={{background:'white',borderRadius:'20px',padding:'36px',
-          boxShadow:'0 24px 80px rgba(0,0,0,0.2)'}}>
+        {/* Panel */}
+        <div style={{background:'rgba(10,22,40,0.9)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'18px',padding:'36px',boxShadow:'0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,200,0.06)'}}>
           <div style={{textAlign:'center',marginBottom:'28px'}}>
-            <div style={{fontSize:'22px',fontWeight:800,color:'#0A3D62',marginBottom:'6px'}}>{STEP.title}</div>
-            <div style={{fontSize:'14px',color:'#696969'}}>{STEP.subtitle}</div>
+            <div style={{fontSize:'36px',marginBottom:'10px'}}>{STEPS[step].icon}</div>
+            <h1 style={{fontSize:'22px',fontWeight:900,color:'#e8f4f8',marginBottom:'5px'}}>{STEPS[step].title}</h1>
+            <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>{STEPS[step].sub}</p>
           </div>
 
-          {/* Step 0: Welcome */}
-          {step===0 && (
-            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-              {[{icon:Zap,   title:'218+ live FDI signals',   desc:'PLATINUM to BRONZE, Z3 verified, 2s updates'},
-                {icon:Globe, title:'215 economies covered',   desc:'GFR assessment, Investment Analysis, benchmarking'},
-                {icon:BarChart3,title:'Investment Analysis',  desc:'4-layer scoring — Doing Business to Market Intelligence'},
-                {icon:Target,title:'Mission Planning',        desc:'Destination countries, targets, dossier generation'},
-              ].map(({icon:Icon,title,desc})=>(
-                <div key={title} style={{display:'flex',gap:'12px',padding:'14px',borderRadius:'10px',
-                  background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)'}}>
-                  <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(116,187,101,0.1)',
-                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <Icon size={16} color="#74BB65"/>
-                  </div>
-                  <div>
-                    <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'2px'}}>{title}</div>
-                    <div style={{fontSize:'11px',color:'#696969'}}>{desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Step 1: Language */}
-          {step===1 && (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
-              {LANGUAGES.map(l=>(
-                <button key={l.code} onClick={()=>setLang(l.code)}
-                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'10px 14px',
-                    borderRadius:'9px',border:lang===l.code?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
-                    background:lang===l.code?'rgba(116,187,101,0.06)':'white',
-                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
-                  <span style={{fontSize:'20px'}}>{l.flag}</span>
-                  <div>
-                    <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{l.native}</div>
-                    <div style={{fontSize:'10px',color:'#696969'}}>{l.name}</div>
-                  </div>
-                  {lang===l.code && <CheckCircle size={14} color="#74BB65" style={{marginLeft:'auto'}}/>}
+          {/* Step 0: Role */}
+          {step === 0 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+              {ROLES.map(r => (
+                <button key={r.id} onClick={()=>{setRole(r.id);}}
+                  style={{padding:'14px',background:role===r.id?'rgba(0,255,200,0.08)':'rgba(255,255,255,0.03)',border:`1px solid ${role===r.id?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.07)'}`,borderRadius:'10px',cursor:'pointer',textAlign:'left',transition:'all 150ms',fontFamily:"'Inter',sans-serif"}}>
+                  <div style={{fontSize:'18px',marginBottom:'5px'}}>{r.icon}</div>
+                  <div style={{fontSize:'12px',fontWeight:700,color:role===r.id?'#00ffc8':'rgba(232,244,248,0.8)',marginBottom:'2px'}}>{r.label}</div>
+                  <div style={{fontSize:'10px',color:'rgba(232,244,248,0.4)',lineHeight:1.4}}>{r.desc}</div>
+                  {role===r.id && <div style={{position:'absolute',top:'10px',right:'10px',color:'#00ffc8',fontSize:'12px'}}>✓</div>}
                 </button>
               ))}
             </div>
           )}
 
-          {/* Step 2: Role */}
-          {step===2 && (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
-              {ROLES.map(r=>(
-                <button key={r.id} onClick={()=>setRole(r.id)}
-                  style={{display:'flex',alignItems:'center',gap:'8px',padding:'12px',
-                    borderRadius:'9px',border:role===r.id?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
-                    background:role===r.id?'rgba(116,187,101,0.06)':'white',
-                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
-                  <span style={{fontSize:'20px'}}>{r.icon}</span>
-                  <span style={{fontSize:'12px',fontWeight:600,color:'#0A3D62',lineHeight:'1.3'}}>{r.label}</span>
-                  {role===r.id && <CheckCircle size={12} color="#74BB65" style={{marginLeft:'auto',flexShrink:0}}/>}
+          {/* Step 1: Regions */}
+          {step === 1 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'10px'}}>
+              {REGIONS.map(r => (
+                <button key={r} onClick={()=>toggleRegion(r)}
+                  style={{padding:'14px 12px',background:regions.includes(r)?'rgba(0,255,200,0.08)':'rgba(255,255,255,0.03)',border:`1px solid ${regions.includes(r)?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.07)'}`,borderRadius:'10px',cursor:'pointer',textAlign:'center',transition:'all 150ms',fontFamily:"'Inter',sans-serif",display:'flex',flexDirection:'column',alignItems:'center',gap:'6px'}}>
+                  <Globe size={20} color={regions.includes(r)?'#00ffc8':'rgba(232,244,248,0.4)'}/>
+                  <span style={{fontSize:'12px',fontWeight:regions.includes(r)?700:400,color:regions.includes(r)?'#00ffc8':'rgba(232,244,248,0.7)'}}>{r}</span>
                 </button>
               ))}
             </div>
           )}
 
-          {/* Step 3: Regions */}
-          {step===3 && (
-            <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-              {REGIONS_LIST.map(r=>(
-                <button key={r}
-                  onClick={()=>setRegions(p=>p.includes(r)?p.filter(x=>x!==r):[...p,r])}
-                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'12px 16px',
-                    borderRadius:'9px',border:regions.includes(r)?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
-                    background:regions.includes(r)?'rgba(116,187,101,0.06)':'white',
-                    cursor:'pointer',transition:'all 0.15s',textAlign:'left'}}>
-                  <div style={{width:'18px',height:'18px',borderRadius:'4px',border:'2px solid',
-                    borderColor:regions.includes(r)?'#74BB65':'rgba(10,61,98,0.2)',
-                    background:regions.includes(r)?'#74BB65':'transparent',
-                    display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    {regions.includes(r) && <CheckCircle size={11} color="white"/>}
+          {/* Step 2: Sectors */}
+          {step === 2 && (
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+              {SECTORS_LIST.map(s => (
+                <button key={s} onClick={()=>toggleSector(s)}
+                  style={{padding:'12px',background:sectors.includes(s)?'rgba(0,255,200,0.08)':'rgba(255,255,255,0.03)',border:`1px solid ${sectors.includes(s)?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.07)'}`,borderRadius:'10px',cursor:'pointer',textAlign:'left',transition:'all 150ms',fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',gap:'8px'}}>
+                  <div style={{width:'20px',height:'20px',borderRadius:'50%',border:`2px solid ${sectors.includes(s)?'#00ffc8':'rgba(255,255,255,0.15)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,transition:'all 150ms',background:sectors.includes(s)?'#00ffc8':'transparent'}}>
+                    {sectors.includes(s) && <span style={{fontSize:'10px',color:'#020c14',fontWeight:900}}>✓</span>}
                   </div>
-                  <span style={{fontSize:'13px',fontWeight:600,color:'#0A3D62'}}>{r}</span>
+                  <span style={{fontSize:'12px',fontWeight:sectors.includes(s)?700:400,color:sectors.includes(s)?'#00ffc8':'rgba(232,244,248,0.7)'}}>{s}</span>
                 </button>
               ))}
             </div>
           )}
 
-          {/* Step 4: Sectors */}
-          {step===4 && (
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
-              {SECTORS_LIST.map(s=>(
-                <button key={s}
-                  onClick={()=>setSectors(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s])}
-                  style={{padding:'10px 14px',borderRadius:'9px',
-                    border:sectors.includes(s)?'2px solid #74BB65':'1px solid rgba(10,61,98,0.12)',
-                    background:sectors.includes(s)?'rgba(116,187,101,0.06)':'white',
-                    cursor:'pointer',transition:'all 0.15s',fontSize:'12px',fontWeight:600,
-                    color:'#0A3D62',textAlign:'left',display:'flex',alignItems:'center',gap:'6px'}}>
-                  {sectors.includes(s) && <CheckCircle size={11} color="#74BB65"/>}
-                  {s}
-                </button>
-              ))}
+          {/* Step 3: Done */}
+          {step === 3 && (
+            <div style={{textAlign:'center'}}>
+              <div style={{width:'72px',height:'72px',borderRadius:'50%',background:'rgba(0,255,200,0.1)',border:'2px solid rgba(0,255,200,0.3)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',boxShadow:'0 0 24px rgba(0,255,200,0.2)'}}>
+                <CheckCircle size={36} color="#00ffc8" style={{filter:'drop-shadow(0 0 10px rgba(0,255,200,0.6))'}}/>
+              </div>
+              <div style={{display:'flex',gap:'10px',flexWrap:'wrap',justifyContent:'center',marginBottom:'20px'}}>
+                {[['Role',ROLES.find(r=>r.id===role)?.label||'—'],['Regions',regions.length>0?regions.join(', '):'All'],['Sectors',sectors.length>0?sectors.join(', '):'All']].map(([k,v])=>(
+                  <div key={k} style={{padding:'8px 14px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.1)',borderRadius:'8px',fontSize:'11px',color:'rgba(232,244,248,0.6)'}}>
+                    <span style={{color:'rgba(0,255,200,0.5)',fontWeight:700,marginRight:'5px'}}>{k}:</span>{v as string}
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:'13px',color:'rgba(232,244,248,0.5)',lineHeight:1.75,marginBottom:'20px'}}>
+                Your platform is personalised and ready. Head to the dashboard to explore live GOSA scores, signals, and your GFR ranking.
+              </p>
+              <Link href="/dashboard" style={{display:'inline-flex',alignItems:'center',gap:'8px',padding:'12px 32px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'10px',textDecoration:'none',fontSize:'14px',fontWeight:800,boxShadow:'0 4px 16px rgba(0,255,200,0.3)'}}>
+                Go to Dashboard <ChevronRight size={15}/>
+              </Link>
             </div>
           )}
 
-          {/* Navigation */}
-          <div style={{display:'flex',gap:'10px',marginTop:'24px',justifyContent:'space-between'}}>
-            {step > 0
-              ? <button onClick={back} style={{padding:'11px 20px',border:'1px solid rgba(10,61,98,0.15)',
-                  borderRadius:'9px',background:'transparent',cursor:'pointer',fontSize:'14px',fontWeight:600,color:'#696969'}}>← Back</button>
-              : <div/>}
-            {isLast
-              ? <Link href="/dashboard" style={{display:'flex',alignItems:'center',gap:'7px',
-                  padding:'11px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
-                  textDecoration:'none',fontWeight:800,fontSize:'14px',
-                  boxShadow:'0 4px 16px rgba(116,187,101,0.3)'}}>
-                  Launch Platform <ArrowRight size={14}/>
-                </Link>
-              : <button onClick={next} disabled={!canNext()}
-                  style={{display:'flex',alignItems:'center',gap:'7px',
-                    padding:'11px 24px',background:canNext()?'#74BB65':'rgba(116,187,101,0.4)',
-                    color:'white',borderRadius:'9px',border:'none',cursor:canNext()?'pointer':'not-allowed',
-                    fontSize:'14px',fontWeight:700,transition:'all 0.15s'}}>
-                  Continue <ArrowRight size={13}/>
-                </button>}
-          </div>
-          <div style={{textAlign:'center',marginTop:'14px',fontSize:'11px',color:'#696969'}}>
-            Step {step+1} of {STEPS.length}
-          </div>
+          {/* Nav buttons */}
+          {step < 3 && (
+            <div style={{display:'flex',justifyContent:'space-between',marginTop:'24px',alignItems:'center'}}>
+              <button onClick={()=>step>0&&setStep(step-1)} disabled={step===0}
+                style={{padding:'9px 18px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'9px',cursor:step===0?'not-allowed':'pointer',fontSize:'12px',fontWeight:600,color:step===0?'rgba(232,244,248,0.2)':'rgba(232,244,248,0.55)',fontFamily:"'Inter',sans-serif",opacity:step===0?0.4:1}}>
+                ← Back
+              </button>
+              <button onClick={()=>setStep(s=>Math.min(3,s+1))}
+                disabled={step===0&&!role}
+                style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 24px',background:(!role&&step===0)?'rgba(255,255,255,0.06)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:(!role&&step===0)?'rgba(232,244,248,0.3)':'#020c14',border:'none',borderRadius:'9px',cursor:(!role&&step===0)?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",boxShadow:(!role&&step===0)?'none':'0 4px 14px rgba(0,255,200,0.25)'}}>
+                {step===2?'Finish Setup':'Continue'} <ChevronRight size={13}/>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
