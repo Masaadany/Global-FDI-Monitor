@@ -95,7 +95,7 @@ export default function HomePage() {
             </div>
           </div>
           <p className="footer-note">
-            DIFC, Dubai, UAE · <a href="mailto:info@fdimonitor.org">info@fdimonitor.org</a>
+            <a href="mailto:info@fdimonitor.org">info@fdimonitor.org</a>
             <br/>© 2026 Global FDI Monitor. All rights reserved.
           </p>
         </div>

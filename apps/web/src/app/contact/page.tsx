@@ -177,7 +177,7 @@ export default function ContactPage() {
                 <div style={{display:'flex',gap:'8px'}}><span>📧</span>
                   <a href="mailto:info@fdimonitor.org" style={{color:'#0A3D62',fontWeight:600}}>info@fdimonitor.org</a>
                 </div>
-                <div style={{display:'flex',gap:'8px'}}><span>📍</span><span>DIFC, Dubai, UAE</span></div>
+                <div style={{display:'flex',gap:'8px'}}><span>📍</span><span>info@fdimonitor.org</span></div>
                 <div style={{display:'flex',gap:'8px'}}><span>⏱</span><span>Response within 24 hours</span></div>
                 <div style={{display:'flex',gap:'8px'}}><span>🔗</span>
                   <a href="https://linkedin.com/company/fdimonitor" target="_blank" rel="noopener"

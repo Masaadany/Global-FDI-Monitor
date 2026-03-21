@@ -11,7 +11,7 @@ export default function JsonLd({ type = 'Organization' }: { type?: string }) {
       logo: `${BASE}/logo.svg`,
       description: 'Global FDI intelligence platform: 215 economies, real-time signals, GFR assessments, AI reports.',
       foundingDate: '2018',
-      address: { '@type':'PostalAddress', addressLocality:'Dubai', addressCountry:'AE', addressRegion:'DIFC' },
+      
       contactPoint: { '@type':'ContactPoint', email:'info@fdimonitor.org', contactType:'customer support' },
       sameAs: ['https://twitter.com/fdimonitor','https://linkedin.com/company/fdi-monitor'],
     },

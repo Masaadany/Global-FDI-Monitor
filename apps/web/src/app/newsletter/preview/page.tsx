@@ -479,7 +479,7 @@ export default function NewsletterPreviewPage() {
                   <div>
                     <div style={{fontSize:'10px',fontWeight:800,color:'#696969',textTransform:'uppercase',
                       letterSpacing:'0.1em',marginBottom:'8px'}}>Contact Us</div>
-                    {[['🌐','www.fdimonitor.org'],['✉','info@fdimonitor.org'],['📍','DIFC, Dubai, UAE']].map(([i,v])=>(
+                    {[['🌐','www.fdimonitor.org'],['✉','info@fdimonitor.org'],['📍','info@fdimonitor.org']].map(([i,v])=>(
                       <div key={v} style={{fontSize:'11px',color:'#555',marginBottom:'5px',display:'flex',gap:'7px'}}>
                         <span>{i}</span><span>{v}</span>
                       </div>

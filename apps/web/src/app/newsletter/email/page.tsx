@@ -142,7 +142,7 @@ export default function EmailPreviewPage() {
 
   <!-- FOOTER -->
   <div class="footer">
-    <p><strong style="color:rgba(255,255,255,0.7)">Global FDI Monitor</strong> &nbsp;·&nbsp; DIFC, Dubai, UAE</p>
+    <p><strong style="color:rgba(255,255,255,0.7)">Global FDI Monitor</strong> &nbsp;·&nbsp; info@fdimonitor.org</p>
     <p><a href="https://fdimonitor.org">www.fdimonitor.org</a> &nbsp;·&nbsp; <a href="mailto:info@fdimonitor.org">info@fdimonitor.org</a></p>
     <p style="margin-top:12px">
       <a href="https://fdimonitor.org/newsletter/unsubscribe">Unsubscribe</a> &nbsp;·&nbsp; 

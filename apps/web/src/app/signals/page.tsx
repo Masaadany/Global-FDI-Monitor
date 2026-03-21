@@ -1,331 +1,187 @@
 'use client';
-import { Zap, Shield, Activity, Filter, Globe, BarChart3, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import TrialBanner from '@/components/TrialBanner';
-import SourceBadge from '@/components/SourceBadge';
-import ReadOnlyOverlay from '@/components/ReadOnlyOverlay';
-import { useTrial } from '@/lib/trialContext';
+import Link from 'next/link';
 
-const API = process.env.NEXT_PUBLIC_API_URL || '';
-
-type Grade = 'PLATINUM'|'GOLD'|'SILVER'|'BRONZE';
-const GRADE_C:  Record<Grade,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#9E9E9E'};
-const GRADE_BG: Record<Grade,string> = {PLATINUM:'rgba(10,61,98,0.1)',GOLD:'rgba(116,187,101,0.12)',SILVER:'rgba(105,105,105,0.1)',BRONZE:'rgba(158,158,158,0.08)'};
-
-const SIGNALS = [
-  {ref:'GFM-SIG-ARE-001',grade:'PLATINUM' as Grade,company:'Microsoft Corporation',eco:'UAE',sector:'Technology',capex:'$5.2B',sci:96.2,z3:true,sha:'a1b2c3d4',source:'fDi Markets',src_ref:'GFM-SRC-000012',date:'2026-03-18',jobs:3500,type:'Greenfield',flag:'🇦🇪'},
-  {ref:'GFM-SIG-IDN-002',grade:'PLATINUM' as Grade,company:'CATL',            eco:'Indonesia',sector:'Manufacturing',capex:'$3.2B',sci:94.8,z3:true,sha:'b2c3d4e5',source:'UNCTAD WIR',src_ref:'GFM-SRC-000005',date:'2026-03-17',jobs:5000,type:'Greenfield',flag:'🇮🇩'},
-  {ref:'GFM-SIG-SAU-003',grade:'GOLD'     as Grade,company:'Amazon Web Services',eco:'Saudi Arabia',sector:'Technology',capex:'$5.4B',sci:91.3,z3:true,sha:'c3d4e5f6',source:'SEC Filing',src_ref:'GFM-SRC-000031',date:'2026-03-16',jobs:2000,type:'Greenfield',flag:'🇸🇦'},
-  {ref:'GFM-SIG-DEU-004',grade:'GOLD'     as Grade,company:'Siemens AG',       eco:'Germany',  sector:'Energy',      capex:'$2.1B',sci:88.5,z3:true,sha:'d4e5f6g7',source:'Annual Report',src_ref:'GFM-SRC-000044',date:'2026-03-15',jobs:1800,type:'Expansion',flag:'🇩🇪'},
-  {ref:'GFM-SIG-SGP-005',grade:'GOLD'     as Grade,company:'Google Cloud',     eco:'Singapore',sector:'Technology', capex:'$2.8B',sci:87.1,z3:true,sha:'e5f6g7h8',source:'Press Release',src_ref:'GFM-SRC-000019',date:'2026-03-14',jobs:2200,type:'Greenfield',flag:'🇸🇬'},
-  {ref:'GFM-SIG-GBR-006',grade:'GOLD'     as Grade,company:'BlackRock',        eco:'UK',       sector:'Finance',    capex:'$0.9B',sci:85.2,z3:true,sha:'f6g7h8i9',source:'Companies House',src_ref:'GFM-SRC-000028',date:'2026-03-14',jobs:450, type:'M&A',     flag:'🇬🇧'},
-  {ref:'GFM-SIG-MAR-007',grade:'SILVER'   as Grade,company:'ACWA Power',       eco:'Morocco',  sector:'Energy',     capex:'$0.7B',sci:74.8,z3:true,sha:'g7h8i9j0',source:'Press Release',src_ref:'GFM-SRC-000019',date:'2026-03-13',jobs:900, type:'Greenfield',flag:'🇲🇦'},
-  {ref:'GFM-SIG-IND-008',grade:'SILVER'   as Grade,company:'Apple Inc.',       eco:'India',    sector:'Manufacturing',capex:'$1.5B',sci:72.3,z3:false,sha:'h8i9j0k1',source:'Economic Times',src_ref:'GFM-SRC-000061',date:'2026-03-12',jobs:4500,type:'Expansion',flag:'🇮🇳'},
-  {ref:'GFM-SIG-VNM-009',grade:'SILVER'   as Grade,company:'Samsung SDI',      eco:'Vietnam',  sector:'Manufacturing',capex:'$1.2B',sci:71.8,z3:true,sha:'i9j0k1l2',source:'Korea Herald',src_ref:'GFM-SRC-000075',date:'2026-03-11',jobs:3200,type:'Greenfield',flag:'🇻🇳'},
-  {ref:'GFM-SIG-POL-010',grade:'BRONZE'   as Grade,company:'Volkswagen',       eco:'Poland',   sector:'Auto',       capex:'$0.4B',sci:62.1,z3:false,sha:'j0k1l2m3',source:'VW AG Report',src_ref:'GFM-SRC-000082',date:'2026-03-10',jobs:800, type:'Expansion',flag:'🇵🇱'},
+const SIGNAL_DB = [
+  {id:1,type:'POLICY CHANGE',eco:'Malaysia',flag:'🇲🇾',region:'Asia Pacific',sector:'Digital Economy',text:'100% FDI ownership in data center sector approved — removes previous 30% local equity requirement.',grade:'PLATINUM',sci:94.2,time:'2 min ago',color:'#e74c3c',impact:'HIGH'},
+  {id:2,type:'NEW INCENTIVE',eco:'Thailand',flag:'🇹🇭',region:'Asia Pacific',sector:'Manufacturing',text:'$2B EV battery manufacturing subsidy — 15-year tax holiday, 50% land cost reduction.',grade:'GOLD',sci:88.7,time:'8 min ago',color:'#2ecc71',impact:'HIGH'},
+  {id:3,type:'SECTOR GROWTH',eco:'Vietnam',flag:'🇻🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Electronics and semiconductor FDI inflows reach record $8.4B in Q1 2026, up 34% YoY.',grade:'GOLD',sci:85.1,time:'15 min ago',color:'#3498db',impact:'HIGH'},
+  {id:4,type:'ZONE AVAILABLE',eco:'Indonesia',flag:'🇮🇩',region:'Asia Pacific',sector:'Manufacturing',text:'Batam FTZ opens 200 hectares for greenfield manufacturing — Tier 1 infrastructure ready.',grade:'SILVER',sci:79.3,time:'24 min ago',color:'#f1c40f',impact:'MEDIUM'},
+  {id:5,type:'COMPETITOR MOVE',eco:'Indonesia',flag:'🇮🇩',region:'Asia Pacific',sector:'Manufacturing',text:'$15B nickel processing mega-investment confirmed by Korean consortium in Sulawesi.',grade:'PLATINUM',sci:91.4,time:'31 min ago',color:'#3498db',impact:'HIGH'},
+  {id:6,type:'POLICY CHANGE',eco:'Saudi Arabia',flag:'🇸🇦',region:'Middle East',sector:'All Sectors',text:'Vision 2030 FDI framework overhaul — fast-track 30-day investment license now mandatory.',grade:'PLATINUM',sci:92.8,time:'45 min ago',color:'#e74c3c',impact:'HIGH'},
+  {id:7,type:'NEW INCENTIVE',eco:'UAE',flag:'🇦🇪',region:'Middle East',sector:'Digital Economy',text:'Dubai launches $10B AI and cloud infrastructure investment fund — co-investment terms available.',grade:'GOLD',sci:87.6,time:'1 hr ago',color:'#2ecc71',impact:'HIGH'},
+  {id:8,type:'SECTOR GROWTH',eco:'India',flag:'🇮🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Semiconductor FDI approvals reach $24B — PLI scheme attracting 12 new global chip makers.',grade:'PLATINUM',sci:89.2,time:'1 hr ago',color:'#3498db',impact:'HIGH'},
+  {id:9,type:'ZONE AVAILABLE',eco:'Morocco',flag:'🇲🇦',region:'Africa',sector:'Manufacturing',text:'Casablanca Atlantic Free Zone — Phase 2 industrial land release: 450 plots available.',grade:'SILVER',sci:76.4,time:'2 hrs ago',color:'#f1c40f',impact:'MEDIUM'},
+  {id:10,type:'NEW INCENTIVE',eco:'Singapore',flag:'🇸🇬',region:'Asia Pacific',sector:'Financial Services',text:'MAS announces enhanced financial sector development program — $500M incentive pool.',grade:'GOLD',sci:86.9,time:'2 hrs ago',color:'#2ecc71',impact:'MEDIUM'},
+  {id:11,type:'POLICY CHANGE',eco:'Kenya',flag:'🇰🇪',region:'Africa',sector:'Digital Economy',text:'ICT sector FDI restrictions lifted — 100% foreign ownership now permitted.',grade:'SILVER',sci:72.1,time:'3 hrs ago',color:'#e74c3c',impact:'MEDIUM'},
+  {id:12,type:'SECTOR GROWTH',eco:'Philippines',flag:'🇵🇭',region:'Asia Pacific',sector:'Digital Economy',text:'BPO sector FDI grows 28% — 6 new economic zones designated for digital services.',grade:'GOLD',sci:81.3,time:'4 hrs ago',color:'#3498db',impact:'MEDIUM'},
+  {id:13,type:'NEW INCENTIVE',eco:'Poland',flag:'🇵🇱',region:'Europe',sector:'Manufacturing',text:'Polish Investment Zone expansion — 14 new special economic zones with 12-year CIT exemption.',grade:'SILVER',sci:74.8,time:'5 hrs ago',color:'#2ecc71',impact:'LOW'},
+  {id:14,type:'COMPETITOR MOVE',eco:'Vietnam',flag:'🇻🇳',region:'Asia Pacific',sector:'Manufacturing',text:'Samsung announces $3.3B DRAM memory expansion — confirms long-term manufacturing commitment.',grade:'PLATINUM',sci:90.1,time:'6 hrs ago',color:'#3498db',impact:'HIGH'},
+  {id:15,type:'POLICY CHANGE',eco:'Rwanda',flag:'🇷🇼',region:'Africa',sector:'All Sectors',text:'Rwanda Investment Policy 2026 — fastest FDI approval globally at 3 business days.',grade:'SILVER',sci:71.6,time:'8 hrs ago',color:'#e74c3c',impact:'MEDIUM'},
+  {id:16,type:'ZONE AVAILABLE',eco:'Saudi Arabia',flag:'🇸🇦',region:'Middle East',sector:'Manufacturing',text:'KAEC Phase 3 industrial zones — 800ha premium industrial land with 0% income tax.',grade:'GOLD',sci:84.7,time:'9 hrs ago',color:'#f1c40f',impact:'HIGH'},
 ];
 
-const GRADES: Grade[] = ['PLATINUM','GOLD','SILVER','BRONZE'];
-const SECTORS = ['All Sectors','Technology','Energy','Manufacturing','Finance','Auto'];
+const TYPES = ['ALL','POLICY CHANGE','NEW INCENTIVE','SECTOR GROWTH','ZONE AVAILABLE','COMPETITOR MOVE'];
+const REGIONS = ['All Regions','Asia Pacific','Middle East','Europe','Africa','Americas'];
+const SECTORS = ['All Sectors','Manufacturing','Digital Economy','Financial Services','All Sectors'];
+const GRADES = ['All Grades','PLATINUM','GOLD','SILVER'];
+const IMPACTS = ['All Impact','HIGH','MEDIUM','LOW'];
 
-const SCI_FORMULA = {
-  components: [
-    {name:'Source Credibility',  weight:25, desc:'Authority, peer-review, official vs. secondary'},
-    {name:'Verification Status', weight:20, desc:'Z3 formal proof + cross-source confirmation'},
-    {name:'Extraction Accuracy', weight:20, desc:'NLP confidence + structured field match'},
-    {name:'Temporal Freshness',  weight:20, desc:'Hours since original announcement'},
-    {name:'Publish Reliability', weight:15, desc:'Track record of source for this signal type'},
-  ],
-};
-
-
+const GRADE_COLORS: Record<string,string> = {PLATINUM:'#9b59b6',GOLD:'#f1c40f',SILVER:'#95a5a6'};
+const TYPE_COLORS: Record<string,string> = {'POLICY CHANGE':'#e74c3c','NEW INCENTIVE':'#2ecc71','SECTOR GROWTH':'#3498db','ZONE AVAILABLE':'#f1c40f','COMPETITOR MOVE':'#9b59b6'};
 
 export default function SignalsPage() {
-  const [view,    setView]    = useState<'table'|'cards'>('table');
-  const [gradeF,  setGradeF]  = useState<Grade[]>(['PLATINUM','GOLD']);
-  const [sectorF, setSectorF] = useState('All Sectors');
-  const [search,  setSearch]  = useState('');
-  const [live,    setLive]    = useState(true);
-  const [ticker,  setTicker]  = useState(0);
-  const [sciOpen, setSciOpen] = useState(false);
-  const trial = useTrial();
+  const [signals, setSignals] = useState(SIGNAL_DB);
+  const [typeF, setTypeF] = useState('ALL');
+  const [regionF, setRegionF] = useState('All Regions');
+  const [gradeF, setGradeF] = useState('All Grades');
+  const [impactF, setImpactF] = useState('All Impact');
+  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<number|null>(null);
+  const [liveCount, setLiveCount] = useState(SIGNAL_DB.length);
 
-  useEffect(() => {
-    if (!live) return;
-    const t = setInterval(() => setTicker(n => (n+1) % SIGNALS.length), 2000);
-    return () => clearInterval(t);
-  }, [live]);
+  useEffect(()=>{
+    const iv = setInterval(()=>{
+      if(Math.random()>0.5){
+        const types = Object.keys(TYPE_COLORS);
+        const ecos = [{eco:'Singapore',flag:'🇸🇬',region:'Asia Pacific'},{eco:'UAE',flag:'🇦🇪',region:'Middle East'},{eco:'Thailand',flag:'🇹🇭',region:'Asia Pacific'}];
+        const e = ecos[Math.floor(Math.random()*ecos.length)];
+        const t = types[Math.floor(Math.random()*types.length)];
+        const newSig = {
+          id: Date.now(), type:t, ...e, sector:'Digital Economy',
+          text:'New investment development detected — analysis in progress.',
+          grade:['PLATINUM','GOLD','SILVER'][Math.floor(Math.random()*3)] as string,
+          sci: 70+Math.random()*25,
+          time:'Just now', color:TYPE_COLORS[t], impact:'MEDIUM'
+        };
+        setSignals(p=>[newSig,...p]);
+        setLiveCount(c=>c+1);
+      }
+    },8000);
+    return ()=>clearInterval(iv);
+  },[]);
 
-  const filtered = SIGNALS.filter(s => {
-    const mg = gradeF.length === 0 || gradeF.includes(s.grade);
-    const ms = sectorF === 'All Sectors' || s.sector === sectorF;
-    const mq = !search || s.company.toLowerCase().includes(search.toLowerCase()) ||
-               s.eco.toLowerCase().includes(search.toLowerCase());
-    return mg && ms && mq;
+  const filtered = signals.filter(s=>{
+    if(typeF!=='ALL' && s.type!==typeF) return false;
+    if(regionF!=='All Regions' && s.region!==regionF) return false;
+    if(gradeF!=='All Grades' && s.grade!==gradeF) return false;
+    if(impactF!=='All Impact' && s.impact!==impactF) return false;
+    if(search && !s.eco.toLowerCase().includes(search.toLowerCase()) && !s.text.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
   });
 
-  function toggleGrade(g: Grade) {
-    setGradeF(p => p.includes(g) ? p.filter(x=>x!==g) : [...p,g]);
-  }
-
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'Helvetica Neue,Segoe UI,Arial,sans-serif'}}>
       <NavBar/>
-      <TrialBanner/>
-
-      {/* Hero */}
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px'}}>
-        <div style={{maxWidth:'1400px',margin:'0 auto'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
-            <div>
-              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
-                <div style={{width:'9px',height:'9px',borderRadius:'50%',background:'#74BB65',
-                  animation:'livePulse 2s ease-in-out infinite'}}/>
-                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em'}}>LIVE · {SIGNALS.length} ACTIVE SIGNALS</span>
-              </div>
-              <h1 style={{fontSize:'28px',fontWeight:800,color:'white',lineHeight:'1.2',marginBottom:'6px'}}>
-                FDI Signal Intelligence
-              </h1>
-              <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
-                Z3-verified · SHA-256 provenance · 2-second ingestion latency · SCI 0–100
-              </p>
+      <section style={{background:'linear-gradient(135deg,#1a2c3e,#2c4a6e)',padding:'20px 24px'}}>
+        <div style={{maxWidth:'1400px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'10px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'4px'}}>
+              <span style={{width:'8px',height:'8px',borderRadius:'50%',background:'#2ecc71',display:'inline-block'}}/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.1em'}}>LIVE · {liveCount} Signals Active · Auto-updating</span>
             </div>
-            <div style={{display:'flex',gap:'16px'}}>
-              {[['218+','Total Signals'],['94%','PLATINUM avg SCI'],['2s','Update latency'],['Z3','Verified']].map(([v,l])=>(
-                <div key={l} style={{textAlign:'center'}}>
-                  <div style={{fontSize:'18px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
-                  <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
-                </div>
-              ))}
-            </div>
+            <h1 style={{fontSize:'22px',fontWeight:900,color:'white'}}>⚡ Investment Signals Intelligence Feed</h1>
+          </div>
+          <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+            {[['PLATINUM','#9b59b6'],['GOLD','#f1c40f'],['HIGH IMPACT','#2ecc71']].map(([l,c])=>(
+              <div key={l} style={{padding:'6px 12px',background:`${c}20`,border:`1px solid ${c}40`,borderRadius:'20px',fontSize:'11px',fontWeight:800,color:c}}>{l}</div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Filter bar */}
-      <div style={{position:'sticky',top:'128px',zIndex:35,background:'white',
-        borderBottom:'1px solid rgba(10,61,98,0.1)',boxShadow:'0 2px 8px rgba(10,61,98,0.05)'}}>
-        <div style={{maxWidth:'1400px',margin:'0 auto',padding:'10px 24px',
-          display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center'}}>
-          {/* Search */}
-          <ReadOnlyOverlay feature="search" showUpgrade={false}>
-            <input value={search} onChange={e=>setSearch(e.target.value)}
-              placeholder="🔍 Search company, economy…"
-              style={{padding:'8px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                fontSize:'13px',background:'white',color:'#000',outline:'none',minWidth:'200px'}}
-              aria-label="Search signals" disabled={trial.isSoftLocked}/>
-          </ReadOnlyOverlay>
+      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'16px 24px'}}>
+        {/* Filters */}
+        <div style={{background:'white',borderRadius:'12px',padding:'14px 16px',marginBottom:'14px',boxShadow:'0 1px 4px rgba(0,0,0,0.05)',display:'flex',gap:'8px',flexWrap:'wrap',alignItems:'center'}}>
+          <input value={search} onChange={e=>setSearch(e.target.value)}
+            placeholder="🔍 Search economy or keyword..."
+            style={{flex:'1',minWidth:'180px',padding:'8px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'8px',fontSize:'13px',outline:'none'}}/>
+          {[
+            {val:typeF,set:setTypeF,opts:TYPES,label:'Type'},
+            {val:regionF,set:setRegionF,opts:REGIONS,label:'Region'},
+            {val:gradeF,set:setGradeF,opts:GRADES,label:'Grade'},
+            {val:impactF,set:setImpactF,opts:IMPACTS,label:'Impact'},
+          ].map(({val,set,opts,label})=>(
+            <select key={label} value={val} onChange={e=>set(e.target.value)}
+              style={{padding:'8px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'8px',fontSize:'12px',background:'white',outline:'none',cursor:'pointer'}}>
+              {opts.map(o=><option key={o}>{o}</option>)}
+            </select>
+          ))}
+          <div style={{fontSize:'12px',color:'#666',marginLeft:'auto',flexShrink:0}}>{filtered.length} signals</div>
+        </div>
 
-          {/* Grade filters */}
-          <ReadOnlyOverlay feature="filter" showUpgrade={false}>
-            <div style={{display:'flex',gap:'4px'}}>
-              {GRADES.map(g=>(
-                <button key={g} onClick={()=>!trial.isSoftLocked && toggleGrade(g)} disabled={trial.isSoftLocked}
-                  style={{padding:'5px 12px',borderRadius:'20px',border:'none',cursor:trial.isSoftLocked?'not-allowed':'pointer',
-                    fontSize:'11px',fontWeight:700,transition:'all 0.15s',
-                    background: gradeF.includes(g) ? GRADE_C[g] : GRADE_BG[g],
-                    color:       gradeF.includes(g) ? 'white'    : GRADE_C[g],
-                    opacity:     trial.isSoftLocked ? 0.5 : 1,
-                  }}>
-                  {g}
-                </button>
-              ))}
-            </div>
-          </ReadOnlyOverlay>
-
-          {/* Sector filter */}
-          <select value={sectorF} onChange={e=>!trial.isSoftLocked && setSectorF(e.target.value)}
-            disabled={trial.isSoftLocked}
-            style={{padding:'7px 12px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-              fontSize:'13px',color:'#0A3D62',background:'white',cursor:trial.isSoftLocked?'not-allowed':'pointer'}}>
-            {SECTORS.map(s=><option key={s}>{s}</option>)}
-          </select>
-
-          <div style={{display:'flex',gap:'4px',marginLeft:'auto'}}>
-            {/* LIVE toggle */}
-            <button onClick={()=>setLive(l=>!l)}
-              style={{display:'flex',alignItems:'center',gap:'5px',padding:'6px 12px',
-                borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                background:live?'rgba(116,187,101,0.1)':'transparent',cursor:'pointer',fontSize:'12px',
-                color:live?'#74BB65':'#696969',fontWeight:700}}>
-              <span style={{width:'7px',height:'7px',borderRadius:'50%',
-                background:live?'#74BB65':'#696969',
-                animation:live?'livePulse 2s infinite':'none'}}/>
-              {live?'LIVE':'Paused'}
-            </button>
-            {/* View toggle */}
-            {['table','cards'].map(v=>(
-              <button key={v} onClick={()=>setView(v as any)}
-                style={{padding:'6px 12px',borderRadius:'8px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:600,
-                  background:view===v?'#0A3D62':'rgba(10,61,98,0.06)',color:view===v?'white':'#0A3D62'}}>
-                {v==='table'?'≡ Table':'⊞ Cards'}
+        {/* Type quick-filter buttons */}
+        <div style={{display:'flex',gap:'6px',marginBottom:'14px',flexWrap:'wrap'}}>
+          {TYPES.map(t=>{
+            const c = t==='ALL'?'#1a2c3e':TYPE_COLORS[t]||'#666';
+            return (
+              <button key={t} onClick={()=>setTypeF(t)}
+                style={{padding:'6px 14px',border:'none',borderRadius:'20px',cursor:'pointer',fontSize:'11px',fontWeight:700,
+                  background:typeF===t?c:'rgba(26,44,62,0.06)',color:typeF===t?'white':'#666',transition:'all 0.15s'}}>
+                {t}
               </button>
-            ))}
-          </div>
-
-          <span style={{fontSize:'12px',color:'#696969'}}>{filtered.length} signals</span>
-        </div>
-      </div>
-
-      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'20px 24px',display:'grid',
-        gridTemplateColumns:'1fr 320px',gap:'20px',alignItems:'start'}}>
-
-        {/* Main signal feed */}
-        <div>
-          {view === 'table' ? (
-            <div style={{background:'white',borderRadius:'12px',overflow:'hidden',
-              boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-              <table className="gfm-table">
-                <thead><tr>
-                  <th>Grade</th><th>Company</th><th>Economy</th><th>Sector</th>
-                  <th>CapEx</th><th>SCI</th><th>Z3</th><th>Source</th><th>Date</th>
-                </tr></thead>
-                <tbody>
-                  {filtered.map((s,i)=>(
-                    <tr key={s.ref}
-                      style={{background:i===ticker&&live?'rgba(116,187,101,0.05)':'transparent',transition:'background 0.4s'}}>
-                      <td>
-                        <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'12px',
-                          background:GRADE_BG[s.grade],color:GRADE_C[s.grade]}}>{s.grade}</span>
-                      </td>
-                      <td style={{fontWeight:600,color:'#0A3D62'}}>{s.company}</td>
-                      <td>
-                        <span style={{marginRight:'5px'}}>{s.flag}</span>
-                        <SourceBadge source={s.source} url="#" date={s.date} accessed="20 Mar 2026" refCode={s.src_ref}>
-                          {s.eco}
-                        </SourceBadge>
-                      </td>
-                      <td style={{color:'#696969',fontSize:'12px'}}>{s.sector}</td>
-                      <td style={{fontFamily:'monospace',fontWeight:700,color:'#0A3D62'}}>{s.capex}</td>
-                      <td>
-                        <div style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                          <div style={{width:'36px',height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.08)'}}>
-                            <div style={{height:'100%',borderRadius:'3px',width:`${s.sci}%`,background:GRADE_C[s.grade]}}/>
-                          </div>
-                          <span style={{fontSize:'11px',fontWeight:700,color:GRADE_C[s.grade],fontFamily:'monospace'}}>{s.sci}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span title={s.sha} style={{fontSize:'12px',color:s.z3?'#74BB65':'#E57373',fontWeight:700}}>
-                          {s.z3?'✓ Z3':'—'}
-                        </span>
-                      </td>
-                      <td style={{fontSize:'11px',color:'#696969',fontFamily:'monospace'}}>{s.src_ref}</td>
-                      <td style={{fontSize:'11px',color:'#696969'}}>{s.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:'12px'}}>
-              {filtered.map((s,i)=>(
-                <div key={s.ref} style={{background:'white',borderRadius:'12px',padding:'18px',
-                  boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
-                  borderLeft:`3px solid ${GRADE_C[s.grade]}`,
-                  background2:i===ticker&&live?'rgba(116,187,101,0.03)':'white',
-                  transition:'background 0.4s'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,padding:'3px 8px',borderRadius:'10px',
-                      background:GRADE_BG[s.grade],color:GRADE_C[s.grade]}}>{s.grade}</span>
-                    <span style={{fontSize:'10px',color:'#696969'}}>{s.date}</span>
-                  </div>
-                  <div style={{fontSize:'15px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{s.company}</div>
-                  <div style={{fontSize:'12px',color:'#696969',marginBottom:'10px'}}>
-                    {s.flag} {s.eco} · {s.sector} · {s.type}
-                  </div>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                    <span style={{fontSize:'18px',fontWeight:800,color:'#0A3D62',fontFamily:'monospace'}}>{s.capex}</span>
-                    <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-                      <span style={{fontSize:'10px',color:s.z3?'#74BB65':'#E57373',fontWeight:700}}>{s.z3?'✓ Z3':'—'}</span>
-                      <span style={{fontSize:'12px',fontWeight:700,color:GRADE_C[s.grade]}}>{s.sci} SCI</span>
-                    </div>
-                  </div>
-                  <div style={{fontSize:'10px',color:'#696969',marginTop:'8px',fontFamily:'monospace'}}>{s.ref}</div>
-                </div>
-              ))}
-            </div>
-          )}
+            );
+          })}
         </div>
 
-        {/* Side panel: SCI formula */}
-        <div style={{display:'flex',flexDirection:'column',gap:'14px',position:'sticky',top:'200px'}}>
-          {/* SCI Score explanation */}
-          <div style={{background:'white',borderRadius:'12px',padding:'18px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-            <button onClick={()=>setSciOpen(o=>!o)}
-              style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'100%',
-                border:'none',background:'transparent',cursor:'pointer',padding:0}}>
-              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>Signal Confidence Index (SCI)</div>
-              <span style={{color:'#696969'}}>{sciOpen?'▲':'▼'}</span>
-            </button>
-            {sciOpen && (
-              <div style={{marginTop:'12px'}}>
-                {SCI_FORMULA.components.map(c=>(
-                  <div key={c.name} style={{marginBottom:'10px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
-                      <span style={{fontSize:'11px',fontWeight:700,color:'#0A3D62'}}>{c.name}</span>
-                      <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65'}}>{c.weight}%</span>
-                    </div>
-                    <div style={{height:'4px',borderRadius:'2px',background:'rgba(10,61,98,0.08)',marginBottom:'2px'}}>
-                      <div style={{height:'100%',borderRadius:'2px',width:`${c.weight*4}%`,background:'#74BB65'}}/>
-                    </div>
-                    <div style={{fontSize:'10px',color:'#696969'}}>{c.desc}</div>
+        {/* Signals List */}
+        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+          {filtered.map(s=>(
+            <div key={s.id}
+              style={{background:'white',borderRadius:'12px',overflow:'hidden',
+                borderLeft:`4px solid ${s.color}`,
+                boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
+                animation:s.time==='Just now'?'fadeIn 0.4s ease':'none'}}>
+              <div onClick={()=>setExpanded(expanded===s.id?null:s.id)}
+                style={{padding:'14px 16px',cursor:'pointer',display:'flex',alignItems:'center',gap:'12px'}}>
+                <span style={{fontSize:'20px'}}>{s.flag}</span>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'4px',flexWrap:'wrap'}}>
+                    <span style={{fontSize:'10px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:`${s.color}15`,color:s.color}}>{s.type}</span>
+                    <span style={{fontSize:'10px',fontWeight:800,padding:'2px 7px',borderRadius:'10px',background:`${GRADE_COLORS[s.grade]}15`,color:GRADE_COLORS[s.grade]}}>{s.grade}</span>
+                    <span style={{fontSize:'10px',color:'#999'}}>{s.eco} · {s.sector}</span>
+                    <span style={{fontSize:'10px',color:'#999',marginLeft:'auto'}}>{s.time}</span>
                   </div>
-                ))}
-                <div style={{paddingTop:'8px',borderTop:'1px solid rgba(10,61,98,0.06)',fontSize:'11px',color:'#696969'}}>
-                  Each signal scores 0–100. PLATINUM ≥90 · GOLD ≥75 · SILVER ≥60 · BRONZE ≥40
+                  <div style={{fontSize:'13px',fontWeight:600,color:'#1a2c3e',lineHeight:'1.4'}}>{s.text}</div>
+                </div>
+                <div style={{textAlign:'right',flexShrink:0,marginLeft:'8px'}}>
+                  <div style={{fontSize:'18px',fontWeight:900,color:'#1a2c3e',fontFamily:'monospace'}}>{s.sci.toFixed(1)}</div>
+                  <div style={{fontSize:'9px',color:'#999'}}>SCI Score</div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Grade distribution */}
-          <div style={{background:'white',borderRadius:'12px',padding:'18px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-            <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Grade Distribution</div>
-            {GRADES.map(g=>{
-              const cnt = SIGNALS.filter(s=>s.grade===g).length;
-              const pct = Math.round(cnt/SIGNALS.length*100);
-              return (
-                <div key={g} style={{marginBottom:'8px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
-                    <span style={{fontSize:'11px',fontWeight:700,color:GRADE_C[g]}}>{g}</span>
-                    <span style={{fontSize:'11px',color:'#696969'}}>{cnt} ({pct}%)</span>
+              {expanded===s.id && (
+                <div style={{padding:'0 16px 14px 52px',borderTop:'1px solid rgba(26,44,62,0.05)'}}>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginTop:'10px'}}>
+                    {[
+                      {l:'Region',v:s.region},{l:'Impact Level',v:s.impact},{l:'Signal Grade',v:s.grade},
+                    ].map(({l,v})=>(
+                      <div key={l} style={{padding:'8px 10px',background:'rgba(26,44,62,0.03)',borderRadius:'7px'}}>
+                        <div style={{fontSize:'9px',color:'#999',marginBottom:'2px'}}>{l}</div>
+                        <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{v}</div>
+                      </div>
+                    ))}
                   </div>
-                  <div style={{height:'6px',borderRadius:'3px',background:'rgba(10,61,98,0.06)'}}>
-                    <div style={{height:'100%',borderRadius:'3px',width:`${pct}%`,background:GRADE_C[g]}}/>
+                  <div style={{marginTop:'10px',padding:'10px 12px',background:'rgba(46,204,113,0.05)',borderRadius:'8px',border:'1px solid rgba(46,204,113,0.15)'}}>
+                    <div style={{fontSize:'10px',fontWeight:700,color:'#2ecc71',marginBottom:'3px'}}>STRATEGIC IMPLICATION</div>
+                    <div style={{fontSize:'12px',color:'#444',lineHeight:'1.6'}}>
+                      This signal indicates {s.impact.toLowerCase()} investment opportunity in {s.eco}. 
+                      Recommend immediate review against your current {s.sector} pipeline strategy.
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:'8px',marginTop:'10px'}}>
+                    <Link href="/reports" style={{padding:'7px 14px',background:'#1a2c3e',color:'white',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700}}>
+                      Generate Report →
+                    </Link>
+                    <Link href="/investment-analysis" style={{padding:'7px 14px',border:'1px solid rgba(26,44,62,0.15)',color:'#1a2c3e',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:600}}>
+                      View Full Analysis
+                    </Link>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-
-          {/* Trial quota indicator */}
-          {!trial.isProfessional && (
-            <div style={{background:'white',borderRadius:'12px',padding:'18px',
-              border:'1px solid rgba(116,187,101,0.2)',boxShadow:'0 2px 8px rgba(116,187,101,0.08)'}}>
-              <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>Trial Access</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'6px',fontSize:'12px'}}>
-                <div style={{display:'flex',justifyContent:'space-between'}}>
-                  <span style={{color:'#696969'}}>Searches used</span>
-                  <span style={{fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{trial.searchesUsed}/{trial.searchesMax}</span>
-                </div>
-                <div style={{height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.08)'}}>
-                  <div style={{height:'100%',borderRadius:'3px',background:trial.searchesUsed>=trial.searchesMax?'#E57373':'#74BB65',
-                    width:`${(trial.searchesUsed/trial.searchesMax)*100}%`,transition:'width 0.3s'}}/>
-                </div>
-                <div style={{display:'flex',justifyContent:'space-between'}}>
-                  <span style={{color:'#696969'}}>Reports used</span>
-                  <span style={{fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{trial.reportsUsed}/{trial.reportsMax}</span>
-                </div>
-                <div style={{height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.08)'}}>
-                  <div style={{height:'100%',borderRadius:'3px',background:trial.reportsUsed>=trial.reportsMax?'#E57373':'#74BB65',
-                    width:`${(trial.reportsUsed/trial.reportsMax)*100}%`,transition:'width 0.3s'}}/>
-                </div>
-              </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       </div>
       <Footer/>
