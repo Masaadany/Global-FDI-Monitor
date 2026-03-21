@@ -1,17 +1,19 @@
 import Link from 'next/link';
 
-export default function NotFound() {
-  return (
-    <div style={{minHeight:'100vh',background:'#0f1e2a',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
-      <div style={{textAlign:'center',maxWidth:'500px'}}>
-        <div style={{fontSize:'80px',fontWeight:900,color:'rgba(46,204,113,0.15)',fontFamily:"'JetBrains Mono',monospace",lineHeight:1,marginBottom:'4px'}}>404</div>
-        <div style={{fontSize:'20px',fontWeight:800,color:'white',marginBottom:'10px'}}>Page not found</div>
-        <p style={{fontSize:'14px',color:'rgba(255,255,255,0.5)',lineHeight:'1.65',marginBottom:'28px'}}>
-          The economy or page you are looking for doesn't exist in our database yet. We currently cover 215+ economies — try the Investment Analysis table.
+export default function NotFound(){
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"'Inter','Helvetica Neue',sans-serif",position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+      <div style={{textAlign:'center',maxWidth:'520px',position:'relative'}}>
+        <div style={{fontSize:'100px',fontWeight:900,color:'rgba(0,255,200,0.06)',fontFamily:"'Orbitron','JetBrains Mono',monospace",lineHeight:1,marginBottom:'8px',letterSpacing:'-4px'}}>404</div>
+        <div style={{width:'60px',height:'2px',background:'linear-gradient(90deg,transparent,#00ffc8,transparent)',margin:'0 auto 24px'}}/>
+        <h1 style={{fontSize:'22px',fontWeight:800,color:'#e8f4f8',marginBottom:'12px'}}>Economy not found</h1>
+        <p style={{fontSize:'14px',color:'rgba(232,244,248,0.45)',lineHeight:1.75,marginBottom:'28px'}}>
+          The page or economy you are looking for doesn't exist in our database yet. We currently cover 215+ economies — try the Investment Analysis table.
         </p>
-        <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
-          <Link href="/dashboard" style={{padding:'11px 24px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:800}}>Go to Dashboard →</Link>
-          <Link href="/investment-analysis" style={{padding:'11px 20px',border:'1px solid rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:600}}>Investment Analysis</Link>
+        <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
+          <Link href="/dashboard" style={{padding:'11px 24px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:800,boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>Go to Dashboard →</Link>
+          <Link href="/investment-analysis" style={{padding:'11px 20px',border:'1px solid rgba(232,244,248,0.12)',color:'rgba(232,244,248,0.65)',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:600}}>Investment Analysis</Link>
         </div>
       </div>
     </div>

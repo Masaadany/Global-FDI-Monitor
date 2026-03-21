@@ -2,218 +2,184 @@
 import { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import { Download, Eye, ChevronDown, Filter } from 'lucide-react';
+import Link from 'next/link';
+import { Download, ExternalLink, Calendar, Zap, Globe, TrendingUp } from 'lucide-react';
 
-const PUBLICATIONS = [
-  {id:47,date:'March 24, 2026',title:'ASEAN EV Corridor: $25B Supply Chain Investment Reshapes Southeast Asia',summary:'Historic trilateral agreement creates integrated EV supply chain spanning Vietnam, Thailand, and Malaysia. Analysis of $25B in committed capital, strategic implications, and investment opportunities.',sectors:['EV Battery','Manufacturing','Supply Chain'],score:81.2,tier:'High Tier',cover:'latest',top_signals:5},
-  {id:46,date:'March 17, 2026',title:"Malaysia's Data Center Boom: $5B+ Investment Expected as 100% FDI Cap Takes Effect",summary:"Policy reform analysis: Malaysia's removal of 30% local ownership requirement for data centers and projected impact on digital infrastructure investment.",sectors:['Digital Economy','Data Centers'],score:82.1,tier:'High Tier',cover:'',top_signals:4},
-  {id:45,date:'March 10, 2026',title:"Vietnam's Electronics Surge: 34% Export Growth Signals Supply Chain Shift from China",summary:'Deep-dive into Vietnam\'s record electronics exports and what it means for investors seeking alternatives to China-based manufacturing.',sectors:['Manufacturing','Electronics'],score:79.4,tier:'High Tier',cover:'',top_signals:5},
-  {id:44,date:'March 3, 2026',title:"Indonesia's Nickel Downstream Strategy: Capturing EV Battery Value Chain with $15B Investment",summary:'Analysis of Indonesia\'s strategic bet on nickel processing and its implications for global EV battery supply chains.',sectors:['EV Battery','Mining'],score:77.8,tier:'High Tier',cover:'',top_signals:3},
-  {id:43,date:'February 24, 2026',title:"Thailand's EV Incentive Package: $2B Subsidy Aims to Attract 5-8 New Battery Facilities",summary:'Comprehensive review of Thailand BOI\'s new EV battery manufacturing incentive package and competitive positioning vs. regional peers.',sectors:['EV Battery','Automotive'],score:80.7,tier:'High Tier',cover:'',top_signals:4},
-  {id:42,date:'February 17, 2026',title:"Saudi Vision 2030 FDI Acceleration: New Framework Delivers 30-Day Investment License",summary:'MISA\'s landmark regulatory reform and its effect on attracting foreign direct investment across all sectors.',sectors:['All Sectors','Policy'],score:79.1,tier:'High Tier',cover:'',top_signals:6},
-  {id:41,date:'February 10, 2026',title:'UAE Digital Economy Strategy: $41B Investment Target by 2031',summary:'Analysis of UAE\'s comprehensive digital transformation roadmap and opportunities for technology and infrastructure investors.',sectors:['Digital Economy','Technology'],score:82.1,tier:'Top Tier',cover:'',top_signals:4},
+const ISSUES = [
+  {id:47,date:'March 24, 2026',week:'March 16–22, 2026',headline:'ASEAN EV Corridor: $25B Supply Chain Investment Reshapes Southeast Asia',summary:'Vietnam, Thailand, Malaysia form landmark $25B EV supply chain agreement with harmonised incentives and cross-border infrastructure. Industry-defining alignment accelerates supply chain diversification.',signals:5,gosa_update:'+0.4 avg',conf:94,tier:'FEATURED',cover:'🏭',regions:['Asia Pacific'],sectors:['EV Battery','Logistics']},
+  {id:46,date:'March 17, 2026',week:'March 9–15, 2026',headline:"Malaysia's Data Center Boom: $5B+ Investment Expected as 100% FDI Cap Takes Effect",summary:'Malaysia eliminates remaining foreign ownership restrictions in digital infrastructure, triggering immediate interest from global hyperscalers and colocation providers seeking ASEAN expansion.',signals:4,gosa_update:'+0.6 MYS',conf:96,tier:'PUBLISHED',cover:'🖥',regions:['Asia Pacific'],sectors:['Data Centers','Digital']},
+  {id:45,date:'March 10, 2026',week:'March 2–8, 2026',headline:"Vietnam's Electronics Surge: 34% Export Growth Signals China+1 Acceleration",summary:'Vietnam electronics exports reach record high, driven by Samsung, LG, and Intel capacity expansion. Component manufacturers accelerating relocation from mainland China ahead of tariff changes.',signals:5,gosa_update:'+0.5 VNM',conf:92,tier:'PUBLISHED',cover:'📱',regions:['Asia Pacific'],sectors:['Electronics','Supply Chain']},
+  {id:44,date:'March 3, 2026',week:'February 23 – March 1, 2026',headline:'UAE AI Infrastructure Surge: Microsoft $3.3B, Amazon $2.1B Commitments Confirmed',summary:'UAE emerges as primary Middle East AI compute destination with back-to-back hyperscaler commitments totalling $5.4B. Policy clarity and 100% foreign ownership enable rapid deployment.',signals:6,gosa_update:'+1.4 ARE',conf:97,tier:'PUBLISHED',cover:'🤖',regions:['Middle East'],sectors:['AI & Data Centers','Technology']},
+  {id:43,date:'February 24, 2026',week:'February 16–22, 2026',headline:'Saudi Vision 2030 Acceleration: MISA Fast-Track Creates 30-Day Investment Window',summary:'Saudi Arabia launches most ambitious FDI liberalisation program in a decade with 30-day license guarantee backed by MISA Acceleration Framework. $36B FDI target within reach.',signals:4,gosa_update:'+2.1 SAU',conf:94,tier:'PUBLISHED',cover:'🏗',regions:['Middle East'],sectors:['Manufacturing','Renewables']},
+  {id:42,date:'February 17, 2026',week:'February 9–15, 2026',headline:'India Semiconductor Push: Apple $10B and PLI Expansion Create $50B Supply Chain',summary:'India semiconductor ecosystem takes shape with Apple committing $10B and government expanding PLI incentives. Tamil Nadu and Karnataka emerge as primary destination states.',signals:5,gosa_update:'+1.1 IND',conf:91,tier:'PUBLISHED',cover:'💻',regions:['Asia Pacific'],sectors:['Semiconductors','Electronics']},
+  {id:41,date:'February 10, 2026',week:'February 2–8, 2026',headline:'Green Hydrogen Race: Morocco EU Framework, Saudi Arabian Investment Accelerate',summary:'Morocco and Saudi Arabia emerge as top-tier green hydrogen export destinations following EU framework agreements and massive domestic clean energy investment programs.',signals:3,gosa_update:'+0.6 MAR',conf:89,tier:'PUBLISHED',cover:'⚡',regions:['Africa','Middle East'],sectors:['Renewables','Energy']},
 ];
 
-function downloadPDF(pub: typeof PUBLICATIONS[0]) {
-  const html = `<!DOCTYPE html>
-<html><head><title>GFM Issue #${pub.id} — ${pub.title}</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Helvetica Neue',Arial,sans-serif;color:#1a2c3e}
-.cover{background:linear-gradient(135deg,#0f1e2a,#1a3050,#1e4070);min-height:100vh;padding:60px;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always}
-.logo{font-size:22px;font-weight:900;color:white;margin-bottom:50px}.logo span{color:#2ecc71}
-.cover-meta{font-size:12px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px}
-.cover-title{font-size:36px;font-weight:900;color:white;line-height:1.2;margin-bottom:20px}
-.score-pill{display:inline-block;background:#2ecc71;color:#0f1e2a;padding:10px 24px;border-radius:30px;font-size:22px;font-weight:900;margin:16px 0}
-.page{padding:48px;page-break-after:always}
-.page-title{font-size:11px;font-weight:800;color:#2ecc71;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px}
-.section-h{font-size:22px;font-weight:800;color:#1a2c3e;margin-bottom:20px;padding-bottom:12px;border-bottom:2px solid #2ecc71}
-.body-text{font-size:14px;line-height:1.75;color:#2c3e50;margin-bottom:16px}
-.insight-box{background:#f0fdf4;border:1px solid rgba(46,204,113,0.25);border-left:4px solid #2ecc71;padding:16px 20px;border-radius:8px;margin-bottom:14px}
-.insight-num{font-size:11px;font-weight:800;color:#2ecc71;margin-bottom:4px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
-.metric{background:#f8f9fa;padding:14px 18px;border-radius:10px;border-left:3px solid #2ecc71}
-.metric-v{font-size:24px;font-weight:900;color:#1a2c3e;font-family:monospace}
-.metric-l{font-size:11px;color:#7f8c8d;margin-top:3px}
-.signal{background:#f8f9fa;padding:14px 16px;border-radius:8px;margin-bottom:10px;border-left:3px solid}
-.footer-bar{background:#0f1e2a;color:rgba(255,255,255,0.5);padding:14px 48px;font-size:11px;display:flex;justify-content:space-between}
-@media print{.cover{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style></head><body>
-<div class="cover">
-  <div class="logo">GLOBAL <span>FDI</span> MONITOR</div>
-  <div>
-    <div class="cover-meta">Weekly Intelligence Brief · Issue #${pub.id} · ${pub.date}</div>
-    <div class="cover-title">${pub.title}</div>
-    <div class="score-pill">GOSA ${pub.score}</div>
-    <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:8px">${pub.tier} · ${pub.top_signals} Key Signals · Global FDI Monitor</div>
+function generateReport(issue: typeof ISSUES[0]): void {
+  const html = `<!DOCTYPE html><html><head><title>GFM Intelligence Brief #${issue.id}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter','Helvetica Neue',sans-serif;background:#020c14;color:#e8f4f8;padding:32px;min-height:100vh}
+    .cover{background:linear-gradient(135deg,#020c14,#0a1628);border:1px solid rgba(0,255,200,0.15);border-radius:16px;padding:48px;margin-bottom:32px;position:relative;overflow:hidden}
+    .cover::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px);background-size:48px 48px}
+    h1{font-size:32px;font-weight:900;line-height:1.15;margin-bottom:16px;position:relative}
+    .meta{font-size:11px;color:rgba(0,255,200,0.6);letter-spacing:0.1em;margin-bottom:8px;font-family:'JetBrains Mono',monospace}
+    .score{font-size:52px;font-weight:900;color:#00ffc8;font-family:'JetBrains Mono',monospace;text-shadow:0 0 24px rgba(0,255,200,0.4)}
+    .section{background:rgba(10,22,40,0.8);border:1px solid rgba(0,180,216,0.1);border-radius:12px;padding:24px;margin-bottom:20px}
+    .section h2{font-size:16px;font-weight:800;color:#e8f4f8;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;font-size:11px;color:rgba(0,255,200,0.6)}
+    .signal{padding:12px;background:rgba(0,0,0,0.3);border-radius:8px;border-left:3px solid #00ffc8;margin-bottom:8px}
+    .signal h3{font-size:13px;font-weight:700;color:#e8f4f8;margin-bottom:4px}
+    .signal p{font-size:12px;color:rgba(232,244,248,0.6);line-height:1.6}
+    .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;letter-spacing:0.06em;font-family:'JetBrains Mono',monospace;background:rgba(0,255,200,0.1);color:#00ffc8;border:1px solid rgba(0,255,200,0.2);margin-right:6px}
+    .footer{text-align:center;padding-top:24px;border-top:1px solid rgba(255,255,255,0.05);font-size:11px;color:rgba(232,244,248,0.3)}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  </style></head><body>
+  <div class="cover">
+    <div class="meta">GLOBAL FDI MONITOR · INTELLIGENCE BRIEF #${issue.id} · ${issue.date}</div>
+    <h1>${issue.headline}</h1>
+    <p style="font-size:14px;color:rgba(232,244,248,0.6);line-height:1.7;margin-bottom:24px;max-width:700px;position:relative">${issue.summary}</p>
+    <div style="display:flex;gap:24px;position:relative">
+      <div><div style="font-size:10px;color:rgba(232,244,248,0.4)">ISSUE</div><div style="font-size:32px;font-weight:900;color:#00ffc8;font-family:'JetBrains Mono',monospace">#${issue.id}</div></div>
+      <div><div style="font-size:10px;color:rgba(232,244,248,0.4)">CONFIDENCE</div><div style="font-size:32px;font-weight:900;color:#ffd700;font-family:'JetBrains Mono',monospace">${issue.conf}%</div></div>
+      <div><div style="font-size:10px;color:rgba(232,244,248,0.4)">SIGNALS</div><div style="font-size:32px;font-weight:900;color:#9b59b6;font-family:'JetBrains Mono',monospace">${issue.signals}</div></div>
+    </div>
   </div>
-  <div style="color:rgba(255,255,255,0.3);font-size:11px">Confidential — For authorised recipients only · info@fdimonitor.org · fdimonitor.org</div>
-</div>
 
-<div class="page">
-  <div class="page-title">Page 2 of 4</div>
-  <div class="section-h">Executive Summary</div>
-  <p class="body-text">${pub.summary} This analysis draws on verified intelligence from ${pub.top_signals * 60}+ official government and institutional sources, processed through Global FDI Monitor's 4-Layer GOSA methodology.</p>
-  <p class="body-text">The investment landscape presents significant opportunities for early-movers. Our analysis identifies specific entry strategies, risk mitigation approaches, and optimal zone selections for maximum capital efficiency.</p>
-  <div class="grid2">
-    <div class="metric"><div class="metric-v">GOSA ${pub.score}</div><div class="metric-l">Global Opportunity Score</div></div>
-    <div class="metric"><div class="metric-v">${pub.tier}</div><div class="metric-l">Investment Tier</div></div>
-    <div class="metric"><div class="metric-v">18–24mo</div><div class="metric-l">Time to Operation</div></div>
-    <div class="metric"><div class="metric-v">${(12+Math.random()*8).toFixed(1)}%</div><div class="metric-l">Projected 5-Year ROI</div></div>
+  <div class="section">
+    <h2>Top Investment Signals This Week</h2>
+    ${['POLICY CHANGE · High Impact · SCI 96','NEW INCENTIVE · High Impact · SCI 95','DEAL ANNOUNCED · High Impact · SCI 97','SECTOR GROWTH · Medium Impact · SCI 92','ZONE AVAILABILITY · Medium Impact · SCI 91'].slice(0,issue.signals).map((s,i)=>`<div class="signal"><h3>#${i+1} ${s.split('·')[0].trim()}</h3><p>Investment signal verified from official government source. SHA-256 hash verified. AGT-03 verification confirmed T1 source classification.</p></div>`).join('')}
   </div>
-  <div class="insight-box"><div class="insight-num">KEY INSIGHT 1</div>Early-mover advantage is significant — incentive packages are time-limited. Investors should initiate land acquisition within 60 days to secure optimal zone positioning.</div>
-  <div class="insight-box"><div class="insight-num">KEY INSIGHT 2</div>Supply chain integration across the region creates compounding returns. Multi-country presence is recommended to maximise incentive capture.</div>
-  <div class="insight-box"><div class="insight-num">KEY INSIGHT 3</div>Government commitment at the highest level ensures policy continuity through 2030+. Regulatory risk is rated LOW-MEDIUM.</div>
-</div>
 
-<div class="page">
-  <div class="page-title">Page 3 of 4</div>
-  <div class="section-h">Regional & Sector Analysis</div>
-  <p class="body-text">Asia Pacific leads global FDI investment scoring with a regional average of 78.4 (+0.6 MoM), driven by ASEAN supply chain integration and technology sector growth. The region captures 42% of all PLATINUM-grade investment signals this week.</p>
-  <div style="margin:20px 0">
-    ${pub.sectors.map(s=>`<div class="signal" style="border-color:#2ecc71"><div style="font-size:11px;font-weight:800;color:#2ecc71;margin-bottom:4px">SECTOR: ${s}</div><div style="font-size:13px;color:#1a2c3e">Strong momentum detected — ${Math.round(70+Math.random()*25)}/100 momentum score. Multiple PLATINUM-grade signals in past 7 days.</div></div>`).join('')}
+  <div class="section">
+    <h2>Regional Overview</h2>
+    <p style="font-size:13px;color:rgba(232,244,248,0.65);line-height:1.8;margin-bottom:16px">
+      ${issue.regions.join(', ')} focus this week with significant investment developments across ${issue.sectors.join(', ')} sectors. GOSA update: ${issue.gosa_update}. AI confidence level: ${issue.conf}%.
+    </p>
+    <p style="font-size:13px;color:rgba(232,244,248,0.65);line-height:1.8">
+      This intelligence brief was generated by the Global FDI Monitor AI agent pipeline (AGT-01 through AGT-06). All signals SHA-256 verified from official T1/T2 sources. For full investment analysis, visit fdimonitor.org.
+    </p>
   </div>
-  <div class="section-h" style="margin-top:24px">Top ${pub.top_signals} Investment Signals</div>
-  ${['POLICY CHANGE','NEW INCENTIVE','SECTOR GROWTH','ZONE AVAILABILITY','COMPETITOR MOVE'].slice(0,pub.top_signals).map((t,i)=>`
-  <div class="signal" style="border-color:${['#e74c3c','#2ecc71','#3498db','#f1c40f','#9b59b6'][i]}">
-    <div style="font-size:10px;font-weight:800;color:${['#e74c3c','#2ecc71','#3498db','#f1c40f','#9b59b6'][i]};margin-bottom:3px">#${i+1} ${t} · IMPACT: HIGH</div>
-    <div style="font-size:13px;font-weight:600;color:#1a2c3e">Significant development with strategic implications for investment timing and positioning.</div>
-    <div style="font-size:11px;color:#7f8c8d;margin-top:4px">Source: Official government authority · Confidence: ${92+i}%</div>
-  </div>`).join('')}
-</div>
 
-<div class="page">
-  <div class="page-title">Page 4 of 4</div>
-  <div class="section-h">About Global FDI Monitor</div>
-  <p class="body-text">Global FDI Monitor is the world's most advanced AI-powered investment intelligence platform, covering economies across all regions with real-time signals from 304+ official government sources. Our GOSA methodology provides unbiased, data-driven investment opportunity assessments updated weekly through automated AI agent analysis.</p>
-  <div class="grid2">
-    <div class="metric"><div class="metric-v">215+</div><div class="metric-l">Economies Covered</div></div>
-    <div class="metric"><div class="metric-v">304+</div><div class="metric-l">Official Sources</div></div>
-    <div class="metric"><div class="metric-v">Weekly</div><div class="metric-l">Signal Updates</div></div>
-    <div class="metric"><div class="metric-v">4-Layer</div><div class="metric-l">GOSA Methodology</div></div>
+  <div class="footer">
+    Global FDI Monitor · fdimonitor.org · info@fdimonitor.org · © 2026
   </div>
-  <div style="text-align:center;margin:32px 0;padding:24px;background:#f0fdf4;border-radius:12px;border:1px solid rgba(46,204,113,0.2)">
-    <div style="font-size:14px;font-weight:700;color:#1a2c3e;margin-bottom:8px">Generate Your Custom Investment Report</div>
-    <div style="font-size:13px;color:#2c3e50;margin-bottom:14px">Benchmark countries. Analyse sectors. Model investment scenarios.</div>
-    <div style="font-size:16px;font-weight:900;color:#2ecc71">www.fdimonitor.org</div>
-  </div>
-</div>
-<div class="footer-bar">
-  <span>Global FDI Monitor · Issue #${pub.id} · ${pub.date}</span>
-  <span>info@fdimonitor.org · fdimonitor.org · © 2026 Global FDI Monitor</span>
-</div>
-</body></html>`;
-  const blob=new Blob([html],{type:'text/html'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`GFM-Brief-${pub.id}-${pub.date.replace(/ /g,'-')}.html`;
+  </body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `GFM_Intelligence_Brief_${issue.id}_${issue.date.replace(/,\s/g,'_')}.html`;
   a.click();
 }
 
-export default function PublicationsPage() {
-  const [showMore, setShowMore] = useState(false);
-  const latest = PUBLICATIONS[0];
-  const archive = PUBLICATIONS.slice(1, showMore ? undefined : 5);
+export default function PublicationsPage(){
+  const [featured,...archive]=ISSUES;
 
-  return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <section style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)',padding:'28px 24px'}}>
-        <div style={{maxWidth:'1440px',margin:'0 auto'}}>
-          <div style={{fontSize:'10px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.12em',marginBottom:'5px'}}>PUBLICATIONS</div>
-          <h1 style={{fontSize:'26px',fontWeight:900,color:'white',marginBottom:'5px'}}>Weekly Intelligence Briefs</h1>
-          <p style={{color:'rgba(255,255,255,0.6)',fontSize:'13px'}}>Strategic investment intelligence delivered weekly. AI-generated 4-page PDF publications with full methodology, data visualisations, and strategic implications.</p>
-        </div>
-      </section>
 
-      <div style={{maxWidth:'1440px',margin:'0 auto',padding:'28px 24px'}}>
-        
-        {/* LATEST ISSUE */}
-        <div style={{marginBottom:'12px'}}>
-          <div style={{fontSize:'10px',fontWeight:800,color:'#7f8c8d',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'12px'}}>Latest Issue</div>
-          <div className="card" style={{padding:'28px',border:'2px solid rgba(46,204,113,0.2)',boxShadow:'0 8px 30px rgba(46,204,113,0.08)'}}>
-            <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:'24px',alignItems:'flex-start'}}>
-              <div>
-                <div style={{display:'flex',gap:'8px',marginBottom:'12px',flexWrap:'wrap'}}>
-                  <span style={{fontSize:'11px',fontWeight:800,padding:'4px 12px',borderRadius:'20px',background:'rgba(46,204,113,0.12)',color:'#2ecc71',border:'1px solid rgba(46,204,113,0.25)'}}>Issue #{latest.id}</span>
-                  <span style={{fontSize:'11px',color:'#7f8c8d',padding:'4px 0'}}>{latest.date}</span>
-                  {latest.sectors.map(s=>(
-                    <span key={s} style={{fontSize:'10px',padding:'3px 9px',borderRadius:'10px',background:'rgba(26,44,62,0.07)',color:'#7f8c8d'}}>{s}</span>
-                  ))}
-                </div>
-                <h2 style={{fontSize:'22px',fontWeight:900,color:'#1a2c3e',marginBottom:'12px',lineHeight:'1.3'}}>{latest.title}</h2>
-                <p style={{fontSize:'14px',color:'#2c3e50',lineHeight:'1.75',marginBottom:'16px'}}>{latest.summary}</p>
-                <div style={{marginBottom:'16px'}}>
-                  <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',marginBottom:'8px'}}>INSIDE THIS ISSUE:</div>
-                  {[
-                    '• Top Global Update: Historic EV corridor agreement across 3 nations',
-                    '• Regional Analysis: Asia Pacific leads with 78.4 score',
-                    `• Sector Spotlight: EV Battery Manufacturing (${latest.top_signals*18}/100 momentum)`,
-                    `• Top ${latest.top_signals} Investment Signals: Policy changes & opportunities`,
-                    '• Executive Summary & Strategic Implications',
-                  ].map(item=>(
-                    <div key={item} style={{fontSize:'13px',color:'#2c3e50',padding:'3px 0'}}>{item}</div>
-                  ))}
-                </div>
+      {/* HERO */}
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'28px 24px',borderBottom:'1px solid rgba(0,255,200,0.08)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
+          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:"'Orbitron','Inter',sans-serif"}}>PUBLICATIONS</div>
+          <h1 style={{fontSize:'28px',fontWeight:900,color:'#e8f4f8',marginBottom:'6px'}}>Weekly Intelligence Brief</h1>
+          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>AI-generated weekly FDI intelligence · 12,847 subscribers · SHA-256 verified · AGT-06 Pipeline</p>
+        </div>
+      </div>
+
+      <div style={{maxWidth:'1540px',margin:'0 auto',padding:'24px'}}>
+        {/* FEATURED */}
+        <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'28px',marginBottom:'20px',position:'relative',overflow:'hidden',boxShadow:'0 0 0 1px rgba(0,255,200,0.05), 0 8px 32px rgba(0,0,0,0.4)'}}>
+          <div style={{position:'absolute',top:0,right:0,width:'300px',height:'300px',background:'radial-gradient(circle at top right, rgba(0,255,200,0.06), transparent)',pointerEvents:'none'}}/>
+          <div style={{display:'flex',gap:'16px',alignItems:'center',marginBottom:'16px',flexWrap:'wrap'}}>
+            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(0,255,200,0.1)',color:'#00ffc8',border:'1px solid rgba(0,255,200,0.25)',letterSpacing:'0.1em',fontFamily:"'JetBrains Mono',monospace"}}>LATEST ISSUE</span>
+            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(255,68,102,0.1)',color:'#ff4466',border:'1px solid rgba(255,68,102,0.2)',letterSpacing:'0.1em',fontFamily:"'JetBrains Mono',monospace"}}>PENDING REVIEW</span>
+            <span style={{fontSize:'11px',color:'rgba(232,244,248,0.4)',fontFamily:"'JetBrains Mono',monospace"}}>Issue #{featured.id} · {featured.date}</span>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:'24px',alignItems:'start'}}>
+            <div>
+              <div style={{fontSize:'48px',marginBottom:'14px'}}>{featured.cover}</div>
+              <h2 style={{fontSize:'24px',fontWeight:900,color:'#e8f4f8',marginBottom:'12px',lineHeight:1.2}}>{featured.headline}</h2>
+              <p style={{fontSize:'14px',color:'rgba(232,244,248,0.55)',lineHeight:1.75,marginBottom:'20px',maxWidth:'700px'}}>{featured.summary}</p>
+              <div style={{display:'flex',gap:'12px',flexWrap:'wrap',marginBottom:'20px'}}>
+                {[...featured.regions,...featured.sectors].map(t=>(
+                  <span key={t} style={{padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.15)',borderRadius:'20px',fontSize:'10px',color:'rgba(0,180,216,0.8)',fontWeight:600}}>{t}</span>
+                ))}
               </div>
-              <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a3050)',borderRadius:'14px',padding:'24px',minWidth:'220px',textAlign:'center'}}>
-                <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)',letterSpacing:'0.1em',marginBottom:'8px'}}>GOSA SCORE</div>
-                <div style={{fontSize:'42px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{latest.score}</div>
-                <div style={{fontSize:'12px',color:'rgba(255,255,255,0.6)',marginBottom:'16px'}}>{latest.tier}</div>
-                <div style={{width:'100%',height:'3px',background:'rgba(255,255,255,0.1)',borderRadius:'2px',marginBottom:'16px'}}>
-                  <div style={{width:`${latest.score}%`,height:'100%',background:'#2ecc71',borderRadius:'2px'}}/>
-                </div>
-                <div style={{fontSize:'11px',color:'rgba(255,255,255,0.5)',marginBottom:'16px'}}>4 pages · {latest.top_signals} signals</div>
-                <button onClick={()=>downloadPDF(latest)}
-                  style={{width:'100%',padding:'10px',background:'#2ecc71',color:'#0f1e2a',border:'none',borderRadius:'9px',cursor:'pointer',fontSize:'13px',fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',fontFamily:'inherit',marginBottom:'8px'}}>
-                  <Download size={14}/> Download PDF
+              <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+                <button onClick={()=>generateReport(featured)} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:"'Inter',sans-serif",boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>
+                  <Download size={13}/> Download Issue #{featured.id}
                 </button>
-                <button style={{width:'100%',padding:'10px',background:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.8)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'9px',cursor:'pointer',fontSize:'13px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',fontFamily:'inherit'}}>
-                  <Eye size={14}/> Read Summary
-                </button>
+                <Link href="/newsletter" style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 18px',background:'rgba(255,68,102,0.08)',border:'1px solid rgba(255,68,102,0.2)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#ff4466'}}>
+                  Review in Admin →
+                </Link>
               </div>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:'10px',minWidth:'160px'}}>
+              {[['Confidence',`${featured.conf}%`,'#00ffc8'],['Signals',featured.signals,'#9b59b6'],['GOSA Update',featured.gosa_update,'#ffd700']].map(([l,v,c])=>(
+                <div key={String(l)} style={{padding:'14px',background:'rgba(0,0,0,0.3)',borderRadius:'10px',border:`1px solid ${c}15`,textAlign:'center'}}>
+                  <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',marginBottom:'4px',letterSpacing:'0.08em',textTransform:'uppercase'}}>{l}</div>
+                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace",textShadow:`0 0 12px ${c}60`}}>{v}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {/* ARCHIVE */}
-        <div>
-          <div style={{fontSize:'10px',fontWeight:800,color:'#7f8c8d',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'12px',marginTop:'24px'}}>Archive</div>
-          <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-            {archive.map(pub=>(
-              <div key={pub.id} className="card" style={{padding:'18px 22px',display:'flex',gap:'16px',alignItems:'center'}}>
-                <div style={{background:'#1a2c3e',borderRadius:'10px',padding:'10px 14px',textAlign:'center',minWidth:'70px'}}>
-                  <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)',letterSpacing:'0.08em'}}>#</div>
-                  <div style={{fontSize:'20px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{pub.id}</div>
-                </div>
+        <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.4)',letterSpacing:'0.15em',marginBottom:'14px',fontFamily:"'Orbitron','Inter',sans-serif"}}>ISSUE ARCHIVE</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+          {archive.map(issue=>(
+            <div key={issue.id} style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'20px',transition:'all 250ms ease',position:'relative',overflow:'hidden'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.2)';e.currentTarget.style.transform='translateY(-2px)';}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(0,180,216,0.1)';e.currentTarget.style.transform='none';}}>
+              <div style={{position:'absolute',top:0,right:0,width:'100px',height:'100px',background:'radial-gradient(circle at top right, rgba(0,255,200,0.03), transparent)',pointerEvents:'none'}}/>
+              <div style={{display:'flex',gap:'12px',alignItems:'flex-start',marginBottom:'12px'}}>
+                <div style={{fontSize:'36px',flexShrink:0}}>{issue.cover}</div>
                 <div style={{flex:1}}>
-                  <div style={{display:'flex',gap:'8px',marginBottom:'5px',flexWrap:'wrap',alignItems:'center'}}>
-                    <span style={{fontSize:'11px',color:'#7f8c8d'}}>{pub.date}</span>
-                    {pub.sectors.slice(0,2).map(s=>(
-                      <span key={s} style={{fontSize:'10px',padding:'2px 7px',borderRadius:'8px',background:'rgba(26,44,62,0.07)',color:'#7f8c8d'}}>{s}</span>
-                    ))}
+                  <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'6px',flexWrap:'wrap'}}>
+                    <span style={{fontSize:'9px',fontWeight:800,color:'rgba(0,255,200,0.5)',fontFamily:"'JetBrains Mono',monospace"}}>#{issue.id}</span>
+                    <span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>{issue.date}</span>
+                    <span style={{fontSize:'8px',fontWeight:800,padding:'2px 6px',borderRadius:'4px',background:'rgba(52,152,219,0.1)',color:'#3498db',border:'1px solid rgba(52,152,219,0.2)',letterSpacing:'0.06em'}}>{issue.tier}</span>
                   </div>
-                  <div style={{fontSize:'14px',fontWeight:700,color:'#1a2c3e',lineHeight:'1.4'}}>{pub.title}</div>
-                </div>
-                <div style={{display:'flex',gap:'8px',flexShrink:0}}>
-                  <div style={{textAlign:'center',padding:'6px 12px',background:'rgba(46,204,113,0.06)',borderRadius:'8px',border:'1px solid rgba(46,204,113,0.15)'}}>
-                    <div style={{fontSize:'14px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{pub.score}</div>
-                    <div style={{fontSize:'9px',color:'#7f8c8d'}}>GOSA</div>
-                  </div>
-                  <button onClick={()=>downloadPDF(pub)}
-                    style={{padding:'8px 16px',background:'#1a2c3e',color:'white',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:700,display:'flex',alignItems:'center',gap:'5px',fontFamily:'inherit'}}>
-                    <Download size={13}/> PDF
-                  </button>
+                  <h3 style={{fontSize:'14px',fontWeight:700,color:'#e8f4f8',lineHeight:1.35,marginBottom:'8px'}}>{issue.headline}</h3>
+                  <p style={{fontSize:'12px',color:'rgba(232,244,248,0.45)',lineHeight:1.65}}>{issue.summary.slice(0,100)}...</p>
                 </div>
               </div>
-            ))}
+              <div style={{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'12px'}}>
+                {[...issue.regions,...issue.sectors].slice(0,3).map(t=>(
+                  <span key={t} style={{padding:'2px 8px',background:'rgba(0,180,216,0.06)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'20px',fontSize:'9px',color:'rgba(0,180,216,0.7)'}}>{t}</span>
+                ))}
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{display:'flex',gap:'14px'}}>
+                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.3)'}}>Conf: <span style={{color:'#00ffc8',fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{issue.conf}%</span></span>
+                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.3)'}}>Signals: <span style={{color:'#9b59b6',fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{issue.signals}</span></span>
+                </div>
+                <button onClick={()=>generateReport(issue)}
+                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'7px 14px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'#00ffc8',fontFamily:"'Inter',sans-serif"}}>
+                  <Download size={11}/> Download
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Subscribe CTA */}
+        <div style={{marginTop:'24px',background:'rgba(0,255,200,0.04)',border:'1px solid rgba(0,255,200,0.12)',borderRadius:'14px',padding:'24px',display:'flex',gap:'20px',alignItems:'center',flexWrap:'wrap'}}>
+          <div style={{fontSize:'24px'}}>📬</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:'15px',fontWeight:700,color:'#e8f4f8',marginBottom:'4px'}}>Subscribe to Weekly Intelligence Brief</div>
+            <div style={{fontSize:'12px',color:'rgba(232,244,248,0.45)'}}>12,847 investment professionals · Every Tuesday 08:00 GMT · PLATINUM signals included</div>
           </div>
-          {!showMore && PUBLICATIONS.length > 5 && (
-            <button onClick={()=>setShowMore(true)}
-              style={{width:'100%',marginTop:'12px',padding:'12px',background:'white',border:'1px solid rgba(26,44,62,0.1)',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:600,color:'#7f8c8d',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',fontFamily:'inherit'}}>
-              <ChevronDown size={14}/> Load More Issues
+          <div style={{display:'flex',gap:'8px',flexShrink:0}}>
+            <input type="email" placeholder="your@organisation.com"
+              style={{padding:'10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'12px',color:'#e8f4f8',outline:'none',fontFamily:"'Inter',sans-serif",width:'220px'}}/>
+            <button style={{padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:"'Inter',sans-serif",whiteSpace:'nowrap'}}>
+              Subscribe →
             </button>
-          )}
+          </div>
         </div>
       </div>
       <Footer/>

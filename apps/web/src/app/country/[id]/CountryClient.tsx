@@ -1,257 +1,353 @@
 'use client';
+import { useState } from 'react';
+import Link from 'next/link';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import Link from 'next/link';
-import { Download, Zap } from 'lucide-react';
+import { TrendingUp, TrendingDown, Download, ArrowLeft, Globe, Zap, BarChart3, Target, Shield, Map } from 'lucide-react';
 
-export const COUNTRIES: Record<string, any> = {
-  SGP:{ name:'Singapore',flag:'🇸🇬',region:'Asia Pacific',tier:'TOP',gosa:88.4,gfr:91.2,l1:92.1,l2:85.3,l3:87.2,l4:89.0,trend:0.2,
-    capital:'Singapore City',currency:'SGD',gdp:'$466B',gdp_growth:'3.2%',fdi_inflow:'$91B',population:'5.9M',
-    dims:{etr:93.1,ict:89.4,tcm:94.2,dtf:91.8,sgt:82.1,grp:96.4},
-    zones:['Jurong Island','Changi Business Park','One-North','Seletar Aerospace'],
-    sectors:['Semiconductors','Biomedical','Logistics','Fintech','Advanced Manufacturing'],
-    signals:[
-      {type:'POLICY',title:'100% foreign ownership all sectors',impact:'HIGH',sco:94},
-      {type:'INCENTIVE',title:'Global Investor Programme expanded',impact:'HIGH',sco:91},
-    ],
-    doing_business:[
-      {ind:'Starting a Business',score:96.2,rank:1},{ind:'Construction Permits',score:89.1,rank:4},
-      {ind:'Getting Electricity',score:98.8,rank:1},{ind:'Registering Property',score:87.4,rank:18},
-      {ind:'Getting Credit',score:85.0,rank:3},{ind:'Protecting Investors',score:92.6,rank:3},
-      {ind:'Paying Taxes',score:91.4,rank:7},{ind:'Trading Across Borders',score:99.2,rank:1},
-      {ind:'Enforcing Contracts',score:87.3,rank:2},{ind:'Resolving Insolvency',score:87.1,rank:27},
-    ],
-  },
-  MYS:{ name:'Malaysia',flag:'🇲🇾',region:'Asia Pacific',tier:'HIGH',gosa:81.2,gfr:79.2,l1:82.5,l2:80.7,l3:81.8,l4:79.8,trend:0.4,
-    capital:'Kuala Lumpur',currency:'MYR',gdp:'$400B',gdp_growth:'4.1%',fdi_inflow:'$22B',population:'33M',
-    dims:{etr:78.6,ict:76.4,tcm:81.8,dtf:78.2,sgt:74.6,grp:82.4},
-    zones:['Penang Free Industrial Zone','Port Klang FTZ','Johor Bahru Industrial Park','KLIA Aeropolis'],
-    sectors:['Electronics','Data Centers','EV Battery','Halal Foods','Medical Devices'],
-    signals:[
-      {type:'POLICY',title:'FDI cap data centers raised to 100%',impact:'HIGH',sco:96},
-      {type:'INCENTIVE',title:'MSC Malaysia status extended',impact:'HIGH',sco:89},
-    ],
-    doing_business:[
-      {ind:'Starting a Business',score:82.3,rank:15},{ind:'Construction Permits',score:74.8,rank:11},
-      {ind:'Getting Electricity',score:87.2,rank:6},{ind:'Registering Property',score:78.4,rank:33},
-      {ind:'Getting Credit',score:75.0,rank:20},{ind:'Protecting Investors',score:81.8,rank:12},
-      {ind:'Paying Taxes',score:78.6,rank:72},{ind:'Trading Across Borders',score:82.4,rank:49},
-      {ind:'Enforcing Contracts',score:72.1,rank:41},{ind:'Resolving Insolvency',score:82.4,rank:40},
-    ],
-  },
-  THA:{ name:'Thailand',flag:'🇹🇭',region:'Asia Pacific',tier:'HIGH',gosa:80.7,gfr:77.4,l1:81.8,l2:80.2,l3:81.0,l4:79.8,trend:0.2,
-    capital:'Bangkok',currency:'THB',gdp:'$544B',gdp_growth:'2.8%',fdi_inflow:'$14B',population:'72M',
-    dims:{etr:75.8,ict:72.6,tcm:78.4,dtf:74.6,sgt:72.8,grp:78.4},
-    zones:['Eastern Economic Corridor','Amata City','WHA Industrial Estate','IEAT Laem Chabang'],
-    sectors:['EV Assembly','Automotive','Electronics','Petrochemicals','Tourism Infrastructure'],
-    signals:[{type:'INCENTIVE',title:'$2B EV battery subsidy approved',impact:'HIGH',sco:95}],
-    doing_business:[
-      {ind:'Starting a Business',score:78.8,rank:36},{ind:'Construction Permits',score:72.1,rank:31},
-      {ind:'Getting Electricity',score:81.3,rank:6},{ind:'Registering Property',score:73.2,rank:62},
-      {ind:'Getting Credit',score:65.0,rank:40},{ind:'Protecting Investors',score:74.0,rank:18},
-      {ind:'Paying Taxes',score:71.2,rank:67},{ind:'Trading Across Borders',score:68.4,rank:62},
-      {ind:'Enforcing Contracts',score:67.9,rank:45},{ind:'Resolving Insolvency',score:61.8,rank:26},
-    ],
-  },
-  VNM:{ name:'Vietnam',flag:'🇻🇳',region:'Asia Pacific',tier:'HIGH',gosa:79.4,gfr:76.8,l1:80.5,l2:79.1,l3:78.9,l4:79.1,trend:0.5,
-    capital:'Hanoi',currency:'VND',gdp:'$449B',gdp_growth:'6.1%',fdi_inflow:'$24B',population:'98M',
-    dims:{etr:74.2,ict:71.4,tcm:77.6,dtf:72.4,sgt:74.2,grp:74.8},
-    zones:['Binh Duong Industrial Parks','Hanoi Industrial Zone','VSIP','Long An Industrial Park'],
-    sectors:['Electronics','EV Battery','Textiles','Food Processing','Software'],
-    signals:[{type:'GROWTH',title:'Electronics exports surge 34% YoY',impact:'HIGH',sco:92}],
-    doing_business:[
-      {ind:'Starting a Business',score:79.2,rank:24},{ind:'Construction Permits',score:68.4,rank:25},
-      {ind:'Getting Electricity',score:87.2,rank:27},{ind:'Registering Property',score:62.8,rank:60},
-      {ind:'Getting Credit',score:75.0,rank:25},{ind:'Protecting Investors',score:72.4,rank:26},
-      {ind:'Paying Taxes',score:68.7,rank:109},{ind:'Trading Across Borders',score:73.1,rank:104},
-      {ind:'Enforcing Contracts',score:62.3,rank:62},{ind:'Resolving Insolvency',score:61.5,rank:122},
-    ],
-  },
-  ARE:{ name:'UAE',flag:'🇦🇪',region:'Middle East',tier:'TOP',gosa:82.1,gfr:83.8,l1:83.4,l2:81.2,l3:82.8,l4:81.0,trend:1.2,
-    capital:'Abu Dhabi',currency:'AED',gdp:'$508B',gdp_growth:'4.4%',fdi_inflow:'$23B',population:'9.9M',
-    dims:{etr:86.4,ict:82.1,tcm:88.6,dtf:84.2,sgt:76.8,grp:88.4},
-    zones:['ADGM','Dubai Internet City','Jebel Ali Free Zone'],
-    sectors:['AI & Data Centers','Financial Services','Renewables','Logistics','Aerospace'],
-    signals:[{type:'DEAL',title:'Microsoft $3.3B AI data center announced',impact:'HIGH',sco:97}],
-    doing_business:[
-      {ind:'Starting a Business',score:91.4,rank:2},{ind:'Construction Permits',score:88.2,rank:6},
-      {ind:'Getting Electricity',score:99.1,rank:1},{ind:'Registering Property',score:94.2,rank:3},
-      {ind:'Getting Credit',score:55.0,rank:62},{ind:'Protecting Investors',score:74.0,rank:18},
-      {ind:'Paying Taxes',score:99.4,rank:1},{ind:'Trading Across Borders',score:94.8,rank:8},
-      {ind:'Enforcing Contracts',score:72.4,rank:9},{ind:'Resolving Insolvency',score:61.2,rank:20},
-    ],
-  },
-  SAU:{ name:'Saudi Arabia',flag:'🇸🇦',region:'Middle East',tier:'HIGH',gosa:79.1,gfr:78.6,l1:77.3,l2:80.4,l3:82.1,l4:76.6,trend:2.1,
-    capital:'Riyadh',currency:'SAR',gdp:'$1.07T',gdp_growth:'2.6%',fdi_inflow:'$36B',population:'35M',
-    dims:{etr:82.4,ict:74.2,tcm:80.6,dtf:76.8,sgt:68.4,grp:82.6},
-    zones:['KAEC','Riyadh City','NEOM','Ras Al-Khair Industrial City'],
-    sectors:['Renewables','Tourism','Advanced Manufacturing','Mining','Defense'],
-    signals:[{type:'POLICY',title:'30-day FDI license guarantee launched',impact:'HIGH',sco:94}],
-    doing_business:[
-      {ind:'Starting a Business',score:84.1,rank:38},{ind:'Construction Permits',score:72.8,rank:28},
-      {ind:'Getting Electricity',score:93.7,rank:4},{ind:'Registering Property',score:76.8,rank:25},
-      {ind:'Getting Credit',score:65.0,rank:40},{ind:'Protecting Investors',score:75.0,rank:15},
-      {ind:'Paying Taxes',score:91.1,rank:3},{ind:'Trading Across Borders',score:78.2,rank:54},
-      {ind:'Enforcing Contracts',score:64.2,rank:54},{ind:'Resolving Insolvency',score:45.2,rank:65},
-    ],
-  },
-  IND:{ name:'India',flag:'🇮🇳',region:'Asia Pacific',tier:'HIGH',gosa:73.2,gfr:75.6,l1:69.8,l2:74.6,l3:74.8,l4:73.6,trend:0.8,
-    capital:'New Delhi',currency:'INR',gdp:'$3.75T',gdp_growth:'6.5%',fdi_inflow:'$71B',population:'1.44B',
-    dims:{etr:72.8,ict:76.4,tcm:74.2,dtf:72.8,sgt:68.6,grp:76.2},
-    zones:['Bangalore Technology Park','GIFT City','Chennai SEZ','Pune Industrial Corridor'],
-    sectors:['Semiconductors','IT Services','Pharmaceuticals','EV Manufacturing','Renewables'],
-    signals:[{type:'DEAL',title:'Apple $10B manufacturing expansion confirmed',impact:'HIGH',sco:89}],
-    doing_business:[
-      {ind:'Starting a Business',score:78.2,rank:136},{ind:'Construction Permits',score:71.3,rank:27},
-      {ind:'Getting Electricity',score:84.7,rank:22},{ind:'Registering Property',score:58.7,rank:154},
-      {ind:'Getting Credit',score:80.0,rank:25},{ind:'Protecting Investors',score:74.0,rank:13},
-      {ind:'Paying Taxes',score:67.0,rank:115},{ind:'Trading Across Borders',score:62.0,rank:68},
-      {ind:'Enforcing Contracts',score:41.2,rank:163},{ind:'Resolving Insolvency',score:62.0,rank:52},
-    ],
-  },
+const COUNTRY_DATA: Record<string, any> = {
+  SGP:{name:'Singapore',    flag:'🇸🇬',region:'Asia Pacific',capital:'Singapore City',pop:'5.9M',gdp:'$466B',gdpg:'3.2%',fdi:'$91B',currency:'SGD',tier:'TOP',gosa:88.4,gfr:91.2,trend:+0.2,l1:92.1,l2:85.3,l3:87.2,l4:89.0,color:'#00ffc8',
+    db:{start:96.2,permit:89.1,elec:98.8,prop:87.4,credit:85.0,investors:92.6,tax:91.4,trade:99.2,contracts:87.3,insolvency:87.1},
+    sectors:['Semiconductors','Biomedical Sciences','Fintech','Advanced Manufacturing','Aerospace'],
+    zones:['Jurong Island','One-North','Changi Business Park','Seletar Aerospace','Tuas Megaport'],
+    signals:[{g:'PLATINUM',t:'POLICY',title:'EDB launches advanced manufacturing 5yr incentive refresh',sco:94},{g:'GOLD',t:'ZONE',title:'One-North expansion Phase 2 — 40ha added',sco:88}],
+    summary:'Singapore maintains its position as the world\'s premier FDI destination, combining world-class infrastructure, political stability, and strategic ASEAN gateway positioning. The city-state\'s Economic Development Board actively curates investment across target sectors.'},
+  MYS:{name:'Malaysia',     flag:'🇲🇾',region:'Asia Pacific',capital:'Kuala Lumpur',pop:'33M',gdp:'$400B',gdpg:'4.1%',fdi:'$22B',currency:'MYR',tier:'HIGH',gosa:81.2,gfr:79.2,trend:+0.4,l1:82.5,l2:80.7,l3:81.8,l4:79.8,color:'#00d4ff',
+    db:{start:82.3,permit:74.8,elec:87.2,prop:78.4,credit:75.0,investors:81.8,tax:78.6,trade:82.4,contracts:72.1,insolvency:82.4},
+    sectors:['Semiconductors','Data Centers','EV Battery','Aerospace','Pharmaceuticals'],
+    zones:['Penang FIZ','Port Klang FTZ','Johor Bahru BP','Kulim Hi-Tech Park','KLCC Financial District'],
+    signals:[{g:'PLATINUM',t:'POLICY',title:'FDI cap in data centers raised to 100%',sco:96},{g:'GOLD',t:'ZONE',title:'Penang Science Park Phase 3 opens 60ha',sco:84}],
+    summary:'Malaysia is emerging as Southeast Asia\'s premier data center and semiconductor hub, building on its established electronics manufacturing base. The 100% FDI liberalisation in digital infrastructure marks a transformational policy shift.'},
+  THA:{name:'Thailand',     flag:'🇹🇭',region:'Asia Pacific',capital:'Bangkok',pop:'72M',gdp:'$544B',gdpg:'2.8%',fdi:'$14B',currency:'THB',tier:'HIGH',gosa:80.7,gfr:77.4,trend:+0.2,l1:81.8,l2:80.2,l3:81.0,l4:79.8,color:'#ffd700',
+    db:{start:78.8,permit:72.1,elec:81.3,prop:73.2,credit:65.0,investors:74.0,tax:71.2,trade:68.4,contracts:67.9,insolvency:61.8},
+    sectors:['EV Assembly','Electronics','Food Processing','Tourism','Automotive'],
+    zones:['Eastern Economic Corridor','Amata City','IEAT Laem Chabang','WHA Industrial Estate','Bangkok Industrial Estate'],
+    signals:[{g:'PLATINUM',t:'INCENTIVE',title:'$2B EV battery subsidy package approved',sco:95},{g:'GOLD',t:'DEAL',title:'Toyota $2.5B EV facility commitment in EEC',sco:91}],
+    summary:'Thailand\'s Eastern Economic Corridor is ASEAN\'s most ambitious special economic zone project, targeting advanced industries including EVs, smart electronics, and aerospace. The $2B EV subsidy package positions Thailand as the regional EV assembly hub.'},
+  VNM:{name:'Vietnam',      flag:'🇻🇳',region:'Asia Pacific',capital:'Hanoi',pop:'98M',gdp:'$449B',gdpg:'6.1%',fdi:'$24B',currency:'VND',tier:'HIGH',gosa:79.4,gfr:76.8,trend:+0.5,l1:80.5,l2:79.1,l3:78.9,l4:79.1,color:'#00ffc8',
+    db:{start:79.2,permit:68.4,elec:87.2,prop:62.8,credit:75.0,investors:72.4,tax:68.7,trade:73.1,contracts:62.3,insolvency:61.5},
+    sectors:['Electronics','EV Battery','Textiles','Seafood Processing','Software Services'],
+    zones:['Binh Duong IP','VSIP Industrial Parks','Hanoi IZ Cluster','Dong Nai IZ','DEEP C Industrial Zones'],
+    signals:[{g:'GOLD',t:'GROWTH',title:'Electronics exports surge 34% YoY',sco:92},{g:'SILVER',t:'INCENTIVE',title:'50% CIT reduction EV manufacturers 5 years',sco:85}],
+    summary:'Vietnam is one of the world\'s fastest-growing FDI destinations, driven by China+1 supply chain diversification. Samsung, LG, Intel and Apple suppliers have established major operations, with electronics exports now exceeding $100B annually.'},
+  ARE:{name:'UAE',          flag:'🇦🇪',region:'Middle East',capital:'Dubai/Abu Dhabi',pop:'9.9M',gdp:'$508B',gdpg:'4.4%',fdi:'$23B',currency:'AED',tier:'TOP',gosa:82.1,gfr:83.8,trend:+1.2,l1:83.4,l2:81.2,l3:82.8,l4:81.0,color:'#00ffc8',
+    db:{start:91.4,permit:88.2,elec:99.1,prop:94.2,credit:55.0,investors:74.0,tax:99.4,trade:94.8,contracts:72.4,insolvency:61.2},
+    sectors:['AI & Data Centers','Financial Services','Renewable Energy','Logistics','Tourism'],
+    zones:['JAFZA','DIFC','ADGM','Dubai Internet City','Masdar City'],
+    signals:[{g:'PLATINUM',t:'DEAL',title:'Microsoft $3.3B AI data center committed',sco:97},{g:'PLATINUM',t:'POLICY',title:'100% foreign ownership all mainland sectors',sco:90}],
+    summary:'The UAE is the Middle East\'s undisputed FDI leader, combining zero corporate tax (outside free zones), world-class infrastructure, and strategic positioning between East and West. Dubai\'s free zones remain the most accessible business hubs globally.'},
+  SAU:{name:'Saudi Arabia', flag:'🇸🇦',region:'Middle East',capital:'Riyadh',pop:'35M',gdp:'$1.07T',gdpg:'2.6%',fdi:'$36B',currency:'SAR',tier:'HIGH',gosa:79.1,gfr:78.6,trend:+2.1,l1:77.3,l2:80.4,l3:82.1,l4:76.6,color:'#e67e22',
+    db:{start:84.1,permit:72.8,elec:93.7,prop:76.8,credit:65.0,investors:75.0,tax:91.1,trade:78.2,contracts:64.2,insolvency:45.2},
+    sectors:['Renewables','Tourism','Mining','Manufacturing','Financial Services'],
+    zones:['KAEC','NEOM','Riyadh SEZ','Jizan Economic City','Ras Al-Khair Industrial City'],
+    signals:[{g:'PLATINUM',t:'INCENTIVE',title:'30-day FDI license guarantee launched',sco:94},{g:'GOLD',t:'DEAL',title:'PIF $15B renewables portfolio expansion',sco:88}],
+    summary:'Saudi Arabia\'s Vision 2030 is reshaping the kingdom into a diversified FDI destination. NEOM, KAEC, and Riyadh SEZ represent the world\'s most ambitious greenfield development programs. The 30-day license guarantee marks a decisive regulatory shift.'},
+  IND:{name:'India',        flag:'🇮🇳',region:'Asia Pacific',capital:'New Delhi',pop:'1.44B',gdp:'$3.75T',gdpg:'6.5%',fdi:'$71B',currency:'INR',tier:'HIGH',gosa:73.2,gfr:75.6,trend:+0.8,l1:69.8,l2:74.6,l3:74.8,l4:73.6,color:'#e67e22',
+    db:{start:78.2,permit:71.3,elec:84.7,prop:58.7,credit:80.0,investors:74.0,tax:67.0,trade:62.0,contracts:41.2,insolvency:62.0},
+    sectors:['Semiconductors','Information Technology','Pharmaceuticals','Renewable Energy','Electric Vehicles'],
+    zones:['Bangalore Tech Park','GIFT City','Chennai Electronics SEZ','Pune Auto Cluster','Hyderabad Pharma City'],
+    signals:[{g:'GOLD',t:'DEAL',title:'Apple commits $10B manufacturing expansion',sco:89},{g:'SILVER',t:'POLICY',title:'PLI scheme expanded to advanced solar modules',sco:83}],
+    summary:'India is the world\'s fastest-growing major economy and an increasingly attractive FDI destination for manufacturing diversification. The PLI incentive scheme has catalysed $35B+ in committed investment across 14 sectors since 2020.'},
+  IDN:{name:'Indonesia',    flag:'🇮🇩',region:'Asia Pacific',capital:'Jakarta',pop:'278M',gdp:'$1.37T',gdpg:'5.0%',fdi:'$22B',currency:'IDR',tier:'HIGH',gosa:77.8,gfr:74.2,trend:+0.1,l1:78.9,l2:77.3,l3:77.5,l4:77.5,color:'#00d4ff',
+    db:{start:76.4,permit:66.3,elec:79.8,prop:68.4,credit:70.0,investors:65.0,tax:72.4,trade:67.8,contracts:58.3,insolvency:62.7},
+    sectors:['Nickel/EV Battery','Palm Oil','Digital Services','Coal','Tourism'],
+    zones:['Batam FTZ','Karawang Industrial Park','Kendal IP','JIIPE Gresik','Morowali Industrial Park'],
+    signals:[{g:'PLATINUM',t:'DEAL',title:'$15B nickel processing investment confirmed',sco:93},{g:'GOLD',t:'ZONE',title:'New Batam zone 200ha ready for occupancy',sco:91}],
+    summary:'Indonesia dominates global nickel supply, positioning it as the critical EV battery supply chain nation. The Morowali and Weda Bay industrial parks host the world\'s largest nickel processing clusters, attracting Chinese and European manufacturers.'},
+  BRA:{name:'Brazil',       flag:'🇧🇷',region:'Americas',capital:'Brasilia',pop:'215M',gdp:'$2.18T',gdpg:'2.9%',fdi:'$74B',currency:'BRL',tier:'HIGH',gosa:71.3,gfr:70.8,trend:+0.4,l1:68.4,l2:72.8,l3:71.2,l4:72.8,color:'#00d4ff',
+    db:{start:66.4,permit:54.2,elec:69.8,prop:54.6,credit:60.0,investors:69.0,tax:46.8,trade:63.2,contracts:62.4,insolvency:57.1},
+    sectors:['AgriTech','Data Centers','Renewable Energy','Mining','Oil & Gas'],
+    zones:['Sao Paulo Tech Zone','Manaus Free Trade Zone','Suape Industrial Complex','Vale do Silicio'],
+    signals:[{g:'SILVER',t:'DEAL',title:'Amazon AWS $5B data center in Sao Paulo',sco:88},{g:'SILVER',t:'GROWTH',title:'Agribusiness exports reach record $160B',sco:82}],
+    summary:'Brazil is South America\'s largest FDI recipient and a growing data center market driven by digital economy expansion. Amazon, Microsoft, and Google have committed over $12B in Brazilian cloud infrastructure. Strong agricultural and renewables fundamentals.'},
+  MAR:{name:'Morocco',      flag:'🇲🇦',region:'Africa',capital:'Rabat',pop:'38M',gdp:'$143B',gdpg:'3.2%',fdi:'$4B',currency:'MAD',tier:'HIGH',gosa:66.8,gfr:68.4,trend:+0.6,l1:63.8,l2:68.2,l3:68.4,l4:66.8,color:'#ffd700',
+    db:{start:71.2,permit:62.4,elec:74.8,prop:58.9,credit:55.0,investors:62.0,tax:69.4,trade:66.8,contracts:56.2,insolvency:58.4},
+    sectors:['Automotive','Renewables','Offshoring','Phosphates','Green Hydrogen'],
+    zones:['Tanger Med','Casablanca Finance City','Renault-Nissan Cluster','Kenitra Atlantic Free Zone'],
+    signals:[{g:'GOLD',t:'POLICY',title:'Green hydrogen EU export framework signed',sco:87},{g:'SILVER',t:'GROWTH',title:'Auto exports cross $10B for first time',sco:81}],
+    summary:'Morocco is Africa\'s top FDI performer and a nearshore manufacturing hub for Europe. Tanger Med is Africa\'s largest container port. Renault and Stellantis anchor a $10B+ auto manufacturing cluster. Green hydrogen positioning with EU creates long-term strategic value.'},
+  DNK:{name:'Denmark',      flag:'🇩🇰',region:'Europe',capital:'Copenhagen',pop:'5.9M',gdp:'$406B',gdpg:'1.8%',fdi:'$22B',currency:'DKK',tier:'TOP',gosa:85.3,gfr:89.8,trend:+0.3,l1:87.2,l2:83.5,l3:84.9,l4:85.6,color:'#00ffc8',
+    db:{start:91.4,permit:82.7,elec:88.4,prop:78.9,credit:75.0,investors:74.0,tax:87.6,trade:82.1,contracts:74.2,insolvency:88.4},
+    sectors:['Green Energy','Pharmaceuticals','Shipping','Medtech','Food Technology'],
+    zones:['Copenhagen Tech Zone','Aarhus Offshore Energy Cluster','Esbjerg Energy Hub'],
+    signals:[{g:'GOLD',t:'GROWTH',title:'Offshore wind FDI pipeline crosses $8B',sco:89},{g:'SILVER',t:'POLICY',title:'Green tech fast-track investment program',sco:83}],
+    summary:'Denmark leads Europe in green energy transition investment, with offshore wind manufacturing driving record FDI inflows. Vestas, Siemens Gamesa, and Ørsted anchor a global renewable energy cluster. Pharmaceutical strength from Novo Nordisk ecosystem adds diversification.'},
+  CHE:{name:'Switzerland',  flag:'🇨🇭',region:'Europe',capital:'Bern',pop:'8.7M',gdp:'$800B',gdpg:'1.2%',fdi:'$28B',currency:'CHF',tier:'TOP',gosa:84.8,gfr:89.1,trend:+0.1,l1:86.0,l2:84.2,l3:83.8,l4:85.2,color:'#00ffc8',
+    db:{start:91.1,permit:83.6,elec:86.4,prop:79.2,credit:72.0,investors:80.0,tax:86.8,trade:86.4,contracts:78.2,insolvency:86.2},
+    sectors:['Pharmaceuticals','Financial Services','Medtech','Watchmaking','Commodities'],
+    zones:['Zug Crypto Valley','Basel Life Sciences Cluster','Geneva International Financial Centre'],
+    signals:[{g:'GOLD',t:'GROWTH',title:'Biotech FDI reaches record CHF 12B',sco:88},{g:'SILVER',t:'POLICY',title:'Crypto regulatory framework finalized',sco:84}],
+    summary:'Switzerland remains Europe\'s top innovation economy, anchored by pharma giants Roche, Novartis, and Lonza. The Zug Crypto Valley has emerged as a global blockchain hub. Political neutrality, rule of law, and quality of life drive multinational HQ concentration.'},
+  NLD:{name:'Netherlands',  flag:'🇳🇱',region:'Europe',capital:'Amsterdam',pop:'17.9M',gdp:'$1.05T',gdpg:'1.4%',fdi:'$68B',currency:'EUR',tier:'TOP',gosa:84.6,gfr:87.4,trend:-0.1,l1:86.8,l2:82.4,l3:83.8,l4:85.4,color:'#00ffc8',
+    db:{start:90.2,permit:86.4,elec:92.1,prop:76.8,credit:78.0,investors:82.0,tax:84.2,trade:90.4,contracts:76.8,insolvency:82.4},
+    sectors:['Semiconductors','Logistics','Agriculture','Financial Services','Data Centers'],
+    zones:['Amsterdam Data Center Cluster','Eindhoven High Tech Campus','Rotterdam Port Industrial','Schiphol Cargo Hub'],
+    signals:[{g:'PLATINUM',t:'DEAL',title:'ASML expansion — €2.5B Eindhoven investment',sco:94},{g:'GOLD',t:'GROWTH',title:'Data center capacity doubles in Amsterdam AMS-IX',sco:89}],
+    summary:'Netherlands is Europe\'s top FDI gateway, hosting ASML (the world\'s most critical semiconductor equipment maker), major global logistics hubs at Rotterdam and Schiphol, and Amsterdam\'s dominant European data center market. EU single market access is unmatched.'},
+  KOR:{name:'South Korea',  flag:'🇰🇷',region:'Asia Pacific',capital:'Seoul',pop:'51M',gdp:'$1.7T',gdpg:'2.4%',fdi:'$17B',currency:'KRW',tier:'TOP',gosa:84.1,gfr:86.9,trend:+0.1,l1:86.0,l2:82.8,l3:83.5,l4:84.2,color:'#00ffc8',
+    db:{start:88.6,permit:79.4,elec:91.2,prop:74.6,credit:85.0,investors:79.0,tax:87.9,trade:78.6,contracts:69.4,insolvency:82.1},
+    sectors:['Semiconductors','Electric Vehicles','Steel','Shipbuilding','K-Content'],
+    zones:['Busan Free Trade Zone','Incheon Global Campus','Gwangyang Industrial Complex','Songdo International Business District'],
+    signals:[{g:'GOLD',t:'INCENTIVE',title:'K-Chips Act semiconductor tax credit extended',sco:90},{g:'GOLD',t:'GROWTH',title:'EV battery exports reach $12B record',sco:87}],
+    summary:'South Korea is a global technology powerhouse anchored by Samsung, SK Hynix, LG, and Hyundai. The K-Chips Act provides 25-35% tax credits for semiconductor investment, competing directly with US CHIPS Act incentives. World-class manufacturing ecosystem.'},
+  NZL:{name:'New Zealand',  flag:'🇳🇿',region:'Oceania',capital:'Wellington',pop:'5.1M',gdp:'$248B',gdpg:'2.1%',fdi:'$9B',currency:'NZD',tier:'TOP',gosa:86.7,gfr:86.3,trend:-0.1,l1:89.5,l2:84.1,l3:85.8,l4:87.3,color:'#00ffc8',
+    db:{start:92.1,permit:84.6,elec:96.7,prop:91.2,credit:70.0,investors:84.0,tax:89.3,trade:88.7,contracts:81.4,insolvency:92.3},
+    sectors:['AgriTech','Tourism','IT Services','Renewables','Screen Industry'],
+    zones:['Auckland Tech Park','Christchurch ICT Precinct','Queenstown Tourism Hub'],
+    signals:[{g:'GOLD',t:'POLICY',title:'Fast-track consenting for green investment',sco:87},{g:'SILVER',t:'GROWTH',title:'Tech sector FDI up 28% — SaaS companies',sco:82}],
+    summary:'New Zealand ranks among the world\'s easiest places to do business, with consistent top-3 governance scores. Strong AgriTech and IT services sectors. Clean energy (90%+ renewable electricity) positions New Zealand for green hydrogen and data center growth.'},
+  GBR:{name:'United Kingdom',flag:'🇬🇧',region:'Europe',capital:'London',pop:'68M',gdp:'$3.1T',gdpg:'0.9%',fdi:'$50B',currency:'GBP',tier:'TOP',gosa:82.5,gfr:84.2,trend:-0.1,l1:84.1,l2:81.4,l3:82.2,l4:82.3,color:'#00d4ff',
+    db:{start:92.4,permit:87.4,elec:96.1,prop:74.4,credit:80.0,investors:78.0,tax:88.4,trade:89.4,contracts:74.9,insolvency:84.2},
+    sectors:['FinTech','Life Sciences','Creative Industries','Aerospace','Defence'],
+    zones:['London Tech City (Silicon Roundabout)','Manchester City-Region','Cambridge Biomedical Campus','Aerospace Wales'],
+    signals:[{g:'GOLD',t:'GROWTH',title:'London FinTech raises record £8B in 2025',sco:88},{g:'SILVER',t:'POLICY',title:'AI Safety Institute expanded with £100M',sco:84}],
+    summary:'The UK remains Europe\'s top FDI destination by volume, led by London\'s unmatched financial services ecosystem. Post-Brexit regulatory autonomy has enabled fintech and life sciences innovation. Cambridge\'s biomedical cluster is Europe\'s deepest life sciences hub.'},
+  DEU:{name:'Germany',      flag:'🇩🇪',region:'Europe',capital:'Berlin',pop:'84M',gdp:'$4.46T',gdpg:'-0.2%',fdi:'$36B',currency:'EUR',tier:'TOP',gosa:83.1,gfr:83.1,trend:-0.2,l1:84.2,l2:85.6,l3:81.4,l4:82.8,color:'#00d4ff',
+    db:{start:82.4,permit:74.2,elec:88.6,prop:82.4,credit:78.0,investors:82.0,tax:76.8,trade:84.2,contracts:74.8,insolvency:86.4},
+    sectors:['Automotive','Chemicals','Mechanical Engineering','Renewables','Semiconductors'],
+    zones:['Hamburg Port Industrial Cluster','Munich High-Tech Region','Stuttgart Auto Valley','Frankfurt Financial District'],
+    signals:[{g:'GOLD',t:'INCENTIVE',title:'Semiconductor investment subsidy — €15B fund',sco:89},{g:'SILVER',t:'GROWTH',title:'Green hydrogen industrial parks announced',sco:82}],
+    summary:'Germany remains Europe\'s largest economy and a critical advanced manufacturing FDI destination. Intel, TSMC, and Wolfspeed are investing $30B+ in German semiconductor capacity. Energy transition creates massive opportunity in green hydrogen and industrial decarbonisation.'},
+  USA:{name:'United States', flag:'🇺🇸',region:'Americas',capital:'Washington D.C.',pop:'335M',gdp:'$29T',gdpg:'2.5%',fdi:'$349B',currency:'USD',tier:'TOP',gosa:83.9,gfr:82.6,trend:-0.2,l1:85.3,l2:82.1,l3:83.0,l4:85.1,color:'#00d4ff',
+    db:{start:91.3,permit:80.2,elec:81.4,prop:73.2,credit:95.0,investors:87.0,tax:86.7,trade:90.1,contracts:73.9,insolvency:82.6},
+    sectors:['AI & Technology','Semiconductors','Defence','Aerospace','Pharmaceuticals'],
+    zones:['Silicon Valley','Texas Semiconductor Corridor','Research Triangle NC','DC Metro Defence Cluster','Boston Life Sciences'],
+    signals:[{g:'GOLD',t:'POLICY',title:'CHIPS Act funding rounds 3-4 announced',sco:91},{g:'GOLD',t:'GROWTH',title:'AI infrastructure investment hits $120B in 2025',sco:90}],
+    summary:'The United States remains the world\'s largest single FDI destination, anchored by unmatched technology, capital markets, and consumer market depth. The CHIPS Act ($52B) and IRA ($369B) create the largest manufacturing incentive programs in US history.'},
+  JPN:{name:'Japan',        flag:'🇯🇵',region:'Asia Pacific',capital:'Tokyo',pop:'125M',gdp:'$4.3T',gdpg:'1.2%',fdi:'$16B',currency:'JPY',tier:'TOP',gosa:81.4,gfr:81.4,trend:+0.2,l1:79.8,l2:84.2,l3:78.6,l4:82.4,color:'#00d4ff',
+    db:{start:82.6,permit:78.4,elec:90.2,prop:70.4,credit:78.0,investors:76.0,tax:78.4,trade:80.2,contracts:68.4,insolvency:80.2},
+    sectors:['Semiconductors','Automotive','Robotics','Healthcare','Tourism'],
+    zones:['Tokyo Bay Innovation Zone','Osaka Life Science Hub','Kyushu Semiconductor Valley','Hokkaido Green Tech'],
+    signals:[{g:'GOLD',t:'DEAL',title:'TSMC Kumamoto Fab 2 announced — $20B',sco:91},{g:'GOLD',t:'INCENTIVE',title:'Semiconductor subsidies doubled to $26B',sco:89}],
+    summary:'Japan is experiencing a semiconductor renaissance driven by massive government subsidies. TSMC, Samsung, Micron, and Western Digital are establishing or expanding Japan operations. Rapid depreciation allowances and JPY weakness improve investment economics significantly.'},
+  CAN:{name:'Canada',       flag:'🇨🇦',region:'Americas',capital:'Ottawa',pop:'40M',gdp:'$2.2T',gdpg:'1.4%',fdi:'$61B',currency:'CAD',tier:'TOP',gosa:80.8,gfr:80.8,trend:0.0,l1:78.4,l2:82.6,l3:82.4,l4:81.6,color:'#00d4ff',
+    db:{start:91.6,permit:76.2,elec:84.2,prop:80.6,credit:82.0,investors:84.0,tax:82.4,trade:82.8,contracts:78.4,insolvency:86.4},
+    sectors:['Clean Energy','Mining','AI Research','Automotive EV','Financial Services'],
+    zones:['Toronto Financial District','Waterloo Tech Corridor','Alberta Energy Hub','British Columbia Gateway'],
+    signals:[{g:'GOLD',t:'INCENTIVE',title:'Canada EV battery investment tax credit — 30%',sco:88},{g:'SILVER',t:'GROWTH',title:'AI sector investment up 42% — Montreal hub',sco:84}],
+    summary:'Canada offers a compelling combination of natural resource depth, AI research leadership (Montreal/Toronto/Vancouver AI clusters), and clean energy abundance. The EV supply chain opportunity is massive — Canada holds lithium, cobalt, and nickel reserves critical to battery manufacturing.'},
 };
 
-function scoreColor(s: number) {
-  if(s>=80) return '#2ecc71'; if(s>=60) return '#3498db'; if(s>=40) return '#f1c40f'; return '#e74c3c';
+const DB_LABELS = ['Starting a Business','Construction Permits','Getting Electricity','Registering Property','Getting Credit','Protecting Investors','Paying Taxes','Trading Across Borders','Enforcing Contracts','Resolving Insolvency'];
+
+function sc(v: number) { return v>=80?'#00ffc8':v>=60?'#00d4ff':v>=40?'#ffd700':'#ff4466'; }
+
+function RadarChart({data}:{data:number[]}) {
+  const n=6; const cx=110,cy=110,r=85;
+  const labels=['L1','L2','L3','L4','ETR','ICT'];
+  function pt(i:number,v:number){const a=(Math.PI*2*i/n)-Math.PI/2;const d=(v/100)*r;return{x:cx+d*Math.cos(a),y:cy+d*Math.sin(a)};}
+  const pts=data.map((v,i)=>pt(i,v));
+  const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  return(
+    <svg width="220" height="220" viewBox="0 0 220 220">
+      {[20,40,60,80,100].map(l=>{const ps=data.map((_,i)=>pt(i,l));return <polygon key={l} points={ps.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke="rgba(0,255,200,0.07)" strokeWidth="1"/>;})}
+      {data.map((_,i)=>{const p=pt(i,100);return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(0,255,200,0.07)" strokeWidth="0.8"/>;})}
+      <polygon points={poly} fill="rgba(0,255,200,0.12)" stroke="#00ffc8" strokeWidth="2"/>
+      {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="4" fill="#00ffc8" style={{filter:'drop-shadow(0 0 5px #00ffc8)'}}/>)}
+      {labels.map((l,i)=>{const p=pt(i,118);return <text key={l} x={p.x} y={p.y} fontSize="9" fill="rgba(232,244,248,0.5)" textAnchor="middle" dominantBaseline="middle" fontFamily="'JetBrains Mono',monospace">{l}</text>;})}
+    </svg>
+  );
 }
 
-export default function CountryClient({ id }: { id: string }) {
-  const key = id?.toUpperCase();
-  const c = COUNTRIES[key];
+export default function CountryClient({countryId}:{countryId:string}) {
+  const [tab,setTab]=useState('overview');
+  const d=COUNTRY_DATA[countryId];
 
-  if(!c) return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+  if(!d) return(
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'Inter',sans-serif",flexDirection:'column',gap:'16px'}}>
       <NavBar/>
-      <div style={{maxWidth:'800px',margin:'80px auto',textAlign:'center',padding:'24px'}}>
-        <div style={{fontSize:'60px',marginBottom:'20px'}}>🌍</div>
-        <h1 style={{fontSize:'28px',fontWeight:900,color:'#1a2c3e',marginBottom:'12px'}}>Economy not found: {id}</h1>
-        <p style={{color:'#7f8c8d',marginBottom:'24px'}}>Try: SGP, MYS, THA, VNM, ARE, SAU, IND</p>
-        <Link href="/investment-analysis" style={{padding:'12px 28px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'10px',textDecoration:'none',fontWeight:800}}>View All Countries</Link>
-      </div>
-      <Footer/>
+      <div style={{fontSize:'40px'}}>🌍</div>
+      <div style={{fontSize:'18px',color:'#e8f4f8',fontWeight:700}}>Country not found: {countryId}</div>
+      <Link href="/investment-analysis" style={{color:'#00ffc8',textDecoration:'none',fontSize:'13px'}}>← Back to Investment Analysis</Link>
     </div>
   );
 
-  const dimData = [
-    {code:'ETR',v:c.dims.etr,color:'#1a2c3e'},{code:'ICT',v:c.dims.ict,color:'#2ecc71'},
-    {code:'TCM',v:c.dims.tcm,color:'#3498db'},{code:'DTF',v:c.dims.dtf,color:'#9b59b6'},
-    {code:'SGT',v:c.dims.sgt,color:'#27ae60'},{code:'GRP',v:c.dims.grp,color:'#f1c40f'},
-  ];
+  const dbVals=Object.values(d.db) as number[];
+  const tierStyle=d.tier==='TOP'?{bg:'rgba(0,255,200,0.08)',color:'#00ffc8',border:'rgba(0,255,200,0.25)'}:{bg:'rgba(0,180,216,0.08)',color:'#00b4d8',border:'rgba(0,180,216,0.25)'};
 
-  return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)',padding:'28px 24px',borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
-        <div style={{maxWidth:'1440px',margin:'0 auto'}}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'20px',flexWrap:'wrap'}}>
-            <div style={{display:'flex',alignItems:'center',gap:'18px'}}>
-              <span style={{fontSize:'52px'}}>{c.flag}</span>
-              <div>
-                <h1 style={{fontSize:'26px',fontWeight:900,color:'white',marginBottom:'4px'}}>{c.name}</h1>
-                <div style={{display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}}>
-                  <span style={{fontSize:'12px',color:'rgba(255,255,255,0.5)'}}>{c.region}</span>
-                  <span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:'rgba(46,204,113,0.12)',color:'#2ecc71'}}>{c.tier} TIER</span>
-                  <span style={{fontSize:'11px',color:'rgba(255,255,255,0.5)'}}>GDP: {c.gdp} · Growth: {c.gdp_growth}</span>
+
+      {/* HERO */}
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a,#0a1628)',padding:'28px 24px',borderBottom:'1px solid rgba(0,255,200,0.08)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{position:'absolute',top:0,right:0,width:'400px',height:'400px',background:`radial-gradient(circle at top right, ${d.color}06, transparent)`,pointerEvents:'none'}}/>
+        <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
+          <Link href="/investment-analysis" style={{display:'inline-flex',alignItems:'center',gap:'6px',fontSize:'11px',color:'rgba(0,255,200,0.5)',textDecoration:'none',marginBottom:'16px',fontFamily:"'JetBrains Mono',monospace"}}>
+            <ArrowLeft size={12}/> Investment Analysis
+          </Link>
+          <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:'24px',alignItems:'flex-start'}}>
+            <div>
+              <div style={{display:'flex',alignItems:'center',gap:'16px',marginBottom:'12px',flexWrap:'wrap'}}>
+                <span style={{fontSize:'52px'}}>{d.flag}</span>
+                <div>
+                  <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px'}}>
+                    <h1 style={{fontSize:'30px',fontWeight:900,color:'#e8f4f8',lineHeight:1}}>{d.name}</h1>
+                    <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'10px',background:tierStyle.bg,color:tierStyle.color,border:'1px solid '+tierStyle.border,letterSpacing:'0.06em'}}>{d.tier}</span>
+                  </div>
+                  <div style={{fontSize:'12px',color:'rgba(232,244,248,0.4)'}}>{d.region} · {d.capital} · {d.currency}</div>
                 </div>
               </div>
+              <p style={{fontSize:'14px',color:'rgba(232,244,248,0.55)',lineHeight:1.75,maxWidth:'800px',marginBottom:'18px'}}>{d.summary}</p>
+              <div style={{display:'flex',gap:'14px',flexWrap:'wrap'}}>
+                {[[d.gdp,'GDP',d.color],[d.gdpg,'GDP Growth','#00ffc8'],[d.fdi,'FDI Inflow','#ffd700'],[d.pop,'Population','rgba(232,244,248,0.5)']].map(([v,l,c])=>(
+                  <div key={String(l)} style={{padding:'8px 16px',background:'rgba(255,255,255,0.04)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.06)'}}>
+                    <div style={{fontSize:'16px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace"}}>{v}</div>
+                    <div style={{fontSize:'9px',color:'rgba(232,244,248,0.35)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div style={{display:'flex',gap:'16px',alignItems:'center'}}>
-              <div style={{textAlign:'center'}}>
-                <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)',marginBottom:'2px'}}>GOSA</div>
-                <div style={{fontSize:'38px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{c.gosa}</div>
+            {/* Score block */}
+            <div style={{display:'flex',gap:'12px',alignItems:'center',flexShrink:0}}>
+              <div style={{textAlign:'center',padding:'18px 22px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'14px'}}>
+                <div style={{fontSize:'10px',color:'rgba(0,255,200,0.5)',marginBottom:'4px',letterSpacing:'0.1em'}}>GOSA</div>
+                <div style={{fontSize:'52px',fontWeight:900,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",textShadow:'0 0 24px rgba(0,255,200,0.5)',lineHeight:1}}>{d.gosa}</div>
+                <div style={{fontSize:'10px',color:d.trend>0?'#00ffc8':'#ff4466',fontWeight:700,marginTop:'4px',display:'flex',alignItems:'center',justifyContent:'center',gap:'3px'}}>
+                  {d.trend>0?<TrendingUp size={11}/>:<TrendingDown size={11}/>}
+                  {d.trend>0?'+':''}{d.trend} MoM
+                </div>
               </div>
-              <div style={{textAlign:'center'}}>
-                <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)',marginBottom:'2px'}}>GFR</div>
-                <div style={{fontSize:'38px',fontWeight:900,color:'#f1c40f',fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{c.gfr}</div>
+              <div style={{textAlign:'center',padding:'18px 22px',background:'rgba(255,215,0,0.05)',border:'1px solid rgba(255,215,0,0.15)',borderRadius:'14px'}}>
+                <div style={{fontSize:'10px',color:'rgba(255,215,0,0.5)',marginBottom:'4px',letterSpacing:'0.1em'}}>GFR</div>
+                <div style={{fontSize:'52px',fontWeight:900,color:'#ffd700',fontFamily:"'JetBrains Mono',monospace",textShadow:'0 0 24px rgba(255,215,0,0.4)',lineHeight:1}}>{d.gfr}</div>
               </div>
-              <Link href="/reports" style={{padding:'9px 18px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:800,display:'flex',alignItems:'center',gap:'5px'}}>
-                <Download size={12}/> PDF Report
-              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div style={{maxWidth:'1440px',margin:'0 auto',padding:'20px 24px'}}>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'14px'}}>
-          <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',padding:'18px'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'14px'}}>Key Indicators</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
-              {[['Capital',c.capital],['Currency',c.currency],['GDP',c.gdp],['GDP Growth',c.gdp_growth],['FDI Inflow',c.fdi_inflow],['Population',c.population]].map(([l,v])=>(
-                <div key={l} style={{padding:'8px 10px',background:'rgba(26,44,62,0.02)',borderRadius:'7px'}}>
-                  <div style={{fontSize:'10px',color:'#7f8c8d',marginBottom:'2px',textTransform:'uppercase'}}>{l}</div>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e'}}>{v}</div>
+      {/* TABS */}
+      <div style={{background:'rgba(6,15,26,0.95)',borderBottom:'1px solid rgba(0,255,200,0.06)',backdropFilter:'blur(20px)'}}>
+        <div style={{maxWidth:'1540px',margin:'0 auto',padding:'0 24px',display:'flex',overflowX:'auto'}}>
+          {[['overview','Overview'],['db','Doing Business'],['zones','Zones'],['signals','Signals']].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)}
+              style={{padding:'13px 20px',border:'none',borderBottom:`2px solid ${tab===t?'#00ffc8':'transparent'}`,background:'transparent',fontSize:'12px',fontWeight:tab===t?700:400,color:tab===t?'#00ffc8':'rgba(232,244,248,0.45)',cursor:'pointer',fontFamily:"'Inter',sans-serif",marginBottom:'-1px',whiteSpace:'nowrap',flexShrink:0}}>
+              {l}
+            </button>
+          ))}
+          <div style={{marginLeft:'auto',display:'flex',gap:'8px',alignItems:'center',paddingLeft:'16px',flexShrink:0}}>
+            <button onClick={()=>{ const c=d; import('@/app/reports/page').then(()=>{}); window.location.href='/reports'; }}
+              style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 16px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'11px',fontWeight:800,fontFamily:"'Inter',sans-serif",boxShadow:'0 4px 12px rgba(0,255,200,0.2)'}}>
+              <Download size={11}/> Report
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:'1540px',margin:'0 auto',padding:'20px 24px'}}>
+        {tab==='overview'&&(
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px'}}>
+            {/* GOSA layers */}
+            <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'20px'}}>
+              <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.15em',marginBottom:'16px',fontFamily:"'Orbitron','Inter',sans-serif"}}>GOSA LAYER BREAKDOWN</div>
+              <div style={{display:'flex',alignItems:'center',gap:'20px',marginBottom:'20px'}}>
+                <RadarChart data={[d.l1,d.l2,d.l3,d.l4,d.gosa*0.9,d.gosa*0.95]}/>
+                <div style={{flex:1}}>
+                  {[['L1 Doing Business',d.l1,'#00ffc8','30%'],['L2 Sector',d.l2,'#00d4ff','20%'],['L3 Zones',d.l3,'#9b59b6','25%'],['L4 Market Intel',d.l4,'#ffd700','25%']].map(([l,v,c,w])=>(
+                    <div key={String(l)} style={{marginBottom:'10px'}}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
+                        <span style={{fontSize:'10px',fontWeight:600,color:'rgba(232,244,248,0.55)'}}>{l} <span style={{color:'rgba(232,244,248,0.25)',fontSize:'9px'}}>({w})</span></span>
+                        <span style={{fontSize:'13px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
+                      </div>
+                      <div style={{height:'5px',background:'rgba(255,255,255,0.05)',borderRadius:'3px',overflow:'hidden'}}>
+                        <div style={{height:'100%',width:(v as number)+'%',background:String(c),borderRadius:'3px',boxShadow:'0 0 8px '+c+'60'}}/>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* Key sectors + zones */}
+            <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+              <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'18px'}}>
+                <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.15em',marginBottom:'12px',fontFamily:"'Orbitron','Inter',sans-serif"}}>KEY INVESTMENT SECTORS</div>
+                <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
+                  {d.sectors.map((s:string,i:number)=>(
+                    <span key={s} style={{padding:'5px 12px',background:`${['rgba(0,255,200,0.08)','rgba(0,180,216,0.08)','rgba(255,215,0,0.08)','rgba(155,89,182,0.08)','rgba(230,126,34,0.08)'][i%5]}`,border:`1px solid ${['rgba(0,255,200,0.2)','rgba(0,180,216,0.2)','rgba(255,215,0,0.2)','rgba(155,89,182,0.2)','rgba(230,126,34,0.2)'][i%5]}`,borderRadius:'20px',fontSize:'11px',fontWeight:600,color:['#00ffc8','#00b4d8','#ffd700','#9b59b6','#e67e22'][i%5]}}>{s}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'18px'}}>
+                <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.15em',marginBottom:'12px',fontFamily:"'Orbitron','Inter',sans-serif"}}>INVESTMENT ZONES</div>
+                {d.zones.map((z:string,i:number)=>(
+                  <div key={z} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
+                    <div style={{width:'6px',height:'6px',borderRadius:'50%',background:['#00ffc8','#00d4ff','#ffd700','#9b59b6','#e67e22'][i%5],flexShrink:0,boxShadow:'0 0 6px '+['#00ffc8','#00d4ff','#ffd700','#9b59b6','#e67e22'][i%5]}}/>
+                    <span style={{fontSize:'12px',color:'rgba(232,244,248,0.7)',fontWeight:500}}>{z}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',padding:'18px'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'14px'}}>GFR 6 Dimensions</div>
-            {dimData.map(dim=>(
-              <div key={dim.code} style={{marginBottom:'8px'}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px'}}>
-                  <span style={{fontSize:'11px',fontWeight:600,color:'#2c3e50'}}>{dim.code}</span>
-                  <span style={{fontSize:'11px',fontWeight:800,color:dim.color,fontFamily:"'JetBrains Mono',monospace"}}>{dim.v}</span>
-                </div>
-                <div style={{height:'5px',background:'rgba(26,44,62,0.07)',borderRadius:'3px'}}>
-                  <div style={{height:'100%',width:`${dim.v}%`,background:dim.color,borderRadius:'3px'}}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
-        <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',padding:'18px',marginBottom:'14px'}}>
-          <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'14px'}}>Doing Business — 10 Indicators</div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'8px'}}>
-            {c.doing_business.map(({ind,score,rank}: any)=>(
-              <div key={ind} style={{padding:'10px',background:'rgba(26,44,62,0.02)',borderRadius:'9px',border:'1px solid rgba(26,44,62,0.06)',textAlign:'center'}}>
-                <div style={{fontSize:'9px',color:'#7f8c8d',marginBottom:'4px',lineHeight:'1.4'}}>{ind}</div>
-                <div style={{fontSize:'18px',fontWeight:900,color:scoreColor(score),fontFamily:"'JetBrains Mono',monospace"}}>{score}</div>
-                <div style={{fontSize:'9px',color:'#7f8c8d',marginTop:'1px'}}>#{rank}</div>
-                <div style={{height:'3px',background:'rgba(26,44,62,0.06)',borderRadius:'2px',marginTop:'4px'}}>
-                  <div style={{height:'100%',width:`${score}%`,background:scoreColor(score),borderRadius:'2px'}}/>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'14px'}}>
-          <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',padding:'18px'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'12px'}}>Investment Zones</div>
-            {c.zones.map((z: string)=>(
-              <div key={z} style={{padding:'8px 12px',background:'rgba(46,204,113,0.04)',borderRadius:'7px',border:'1px solid rgba(46,204,113,0.1)',marginBottom:'5px',fontSize:'12px',fontWeight:500,color:'#1a2c3e'}}>{z}</div>
-            ))}
-          </div>
-          <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',padding:'18px'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'12px'}}><Zap size={11} style={{marginRight:'4px',display:'inline',color:'#2ecc71'}}/> Signals</div>
-            {c.signals.map((sig: any)=>{
-              const tc: Record<string,string> = {POLICY:'#e74c3c',INCENTIVE:'#2ecc71',ZONE:'#f1c40f',DEAL:'#e67e22',GROWTH:'#3498db'};
-              const col = tc[sig.type]||'#7f8c8d';
-              return (
-                <div key={sig.title} style={{padding:'9px 12px',borderRadius:'8px',border:'1px solid rgba(26,44,62,0.06)',marginBottom:'6px',borderLeft:`3px solid ${col}`}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px'}}>
-                    <span style={{fontSize:'9px',fontWeight:800,color:col}}>{sig.type}</span>
-                    <span style={{fontSize:'11px',fontWeight:800,color:'#9b59b6'}}>{sig.sco}</span>
+        {tab==='db'&&(
+          <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'22px'}}>
+            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.15em',marginBottom:'18px',fontFamily:"'Orbitron','Inter',sans-serif"}}>DOING BUSINESS INDICATORS — L1 LAYER</div>
+            {DB_LABELS.map((label,i)=>{
+              const v=dbVals[i]||70;
+              return(
+                <div key={label} style={{marginBottom:'12px',display:'flex',alignItems:'center',gap:'16px'}}>
+                  <div style={{width:'180px',fontSize:'12px',color:'rgba(232,244,248,0.6)',flexShrink:0}}>{label}</div>
+                  <div style={{flex:1,height:'6px',background:'rgba(255,255,255,0.05)',borderRadius:'3px',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:v+'%',background:'linear-gradient(90deg,'+sc(v)+'60,'+sc(v)+')',borderRadius:'3px',transition:'width 1s ease'}}/>
                   </div>
-                  <div style={{fontSize:'12px',fontWeight:600,color:'#1a2c3e'}}>{sig.title}</div>
+                  <div style={{width:'36px',textAlign:'right',fontSize:'13px',fontWeight:800,color:sc(v),fontFamily:"'JetBrains Mono',monospace"}}>{v}</div>
                 </div>
               );
             })}
           </div>
-        </div>
+        )}
 
-        <div style={{background:'#1a2c3e',borderRadius:'14px',padding:'20px 24px',display:'flex',gap:'16px',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',border:'1px solid rgba(46,204,113,0.1)'}}>
-          <div>
-            <div style={{fontSize:'15px',fontWeight:800,color:'white',marginBottom:'3px'}}>Generate Full Report for {c.name}</div>
-            <div style={{fontSize:'12px',color:'rgba(255,255,255,0.5)'}}>4-page PDF · GOSA deep-dive · Zone recommendations</div>
+        {tab==='zones'&&(
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+            {d.zones.map((z:string,i:number)=>{
+              const colors=['#00ffc8','#00d4ff','#ffd700','#9b59b6','#e67e22'];
+              const types=['Free Zone','SEZ','Industrial Park','Tech Cluster','Export Zone'];
+              const c=colors[i%5];
+              return(
+                <div key={z} style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'20px',borderLeft:'3px solid '+c}}>
+                  <div style={{fontSize:'16px',fontWeight:800,color:'rgba(232,244,248,0.85)',marginBottom:'4px'}}>{z}</div>
+                  <div style={{fontSize:'11px',color:'rgba(232,244,248,0.4)',marginBottom:'12px'}}>{types[i%5]} · {d.name}</div>
+                  <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
+                    {['Tax Incentive','Land Available','Power Grid','Fiber Connected'].map(f=>(
+                      <span key={f} style={{fontSize:'10px',padding:'2px 8px',background:c+'10',border:'1px solid '+c+'20',borderRadius:'10px',color:c,fontWeight:600}}>{f}</span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div style={{display:'flex',gap:'10px'}}>
-            <Link href="/reports" style={{padding:'10px 22px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:800}}>Generate Report →</Link>
-            <Link href="/investment-analysis" style={{padding:'10px 18px',border:'1px solid rgba(255,255,255,0.2)',color:'white',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:600}}>Compare Countries</Link>
+        )}
+
+        {tab==='signals'&&(
+          <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+            {d.signals.map((sig:any,i:number)=>{
+              const gc=sig.g==='PLATINUM'?'#c39bd3':sig.g==='GOLD'?'#ffd700':'#94a8b3';
+              const tc=sig.t==='POLICY'?'#ff4466':sig.t==='INCENTIVE'?'#00ffc8':sig.t==='DEAL'?'#e67e22':sig.t==='GROWTH'?'#00d4ff':'#9b59b6';
+              return(
+                <div key={i} style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(255,255,255,0.04)',borderLeft:'3px solid '+tc,borderRadius:'10px',padding:'16px 20px',display:'flex',alignItems:'center',gap:'16px'}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:'flex',gap:'6px',marginBottom:'6px'}}>
+                      <span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:gc+'15',color:gc,letterSpacing:'0.05em'}}>{sig.g}</span>
+                      <span style={{fontSize:'9px',fontWeight:700,padding:'2px 8px',borderRadius:'4px',background:tc+'12',color:tc}}>{sig.t}</span>
+                    </div>
+                    <div style={{fontSize:'14px',fontWeight:700,color:'rgba(232,244,248,0.85)'}}>{sig.title}</div>
+                  </div>
+                  <div style={{textAlign:'right',flexShrink:0}}>
+                    <div style={{fontSize:'20px',fontWeight:900,color:'#9b59b6',fontFamily:"'JetBrains Mono',monospace"}}>{sig.sco}</div>
+                    <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>SCI Score</div>
+                  </div>
+                </div>
+              );
+            })}
+            <Link href="/signals" style={{display:'block',textAlign:'center',padding:'12px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'10px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#00ffc8',marginTop:'4px'}}>
+              View All Signals →
+            </Link>
           </div>
-        </div>
+        )}
       </div>
       <Footer/>
     </div>

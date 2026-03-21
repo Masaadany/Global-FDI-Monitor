@@ -4,6 +4,7 @@ import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, ChevronUp, ChevronDown, Download, Filter, Info, Award } from 'lucide-react';
+import ScrollableSelect from '@/components/ScrollableSelect';
 
 const DIMS = [
   {code:'ETR',name:'Economic & Trade Resilience',weight:0.20,color:'#00ffc8',desc:'Macro stability, trade openness, external balance, currency resilience'},
@@ -145,14 +146,16 @@ export default function GFRPage(){
               <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',gap:'10px',flexWrap:'wrap',alignItems:'center',background:'rgba(0,0,0,0.2)'}}>
                 <input placeholder="Search economy..." value={search} onChange={e=>setSearch(e.target.value)}
                   style={{padding:'7px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'7px',fontSize:'12px',outline:'none',fontFamily:"'Inter',sans-serif",color:'#e8f4f8',minWidth:'160px'}}/>
-                <select value={selRegion} onChange={e=>setSelRegion(e.target.value)}
-                  style={{padding:'7px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'7px',fontSize:'12px',color:'#e8f4f8',outline:'none',cursor:'pointer',fontFamily:"'Inter',sans-serif"}}>
-                  {regions.map(r=><option key={r} style={{background:'#0a1628'}}>{r}</option>)}
-                </select>
-                <select value={selTier} onChange={e=>setSelTier(e.target.value)}
-                  style={{padding:'7px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'7px',fontSize:'12px',color:'#e8f4f8',outline:'none',cursor:'pointer',fontFamily:"'Inter',sans-serif"}}>
-                  {['ALL','TOP','HIGH','DEV'].map(t=><option key={t} style={{background:'#0a1628'}}>{t}</option>)}
-                </select>
+                <ScrollableSelect
+                  value={selRegion} onChange={setSelRegion} width="150px"
+                  options={regions.map(r=>({value:r,label:r==='ALL'?'All Regions':r}))}
+                  accentColor="#00ffc8"
+                />
+                <ScrollableSelect
+                  value={selTier} onChange={setSelTier} width="130px"
+                  options={[{value:'ALL',label:'All Tiers'},{value:'TOP',label:'TOP (≥80)'},{value:'HIGH',label:'HIGH (60-79)'},{value:'DEV',label:'DEV (<60)'}]}
+                  accentColor="#ffd700"
+                />
                 <span style={{marginLeft:'auto',fontSize:'11px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>{filtered.length} economies</span>
                 <button style={{padding:'7px 14px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'#00ffc8',fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',gap:'6px'}}>
                   <Download size={11}/> Export

@@ -1,17 +1,16 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle, Eye, EyeOff, Globe, Zap, BarChart3 } from 'lucide-react';
+import { CheckCircle, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
-export default function RegisterPage() {
-  const [step, setStep] = useState(1);
-  const [showPass, setShowPass] = useState(false);
-  const [form, setForm] = useState({ name:'', email:'', org:'', role:'', password:'' });
-  const [agreed, setAgreed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
+export default function RegisterPage(){
+  const [showPass,setShowPass]=useState(false);
+  const [form,setForm]=useState({name:'',email:'',org:'',role:'',password:''});
+  const [agreed,setAgreed]=useState(false);
+  const [loading,setLoading]=useState(false);
+  const [done,setDone]=useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e:React.FormEvent){
     e.preventDefault();
     setLoading(true);
     await new Promise(r=>setTimeout(r,1400));
@@ -19,123 +18,113 @@ export default function RegisterPage() {
     setDone(true);
   }
 
-  const roles = ['Strategy / Investment','Corporate Development','Government / Economic Development','Private Equity / VC','Research / Academia','Other'];
+  const roles=['Strategy / Investment','Corporate Development','Government / Economic Development','Private Equity / VC','Research / Academia','Other'];
 
-  if(done) return (
-    <div style={{minHeight:'100vh', background:'#0f1e2a', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
-      <div style={{background:'white', borderRadius:'20px', padding:'40px', maxWidth:'480px', width:'100%', textAlign:'center'}}>
-        <div style={{width:'64px', height:'64px', background:'rgba(46,204,113,0.12)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px'}}>
-          <CheckCircle size={32} color="#2ecc71"/>
+  if(done) return(
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"'Inter','Helvetica Neue',sans-serif",position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+      <div style={{background:'rgba(10,22,40,0.9)',borderRadius:'18px',padding:'44px',maxWidth:'480px',width:'100%',textAlign:'center',border:'1px solid rgba(0,255,200,0.15)',boxShadow:'0 0 40px rgba(0,255,200,0.08)',position:'relative'}}>
+        <div style={{width:'70px',height:'70px',background:'rgba(0,255,200,0.08)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px',border:'1px solid rgba(0,255,200,0.2)'}}>
+          <CheckCircle size={36} color="#00ffc8" style={{filter:'drop-shadow(0 0 12px rgba(0,255,200,0.6))'}}/>
         </div>
-        <h1 style={{fontSize:'24px', fontWeight:900, color:'#1a2c3e', marginBottom:'8px'}}>Welcome to Global FDI Monitor</h1>
-        <p style={{fontSize:'14px', color:'#7f8c8d', marginBottom:'24px', lineHeight:'1.65'}}>
-          Your 7-day free trial is active. Access all features including the Dashboard, Investment Analysis, GFR Ranking, and generate up to 2 PDF reports.
-        </p>
-        <div style={{background:'rgba(46,204,113,0.06)', borderRadius:'12px', padding:'16px', marginBottom:'24px', border:'1px solid rgba(46,204,113,0.2)'}}>
-          <div style={{fontSize:'12px', color:'#7f8c8d', marginBottom:'8px'}}>TRIAL INCLUDES</div>
-          {['7 days full platform access','2 PDF report downloads','3 country searches','All 7 dashboard widgets','GFR Ranking access','Live signals feed'].map(f=>(
-            <div key={f} style={{display:'flex', alignItems:'center', gap:'8px', padding:'4px 0', fontSize:'13px', color:'#1a2c3e'}}>
-              <CheckCircle size={13} color="#2ecc71"/>{f}
+        <h1 style={{fontSize:'24px',fontWeight:900,color:'#e8f4f8',marginBottom:'8px'}}>Welcome to Global FDI Monitor</h1>
+        <p style={{fontSize:'14px',color:'rgba(232,244,248,0.5)',marginBottom:'24px',lineHeight:1.7}}>Your 7-day free trial is active. Full platform access with 2 PDF report downloads and 3 searches.</p>
+        <div style={{background:'rgba(0,255,200,0.05)',borderRadius:'12px',padding:'16px',marginBottom:'24px',border:'1px solid rgba(0,255,200,0.12)'}}>
+          {['7 days full platform access','2 PDF report downloads','3 country searches','All 7 HUD dashboard widgets','GFR Ranking access','Live signals — all grades'].map(f=>(
+            <div key={f} style={{display:'flex',alignItems:'center',gap:'8px',padding:'5px 0',fontSize:'13px',color:'rgba(232,244,248,0.7)'}}>
+              <CheckCircle size={12} color="#00ffc8"/>{f}
             </div>
           ))}
         </div>
-        <Link href="/dashboard" style={{display:'block', padding:'13px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:800, marginBottom:'10px'}}>
+        <Link href="/dashboard" style={{display:'block',padding:'13px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'10px',textDecoration:'none',fontSize:'14px',fontWeight:800,marginBottom:'12px',boxShadow:'0 4px 16px rgba(0,255,200,0.3)'}}>
           Go to Dashboard →
         </Link>
-        <p style={{fontSize:'11px', color:'#7f8c8d'}}>Check <strong>{form.email||'your email'}</strong> for confirmation</p>
+        <p style={{fontSize:'11px',color:'rgba(232,244,248,0.3)'}}>Confirmation sent to {form.email||'your email'}</p>
       </div>
     </div>
   );
 
-  return (
-    <div style={{minHeight:'100vh', background:'#0f1e2a', display:'flex', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',fontFamily:"'Inter','Helvetica Neue',sans-serif",overflow:'hidden'}}>
       {/* Left panel */}
-      <div style={{flex:'0 0 420px', background:'linear-gradient(160deg,#1a2c3e,#0f1e2a)', padding:'40px', display:'flex', flexDirection:'column', borderRight:'1px solid rgba(46,204,113,0.1)'}}>
-        <Link href="/" style={{textDecoration:'none', marginBottom:'40px', display:'flex', alignItems:'center', gap:'10px'}}>
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" stroke="#2ecc71" strokeWidth="1.5" opacity="0.4"/>
-            <circle cx="16" cy="16" r="10" stroke="#2ecc71" strokeWidth="1" opacity="0.6"/>
-            <path d="M16 26 L20 14 L16 6" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <circle cx="20" cy="14" r="2.5" fill="#2ecc71"/>
+      <div style={{flex:'0 0 420px',background:'linear-gradient(160deg,rgba(10,22,40,0.98),rgba(2,12,20,0.98))',padding:'40px',display:'flex',flexDirection:'column',borderRight:'1px solid rgba(0,255,200,0.08)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.03) 1px,transparent 1px)',backgroundSize:'48px 48px',pointerEvents:'none'}}/>
+        <Link href="/" style={{textDecoration:'none',marginBottom:'48px',display:'flex',alignItems:'center',gap:'10px',position:'relative'}}>
+          <svg width="32" height="32" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="17" stroke="rgba(0,255,200,0.4)" strokeWidth="1.5"/>
+            <circle cx="20" cy="20" r="11" stroke="rgba(0,212,255,0.4)" strokeWidth="1"/>
+            <path d="M20 32 L24 18 L20 6" stroke="#00ffc8" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+            <circle cx="24" cy="18" r="3" fill="#00ffc8" style={{filter:'drop-shadow(0 0 6px #00ffc8)'}}/>
           </svg>
-          <span style={{fontSize:'14px', fontWeight:900, letterSpacing:'0.04em'}}>
-            <span style={{color:'white'}}>GLOBAL </span><span style={{color:'#2ecc71'}}>FDI</span><span style={{color:'white'}}> MONITOR</span>
-          </span>
+          <div style={{fontSize:'13px',fontWeight:900,letterSpacing:'0.06em',fontFamily:"'Orbitron','Inter',sans-serif"}}>
+            <span style={{color:'#e8f4f8'}}>GLOBAL </span><span style={{color:'#00ffc8',textShadow:'0 0 12px rgba(0,255,200,0.6)'}}>FDI</span><span style={{color:'#e8f4f8'}}> MONITOR</span>
+          </div>
         </Link>
-        <div style={{flex:1}}>
-          <h1 style={{fontSize:'28px', fontWeight:900, color:'white', marginBottom:'8px', lineHeight:'1.2'}}>Start your free 7-day trial</h1>
-          <p style={{fontSize:'14px', color:'rgba(255,255,255,0.55)', marginBottom:'32px', lineHeight:'1.7'}}>No credit card required. Full access to the world's most advanced FDI intelligence platform.</p>
+        <div style={{flex:1,position:'relative'}}>
+          <h1 style={{fontSize:'28px',fontWeight:900,color:'#e8f4f8',marginBottom:'10px',lineHeight:1.15}}>Start your free 7-day trial</h1>
+          <p style={{fontSize:'14px',color:'rgba(232,244,248,0.5)',marginBottom:'32px',lineHeight:1.75}}>No credit card required. Full access to the world's most advanced FDI intelligence platform.</p>
           {[
-            { icon:<Globe size={18} color="#2ecc71"/>, title:'215+ Economies', desc:'Complete global coverage with GOSA scores' },
-            { icon:<Zap size={18} color="#f1c40f"/>, title:'Real-time Signals', desc:'Live FDI signals from 304+ official sources' },
-            { icon:<BarChart3 size={18} color="#3498db"/>, title:'PDF Reports', desc:'AI-generated investment reports with cover images' },
+            {icon:'🌍',title:'215+ Economies',desc:'Complete global coverage with GOSA scores'},
+            {icon:'⚡',title:'Real-time Signals',desc:'Live FDI signals from 304+ official sources'},
+            {icon:'🏆',title:'GFR Ranking',desc:'Comparable to IMD WCR and Kearney GCR'},
+            {icon:'📄',title:'PDF Reports',desc:'AI-generated investment intelligence reports'},
           ].map(({icon,title,desc})=>(
-            <div key={title} style={{display:'flex', gap:'14px', marginBottom:'20px', padding:'14px 16px', background:'rgba(255,255,255,0.04)', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.07)'}}>
-              <div style={{width:'38px', height:'38px', borderRadius:'10px', background:'rgba(46,204,113,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
-                {icon}
-              </div>
+            <div key={title} style={{display:'flex',gap:'14px',marginBottom:'18px',padding:'12px 14px',background:'rgba(0,255,200,0.03)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.07)'}}>
+              <span style={{fontSize:'22px',flexShrink:0}}>{icon}</span>
               <div>
-                <div style={{fontSize:'13px', fontWeight:700, color:'white', marginBottom:'2px'}}>{title}</div>
-                <div style={{fontSize:'12px', color:'rgba(255,255,255,0.45)'}}>{desc}</div>
+                <div style={{fontSize:'13px',fontWeight:700,color:'rgba(232,244,248,0.85)',marginBottom:'2px'}}>{title}</div>
+                <div style={{fontSize:'11px',color:'rgba(232,244,248,0.4)'}}>{desc}</div>
               </div>
             </div>
           ))}
         </div>
-        <div style={{fontSize:'11px', color:'rgba(255,255,255,0.3)'}}>
-          Professional plan from $9,588/year · Enterprise: Custom pricing
-        </div>
+        <div style={{fontSize:'11px',color:'rgba(232,244,248,0.25)',position:'relative'}}>Professional: $9,588/year · Enterprise: Custom pricing</div>
       </div>
-      {/* Right panel */}
-      <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px'}}>
-        <div style={{background:'white', borderRadius:'20px', padding:'36px', width:'100%', maxWidth:'440px', boxShadow:'0 24px 48px rgba(0,0,0,0.3)'}}>
-          <h2 style={{fontSize:'22px', fontWeight:800, color:'#1a2c3e', marginBottom:'6px'}}>Create your account</h2>
-          <p style={{fontSize:'13px', color:'#7f8c8d', marginBottom:'24px'}}>Join 12,847 investment professionals</p>
+
+      {/* Right panel — form */}
+      <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',padding:'40px',background:'rgba(2,12,20,0.5)'}}>
+        <div style={{background:'rgba(10,22,40,0.9)',borderRadius:'18px',padding:'36px',width:'100%',maxWidth:'440px',boxShadow:'0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,255,200,0.08)',border:'1px solid rgba(0,180,216,0.12)'}}>
+          <h2 style={{fontSize:'22px',fontWeight:800,color:'#e8f4f8',marginBottom:'6px'}}>Create your account</h2>
+          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.4)',marginBottom:'24px'}}>Join 12,847 investment professionals</p>
           <form onSubmit={handleSubmit}>
-            {[
-              {name:'name', label:'Full Name', placeholder:'Mahmoud Al-Saadany', type:'text'},
-              {name:'email', label:'Work Email', placeholder:'m@organisation.com', type:'email'},
-              {name:'org', label:'Organisation', placeholder:'Forecasta / MISA / Goldman Sachs', type:'text'},
-            ].map(field=>(
-              <div key={field.name} style={{marginBottom:'14px'}}>
-                <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>{field.label}</label>
-                <input required type={field.type} placeholder={field.placeholder} value={(form as any)[field.name]}
-                  onChange={e=>setForm(f=>({...f,[field.name]:e.target.value}))}
-                  style={{width:'100%', padding:'10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none', transition:'border 0.2s'}}/>
+            {[{n:'name',l:'Full Name',p:'Mahmoud Al-Saadany',t:'text'},{n:'email',l:'Work Email',p:'m@organisation.com',t:'email'},{n:'org',l:'Organisation',p:'Forecasta / MISA / Goldman Sachs',t:'text'}].map(({n,l,p,t})=>(
+              <div key={n} style={{marginBottom:'14px'}}>
+                <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',textTransform:'uppercase',letterSpacing:'0.08em',display:'block',marginBottom:'4px'}}>{l}</label>
+                <input required type={t} placeholder={p} value={(form as any)[n]} onChange={e=>setForm(f=>({...f,[n]:e.target.value}))}
+                  style={{width:'100%',padding:'10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'13px',fontFamily:"'Inter',sans-serif",outline:'none',color:'#e8f4f8',transition:'border-color 150ms'}}
+                  onFocus={e=>{e.target.style.borderColor='rgba(0,255,200,0.3)';}}
+                  onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.08)';}}/>
               </div>
             ))}
             <div style={{marginBottom:'14px'}}>
-              <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Role</label>
+              <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',textTransform:'uppercase',letterSpacing:'0.08em',display:'block',marginBottom:'4px'}}>Role</label>
               <select required value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}
-                style={{width:'100%', padding:'10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none', background:'white'}}>
-                <option value="">Select your role</option>
-                {roles.map(r=><option key={r}>{r}</option>)}
+                style={{width:'100%',padding:'10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'13px',fontFamily:"'Inter',sans-serif",outline:'none',color:'#e8f4f8'}}>
+                <option value="" style={{background:'#0a1628'}}>Select your role</option>
+                {roles.map(r=><option key={r} style={{background:'#0a1628'}}>{r}</option>)}
               </select>
             </div>
-            <div style={{marginBottom:'20px', position:'relative'}}>
-              <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Password</label>
-              <input required type={showPass?'text':'password'} placeholder="Min. 8 characters" value={form.password}
-                onChange={e=>setForm(f=>({...f,password:e.target.value}))}
-                style={{width:'100%', padding:'10px 40px 10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none'}}/>
-              <button type="button" onClick={()=>setShowPass(!showPass)}
-                style={{position:'absolute', right:'12px', top:'28px', background:'none', border:'none', cursor:'pointer', color:'#7f8c8d', padding:'0'}}>
-                {showPass?<EyeOff size={16}/>:<Eye size={16}/>}
+            <div style={{marginBottom:'20px',position:'relative'}}>
+              <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',textTransform:'uppercase',letterSpacing:'0.08em',display:'block',marginBottom:'4px'}}>Password</label>
+              <input required type={showPass?'text':'password'} placeholder="Min. 8 characters" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
+                style={{width:'100%',padding:'10px 40px 10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'13px',fontFamily:"'Inter',sans-serif",outline:'none',color:'#e8f4f8'}}/>
+              <button type="button" onClick={()=>setShowPass(!showPass)} style={{position:'absolute',right:'12px',top:'28px',background:'none',border:'none',cursor:'pointer',color:'rgba(232,244,248,0.35)',padding:0,lineHeight:1}}>
+                {showPass?<EyeOff size={15}/>:<Eye size={15}/>}
               </button>
             </div>
-            <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginBottom:'20px', cursor:'pointer'}}>
-              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:'2px', accentColor:'#2ecc71'}}/>
-              <span style={{fontSize:'12px', color:'#7f8c8d', lineHeight:'1.55'}}>
-                I agree to the <Link href="/terms" style={{color:'#2ecc71', textDecoration:'none', fontWeight:600}}>Terms of Service</Link> and <Link href="/privacy" style={{color:'#2ecc71', textDecoration:'none', fontWeight:600}}>Privacy Policy</Link>
+            <label style={{display:'flex',alignItems:'flex-start',gap:'10px',marginBottom:'20px',cursor:'pointer'}}>
+              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:'2px',accentColor:'#00ffc8'}}/>
+              <span style={{fontSize:'12px',color:'rgba(232,244,248,0.45)',lineHeight:1.6}}>
+                I agree to the <Link href="/terms" style={{color:'#00ffc8',textDecoration:'none',fontWeight:600}}>Terms</Link> and <Link href="/privacy" style={{color:'#00ffc8',textDecoration:'none',fontWeight:600}}>Privacy Policy</Link>
               </span>
             </label>
             <button type="submit" disabled={!agreed||loading}
-              style={{width:'100%', padding:'12px', background:agreed?'#2ecc71':'rgba(26,44,62,0.1)', color:agreed?'#0f1e2a':'#7f8c8d',
-                border:'none', borderRadius:'10px', cursor:agreed?'pointer':'not-allowed', fontSize:'14px', fontWeight:800, fontFamily:'inherit',
-                transition:'all 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px'}}>
-              {loading ? '⏳ Creating account...' : '🚀 Start Free 7-Day Trial'}
+              style={{width:'100%',padding:'12px',background:agreed?'linear-gradient(135deg,#00ffc8,#00c49a)':'rgba(255,255,255,0.06)',color:agreed?'#020c14':'rgba(232,244,248,0.3)',border:'none',borderRadius:'10px',cursor:agreed?'pointer':'not-allowed',fontSize:'14px',fontWeight:800,fontFamily:"'Inter',sans-serif",transition:'all 200ms',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',boxShadow:agreed?'0 4px 16px rgba(0,255,200,0.25)':'none'}}>
+              {loading?'⚙️ Creating account...':'🚀 Start Free 7-Day Trial'}
             </button>
           </form>
-          <div style={{textAlign:'center', marginTop:'16px', fontSize:'12px', color:'#7f8c8d'}}>
-            Already have an account? <Link href="/auth/login" style={{color:'#2ecc71', fontWeight:600, textDecoration:'none'}}>Sign in</Link>
+          <div style={{textAlign:'center',marginTop:'16px',fontSize:'12px',color:'rgba(232,244,248,0.35)'}}>
+            Already have an account? <Link href="/auth/login" style={{color:'#00ffc8',fontWeight:600,textDecoration:'none'}}>Sign in</Link>
           </div>
         </div>
       </div>

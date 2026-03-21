@@ -3,53 +3,60 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [loading, setLoading] = useState(false);
+export default function LoginPage(){
+  const [email,setEmail]=useState('');
+  const [password,setPassword]=useState('');
+  const [showPass,setShowPass]=useState(false);
+  const [loading,setLoading]=useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e:React.FormEvent){
     e.preventDefault();
     setLoading(true);
     await new Promise(r=>setTimeout(r,1000));
-    window.location.href = '/dashboard';
+    window.location.href='/dashboard';
   }
 
-  return (
-    <div style={{minHeight:'100vh', background:'#0f1e2a', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
-      <div style={{background:'white', borderRadius:'20px', padding:'40px', width:'100%', maxWidth:'420px', boxShadow:'0 24px 48px rgba(0,0,0,0.3)'}}>
-        <Link href="/" style={{textDecoration:'none', display:'flex', alignItems:'center', gap:'10px', marginBottom:'32px', justifyContent:'center'}}>
-          <span style={{fontSize:'16px', fontWeight:900}}>
-            <span style={{color:'#1a2c3e'}}>GLOBAL </span><span style={{color:'#2ecc71'}}>FDI</span><span style={{color:'#1a2c3e'}}> MONITOR</span>
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"'Inter','Helvetica Neue',sans-serif",position:'relative',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+      <div style={{background:'rgba(10,22,40,0.95)',borderRadius:'18px',padding:'40px',width:'100%',maxWidth:'420px',boxShadow:'0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,200,0.08)',border:'1px solid rgba(0,180,216,0.12)',position:'relative'}}>
+        <Link href="/" style={{textDecoration:'none',display:'flex',alignItems:'center',gap:'10px',marginBottom:'32px',justifyContent:'center'}}>
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+            <circle cx="20" cy="20" r="17" stroke="rgba(0,255,200,0.4)" strokeWidth="1.5"/>
+            <path d="M20 32 L24 18 L20 6" stroke="#00ffc8" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+            <circle cx="24" cy="18" r="3" fill="#00ffc8" style={{filter:'drop-shadow(0 0 6px #00ffc8)'}}/>
+          </svg>
+          <span style={{fontSize:'14px',fontWeight:900,fontFamily:"'Orbitron','Inter',sans-serif"}}>
+            <span style={{color:'#e8f4f8'}}>GLOBAL </span><span style={{color:'#00ffc8'}}>FDI</span><span style={{color:'#e8f4f8'}}> MONITOR</span>
           </span>
         </Link>
-        <h1 style={{fontSize:'22px', fontWeight:800, color:'#1a2c3e', marginBottom:'6px', textAlign:'center'}}>Sign in to your account</h1>
-        <p style={{fontSize:'13px', color:'#7f8c8d', marginBottom:'28px', textAlign:'center'}}>Access your FDI intelligence dashboard</p>
+        <h1 style={{fontSize:'22px',fontWeight:800,color:'#e8f4f8',marginBottom:'6px',textAlign:'center'}}>Sign in</h1>
+        <p style={{fontSize:'13px',color:'rgba(232,244,248,0.4)',marginBottom:'28px',textAlign:'center'}}>Access your FDI intelligence dashboard</p>
         <form onSubmit={handleLogin}>
           <div style={{marginBottom:'14px'}}>
-            <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Email</label>
+            <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',textTransform:'uppercase',letterSpacing:'0.08em',display:'block',marginBottom:'4px'}}>Email</label>
             <input required type="email" placeholder="you@organisation.com" value={email} onChange={e=>setEmail(e.target.value)}
-              style={{width:'100%', padding:'10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none'}}/>
+              style={{width:'100%',padding:'10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'13px',fontFamily:"'Inter',sans-serif",outline:'none',color:'#e8f4f8'}}
+              onFocus={e=>{e.target.style.borderColor='rgba(0,255,200,0.3)';}}
+              onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.08)';}}/>
           </div>
-          <div style={{marginBottom:'20px', position:'relative'}}>
-            <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Password</label>
+          <div style={{marginBottom:'22px',position:'relative'}}>
+            <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',textTransform:'uppercase',letterSpacing:'0.08em',display:'block',marginBottom:'4px'}}>Password</label>
             <input required type={showPass?'text':'password'} placeholder="Your password" value={password} onChange={e=>setPassword(e.target.value)}
-              style={{width:'100%', padding:'10px 40px 10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none'}}/>
-            <button type="button" onClick={()=>setShowPass(!showPass)}
-              style={{position:'absolute', right:'12px', top:'28px', background:'none', border:'none', cursor:'pointer', color:'#7f8c8d', padding:'0'}}>
-              {showPass?<EyeOff size={16}/>:<Eye size={16}/>}
+              style={{width:'100%',padding:'10px 40px 10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'13px',fontFamily:"'Inter',sans-serif",outline:'none',color:'#e8f4f8'}}/>
+            <button type="button" onClick={()=>setShowPass(!showPass)} style={{position:'absolute',right:'12px',top:'28px',background:'none',border:'none',cursor:'pointer',color:'rgba(232,244,248,0.35)',padding:0,lineHeight:1}}>
+              {showPass?<EyeOff size={15}/>:<Eye size={15}/>}
             </button>
           </div>
           <button type="submit" disabled={loading}
-            style={{width:'100%', padding:'12px', background:'#1a2c3e', color:'white', border:'none', borderRadius:'10px', cursor:'pointer', fontSize:'14px', fontWeight:800, fontFamily:'inherit', marginBottom:'12px'}}>
-            {loading ? 'Signing in...' : 'Sign In →'}
+            style={{width:'100%',padding:'12px',background:loading?'rgba(0,255,200,0.1)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:loading?'rgba(232,244,248,0.4)':'#020c14',border:'none',borderRadius:'10px',cursor:loading?'not-allowed':'pointer',fontSize:'14px',fontWeight:800,fontFamily:"'Inter',sans-serif",marginBottom:'14px',transition:'all 200ms',boxShadow:loading?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
+            {loading?'Signing in...':'Sign In →'}
           </button>
         </form>
-        <div style={{textAlign:'center', fontSize:'12px', color:'#7f8c8d'}}>
-          No account? <Link href="/register" style={{color:'#2ecc71', fontWeight:600, textDecoration:'none'}}>Start free trial</Link>
-          <span style={{margin:'0 8px'}}>·</span>
-          <Link href="/contact" style={{color:'#7f8c8d', textDecoration:'none'}}>Forgot password?</Link>
+        <div style={{textAlign:'center',fontSize:'12px',color:'rgba(232,244,248,0.35)'}}>
+          No account? <Link href="/register" style={{color:'#00ffc8',fontWeight:600,textDecoration:'none'}}>Start free trial</Link>
+          <span style={{margin:'0 8px',opacity:0.4}}>·</span>
+          <Link href="/contact" style={{color:'rgba(232,244,248,0.35)',textDecoration:'none'}}>Forgot password?</Link>
         </div>
       </div>
     </div>
