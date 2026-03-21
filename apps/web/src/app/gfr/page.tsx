@@ -45,7 +45,7 @@ function TierBadge({tier}:{tier:string}) {
   );
 }
 
-export default function GFRPage() {
+export default function GFRRankingPage() {
   const [tab,      setTab]      = useState<'results'|'profile'|'compare'|'methodology'|'ia'>('results');
   const [selected, setSelected] = useState('SGP');
   const [compare,  setCompare]  = useState<string[]>(['SGP','ARE','SAU']);
@@ -74,9 +74,9 @@ export default function GFRPage() {
             <div>
               <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
                 <Award size={16} color="#74BB65"/>
-                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Global Future Readiness Assessment</span>
+                <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Global Future Readiness (GFR) Ranking</span>
               </div>
-              <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>GFR Assessment 2026</h1>
+              <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>GFR Ranking 2026</h1>
               <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
                 215 economies · 6 dimensions · 38 indicators · Quarterly recalculation
               </p>
@@ -120,10 +120,10 @@ export default function GFRPage() {
               <div style={{padding:'13px 20px',borderBottom:'1px solid rgba(10,61,98,0.06)',
                 display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',display:'flex',alignItems:'center',gap:'6px'}}>
-                  <BarChart3 size={14} color="#74BB65"/> GFR Assessment Results — Q1 2026
+                  <BarChart3 size={14} color="#74BB65"/> GFR Ranking Results — Q1 2026
                 </div>
                 <div style={{fontSize:'11px',color:'#696969',fontStyle:'italic'}}>
-                  Sorted by GFR Score (highest first) · No assessment
+                  Sorted by GFR Score (highest first) · Economy Ranking
                 </div>
               </div>
               <div style={{overflowX:'auto'}}>

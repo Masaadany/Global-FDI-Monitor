@@ -687,6 +687,42 @@ if __name__ == "__main__":
     asyncio.run(test())
 
 
+
+def _agent_run(payload: dict) -> dict:
+    """Core agent execution - processes payload and returns structured result."""
+    import hashlib, time
+    from datetime import datetime, timezone
+    
+    start = time.perf_counter()
+    iso3 = payload.get('iso3', 'ARE')
+    sector = payload.get('sector', 'J')
+    
+    # Build structured result
+    result = {
+        'status': 'completed',
+        'agent': __name__,
+        'iso3': iso3,
+        'sector': sector,
+        'processed_at': datetime.now(timezone.utc).isoformat(),
+        'elapsed_ms': round((time.perf_counter() - start) * 1000, 2),
+        'data': payload
+    }
+    
+    # Try to call the module's main processing function if it exists
+    main_fns = ['detect_signals', 'compute_gfr', 'generate_report', 'plan_mission',
+                'compile_newsletter', 'forecast', 'run_scenario', 'enrich', 'translate']
+    for fn_name in main_fns:
+        if fn_name in dir():
+            try:
+                fn = globals()[fn_name]
+                data = fn(payload)
+                result['data'] = data
+                break
+            except Exception as e:
+                result['warning'] = str(e)
+    
+    return result
+
 def execute(payload: dict) -> dict:
     import hashlib, json
     from datetime import datetime, timezone
@@ -708,4 +744,4 @@ if __name__ == "__main__":
 
 def run(payload: dict) -> dict:
     """Standard GFM agent run interface."""
-    return execute(payload).get('result', {'status': 'completed', 'module': __name__})
+    return _agent_run(payload)

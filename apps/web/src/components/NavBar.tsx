@@ -19,7 +19,7 @@ export default function NavBar() {
             ['Dashboard','/dashboard'],
             ['Investment Analysis','/investment-analysis'],
             ['Market Signals','/signals'],
-            ['GFR Assessment','/gfr'],
+            ['GFR Ranking','/gfr'],
             ['Mission Planning','/pmp'],
             ['Publications','/publications'],
             ['Pricing','/pricing'],

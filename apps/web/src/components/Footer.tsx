@@ -22,7 +22,7 @@ export default function Footer() {
           </div>
           <div>
             <div style={{fontSize:'11px',fontWeight:800,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'12px'}}>Platform</div>
-            {[['Dashboard','/dashboard'],['Investment Analysis','/investment-analysis'],['Market Signals','/signals'],['GFR Assessment','/gfr'],['Mission Planning','/pmp']].map(([l,h])=>(
+            {[['Dashboard','/dashboard'],['Investment Analysis','/investment-analysis'],['Market Signals','/signals'],['GFR Ranking','/gfr'],['Mission Planning','/pmp']].map(([l,h])=>(
               <div key={l} style={{marginBottom:'8px'}}>
                 <Link href={h} style={{fontSize:'13px',color:'rgba(255,255,255,0.7)',textDecoration:'none'}}>{l}</Link>
               </div>
