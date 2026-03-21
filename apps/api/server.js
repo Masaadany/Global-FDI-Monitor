@@ -574,7 +574,7 @@ const server=http.createServer(async(req,res)=>{
   setCORS(res);
   if(req.method==='OPTIONS'){res.writeHead(204);return res.end();}
   const{pathname}=url.parse(req.url);
-  const m=matchRoute(req.method,pathname);
+  const m=routeMatch(req.method,pathname);
   if(m){ try{await m.h(req,res,m.p);}catch(e){log('ERR',e.message);fail(res,'INTERNAL_ERROR',e.message,500);} }
   else fail(res,'NOT_FOUND',`${req.method} ${pathname} not found`,404);
 });
@@ -1607,7 +1607,7 @@ ROUTES['GET /api/v1/health'] = async(req,res)=>{
   try { if(redis) { await redis.ping(); redis_ok=true; } } catch {}
   const [s,ns]=process.hrtime(start);
   const latency_ms=Math.round(s*1000+ns/1e6);
-  ok(res,{status:'ok',version:'3.0.0',db:db_ok,redis:redis_ok,ws:wss?.clients?.size||0,uptime_s:Math.floor(process.uptime()),latency_ms,signals_broadcast:M_SIGNALS.length,gfr_economies:M_GFR.length});
+  ok(res,{status:'ok',version:'3.0.0',db:db_ok,redis:redis_ok,ws:0,uptime_s:Math.floor(process.uptime()),latency_ms,signals_broadcast:M_SIGNALS.length,gfr_economies:M_GFR.length});
 };
 
 // ── OPENAPI JSON ─────────────────────────────────────────────────────────
