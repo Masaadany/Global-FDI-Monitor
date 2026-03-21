@@ -55,7 +55,7 @@ export default function InsightsPage() {
         {/* Market metrics */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px',marginBottom:'18px'}}>
           {MARKET_METRICS.map(({label,v,chg,c,sub}) => (
-            <div key={label} style={{padding:'14px',background:'white',border:'1px solid rgba(0,180,216,0.08)',borderRadius:'10px',borderTop:'2px solid '+c}}>
+            <div key={label} style={{padding:'14px',background:'white',border:'1px solid #ECF0F1,0.08)',borderRadius:'10px',borderTop:'2px solid '+c}}>
               <div style={{fontSize:'9px',color:'var(--text-light)',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.06em'}}>{label}</div>
               <div style={{fontSize:'20px',fontWeight:900,color:c,fontFamily:'var(--font-mono)'}}>{v}</div>
               <div style={{display:'flex',gap:'5px',alignItems:'center',marginTop:'2px'}}>

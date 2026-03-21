@@ -99,7 +99,7 @@ export default function WatchlistsPage() {
 
         {/* Watchlist items */}
         {watchedEconomies.length === 0 && (
-          <div style={{background:'rgba(10,22,40,0.6)',borderRadius:'14px',padding:'56px',textAlign:'center',border:'1px solid rgba(0,180,216,0.08)'}}>
+          <div style={{background:'#FFFFFF,0.6)',borderRadius:'14px',padding:'56px',textAlign:'center',border:'1px solid #ECF0F1,0.08)'}}>
             <Star size={36} color="rgba(0,255,200,0.3)" style={{display:'block',margin:'0 auto 16px'}}/>
             <div style={{fontSize:'16px',fontWeight:700,color:'var(--text-secondary)',marginBottom:'8px'}}>Your watchlist is empty</div>
             <div style={{fontSize:'13px',color:'var(--text-muted)',marginBottom:'20px'}}>Add economies to track their GOSA scores and set alert thresholds</div>
@@ -153,7 +153,7 @@ export default function WatchlistsPage() {
                   </div>
                   {/* Actions */}
                   <div style={{display:'flex',gap:'7px'}}>
-                    <Link href={'/country/'+ec.id} style={{padding:'7px 13px',background:'rgba(0,180,216,0.06)',border:'1px solid rgba(0,180,216,0.18)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#3498DB'}}>Profile</Link>
+                    <Link href={'/country/'+ec.id} style={{padding:'7px 13px',background:'rgba(0,180,216,0.06)',border:'1px solid #ECF0F1,0.18)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#3498DB'}}>Profile</Link>
                     <button onClick={()=>removeWatch(ec.id)} style={{padding:'7px 10px',background:'rgba(255,68,102,0.06)',border:'1px solid rgba(255,68,102,0.15)',borderRadius:'7px',cursor:'pointer',color:'#ff4466',lineHeight:1}}>
                       <Trash2 size={13}/>
                     </button>

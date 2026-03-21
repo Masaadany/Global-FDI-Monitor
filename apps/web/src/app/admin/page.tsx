@@ -59,7 +59,7 @@ export default function AdminPage(){
         {/* Stats */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px',marginBottom:'16px'}}>
           {STATS.map(({l,v,d,c,icon})=>(
-            <div key={l} style={{padding:'18px',background:'white',border:'1px solid rgba(0,180,216,0.08)',borderRadius:'12px',borderTop:`2px solid ${c}`}}>
+            <div key={l} style={{padding:'18px',background:'white',border:'1px solid #ECF0F1,0.08)',borderRadius:'12px',borderTop:`2px solid ${c}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}><span style={{fontSize:'9px',color:'var(--text-light)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</span>{icon}</div>
               <div style={{fontSize:'22px',fontWeight:900,color:c,fontFamily:'var(--font-mono)',textShadow:`0 0 12px ${c}40`}}>{v}</div>
               <div style={{fontSize:'10px',color:'var(--text-light)',marginTop:'3px'}}>{d}</div>

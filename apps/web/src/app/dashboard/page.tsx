@@ -1,570 +1,424 @@
-'use client';
-import { useState, useEffect, useRef } from 'react';
-import NavBar from '@/components/NavBar';
-import Footer from '@/components/Footer';
-import ScrollableSelect from '@/components/ScrollableSelect';
-import Link from 'next/link';
-import { TrendingUp, TrendingDown, Zap, Globe, Shield, Target, BarChart3, Activity, Bell, Settings, Download, RefreshCw, Filter } from 'lucide-react';
+'use client'
+import { useState, useEffect } from 'react'
+import { BackgroundVideo } from '@/components/shared/BackgroundVideo'
+import { CountryFlag } from '@/components/shared/CountryFlag'
+import { Globe3D } from '@/components/hero/Globe3D'
+import { LollipopChart } from '@/components/charts/LollipopChart'
+import { BulletChart } from '@/components/charts/BulletChart'
+import { RadarChart } from '@/components/charts/RadarChart'
+import Link from 'next/link'
+import { Filter, Zap, Globe, Shield, Target, BarChart3, Activity, ChevronRight } from 'lucide-react'
 
-// ══════ DATA ══════════════════════════════════════════════════════
 const ECONOMIES = [
-  {id:'SGP',code:'SG',name:'Singapore',    gosa:88.4,trend:+0.2,fdi:'$91B', category:'TOP',  region:'Asia Pacific',  dot:{x:73,y:46},color:'#2ECC71'},
-  {id:'NZL',code:'NZ',name:'New Zealand',  gosa:86.7,trend:-0.1,fdi:'$9B',  category:'TOP',  region:'Oceania',       dot:{x:84,y:74},color:'#2ECC71'},
-  {id:'DNK',code:'DK',name:'Denmark',      gosa:85.3,trend:+0.3,fdi:'$22B', category:'TOP',  region:'Europe',        dot:{x:49,y:24},color:'#2ECC71'},
-  {id:'KOR',code:'KR',name:'South Korea',  gosa:84.1,trend:+0.1,fdi:'$17B', category:'TOP',  region:'Asia Pacific',  dot:{x:78,y:34},color:'#2ECC71'},
-  {id:'AUS',code:'AU',name:'Australia',    gosa:82.8,trend:+0.1,fdi:'$68B', category:'TOP',  region:'Oceania',       dot:{x:77,y:68},color:'#2ECC71'},
-  {id:'USA',code:'US',name:'United States',gosa:83.9,trend:-0.2,fdi:'$349B',category:'TOP',  region:'Americas',      dot:{x:18,y:35},color:'#2ECC71'},
-  {id:'GBR',code:'GB',name:'United Kingdom',gosa:82.5,trend:-0.1,fdi:'$50B',category:'TOP',  region:'Europe',        dot:{x:46,y:26},color:'#2ECC71'},
-  {id:'ARE',code:'AE',name:'UAE',          gosa:82.1,trend:+1.2,fdi:'$23B', category:'TOP',  region:'Middle East',   dot:{x:57,y:41},color:'#2ECC71'},
-  {id:'FRA',code:'FR',name:'France',       gosa:81.6,trend:+0.2,fdi:'$40B', category:'TOP',  region:'Europe',        dot:{x:47,y:28},color:'#2ECC71'},
-  {id:'MYS',code:'MY',name:'Malaysia',     gosa:81.2,trend:+0.4,fdi:'$22B', category:'HIGH', region:'Asia Pacific',  dot:{x:70,y:46},color:'#3498DB'},
-  {id:'THA',code:'TH',name:'Thailand',     gosa:80.7,trend:+0.2,fdi:'$14B', category:'HIGH', region:'Asia Pacific',  dot:{x:69,y:43},color:'#3498DB'},
-  {id:'VNM',code:'VN',name:'Vietnam',      gosa:79.4,trend:+0.5,fdi:'$24B', category:'HIGH', region:'Asia Pacific',  dot:{x:71,y:41},color:'#3498DB'},
-  {id:'SAU',code:'SA',name:'Saudi Arabia', gosa:79.1,trend:+2.1,fdi:'$36B', category:'HIGH', region:'Middle East',   dot:{x:55,y:43},color:'#3498DB'},
-  {id:'IDN',code:'ID',name:'Indonesia',    gosa:77.8,trend:+0.1,fdi:'$22B', category:'HIGH', region:'Asia Pacific',  dot:{x:72,y:52},color:'#3498DB'},
-  {id:'IND',code:'IN',name:'India',        gosa:73.2,trend:+0.8,fdi:'$71B', category:'HIGH', region:'Asia Pacific',  dot:{x:65,y:40},color:'#3498DB'},
-  {id:'BRA',code:'BR',name:'Brazil',       gosa:71.3,trend:+0.4,fdi:'$74B', category:'HIGH', region:'Americas',      dot:{x:26,y:58},color:'#F1C40F'},
-  {id:'MAR',code:'MA',name:'Morocco',      gosa:66.8,trend:+0.6,fdi:'$4B',  category:'HIGH', region:'Africa',        dot:{x:44,y:41},color:'#F1C40F'},
-  {id:'CHN',code:'CN',name:'China',        gosa:64.2,trend:-0.4,fdi:'$163B',category:'HIGH', region:'Asia Pacific',  dot:{x:73,y:35},color:'#F1C40F'},
-  {id:'DEU',code:'DE',name:'Germany',      gosa:83.1,trend:-0.2,fdi:'$40B', category:'TOP',  region:'Europe',        dot:{x:50,y:25},color:'#2ECC71'},
-  {id:'JPN',code:'JP',name:'Japan',        gosa:81.4,trend:+0.2,fdi:'$30B', category:'TOP',  region:'Asia Pacific',  dot:{x:80,y:32},color:'#2ECC71'},
-];
+  {id:'SGP',code:'SG',name:'Singapore',    gosa:88.4,trend:+0.2,fdi:'$91B', category:'TOP',  region:'Asia Pacific'},
+  {id:'DNK',code:'DK',name:'Denmark',      gosa:85.3,trend:+0.3,fdi:'$22B', category:'TOP',  region:'Europe'},
+  {id:'KOR',code:'KR',name:'South Korea',  gosa:84.1,trend:+0.1,fdi:'$17B', category:'TOP',  region:'Asia Pacific'},
+  {id:'USA',code:'US',name:'United States',gosa:83.9,trend:-0.2,fdi:'$349B',category:'TOP',  region:'Americas'},
+  {id:'GBR',code:'GB',name:'United Kingdom',gosa:82.5,trend:-0.1,fdi:'$50B',category:'TOP',  region:'Europe'},
+  {id:'ARE',code:'AE',name:'UAE',          gosa:82.1,trend:+1.2,fdi:'$23B', category:'TOP',  region:'Middle East'},
+  {id:'MYS',code:'MY',name:'Malaysia',     gosa:81.2,trend:+0.4,fdi:'$22B', category:'HIGH', region:'Asia Pacific'},
+  {id:'THA',code:'TH',name:'Thailand',     gosa:80.7,trend:+0.2,fdi:'$14B', category:'HIGH', region:'Asia Pacific'},
+  {id:'VNM',code:'VN',name:'Vietnam',      gosa:79.4,trend:+0.5,fdi:'$24B', category:'HIGH', region:'Asia Pacific'},
+  {id:'SAU',code:'SA',name:'Saudi Arabia', gosa:79.1,trend:+2.1,fdi:'$36B', category:'HIGH', region:'Middle East'},
+  {id:'IDN',code:'ID',name:'Indonesia',    gosa:77.8,trend:+0.1,fdi:'$22B', category:'HIGH', region:'Asia Pacific'},
+  {id:'IND',code:'IN',name:'India',        gosa:73.2,trend:+0.8,fdi:'$71B', category:'HIGH', region:'Asia Pacific'},
+  {id:'BRA',code:'BR',name:'Brazil',       gosa:71.3,trend:+0.4,fdi:'$74B', category:'HIGH', region:'Americas'},
+  {id:'MAR',code:'MA',name:'Morocco',      gosa:66.8,trend:+0.6,fdi:'$4B',  category:'HIGH', region:'Africa'},
+  {id:'NZL',code:'NZ',name:'New Zealand',  gosa:86.7,trend:-0.1,fdi:'$9B',  category:'TOP',  region:'Oceania'},
+]
 
-const DB_INDICATORS = [
-  {ind:'Starting a Business',   score:82.3,avg:72.4},
-  {ind:'Construction Permits',  score:74.8,avg:67.1},
-  {ind:'Getting Electricity',   score:87.2,avg:78.6},
-  {ind:'Registering Property',  score:71.4,avg:61.8},
-  {ind:'Getting Credit',        score:75.0,avg:65.4},
-  {ind:'Protecting Investors',  score:81.8,avg:71.2},
-  {ind:'Paying Taxes',          score:78.6,avg:64.8},
-  {ind:'Trading Across Borders',score:82.4,avg:74.2},
-  {ind:'Enforcing Contracts',   score:72.1,avg:58.4},
-  {ind:'Resolving Insolvency',  score:82.4,avg:61.6},
-];
-
-const SECTORS_RADAR = [
-  {name:'EV Battery',   scores:[88,92,76,84,90],color:'#2ECC71',hot:true},
-  {name:'Data Centers', scores:[84,88,92,86,78],color:'#3498DB',hot:true},
-  {name:'Renewables',   scores:[82,76,88,72,94],color:'#F1C40F',hot:false},
-];
+const SECTOR_RADAR_DATA = [
+  {scores:[88,92,76,84,90],color:'#2ECC71',label:'EV Battery'},
+  {scores:[84,88,92,86,78],color:'#3498DB',label:'Data Centers'},
+  {scores:[82,76,88,72,94],color:'#F1C40F',label:'Renewables'},
+]
 
 const POLICIES = [
-  {code:'MY',country:'Malaysia',   policy:'100% FDI in data centers',         status:'NEW',   date:'Mar 2026'},
-  {code:'AE',country:'UAE',        policy:'100% mainland foreign ownership',   status:'ACTIVE',date:'Feb 2026'},
-  {code:'TH',country:'Thailand',   policy:'$2B EV battery subsidy package',    status:'NEW',   date:'Mar 2026'},
-  {code:'VN',country:'Vietnam',    policy:'50% CIT reduction EV manufacturing',status:'ACTIVE',date:'Jan 2026'},
-  {code:'SA',country:'Saudi Arabia','policy':'30-day FDI license guarantee',    status:'NEW',   date:'Mar 2026'},
-  {code:'IN',country:'India',      policy:'PLI Scheme 2.0 — $2.7B incentives', status:'NEW',   date:'Mar 2026'},
-];
+  {code:'MY',country:'Malaysia',   policy:'100% FDI in data centers',          status:'NEW',   date:'Mar 2026'},
+  {code:'AE',country:'UAE',        policy:'100% mainland foreign ownership',    status:'ACTIVE',date:'Feb 2026'},
+  {code:'TH',country:'Thailand',   policy:'$2B EV battery incentive package',   status:'NEW',   date:'Mar 2026'},
+  {code:'VN',country:'Vietnam',    policy:'50% CIT reduction EV manufacturing', status:'ACTIVE',date:'Jan 2026'},
+  {code:'SA',country:'Saudi Arabia','policy':'30-day FDI license guarantee',     status:'NEW',   date:'Mar 2026'},
+  {code:'IN',country:'India',      policy:'PLI Scheme 2.0 — $2.7B incentives',  status:'NEW',   date:'Mar 2026'},
+]
 
 const LIVE_SIGNALS = [
-  {id:1,grade:'PLATINUM',type:'POLICY',  code:'MY',country:'Malaysia',   title:'FDI cap raised to 100% in data centers',      sco:96,impact:'HIGH',ts:'2m'},
-  {id:2,grade:'PLATINUM',type:'DEAL',    code:'AE',country:'UAE',         title:'Microsoft $3.3B AI infrastructure committed',  sco:97,impact:'HIGH',ts:'1h'},
-  {id:3,grade:'PLATINUM',type:'INCENTIVE',code:'TH',country:'Thailand',  title:'$2B EV battery subsidy approved',               sco:95,impact:'HIGH',ts:'3h'},
-  {id:4,grade:'GOLD',    type:'POLICY',  code:'SA',country:'Saudi Arabia','title':'30-day FDI license guarantee live',            sco:94,impact:'HIGH',ts:'6h'},
-  {id:5,grade:'GOLD',    type:'GROWTH',  code:'VN',country:'Vietnam',     title:'Electronics exports surge 34% YoY',             sco:92,impact:'MED', ts:'1d'},
-  {id:6,grade:'GOLD',    type:'ZONE',    code:'ID',country:'Indonesia',   title:'New Batam zone — 200ha greenfield ready',       sco:91,impact:'MED', ts:'2d'},
-  {id:7,grade:'GOLD',    type:'GROWTH',  code:'IN',country:'India',       title:'Apple commits $10B manufacturing expansion',    sco:89,impact:'HIGH',ts:'3d'},
-];
+  {id:1,grade:'PLATINUM',type:'POLICY',  code:'MY',country:'Malaysia',   title:'FDI cap raised to 100% in data centers',   sco:96,ts:'2m'},
+  {id:2,grade:'PLATINUM',type:'DEAL',    code:'AE',country:'UAE',         title:'Microsoft $3.3B AI commitment',             sco:97,ts:'1h'},
+  {id:3,grade:'PLATINUM',type:'INCENTIVE',code:'TH',country:'Thailand',  title:'$2B EV battery subsidy approved',            sco:95,ts:'3h'},
+  {id:4,grade:'GOLD',    type:'POLICY',  code:'SA',country:'Saudi Arabia','title':'30-day FDI license guarantee live',         sco:94,ts:'6h'},
+  {id:5,grade:'GOLD',    type:'GROWTH',  code:'VN',country:'Vietnam',     title:'Electronics exports surge 34% YoY',          sco:92,ts:'1d'},
+  {id:6,grade:'GOLD',    type:'ZONE',    code:'ID',country:'Indonesia',   title:'New Batam zone — 200ha greenfield ready',    sco:91,ts:'2d'},
+]
 
-function sc(v:number){return v>=80?'#2ECC71':v>=60?'#3498DB':'#F1C40F';}
+const ZONES = [
+  {name:'Jurong Island, SG',     code:'SG',type:'Industrial',avail:18,color:'#E74C3C'},
+  {name:'Jebel Ali FZ, UAE',     code:'AE',type:'Multi-use', avail:14,color:'#E74C3C'},
+  {name:'VSIP Binh Duong, VN',   code:'VN',type:'Manufacturing',avail:47,color:'#2ECC71'},
+  {name:'Tanger Med, Morocco',   code:'MA',type:'Manufacturing',avail:62,color:'#2ECC71'},
+  {name:'EEC Rayong, Thailand',  code:'TH',type:'EV / Auto',avail:58,color:'#2ECC71'},
+  {name:'NEOM Industrial, SA',   code:'SA',type:'Mixed-use', avail:78,color:'#2ECC71'},
+]
 
-// ══════ MINI RADAR ════════════════════════════════════════════════
-function RadarMini({datasets,size=120}:{datasets:{scores:number[],color:string}[],size?:number}){
-  const n=5,cx=size/2,cy=size/2,r=size*0.38;
-  function pt(i:number,v:number){const a=(Math.PI*2*i/n)-Math.PI/2;return{x:cx+(v/100)*r*Math.cos(a),y:cy+(v/100)*r*Math.sin(a)};}
-  return(
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {[25,50,75,100].map(l=>{const ps=Array.from({length:n},(_,i)=>pt(i,l));return <polygon key={l} points={ps.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke="#ECF0F1" strokeWidth="0.8"/>;
-      })}
-      {Array.from({length:n},(_,i)=>{const p=pt(i,100);return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#ECF0F1" strokeWidth="0.8"/>;
-      })}
-      {datasets.map((ds,di)=>{
-        const pts=ds.scores.map((v,i)=>pt(i,v));
-        return <g key={di}><polygon points={pts.map(p=>`${p.x},${p.y}`).join(' ')} fill={ds.color+'18'} stroke={ds.color} strokeWidth="1.5"/>{pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="2.5" fill={ds.color}/>)}</g>;
-      })}
-      {['Reg','Inc','Lab','Inf','Exp'].map((l,i)=>{const p=pt(i,120);return <text key={l} x={p.x} y={p.y} fontSize="7" fill="#5A6874" textAnchor="middle" dominantBaseline="middle" fontFamily="Inter,sans-serif">{l}</text>;})}
-    </svg>
-  );
-}
-
-// ══════ INTERACTIVE SVG WORLD MAP ═════════════════════════════════
-function WorldMap({economies,selected,onSelect,highlight}:{economies:typeof ECONOMIES,selected:string|null,onSelect:(id:string)=>void,highlight:string[]}){
-  const [hovered,setHovered]=useState<string|null>(null);
-
-  const visible = highlight.length>0 ? economies.filter(e=>highlight.includes(e.id)) : economies;
-
-  return(
-    <div style={{position:'relative',width:'100%',aspectRatio:'2/1',background:'linear-gradient(180deg,#EBF5FF 0%,#E0EEF8 100%)',borderRadius:'14px',overflow:'hidden',border:'1px solid #DCE9F3'}}>
-      <svg viewBox="0 0 100 55" style={{width:'100%',height:'100%',display:'block'}} preserveAspectRatio="xMidYMid meet">
-        {/* Grid */}
-        {[0,10,20,30,40,50].map(y=><line key={'h'+y} x1="0" y1={y} x2="100" y2={y} stroke="rgba(0,80,140,0.05)" strokeWidth="0.3"/>)}
-        {[0,10,20,30,40,50,60,70,80,90,100].map(x=><line key={'v'+x} x1={x} y1="0" x2={x} y2="55" stroke="rgba(0,80,140,0.05)" strokeWidth="0.3"/>)}
-
-        {/* Continents — simplified shapes */}
-        {/* North America */}
-        <path d="M5,12 L22,12 L28,18 L26,28 L22,35 L18,38 L12,35 L8,28 L5,20 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* South America */}
-        <path d="M18,40 L28,38 L32,42 L30,54 L24,55 L18,50 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* Europe */}
-        <path d="M40,14 L58,14 L58,22 L54,26 L46,26 L40,22 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* Africa */}
-        <path d="M42,26 L56,26 L58,34 L56,48 L46,50 L40,42 L40,32 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* Middle East */}
-        <path d="M52,28 L66,28 L66,36 L56,38 L52,34 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* Asia */}
-        <path d="M58,10 L90,10 L92,16 L88,22 L84,28 L74,32 L64,30 L60,26 L58,18 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* SE Asia */}
-        <path d="M68,36 L80,34 L82,42 L76,48 L68,46 L66,40 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-        {/* Australia */}
-        <path d="M72,56 L90,54 L92,66 L84,70 L72,68 Z" fill="rgba(26,44,62,0.06)" stroke="rgba(26,44,62,0.12)" strokeWidth="0.3"/>
-
-        {/* Region labels */}
-        {[{x:14,y:22,l:'AMERICAS'},{x:48,y:16,l:'EUROPE'},{x:62,y:18,l:'ASIA PACIFIC'},{x:48,y:40,l:'AFRICA'},{x:57,y:34,l:'MIDDLE EAST'},{x:80,y:63,l:'OCEANIA'}].map(({x,y,l})=>(
-          <text key={l} x={x} y={y} textAnchor="middle" fontSize="2.4" fill="rgba(26,44,62,0.2)" fontFamily="Inter,sans-serif" fontWeight="700" letterSpacing="0.1em">{l}</text>
-        ))}
-
-        {/* Country dots */}
-        {visible.map(eco=>{
-          const isSelected=selected===eco.id;
-          const isHovered=hovered===eco.id;
-          const active=isSelected||isHovered;
-          // Scale dots to map viewBox (x: 0-100, y: 0-55)
-          const mx=eco.dot.x;
-          const my=(eco.dot.y/100)*55;
-          const r=active?5:3;
-          return(
-            <g key={eco.id} style={{cursor:'pointer'}} onClick={()=>onSelect(eco.id)} onMouseEnter={()=>setHovered(eco.id)} onMouseLeave={()=>setHovered(null)}>
-              {/* Pulse ring */}
-              <circle cx={mx} cy={my} r={r+2} fill={eco.color+'15'} stroke={eco.color+'30'} strokeWidth="0.5">
-                {active && <animate attributeName="r" values={`${r+2};${r+5};${r+2}`} dur="1.5s" repeatCount="indefinite"/>}
-                {active && <animate attributeName="opacity" values="0.8;0.1;0.8" dur="1.5s" repeatCount="indefinite"/>}
-              </circle>
-              {/* Main dot */}
-              <circle cx={mx} cy={my} r={isSelected?4.5:active?3.5:2.8} fill={isSelected?eco.color:eco.color+'CC'} stroke="white" strokeWidth={isSelected?1.2:0.6}
-                style={{filter:active?`drop-shadow(0 0 ${isSelected?5:3}px ${eco.color})`:'none',transition:'r 0.2s'}}/>
-              {/* GOSA label on hover/select */}
-              {active && (
-                <g>
-                  <rect x={mx-6} y={my-8.5} width="12" height="6.5" fill="white" stroke={eco.color} strokeWidth="0.3" rx="1.2" style={{filter:'drop-shadow(0 1px 3px rgba(0,0,0,0.15))'}}/>
-                  <text x={mx} y={my-4.5} textAnchor="middle" fontSize="2" fill="#1A2C3E" fontWeight="800" fontFamily="Inter,sans-serif">{eco.name}</text>
-                  <text x={mx} y={my-2.2} textAnchor="middle" fontSize="1.8" fill={eco.color} fontWeight="700" fontFamily="JetBrains Mono,monospace">{eco.gosa}</text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-      {/* Legend */}
-      <div style={{position:'absolute',bottom:'10px',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'12px',background:'rgba(255,255,255,0.9)',backdropFilter:'blur(6px)',padding:'5px 14px',borderRadius:'20px',boxShadow:'0 2px 8px rgba(0,0,0,0.08)',border:'1px solid rgba(0,0,0,0.06)'}}>
-        {[['#2ECC71','TOP (≥80)'],['#3498DB','HIGH (60-79)'],['#F1C40F','DEV (<60)']].map(([c,l])=>(
-          <div key={l} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'10px',color:'#5A6874',fontWeight:600}}>
-            <div style={{width:'8px',height:'8px',borderRadius:'50%',background:c as string}}/>
-            {l}
-          </div>
-        ))}
-        <div style={{borderLeft:'1px solid #ECF0F1',paddingLeft:'12px',fontSize:'10px',color:'#C8D0D6',display:'flex',alignItems:'center',gap:'4px'}}>
-          <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#2ECC71',boxShadow:'0 0 6px #2ECC71'}}/>
-          Click dot to select
-        </div>
-      </div>
-      {/* Live indicator */}
-      <div style={{position:'absolute',top:'10px',right:'12px',display:'flex',alignItems:'center',gap:'5px',background:'rgba(255,255,255,0.9)',backdropFilter:'blur(6px)',padding:'4px 10px',borderRadius:'20px',boxShadow:'0 2px 8px rgba(0,0,0,0.08)',border:'1px solid rgba(0,0,0,0.06)'}}>
-        <div style={{width:'6px',height:'6px',borderRadius:'50%',background:'#2ECC71',animation:'pulseGreen 2s infinite'}}/>
-        <span style={{fontSize:'10px',fontWeight:700,color:'#27ae60'}}>LIVE</span>
-        <span style={{fontSize:'10px',color:'#C8D0D6'}}>{ECONOMIES.length} economies</span>
-      </div>
-    </div>
-  );
-}
-
-// ══════ MAIN DASHBOARD ════════════════════════════════════════════
-export default function Dashboard(){
-  const [selId,setSelId]=useState<string|null>('SGP');
-  const [signals,setSignals]=useState(LIVE_SIGNALS);
-  const [time,setTime]=useState(new Date());
-  const [lastRefresh,setLastRefresh]=useState(new Date());
-
-  // LEFT PANEL FILTERS
-  const [filterCategory,setFilterCategory]=useState('ALL');
-  const [filterRegion,setFilterRegion]=useState('ALL');
-  const [filterSector,setFilterSector]=useState('ALL');
-  const [filterGrade,setFilterGrade]=useState('ALL');
-
-  // RIGHT PANEL FILTERS
-  const [signalType,setSignalType]=useState('ALL');
-  const [signalImpact,setSignalImpact]=useState('ALL');
+export default function Dashboard() {
+  const [selId, setSelId] = useState<string>('SGP')
+  const [filterCat, setFilterCat] = useState('ALL')
+  const [filterRegion, setFilterRegion] = useState('ALL')
+  const [filterSector, setFilterSector] = useState('ALL')
+  const [filterGrade, setFilterGrade] = useState('ALL')
+  const [signals, setSignals] = useState(LIVE_SIGNALS)
+  const [time, setTime] = useState(new Date())
 
   useEffect(()=>{
     const iv=setInterval(()=>{
-      setTime(new Date());
-      if(Math.random()>0.6){
-        const eco=ECONOMIES[Math.floor(Math.random()*6)];
-        setSignals(p=>[{id:Date.now(),grade:'GOLD',type:'GROWTH',code:eco.code,country:eco.name,title:'New signal detected — scoring in progress',sco:70+Math.floor(Math.random()*20),impact:'MED',ts:'now'},...p.slice(0,9)]);
-        setLastRefresh(new Date());
+      setTime(new Date())
+      if(Math.random()>0.65){
+        const eco=ECONOMIES[Math.floor(Math.random()*6)]
+        setSignals(p=>[{id:Date.now(),grade:'GOLD',type:'GROWTH',code:eco.code,country:eco.name,title:'New signal detected — scoring in progress',sco:70+Math.floor(Math.random()*20),ts:'now'},...p.slice(0,9)])
       }
-    },4000);
-    return ()=>clearInterval(iv);
-  },[]);
+    },4000)
+    return ()=>clearInterval(iv)
+  },[])
 
-  const selEco=ECONOMIES.find(e=>e.id===selId)||ECONOMIES[0];
+  const filteredEcos = ECONOMIES.filter(e=>{
+    if(filterCat!=='ALL'&&e.category!==filterCat)return false
+    if(filterRegion!=='ALL'&&e.region!==filterRegion)return false
+    return true
+  })
 
-  // Filter economies
-  const filteredEcos=ECONOMIES.filter(e=>{
-    if(filterCategory!=='ALL'&&e.category!==filterCategory)return false;
-    if(filterRegion!=='ALL'&&e.region!==filterRegion)return false;
-    return true;
-  });
+  const filteredSigs = signals.filter(s=>{
+    if(filterGrade!=='ALL'&&s.grade!==filterGrade)return false
+    return true
+  })
 
-  const highlightIds=filteredEcos.map(e=>e.id);
+  const selEco = ECONOMIES.find(e=>e.id===selId)||ECONOMIES[0]
+  const regions = Array.from(new Set(ECONOMIES.map(e=>e.region)))
+  const sc = (v:number)=>v>=80?'#2ECC71':v>=60?'#3498DB':'#F1C40F'
 
-  // Filter signals
-  const filteredSignals=signals.filter(s=>{
-    if(filterGrade!=='ALL'&&s.grade!==filterGrade)return false;
-    if(signalType!=='ALL'&&s.type!==signalType)return false;
-    if(signalImpact!=='ALL'&&s.impact!==signalImpact)return false;
-    return true;
-  });
-
-  const categoryOpts=[{value:'ALL',label:'All Categories'},{value:'TOP',label:'TOP (≥80)'},{value:'HIGH',label:'HIGH (60-79)'},{value:'DEV',label:'DEV (<60)'}];
-  const regionOpts=[{value:'ALL',label:'All Regions'},...Array.from(new Set(ECONOMIES.map(e=>e.region))).map(r=>({value:r,label:r}))];
-  const sectorOpts=[{value:'ALL',label:'All Sectors'},{value:'EV Battery',label:'EV Battery'},{value:'Data Centers',label:'Data Centers'},{value:'Renewables',label:'Renewables'},{value:'Semiconductors',label:'Semiconductors'},{value:'AI Tech',label:'AI & Technology'}];
-  const gradeOpts=[{value:'ALL',label:'All Grades'},{value:'PLATINUM',label:'PLATINUM'},{value:'GOLD',label:'GOLD'},{value:'SILVER',label:'SILVER'}];
-  const typeOpts=[{value:'ALL',label:'All Types'},{value:'POLICY',label:'Policy'},{value:'DEAL',label:'Deal'},{value:'INCENTIVE',label:'Incentive'},{value:'GROWTH',label:'Growth'},{value:'ZONE',label:'Zone'}];
-  const impactOpts=[{value:'ALL',label:'All Impact'},{value:'HIGH',label:'HIGH'},{value:'MED',label:'MED'},{value:'LOW',label:'LOW'}];
-
-  const CardW=({children,style={}}:{children:any,style?:any})=>(
-    <div style={{background:'#FFFFFF',borderRadius:'14px',boxShadow:'0 4px 16px rgba(0,0,0,0.06)',border:'1px solid #ECF0F1',overflow:'hidden',...style}}>{children}</div>
-  );
-
-  const PanelHeader=({icon,title,badge,extra}:{icon:any,title:string,badge?:string,extra?:any})=>(
-    <div style={{padding:'11px 14px',borderBottom:'1px solid #F8F9FA',display:'flex',alignItems:'center',gap:'8px',background:'#FAFBFC',flexShrink:0}}>
-      <span style={{color:'#2ECC71',display:'flex'}}>{icon}</span>
-      <span style={{fontSize:'11px',fontWeight:800,color:'#1A2C3E',letterSpacing:'0.06em',textTransform:'uppercase',flex:1,fontFamily:"'Inter',sans-serif"}}>{title}</span>
-      {badge&&<span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'20px',background:'rgba(46,204,113,0.1)',color:'#27ae60',border:'1px solid rgba(46,204,113,0.2)',letterSpacing:'0.05em'}}>{badge}</span>}
-      {extra}
+  const SelectField = ({label,value,options,onChange}:{label:string;value:string;options:string[];onChange:(v:string)=>void}) => (
+    <div>
+      <label className="text-[10px] font-bold text-text-light uppercase tracking-wider block mb-1">{label}</label>
+      <select value={value} onChange={e=>onChange(e.target.value)}
+        className="w-full px-3 py-2 bg-white border border-border-light rounded-xl text-sm text-text-primary focus:border-primary-teal focus:outline-none cursor-pointer">
+        {options.map(o=><option key={o}>{o}</option>)}
+      </select>
     </div>
-  );
+  )
 
-  return(
-    <div style={{minHeight:'100vh',background:'#F0F2F5',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
-      <NavBar/>
+  return (
+    <div className="min-h-screen bg-background-offwhite">
+      <BackgroundVideo/>
 
-      {/* ── TOP BAR ─────────────────────────────────────────────── */}
-      <div style={{background:'#FFFFFF',borderBottom:'1px solid #ECF0F1',padding:'10px 20px',position:'sticky',top:'64px',zIndex:200,boxShadow:'0 2px 8px rgba(0,0,0,0.04)'}}>
-        <div style={{maxWidth:'1920px',margin:'0 auto',display:'flex',alignItems:'center',gap:'14px',flexWrap:'wrap'}}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#C8D0D6',textTransform:'uppercase',letterSpacing:'0.1em'}}>Intelligence Dashboard</div>
-            <div style={{fontSize:'18px',fontWeight:900,color:'#1A2C3E',lineHeight:1.1}}>Global FDI Monitor — Live Operations</div>
+      {/* TOP BAR */}
+      <div className="sticky top-16 z-40 bg-white/98 backdrop-blur border-b border-border-light px-6 py-3 shadow-sm">
+        <div className="max-w-[1920px] mx-auto flex items-center gap-4 flex-wrap">
+          <div className="flex-1">
+            <div className="text-[10px] font-bold text-text-light uppercase tracking-widest">Intelligence Dashboard</div>
+            <div className="text-lg font-black text-primary-dark">Global FDI Monitor — Live</div>
           </div>
-          {/* KPI chips */}
-          {[
-            ['🌍',filteredEcos.length+' Economies','#2ECC71'],
-            ['⚡',filteredSignals.length+' Signals','#3498DB'],
-            ['🏆',filteredEcos.filter(e=>e.category==='TOP').length+' TOP Category','#F1C40F'],
-          ].map(([icon,label,c])=>(
-            <div key={String(label)} style={{display:'flex',alignItems:'center',gap:'5px',padding:'6px 12px',background:`${c}08`,border:`1px solid ${c}20`,borderRadius:'20px',fontSize:'11px',fontWeight:700,color:String(c)}}>
-              <span>{icon}</span>{label as string}
+          {/* KPIs */}
+          {[[`${filteredEcos.length} Economies`,'#2ECC71'],[`${filteredSigs.length} Signals`,'#3498DB'],['3 Agents LIVE','#F1C40F']].map(([l,c])=>(
+            <div key={l} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold" style={{background:`${c}12`,color:c,border:`1px solid ${c}20`}}>
+              <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{background:c}}/>
+              {l}
             </div>
           ))}
-          {/* Live clock */}
-          <div style={{padding:'6px 14px',background:'#F8F9FA',borderRadius:'10px',border:'1px solid #ECF0F1',textAlign:'center'}}>
-            <div style={{fontSize:'15px',fontWeight:800,color:'#1A2C3E',fontFamily:"'JetBrains Mono',monospace"}}>{time.toLocaleTimeString()}</div>
-            <div style={{fontSize:'9px',color:'#5A6874',marginTop:'1px'}}>{time.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase()}</div>
+          {/* Clock */}
+          <div className="px-3 py-2 bg-background-offwhite rounded-xl border border-border-light text-center">
+            <div className="text-sm font-black text-primary-dark font-mono">{time.toLocaleTimeString()}</div>
+            <div className="text-[9px] text-text-light">{time.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}).toUpperCase()}</div>
           </div>
-          {/* Agent status */}
-          {[['AGT-02','SIGNAL','#2ECC71'],['AGT-04','GOSA','#3498DB'],['AGT-05','GFR','#F1C40F']].map(([a,l,c])=>(
-            <div key={a} style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'#F8F9FA',border:'1px solid #ECF0F1',borderRadius:'16px'}}>
-              <div style={{width:'5px',height:'5px',borderRadius:'50%',background:c as string,boxShadow:`0 0 5px ${c}`}}/>
-              <span style={{fontSize:'10px',fontWeight:700,color:'#5A6874',fontFamily:"'JetBrains Mono',monospace"}}>{a}</span>
-            </div>
-          ))}
-          <Link href="/pipeline-report" style={{display:'flex',alignItems:'center',gap:'5px',padding:'7px 14px',background:'linear-gradient(135deg,#2ECC71,#27ae60)',color:'white',borderRadius:'20px',textDecoration:'none',fontSize:'11px',fontWeight:800,boxShadow:'0 3px 10px rgba(46,204,113,0.3)'}}>
-            <BarChart3 size={11}/> Pipeline Report
+          <Link href="/pipeline-report" className="btn-primary flex items-center gap-1.5 text-xs !px-4 !py-2">
+            <BarChart3 size={11}/> Agent Report
           </Link>
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════
-          THREE-COLUMN LAYOUT:
-          LEFT (280px) | CENTER (flex) | RIGHT (300px)
-          ══════════════════════════════════════════════════════════ */}
-      <div style={{maxWidth:'1920px',margin:'0 auto',padding:'14px 16px',display:'grid',gridTemplateColumns:'280px 1fr 300px',gap:'12px',alignItems:'start',minHeight:'calc(100vh - 130px)'}}>
+      {/* ═══ 3-COLUMN LAYOUT ═══ */}
+      <div className="max-w-[1920px] mx-auto px-4 py-4 grid gap-4" style={{gridTemplateColumns:'280px 1fr 300px',alignItems:'start'}}>
 
-        {/* ═══════════════════════════════════════════════════════
-            LEFT PANEL — FILTERS + ECONOMY LIST + COUNTRY DETAIL
-            ═══════════════════════════════════════════════════════ */}
-        <div style={{display:'flex',flexDirection:'column',gap:'10px',position:'sticky',top:'130px'}}>
+        {/* LEFT — FILTERS + ECONOMY LIST */}
+        <div className="flex flex-col gap-4 sticky top-[120px]">
 
-          {/* Filter Panel */}
-          <CardW>
-            <PanelHeader icon={<Filter size={13}/>} title="Dashboard Filters" badge={`${filteredEcos.length} SHOWING`}/>
-            <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:'10px'}}>
-              <ScrollableSelect label="Country Category" value={filterCategory} options={categoryOpts} onChange={setFilterCategory} width="100%" accentColor="#2ECC71"/>
-              <ScrollableSelect label="Region" value={filterRegion} options={regionOpts} onChange={setFilterRegion} width="100%" accentColor="#3498DB"/>
-              <ScrollableSelect label="Sector Focus" value={filterSector} options={sectorOpts} onChange={setFilterSector} width="100%" accentColor="#F1C40F"/>
-              {(filterCategory!=='ALL'||filterRegion!=='ALL'||filterSector!=='ALL') && (
-                <button onClick={()=>{setFilterCategory('ALL');setFilterRegion('ALL');setFilterSector('ALL');}}
-                  style={{padding:'7px',background:'rgba(231,76,60,0.06)',border:'1px solid rgba(231,76,60,0.15)',borderRadius:'8px',cursor:'pointer',fontSize:'11px',fontWeight:600,color:'#e74c3c',fontFamily:'Inter,sans-serif',width:'100%'}}>
-                  Clear All Filters ×
+          {/* Filters */}
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <Filter size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide">Dashboard Filters</span>
+              <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">{filteredEcos.length}</span>
+            </div>
+            <div className="space-y-3">
+              <SelectField label="Country Category" value={filterCat}
+                options={['ALL','TOP','HIGH','DEV']}
+                onChange={setFilterCat}/>
+              <SelectField label="Region" value={filterRegion}
+                options={['ALL',...regions]}
+                onChange={setFilterRegion}/>
+              <SelectField label="Sector Focus" value={filterSector}
+                options={['ALL','EV Battery','Data Centers','Semiconductors','Renewables','AI & Technology']}
+                onChange={setFilterSector}/>
+              {(filterCat!=='ALL'||filterRegion!=='ALL'||filterSector!=='ALL')&&(
+                <button onClick={()=>{setFilterCat('ALL');setFilterRegion('ALL');setFilterSector('ALL')}}
+                  className="w-full py-2 text-xs font-semibold text-red-500 border border-red-100 rounded-xl hover:bg-red-50 transition-all">
+                  Clear Filters ×
                 </button>
               )}
             </div>
-          </CardW>
+          </div>
 
-          {/* Top Economies — Lollipop list */}
-          <CardW>
-            <PanelHeader icon={<Globe size={13}/>} title="Investment Analysis" badge="GOSA"/>
-            <div style={{padding:'6px 10px',maxHeight:'320px',overflowY:'auto'}}>
-              {filteredEcos.slice(0,12).map((eco,i)=>(
-                <div key={eco.id} onClick={()=>setSelId(eco.id)}
-                  style={{display:'flex',alignItems:'center',gap:'8px',padding:'7px 6px',borderRadius:'8px',cursor:'pointer',transition:'all 0.15s',background:selId===eco.id?'rgba(46,204,113,0.06)':'transparent',border:selId===eco.id?'1px solid rgba(46,204,113,0.18)':'1px solid transparent',marginBottom:'2px'}}
-                  onMouseEnter={e=>{if(selId!==eco.id)e.currentTarget.style.background='#F8F9FA';}}
-                  onMouseLeave={e=>{if(selId!==eco.id)e.currentTarget.style.background='transparent';}}>
-                  <span style={{fontSize:'9px',fontWeight:700,color:'#C8D0D6',minWidth:'16px',fontFamily:"'JetBrains Mono',monospace"}}>#{i+1}</span>
-                  <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${eco.code}.svg`} width="18" height="12" style={{borderRadius:'2px',flexShrink:0,boxShadow:'0 1px 2px rgba(0,0,0,0.1)'}} onError={e=>{(e.target as any).style.display='none';}}/>
-                  <span style={{fontSize:'11px',fontWeight:selId===eco.id?700:500,color:selId===eco.id?'#1A2C3E':'#5A6874',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{eco.name}</span>
-                  {/* Mini lollipop */}
-                  <div style={{width:'40px',height:'4px',background:'#F0F2F4',borderRadius:'2px',overflow:'hidden'}}>
-                    <div style={{height:'100%',width:`${eco.gosa}%`,background:`linear-gradient(90deg,${sc(eco.gosa)}50,${sc(eco.gosa)})`,borderRadius:'2px'}}/>
-                  </div>
-                  <span style={{fontSize:'12px',fontWeight:900,color:sc(eco.gosa),fontFamily:"'JetBrains Mono',monospace",minWidth:'32px',textAlign:'right'}}>{eco.gosa}</span>
-                </div>
-              ))}
+          {/* WIDGET 2: Lollipop — Top Economies */}
+          <div className="floating-card !p-0 overflow-hidden">
+            <div className="px-4 py-3 border-b border-border-light bg-background-offwhite flex items-center gap-2">
+              <Globe size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Investment Analysis</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">GOSA</span>
             </div>
-            <div style={{padding:'8px 10px',borderTop:'1px solid #F8F9FA'}}>
-              <Link href="/investment-analysis" style={{display:'block',textAlign:'center',padding:'7px',background:'rgba(46,204,113,0.06)',borderRadius:'8px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#27ae60',border:'1px solid rgba(46,204,113,0.15)'}}>
-                Full Investment Analysis →
+            <div className="p-3 max-h-[340px] overflow-y-auto">
+              <LollipopChart economies={filteredEcos} selected={selId} onSelect={setSelId}/>
+            </div>
+            <div className="px-4 py-2.5 border-t border-border-light">
+              <Link href="/investment-analysis" className="block text-center text-xs font-bold text-primary-teal py-2 bg-green-50 rounded-xl hover:bg-green-100 transition-all">
+                Full Analysis Platform →
               </Link>
             </div>
-          </CardW>
+          </div>
 
-          {/* Selected Country Detail */}
-          <CardW>
-            <PanelHeader icon={<BarChart3 size={13}/>} title={selEco.name} badge="GOSA"/>
-            <div style={{padding:'12px 14px'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px',padding:'10px',background:'#F8F9FA',borderRadius:'10px'}}>
-                <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${selEco.code}.svg`} width="36" height="24" style={{borderRadius:'4px',boxShadow:'0 2px 6px rgba(0,0,0,0.1)',flexShrink:0}} onError={e=>{(e.target as any).style.display='none';}}/>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:'12px',color:'#5A6874'}}>{selEco.region}</div>
-                  <div style={{fontSize:'10px',padding:'2px 7px',borderRadius:'10px',display:'inline-block',marginTop:'2px',...(selEco.category==='TOP'?{background:'rgba(46,204,113,0.1)',color:'#27ae60'}:{background:'rgba(52,152,219,0.1)',color:'#2980b9'})}}>{selEco.category}</div>
-                </div>
-                <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:'30px',fontWeight:900,color:sc(selEco.gosa),fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{selEco.gosa}</div>
-                  <div style={{fontSize:'10px',fontWeight:700,color:selEco.trend>0?'#27ae60':'#e74c3c',display:'flex',alignItems:'center',gap:'2px',justifyContent:'flex-end'}}>
-                    {selEco.trend>0?<TrendingUp size={9}/>:<TrendingDown size={9}/>}{selEco.trend>0?'+':''}{selEco.trend}
-                  </div>
-                </div>
+          {/* Country Detail */}
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <BarChart3 size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">{selEco.name}</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">GOSA</span>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-background-offwhite rounded-xl mb-3">
+              <CountryFlag code={selEco.code} size={40}/>
+              <div className="flex-1">
+                <div className="text-xs text-text-secondary">{selEco.region}</div>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${selEco.category==='TOP'?'badge-top':'badge-high'}`}>{selEco.category}</span>
               </div>
-              {/* Layer bars */}
-              {[['L1 Doing Business',selEco.gosa*1.04,'#2ECC71'],['L2 Sector',selEco.gosa*0.97,'#3498DB'],['L3 Inv. Zones',selEco.gosa*1.01,'#F1C40F'],['L4 Intelligence',selEco.gosa*0.99,'#9b59b6']].map(([l,v,c])=>(
-                <div key={String(l)} style={{marginBottom:'7px'}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px'}}>
-                    <span style={{fontSize:'10px',color:'#5A6874'}}>{l as string}</span>
-                    <span style={{fontSize:'11px',fontWeight:800,color:String(c),fontFamily:"'JetBrains Mono',monospace"}}>{Math.min(100,Math.round(v as number))}</span>
-                  </div>
-                  <div style={{height:'4px',background:'#F0F2F4',borderRadius:'2px',overflow:'hidden'}}>
-                    <div style={{height:'100%',width:Math.min(100,v as number)+'%',background:String(c),borderRadius:'2px'}}/>
-                  </div>
+              <div className="text-right">
+                <div className="text-3xl font-black font-mono" style={{color:sc(selEco.gosa)}}>{selEco.gosa}</div>
+                <div className="text-xs font-bold" style={{color:selEco.trend>0?'#2ECC71':'#E74C3C'}}>
+                  {selEco.trend>0?`▲+${selEco.trend}`:`▼${selEco.trend}`}
                 </div>
-              ))}
-              <div style={{display:'flex',gap:'6px',marginTop:'10px'}}>
-                <Link href={'/country/'+selEco.id} style={{flex:1,padding:'7px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:'8px',textDecoration:'none',fontSize:'10px',fontWeight:700,color:'#27ae60',textAlign:'center'}}>Profile</Link>
-                <Link href="/reports" style={{flex:1,padding:'7px',background:'#F8F9FA',border:'1px solid #ECF0F1',borderRadius:'8px',textDecoration:'none',fontSize:'10px',fontWeight:700,color:'#1A2C3E',textAlign:'center'}}>Report</Link>
               </div>
             </div>
-          </CardW>
+            {[['L1 Doing Business',selEco.gosa*1.04,'#2ECC71'],['L2 Sector',selEco.gosa*0.97,'#3498DB'],['L3 Zones',selEco.gosa*1.01,'#F1C40F'],['L4 Intelligence',selEco.gosa*0.99,'#9B59B6']].map(([l,v,c])=>(
+              <div key={String(l)} className="mb-2">
+                <div className="flex justify-between mb-1">
+                  <span className="text-[10px] text-text-secondary">{l}</span>
+                  <span className="text-xs font-black font-mono" style={{color:String(c)}}>{Math.min(100,Math.round(v as number))}</span>
+                </div>
+                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full" style={{width:Math.min(100,v as number)+'%',background:String(c)}}/>
+                </div>
+              </div>
+            ))}
+            <div className="flex gap-2 mt-3">
+              <Link href={'/country/'+selEco.id} className="flex-1 py-2 text-center text-xs font-bold text-primary-teal bg-green-50 rounded-xl border border-green-200 hover:bg-green-100 transition-all">Profile</Link>
+              <Link href="/reports" className="flex-1 py-2 text-center text-xs font-bold text-text-primary bg-background-offwhite rounded-xl border border-border-light hover:border-primary-dark transition-all">Report</Link>
+            </div>
+          </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════
-            CENTER PANEL — LARGE WORLD MAP + WIDGETS BELOW
-            ═══════════════════════════════════════════════════════ */}
-        <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+        {/* CENTER — GLOBE + CHARTS */}
+        <div className="flex flex-col gap-4">
 
-          {/* ── MAIN WORLD MAP ──────────────────────────────────── */}
-          <CardW>
-            <PanelHeader icon={<Globe size={14}/>} title="Global Opportunity Map" badge={`${filteredEcos.length} ECONOMIES LIVE`}
-              extra={
-                <div style={{display:'flex',gap:'6px'}}>
-                  <Link href="/pipeline-report" style={{fontSize:'9px',fontWeight:700,padding:'3px 8px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:'8px',textDecoration:'none',color:'#27ae60'}}>
-                    Agent Report
-                  </Link>
-                </div>
-              }/>
-            <div style={{padding:'14px 16px 16px'}}>
-              <WorldMap
-                economies={filteredEcos}
-                selected={selId}
-                onSelect={(id)=>setSelId(id)}
-                highlight={highlightIds}
-              />
+          {/* WIDGET 1: Globe */}
+          <div className="floating-card !p-5">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <Globe size={14} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Global Opportunity Map</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">{filteredEcos.length} LIVE</span>
+              <Link href="/pipeline-report" className="text-[10px] font-bold px-2 py-1 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-all">
+                Agent Report
+              </Link>
             </div>
-          </CardW>
+            <Globe3D onSelect={(code)=>{ const eco=ECONOMIES.find(e=>e.code===code); if(eco)setSelId(eco.id) }}/>
+          </div>
 
-          {/* ── ROW 2: Doing Business (Bullet) + Sector (Radar) ── */}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
-
-            {/* Bullet Chart — Doing Business */}
-            <CardW>
-              <PanelHeader icon={<Shield size={13}/>} title="Doing Business Indicators" badge="L1 LAYER"/>
-              <div style={{padding:'12px 14px'}}>
-                {DB_INDICATORS.map(({ind,score,avg})=>(
-                  <div key={ind} style={{marginBottom:'8px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px'}}>
-                      <span style={{fontSize:'10px',color:'#5A6874'}}>{ind}</span>
-                      <div style={{display:'flex',gap:'5px',alignItems:'center'}}>
-                        <span style={{fontSize:'9px',color:'#C8D0D6'}}>avg {avg}</span>
-                        <span style={{fontSize:'11px',fontWeight:800,color:sc(score),fontFamily:"'JetBrains Mono',monospace"}}>{score}</span>
-                      </div>
-                    </div>
-                    <div style={{position:'relative',height:'7px',background:'#F0F2F4',borderRadius:'4px',overflow:'hidden'}}>
-                      {/* Global avg reference band */}
-                      <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${avg}%`,background:'#E8EAED',borderRadius:'4px'}}/>
-                      {/* Actual score */}
-                      <div style={{position:'absolute',left:0,top:'1px',height:'5px',width:`${score}%`,background:`linear-gradient(90deg,${sc(score)}50,${sc(score)})`,borderRadius:'3px'}}/>
-                      {/* Target line */}
-                      <div style={{position:'absolute',left:`${avg}%`,top:0,width:'1.5px',height:'100%',background:'#9BA8B5'}}/>
-                    </div>
-                  </div>
-                ))}
-                <div style={{display:'flex',gap:'12px',marginTop:'8px',paddingTop:'6px',borderTop:'1px solid #F8F9FA'}}>
-                  <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'9px',color:'#5A6874'}}><div style={{width:'12px',height:'4px',background:'#E8EAED',borderRadius:'2px'}}/>Avg</div>
-                  <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'9px',color:'#5A6874'}}><div style={{width:'12px',height:'4px',background:'#2ECC71',borderRadius:'2px'}}/>Score</div>
-                  <div style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'9px',color:'#5A6874'}}><div style={{width:'2px',height:'10px',background:'#9BA8B5',borderRadius:'1px'}}/>Target ref</div>
-                </div>
+          {/* WIDGET 3 + 4: Bullet + Radar side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* WIDGET 3: Bullet Chart — Doing Business */}
+            <div className="floating-card !p-4">
+              <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+                <Shield size={13} className="text-primary-teal"/>
+                <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Doing Business</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">L1 LAYER</span>
               </div>
-            </CardW>
+              <BulletChart/>
+            </div>
 
-            {/* Radar Chart — Sector Attractiveness */}
-            <CardW>
-              <PanelHeader icon={<Target size={13}/>} title="Sector Attractiveness Radar" badge="L2 LAYER"/>
-              <div style={{padding:'12px 14px',display:'flex',gap:'14px',alignItems:'flex-start'}}>
-                <RadarMini datasets={SECTORS_RADAR.map(s=>({scores:s.scores,color:s.color}))} size={160}/>
-                <div style={{flex:1}}>
-                  {SECTORS_RADAR.map((sec,i)=>(
-                    <div key={sec.name} style={{marginBottom:'10px',padding:'9px',background:sec.hot?'rgba(46,204,113,0.04)':'#FAFBFC',borderRadius:'9px',border:`1px solid ${sec.hot?'rgba(46,204,113,0.14)':'#F0F2F4'}`}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
-                        <div style={{width:'10px',height:'3px',borderRadius:'2px',background:sec.color}}/>
-                        <span style={{fontSize:'11px',fontWeight:700,color:'#1A2C3E',flex:1}}>{sec.name}</span>
-                        {sec.hot&&<span style={{fontSize:'8px',fontWeight:800,padding:'1px 6px',borderRadius:'8px',background:'rgba(46,204,113,0.1)',color:'#27ae60',border:'1px solid rgba(46,204,113,0.2)'}}>HOT</span>}
-                        <span style={{fontSize:'13px',fontWeight:900,color:sec.color,fontFamily:"'JetBrains Mono',monospace"}}>{Math.round(sec.scores.reduce((a,b)=>a+b)/sec.scores.length)}</span>
+            {/* WIDGET 4: Radar — Sector Matrix */}
+            <div className="floating-card !p-4">
+              <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+                <Target size={13} className="text-primary-teal"/>
+                <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Sector Radar</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-600">L2 LAYER</span>
+              </div>
+              <div className="flex gap-4 items-start">
+                <RadarChart
+                  datasets={SECTOR_RADAR_DATA}
+                  labels={['Regs','Incentives','Labor','Infra','Export']}
+                  size={170}/>
+                <div className="flex-1 space-y-2">
+                  {SECTOR_RADAR_DATA.map(sec=>(
+                    <div key={sec.label} className="p-2 rounded-xl bg-background-offwhite border border-border-light">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-2.5 h-1 rounded-full" style={{background:sec.color}}/>
+                        <span className="text-[11px] font-bold text-primary-dark flex-1">{sec.label}</span>
+                        <span className="text-xs font-black font-mono" style={{color:sec.color}}>
+                          {Math.round(sec.scores.reduce((a,b)=>a+b)/sec.scores.length)}
+                        </span>
                       </div>
-                      <div style={{height:'4px',background:'#F0F2F4',borderRadius:'2px',overflow:'hidden'}}>
-                        <div style={{height:'100%',width:Math.round(sec.scores.reduce((a,b)=>a+b)/sec.scores.length)+'%',background:sec.color,borderRadius:'2px'}}/>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{width:Math.round(sec.scores.reduce((a,b)=>a+b)/sec.scores.length)+'%',background:sec.color}}/>
                       </div>
                     </div>
                   ))}
-                  <Link href="/sectors" style={{display:'block',textAlign:'center',padding:'7px',marginTop:'4px',background:'#F8F9FA',borderRadius:'8px',textDecoration:'none',fontSize:'10px',fontWeight:700,color:'#1A2C3E',border:'1px solid #ECF0F1'}}>
-                    Full Sector Monitor →
-                  </Link>
+                  <Link href="/sectors" className="block text-center text-[10px] font-bold text-primary-teal py-2 bg-green-50 rounded-xl mt-2">Sector Monitor →</Link>
                 </div>
               </div>
-            </CardW>
+            </div>
           </div>
 
-          {/* ── ROW 3: Policy Monitor ──────────────────────────── */}
-          <CardW>
-            <PanelHeader icon={<Activity size={13}/>} title="Policy & Incentives Monitor" badge="LIVE"/>
-            <div style={{padding:'12px 14px',display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'9px'}}>
-              {POLICIES.map(p=>(
-                <div key={p.policy} style={{padding:'11px 12px',background:'#FAFBFC',borderRadius:'11px',border:'1px solid #F0F2F4',transition:'all 0.2s'}}
-                  onMouseEnter={e=>{e.currentTarget.style.background='#F4F6F8';e.currentTarget.style.transform='translateY(-2px)';e.currentTarget.style.boxShadow='0 6px 16px rgba(0,0,0,0.06)';}}
-                  onMouseLeave={e=>{e.currentTarget.style.background='#FAFBFC';e.currentTarget.style.transform='none';e.currentTarget.style.boxShadow='none';}}>
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'7px'}}>
-                    <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${p.code}.svg`} width="22" height="15" style={{borderRadius:'3px',boxShadow:'0 1px 3px rgba(0,0,0,0.1)'}} onError={e=>{(e.target as any).style.display='none';}}/>
-                    <span style={{fontSize:'8px',fontWeight:800,padding:'2px 6px',borderRadius:'10px',...(p.status==='NEW'?{background:'rgba(46,204,113,0.1)',color:'#27ae60',border:'1px solid rgba(46,204,113,0.2)'}:{background:'rgba(52,152,219,0.1)',color:'#2980b9',border:'1px solid rgba(52,152,219,0.2)'})}}>{p.status}</span>
+          {/* WIDGET 5: Investment Zones */}
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <Globe size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Special Investment Zones</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600">L3 LAYER</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {ZONES.map(z=>(
+                <div key={z.name} className="p-3 bg-background-offwhite rounded-xl border border-border-light hover:border-primary-teal transition-all cursor-pointer group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CountryFlag code={z.code} size={18}/>
+                    <span className="text-[10px] font-bold text-text-secondary truncate">{z.type}</span>
                   </div>
-                  <div style={{fontSize:'11px',fontWeight:700,color:'#1A2C3E',marginBottom:'3px',lineHeight:1.35}}>{p.country}</div>
-                  <div style={{fontSize:'10px',color:'#5A6874',lineHeight:1.4,marginBottom:'4px'}}>{p.policy}</div>
-                  <div style={{fontSize:'9px',color:'#C8D0D6',fontFamily:"'JetBrains Mono',monospace"}}>{p.date}</div>
+                  <div className="text-[11px] font-bold text-primary-dark mb-2 leading-tight">{z.name.split(',')[0]}</div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[9px] text-text-light">Available</span>
+                    <span className="text-sm font-black font-mono" style={{color:z.color}}>{z.avail}%</span>
+                  </div>
+                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{width:z.avail+'%',background:z.color}}/>
+                  </div>
                 </div>
               ))}
             </div>
-          </CardW>
+          </div>
+
+          {/* WIDGET 6: Policy Monitor */}
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <Activity size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Policy & Incentives Monitor</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-600">LIVE</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {POLICIES.map(p=>(
+                <div key={p.country} className="p-3 bg-background-offwhite rounded-xl border border-border-light hover:-translate-y-0.5 transition-all cursor-pointer">
+                  <div className="flex justify-between items-center mb-2">
+                    <CountryFlag code={p.code} size={22}/>
+                    <span className={`badge-${p.status.toLowerCase()}`}>{p.status}</span>
+                  </div>
+                  <div className="text-xs font-bold text-primary-dark mb-1">{p.country}</div>
+                  <div className="text-[10px] text-text-secondary leading-snug mb-1.5">{p.policy}</div>
+                  <div className="text-[9px] text-text-light font-mono">{p.date}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════
-            RIGHT PANEL — SIGNAL FILTERS + LIVE FEED + QUICK NAV
-            ═══════════════════════════════════════════════════════ */}
-        <div style={{display:'flex',flexDirection:'column',gap:'10px',position:'sticky',top:'130px'}}>
+        {/* RIGHT — SIGNAL FILTERS + FEED + QUICK NAV */}
+        <div className="flex flex-col gap-4 sticky top-[120px]">
 
           {/* Signal Filters */}
-          <CardW>
-            <PanelHeader icon={<Filter size={13}/>} title="Signal Filters"/>
-            <div style={{padding:'12px 14px',display:'flex',flexDirection:'column',gap:'10px'}}>
-              <ScrollableSelect label="Grade" value={filterGrade} options={gradeOpts} onChange={setFilterGrade} width="100%" accentColor="#9b59b6"/>
-              <ScrollableSelect label="Signal Type" value={signalType} options={typeOpts} onChange={setSignalType} width="100%" accentColor="#2ECC71"/>
-              <ScrollableSelect label="Impact" value={signalImpact} options={impactOpts} onChange={setSignalImpact} width="100%" accentColor="#e74c3c"/>
-              <div style={{fontSize:'10px',color:'#5A6874',textAlign:'center',padding:'4px',background:'#F8F9FA',borderRadius:'7px',fontFamily:"'JetBrains Mono',monospace"}}>
-                {filteredSignals.length} signals · refreshed {lastRefresh.toLocaleTimeString()}
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <Filter size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide">Signal Filters</span>
+            </div>
+            <div className="space-y-3">
+              <SelectField label="Grade" value={filterGrade}
+                options={['ALL','PLATINUM','GOLD','SILVER']}
+                onChange={setFilterGrade}/>
+              <div className="text-[10px] font-mono text-text-light text-center py-2 bg-background-offwhite rounded-xl">
+                {filteredSigs.length} signals · {time.toLocaleTimeString()}
               </div>
             </div>
-          </CardW>
+          </div>
 
-          {/* Live Signals Feed */}
-          <CardW style={{flex:'0 1 auto'}}>
-            <PanelHeader icon={<Zap size={13}/>} title="Investment Signals" badge="LIVE"/>
-            <div style={{height:'360px',overflowY:'auto',padding:'6px 8px'}}>
-              {filteredSignals.map((sig,i)=>{
-                const gc=sig.grade==='PLATINUM'?'#9b59b6':sig.grade==='GOLD'?'#d4ac0d':'#5A6874';
-                const tc=sig.type==='POLICY'?'#e74c3c':sig.type==='DEAL'?'#e67e22':sig.type==='INCENTIVE'?'#2ECC71':sig.type==='GROWTH'?'#3498DB':'#5A6874';
-                return(
-                  <div key={sig.id} style={{padding:'10px 11px',borderRadius:'10px',marginBottom:'5px',background:'#FAFBFC',border:'1px solid #F0F2F4',borderLeft:`3px solid ${tc}`,transition:'all 0.15s',animation:i===0?'slideInRight 0.4s ease both':'none'}}
-                    onMouseEnter={e=>{e.currentTarget.style.background='#F4F6F8';e.currentTarget.style.transform='translateX(2px)';}}
-                    onMouseLeave={e=>{e.currentTarget.style.background='#FAFBFC';e.currentTarget.style.transform='none';}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
-                      <div style={{display:'flex',gap:'4px'}}>
-                        <span style={{fontSize:'8px',fontWeight:800,padding:'2px 5px',borderRadius:'4px',background:`${gc}12`,color:gc}}>{sig.grade.slice(0,4)}</span>
-                        <span style={{fontSize:'8px',padding:'2px 5px',background:`${tc}10`,color:tc,borderRadius:'4px',fontWeight:600}}>{sig.type}</span>
+          {/* WIDGET 7: Signals Feed */}
+          <div className="floating-card !p-0 overflow-hidden flex-1">
+            <div className="px-4 py-3 border-b border-border-light bg-background-offwhite flex items-center gap-2">
+              <Zap size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide flex-1">Investment Signals</span>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary-teal">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary-teal animate-pulse"/>
+                LIVE
+              </div>
+            </div>
+            <div className="max-h-[420px] overflow-y-auto p-2 space-y-1.5">
+              {filteredSigs.map((sig,i)=>{
+                const gc=sig.grade==='PLATINUM'?'#9B59B6':'#F1C40F'
+                const tc=sig.type==='POLICY'?'#E74C3C':sig.type==='DEAL'?'#E67E22':sig.type==='INCENTIVE'?'#2ECC71':'#3498DB'
+                return (
+                  <div key={sig.id} className="p-2.5 rounded-xl bg-background-offwhite border-l-2 transition-all hover:bg-white hover:translate-x-0.5"
+                    style={{borderColor:tc,animation:i===0?'slideInRight 0.4s ease both':'none'}}>
+                    <div className="flex justify-between mb-1.5">
+                      <div className="flex gap-1">
+                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{background:`${gc}15`,color:gc}}>{sig.grade.slice(0,4)}</span>
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold" style={{background:`${tc}10`,color:tc}}>{sig.type}</span>
                       </div>
-                      <span style={{fontSize:'12px',fontWeight:900,color:'#9b59b6',fontFamily:"'JetBrains Mono',monospace"}}>{sig.sco}</span>
+                      <span className="text-[9px] font-black font-mono" style={{color:'#9B59B6'}}>{sig.sco}</span>
                     </div>
-                    <div style={{fontSize:'11px',color:'#1A2C3E',lineHeight:1.4,marginBottom:'4px',fontWeight:500}}>{sig.title}</div>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
-                        <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${sig.code}.svg`} width="12" height="8" style={{borderRadius:'1px'}} onError={e=>{(e.target as any).style.display='none';}}/>
-                        <span style={{fontSize:'9px',color:'#5A6874'}}>{sig.country}</span>
+                    <div className="text-[11px] font-medium text-primary-dark leading-snug mb-1.5">{sig.title}</div>
+                    <div className="flex justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <CountryFlag code={sig.code} size={12}/>
+                        <span className="text-[9px] text-text-secondary">{sig.country}</span>
                       </div>
-                      <span style={{fontSize:'9px',color:'#C8D0D6',fontFamily:"'JetBrains Mono',monospace"}}>{sig.ts} ago</span>
+                      <span className="text-[9px] text-text-light font-mono">{sig.ts} ago</span>
                     </div>
                   </div>
-                );
+                )
               })}
-              {filteredSignals.length===0&&<div style={{padding:'24px',textAlign:'center',fontSize:'12px',color:'#C8D0D6'}}>No signals match filters</div>}
             </div>
-            <div style={{padding:'8px',borderTop:'1px solid #F8F9FA'}}>
-              <Link href="/signals" style={{display:'block',textAlign:'center',padding:'8px',background:'rgba(46,204,113,0.06)',borderRadius:'9px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#27ae60',border:'1px solid rgba(46,204,113,0.15)'}}>
-                Full Signals Platform →
+            <div className="p-2.5 border-t border-border-light">
+              <Link href="/signals" className="block text-center text-xs font-bold text-primary-teal py-2 bg-green-50 rounded-xl hover:bg-green-100 transition-all">
+                Full Signals Feed →
               </Link>
             </div>
-          </CardW>
+          </div>
 
           {/* Quick Nav */}
-          <CardW>
-            <PanelHeader icon={<BarChart3 size={13}/>} title="Platform"/>
-            <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:'5px'}}>
+          <div className="floating-card !p-4">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-border-light">
+              <ChevronRight size={13} className="text-primary-teal"/>
+              <span className="text-xs font-black text-primary-dark uppercase tracking-wide">Platform</span>
+            </div>
+            <div className="flex flex-col gap-1.5">
               {[
-                {href:'/gfr',       icon:'🏆',l:'GFR Ranking',       d:'25 economies'},
-                {href:'/corridors', icon:'🔀',l:'Corridors',          d:'12 routes'},
-                {href:'/pipeline',  icon:'📋',l:'Pipeline',           d:'Deal board'},
-                {href:'/scenario-planner',icon:'🔬',l:'Scenario Planner',d:'IRR/NPV'},
-                {href:'/pipeline-report',icon:'📊',l:'Agent Report',  d:'Full pipeline'},
-                {href:'/sources',   icon:'📡',l:'Data Sources',       d:'1000+ sources'},
+                {href:'/gfr',         icon:'🏆',l:'GFR Ranking',      d:'25 economies'},
+                {href:'/corridors',   icon:'🔀',l:'Corridors',         d:'12 bilateral'},
+                {href:'/pipeline',    icon:'📋',l:'Pipeline',          d:'Deal board'},
+                {href:'/scenario-planner',icon:'🔬',l:'Scenario',      d:'IRR/NPV'},
+                {href:'/pipeline-report',icon:'📊',l:'Agent Report',   d:'Pipeline data'},
+                {href:'/sources',     icon:'📡',l:'Sources',           d:'1000+'},
               ].map(({href,icon,l,d})=>(
-                <Link key={href} href={href} style={{display:'flex',alignItems:'center',gap:'8px',padding:'8px 10px',background:'#FAFBFC',border:'1px solid #F0F2F4',borderRadius:'9px',textDecoration:'none',transition:'all 0.15s'}}
-                  onMouseEnter={e=>{(e.currentTarget as any).style.background='#F0F2F4';(e.currentTarget as any).style.borderColor='#2ECC71';}}
-                  onMouseLeave={e=>{(e.currentTarget as any).style.background='#FAFBFC';(e.currentTarget as any).style.borderColor='#F0F2F4';}}>
-                  <span style={{fontSize:'16px'}}>{icon}</span>
-                  <div><div style={{fontSize:'11px',fontWeight:700,color:'#1A2C3E'}}>{l}</div><div style={{fontSize:'9px',color:'#C8D0D6'}}>{d}</div></div>
+                <Link key={href} href={href}
+                  className="flex items-center gap-3 p-2.5 rounded-xl bg-background-offwhite border border-border-light hover:border-primary-teal hover:bg-green-50 transition-all">
+                  <span className="text-base">{icon}</span>
+                  <div><div className="text-[11px] font-bold text-primary-dark">{l}</div><div className="text-[9px] text-text-light">{d}</div></div>
                 </Link>
               ))}
             </div>
-          </CardW>
+          </div>
         </div>
       </div>
-
-      <Footer/>
     </div>
-  );
+  )
 }

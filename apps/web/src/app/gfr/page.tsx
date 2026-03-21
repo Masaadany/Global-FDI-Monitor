@@ -1,131 +1,124 @@
-'use client';
-import { useState, useMemo } from 'react';
-import NavBar from '@/components/NavBar';
-import Footer from '@/components/Footer';
-import Flag from '@/components/Flag';
-import ScrollableSelect from '@/components/ScrollableSelect';
-import { LollipopChart, RadarChart, scoreColor } from '@/components/Charts';
-import Link from 'next/link';
-import { TrendingUp, TrendingDown, Award, Download } from 'lucide-react';
+'use client'
+import { useState } from 'react'
+import { BackgroundVideo } from '@/components/shared/BackgroundVideo'
+import { CountryFlag } from '@/components/shared/CountryFlag'
+import { RadarChart } from '@/components/charts/RadarChart'
+import { TrendingUp, TrendingDown, Download } from 'lucide-react'
 
-const DIMS = [
-  {code:'ETR',name:'Economic & Trade Resilience',weight:0.20,color:'#2ECC71'},
-  {code:'ICT',name:'Innovation & Creative Talent', weight:0.18,color:'#3498DB'},
-  {code:'TCM',name:'Trade & Capital Mobility',     weight:0.18,color:'#F1C40F'},
-  {code:'DTF',name:'Digital & Tech Frontier',      weight:0.16,color:'#9B59B6'},
-  {code:'SGT',name:'Sustainable Growth',           weight:0.15,color:'#E67E22'},
-  {code:'GRP',name:'Governance & Policy',          weight:0.13,color:'#E74C3C'},
-];
+const DIMS=[
+  {code:'ETR',name:'Economic & Trade Resilience',weight:0.20,color:'#2ECC71',desc:'Macro stability, trade openness, external balance'},
+  {code:'ICT',name:'Innovation & Creative Talent', weight:0.18,color:'#3498DB',desc:'R&D spend, patent filings, STEM graduates'},
+  {code:'TCM',name:'Trade & Capital Mobility',     weight:0.18,color:'#F1C40F',desc:'FDI inflows, capital controls, trade facilitation'},
+  {code:'DTF',name:'Digital & Tech Frontier',      weight:0.16,color:'#9B59B6',desc:'Broadband penetration, cloud adoption, AI readiness'},
+  {code:'SGT',name:'Sustainable Growth',           weight:0.15,color:'#E74C3C',desc:'Green investment, carbon intensity, ESG'},
+  {code:'GRP',name:'Governance & Policy',          weight:0.13,color:'#1A2C3E',desc:'Rule of law, regulatory quality, political stability'},
+]
 
-const GFR = [
-  {rank:1, flag:'SG',name:'Singapore',    gfr:91.2,etr:93.1,ict:89.4,tcm:94.2,dtf:91.8,sgt:82.1,grp:96.4,trend:+0.3,cat:'TOP', region:'Asia Pacific'},
-  {rank:2, flag:'DK',name:'Denmark',      gfr:89.8,etr:88.2,ict:91.4,tcm:86.3,dtf:90.1,sgt:94.2,grp:95.1,trend:+0.2,cat:'TOP', region:'Europe'},
-  {rank:3, flag:'CH',name:'Switzerland',  gfr:89.1,etr:91.0,ict:92.3,tcm:88.4,dtf:87.6,sgt:88.3,grp:93.8,trend:+0.1,cat:'TOP', region:'Europe'},
-  {rank:4, flag:'NL',name:'Netherlands',  gfr:87.4,etr:86.8,ict:88.2,tcm:89.1,dtf:89.4,sgt:87.6,grp:91.2,trend:-0.1,cat:'TOP', region:'Europe'},
-  {rank:5, flag:'NZ',name:'New Zealand',  gfr:86.3,etr:83.1,ict:84.6,tcm:87.2,dtf:85.4,sgt:89.8,grp:94.6,trend:-0.2,cat:'TOP', region:'Oceania'},
-  {rank:6, flag:'KR',name:'South Korea',  gfr:86.9,etr:84.3,ict:93.1,tcm:82.6,dtf:94.8,sgt:78.4,grp:88.2,trend:+0.4,cat:'TOP', region:'Asia Pacific'},
-  {rank:7, flag:'GB',name:'UK',           gfr:84.2,etr:81.6,ict:87.4,tcm:85.8,dtf:86.2,sgt:81.4,grp:89.6,trend:-0.3,cat:'TOP', region:'Europe'},
-  {rank:8, flag:'AE',name:'UAE',          gfr:83.8,etr:86.4,ict:82.1,tcm:88.6,dtf:84.2,sgt:76.8,grp:88.4,trend:+1.4,cat:'TOP', region:'Middle East'},
-  {rank:9, flag:'US',name:'United States',gfr:82.6,etr:83.8,ict:88.4,tcm:84.2,dtf:89.6,sgt:72.4,grp:82.8,trend:-0.1,cat:'TOP', region:'Americas'},
-  {rank:10,flag:'DE',name:'Germany',      gfr:83.1,etr:84.2,ict:85.6,tcm:81.4,dtf:82.8,sgt:85.6,grp:88.2,trend:-0.2,cat:'TOP', region:'Europe'},
-  {rank:11,flag:'MY',name:'Malaysia',     gfr:79.2,etr:78.6,ict:76.4,tcm:81.8,dtf:78.2,sgt:74.6,grp:82.4,trend:+0.6,cat:'HIGH',region:'Asia Pacific'},
-  {rank:12,flag:'SA',name:'Saudi Arabia', gfr:78.6,etr:82.4,ict:74.2,tcm:80.6,dtf:76.8,sgt:68.4,grp:82.6,trend:+2.2,cat:'HIGH',region:'Middle East'},
-  {rank:13,flag:'TH',name:'Thailand',     gfr:77.4,etr:75.8,ict:72.6,tcm:78.4,dtf:74.6,sgt:72.8,grp:78.4,trend:+0.3,cat:'HIGH',region:'Asia Pacific'},
-  {rank:14,flag:'VN',name:'Vietnam',      gfr:76.8,etr:74.2,ict:71.4,tcm:77.6,dtf:72.4,sgt:74.2,grp:74.8,trend:+0.8,cat:'HIGH',region:'Asia Pacific'},
-  {rank:15,flag:'IN',name:'India',        gfr:75.6,etr:72.8,ict:76.4,tcm:74.2,dtf:72.8,sgt:68.6,grp:76.2,trend:+1.1,cat:'HIGH',region:'Asia Pacific'},
-];
+const COUNTRIES=[
+  {rank:1, code:'SG',name:'Singapore',    gfr:91.2,etr:93.1,ict:89.4,tcm:94.2,dtf:91.8,sgt:82.1,grp:96.4,trend:+0.3,cat:'TOP'},
+  {rank:2, code:'DK',name:'Denmark',      gfr:89.8,etr:88.2,ict:91.4,tcm:86.3,dtf:90.1,sgt:94.2,grp:95.1,trend:+0.2,cat:'TOP'},
+  {rank:3, code:'CH',name:'Switzerland',  gfr:89.1,etr:91.0,ict:92.3,tcm:88.4,dtf:87.6,sgt:88.3,grp:93.8,trend:+0.1,cat:'TOP'},
+  {rank:4, code:'NL',name:'Netherlands',  gfr:87.4,etr:86.8,ict:88.2,tcm:89.1,dtf:89.4,sgt:87.6,grp:91.2,trend:-0.1,cat:'TOP'},
+  {rank:5, code:'NZ',name:'New Zealand',  gfr:86.3,etr:83.1,ict:84.6,tcm:87.2,dtf:85.4,sgt:89.8,grp:94.6,trend:-0.2,cat:'TOP'},
+  {rank:6, code:'KR',name:'South Korea',  gfr:86.9,etr:84.3,ict:93.1,tcm:82.6,dtf:94.8,sgt:78.4,grp:88.2,trend:+0.4,cat:'TOP'},
+  {rank:7, code:'AE',name:'UAE',          gfr:83.8,etr:86.4,ict:82.1,tcm:88.6,dtf:84.2,sgt:76.8,grp:88.4,trend:+1.4,cat:'TOP'},
+  {rank:8, code:'DE',name:'Germany',      gfr:83.1,etr:84.2,ict:85.6,tcm:81.4,dtf:82.8,sgt:85.6,grp:88.2,trend:-0.2,cat:'TOP'},
+  {rank:9, code:'US',name:'United States',gfr:82.6,etr:83.8,ict:88.4,tcm:84.2,dtf:89.6,sgt:72.4,grp:82.8,trend:-0.1,cat:'TOP'},
+  {rank:10,code:'MY',name:'Malaysia',     gfr:79.2,etr:78.6,ict:76.4,tcm:81.8,dtf:78.2,sgt:74.6,grp:82.4,trend:+0.6,cat:'HIGH'},
+  {rank:11,code:'SA',name:'Saudi Arabia', gfr:78.6,etr:82.4,ict:74.2,tcm:80.6,dtf:76.8,sgt:68.4,grp:82.6,trend:+2.2,cat:'HIGH'},
+  {rank:12,code:'TH',name:'Thailand',     gfr:77.4,etr:75.8,ict:72.6,tcm:78.4,dtf:74.6,sgt:72.8,grp:78.4,trend:+0.3,cat:'HIGH'},
+  {rank:13,code:'VN',name:'Vietnam',      gfr:76.8,etr:74.2,ict:71.4,tcm:77.6,dtf:72.4,sgt:74.2,grp:74.8,trend:+0.8,cat:'HIGH'},
+  {rank:14,code:'IN',name:'India',        gfr:75.6,etr:72.8,ict:76.4,tcm:74.2,dtf:72.8,sgt:68.6,grp:76.2,trend:+1.1,cat:'HIGH'},
+  {rank:15,code:'MA',name:'Morocco',      gfr:68.4,etr:66.8,ict:64.2,tcm:68.6,dtf:62.4,sgt:66.8,grp:70.2,trend:+0.8,cat:'HIGH'},
+]
 
-const COMPARE_COLORS = ['#2ECC71','#3498DB','#F1C40F','#9B59B6'];
+const sc=(v:number)=>v>=80?'#2ECC71':v>=60?'#3498DB':'#F1C40F'
+const COMPARE_COLS=['#2ECC71','#3498DB','#F1C40F','#9B59B6']
 
 export default function GFRPage() {
-  const [tab, setTab] = useState('ranking');
-  const [sel, setSel] = useState(GFR[0]);
-  const [search, setSearch] = useState('');
-  const [filterRegion, setFilterRegion] = useState('ALL');
-  const [filterCat, setFilterCat] = useState('ALL');
-  const [compareSet, setCompareSet] = useState(['Singapore','UAE','Malaysia','Saudi Arabia']);
+  const [tab,setTab]=useState<'ranking'|'compare'|'method'>('ranking')
+  const [selCode,setSelCode]=useState('SG')
+  const [compare,setCompare]=useState(['SG','AE','MY'])
 
-  const filtered = useMemo(() => {
-    let d = GFR.filter(c => {
-      if (filterRegion!=='ALL' && c.region!==filterRegion) return false;
-      if (filterCat!=='ALL' && c.cat!==filterCat) return false;
-      if (search && !c.name.toLowerCase().includes(search.toLowerCase())) return false;
-      return true;
-    });
-    return d;
-  }, [filterRegion, filterCat, search]);
+  const selC=COUNTRIES.find(c=>c.code===selCode)||COUNTRIES[0]
+  const compareC=COUNTRIES.filter(c=>compare.includes(c.code))
 
-  const compareCountries = GFR.filter(c => compareSet.includes(c.name));
-  const regionOpts = [{value:'ALL',label:'All Regions'},...Array.from(new Set(GFR.map(c=>c.region))).map(r=>({value:r,label:r}))];
-  const catOpts = [{value:'ALL',label:'All Categories'},{value:'TOP',label:'TOP (≥80)'},{value:'HIGH',label:'HIGH (60-79)'}];
-
-  const card = {background:'white',borderRadius:'20px',padding:'22px',border:'1px solid var(--border)',boxShadow:'0 4px 16px rgba(26,44,62,0.05)'};
+  function toggleCompare(code:string){
+    setCompare(p=>p.includes(code)?p.filter(x=>x!==code):[...p.slice(-3),code])
+  }
 
   return (
-    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:'var(--font-ui)'}}>
-      <NavBar/>
-      <div style={{background:'white',borderBottom:'1px solid var(--border)',padding:'20px 24px'}}>
-        <div style={{maxWidth:'1440px',margin:'0 auto'}}>
-          <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px',flexWrap:'wrap'}}>
-            <Award size={18} color="#D4AC0D"/>
-            <div style={{fontSize:'11px',fontWeight:700,color:'var(--text-muted)',letterSpacing:'0.12em',textTransform:'uppercase',fontFamily:'var(--font-mono)'}}>GFR RANKING 2026</div>
-            <span style={{fontSize:'10px',padding:'3px 10px',background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.25)',borderRadius:'12px',color:'var(--accent-green)',fontFamily:'var(--font-mono)',fontWeight:700}}>COMPARABLE TO IMD WCR · KEARNEY GCR</span>
+    <div className="min-h-screen bg-background-offwhite">
+      <BackgroundVideo/>
+      <div className="max-w-[1540px] mx-auto px-6 py-10">
+
+        {/* Header */}
+        <div className="flex flex-wrap justify-between items-start gap-4 mb-6">
+          <div>
+            <div className="section-label">Global Future Readiness</div>
+            <h1 className="page-title">GFR Ranking 2026</h1>
+            <p className="text-text-secondary text-sm">6-dimension composite · 25 economies · Comparable to IMD WCR · Kearney GCR · World Happiness Report</p>
           </div>
-          <h1 style={{fontSize:'26px',fontWeight:900,color:'var(--text-primary)',fontFamily:'var(--font-display)',marginBottom:'6px'}}>Global Future Readiness Ranking</h1>
-          <div style={{fontFamily:'var(--font-mono)',fontSize:'12px',color:'var(--text-muted)',marginBottom:'16px'}}>
+          <div className="px-4 py-3 bg-primary-dark/5 rounded-xl border border-border-light text-sm font-mono text-text-secondary">
             GFR = (0.20×ETR) + (0.18×ICT) + (0.18×TCM) + (0.16×DTF) + (0.15×SGT) + (0.13×GRP)
           </div>
-          <div style={{display:'flex',gap:'4px'}}>
-            {[['ranking','📊 Ranking'],['compare','⚖ Compare'],['methodology','🔬 Methodology']].map(([t,l])=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:'8px 18px',border:'none',borderBottom:`2px solid ${tab===t?'var(--accent-green)':'transparent'}`,background:'transparent',cursor:'pointer',fontSize:'13px',fontWeight:tab===t?700:500,color:tab===t?'var(--accent-green)':'var(--text-secondary)',fontFamily:'var(--font-ui)',transition:'all 200ms'}}>
-                {l}
-              </button>
-            ))}
-          </div>
         </div>
-      </div>
 
-      <div style={{maxWidth:'1440px',margin:'0 auto',padding:'24px'}}>
-        {tab==='ranking' && (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 300px',gap:'20px',alignItems:'start'}}>
-            <div style={card}>
-              <div style={{display:'flex',gap:'10px',flexWrap:'wrap',marginBottom:'16px',alignItems:'flex-end'}}>
-                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search economy..." style={{width:'180px'}}/>
-                <ScrollableSelect value={filterRegion} onChange={setFilterRegion} width="150px" options={regionOpts}/>
-                <ScrollableSelect label="Category" value={filterCat} onChange={setFilterCat} width="140px" options={catOpts}/>
-                <span style={{marginLeft:'auto',fontSize:'11px',color:'var(--text-muted)',fontFamily:'var(--font-mono)'}}>{filtered.length} economies</span>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-border-light mb-6">
+          {[['ranking','📊 Ranking Table'],['compare','⚖ Compare'],['method','🔬 Methodology']].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t as any)}
+              className={`tab-btn ${tab===t?'tab-active':'tab-inactive'}`}>{l}</button>
+          ))}
+        </div>
+
+        {/* RANKING TAB */}
+        {tab==='ranking'&&(
+          <div className="grid grid-cols-[1fr_300px] gap-5">
+            <div className="floating-card !p-0 overflow-hidden">
+              <div className="px-5 py-4 bg-background-offwhite border-b border-border-light flex gap-3 items-center flex-wrap">
+                <input type="text" placeholder="Search economy..." className="px-3 py-2 border border-border-light rounded-xl text-sm focus:outline-none focus:border-primary-teal flex-1 min-w-32"/>
+                <button className="btn-primary flex items-center gap-1.5 text-xs !px-4 !py-2">
+                  <Download size={12}/> Export
+                </button>
               </div>
-              <div style={{overflowX:'auto'}}>
-                <table style={{width:'100%',borderCollapse:'collapse'}}>
-                  <thead>
-                    <tr style={{background:'var(--bg-subtle)'}}>
-                      {['#','Economy','GFR','ETR','ICT','TCM','DTF','SGT','GRP','Trend'].map(h=>(
-                        <th key={h} style={{padding:'9px 12px',textAlign:h==='Economy'?'left':'center',fontSize:'10px',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.07em',borderBottom:'1px solid var(--border)',fontFamily:'var(--font-mono)',whiteSpace:'nowrap'}}>{h}</th>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead className="bg-background-offwhite">
+                    <tr>
+                      {['#','Economy','GFR Score','ETR (20%)','ICT (18%)','TCM (18%)','DTF (16%)','SGT (15%)','GRP (13%)','Trend','Category'].map(h=>(
+                        <th key={h} className={`px-3 py-3 text-[10px] font-black text-text-light uppercase whitespace-nowrap border-b border-border-light ${h==='Economy'?'text-left':'text-center'}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {filtered.map(c=>(
-                      <tr key={c.name} style={{cursor:'pointer',borderBottom:'1px solid var(--border)',background:sel.name===c.name?'rgba(46,204,113,0.04)':'white',transition:'background 150ms'}}
-                        onClick={()=>setSel(c)}
-                        onMouseEnter={e=>{if(sel.name!==c.name)e.currentTarget.style.background='rgba(46,204,113,0.02)';}}
-                        onMouseLeave={e=>{if(sel.name!==c.name)e.currentTarget.style.background='white';}}>
-                        <td style={{padding:'11px 12px',textAlign:'center',fontWeight:800,color:'var(--text-muted)',fontFamily:'var(--font-mono)'}}>{c.rank<=3?['🥇','🥈','🥉'][c.rank-1]:c.rank}</td>
-                        <td style={{padding:'11px 12px'}}>
-                          <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                            <Flag country={c.flag} size="md"/>
-                            <span style={{fontWeight:600,color:'var(--text-primary)'}}>{c.name}</span>
-                            <span style={{fontSize:'9px',fontWeight:800,padding:'2px 7px',borderRadius:'10px',background:c.cat==='TOP'?'rgba(46,204,113,0.1)':'rgba(52,152,219,0.1)',color:c.cat==='TOP'?'#27AE60':'#2980B9'}}>{c.cat}</span>
+                    {COUNTRIES.map(c=>(
+                      <tr key={c.code} onClick={()=>setSelCode(c.code)}
+                        className={`border-b border-border-light cursor-pointer transition-all ${selCode===c.code?'bg-green-50':'hover:bg-background-offwhite/50'}`}>
+                        <td className="px-3 py-3 text-center font-mono font-black text-text-light text-xs">{c.rank<=3?['🥇','🥈','🥉'][c.rank-1]:c.rank}</td>
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <CountryFlag code={c.code} size={24}/>
+                            <span className="font-bold text-primary-dark">{c.name}</span>
                           </div>
                         </td>
-                        <td style={{padding:'11px 8px',textAlign:'center'}}>
-                          <div style={{fontSize:'16px',fontWeight:900,color:scoreColor(c.gfr),fontFamily:'var(--font-mono)'}}>{c.gfr}</div>
+                        <td className="px-3 py-3 text-center">
+                          <div className="text-lg font-black font-mono" style={{color:sc(c.gfr)}}>{c.gfr}</div>
+                          <div className="w-10 h-1 rounded-full mx-auto mt-1 overflow-hidden bg-gray-100">
+                            <div className="h-full rounded-full" style={{width:c.gfr+'%',background:sc(c.gfr)}}/>
+                          </div>
                         </td>
                         {[c.etr,c.ict,c.tcm,c.dtf,c.sgt,c.grp].map((v,i)=>(
-                          <td key={i} style={{padding:'11px 8px',textAlign:'center',fontSize:'12px',fontWeight:600,color:scoreColor(v),fontFamily:'var(--font-mono)'}}>{v}</td>
+                          <td key={i} className="px-2 py-3 text-center font-mono font-bold text-xs" style={{color:sc(v)}}>{v}</td>
                         ))}
-                        <td style={{padding:'11px 8px',textAlign:'center',fontSize:'11px',fontWeight:700,color:c.trend>0?'#27AE60':c.trend<0?'#E74C3C':'var(--text-muted)'}}>
-                          {c.trend>0?`▲+${c.trend}`:c.trend<0?`▼${c.trend}`:'—'}
+                        <td className="px-2 py-3 text-center">
+                          <div className="flex items-center justify-center gap-0.5 text-xs font-bold" style={{color:c.trend>0?'#2ECC71':c.trend<0?'#E74C3C':'#5A6874'}}>
+                            {c.trend>0?<TrendingUp size={11}/>:c.trend<0?<TrendingDown size={11}/>:null}
+                            {c.trend!==0?(c.trend>0?'+':'')+c.trend:'—'}
+                          </div>
+                        </td>
+                        <td className="px-2 py-3 text-center">
+                          <span className={c.cat==='TOP'?'badge-top':'badge-high'}>{c.cat}</span>
                         </td>
                       </tr>
                     ))}
@@ -133,117 +126,192 @@ export default function GFRPage() {
                 </table>
               </div>
             </div>
+
             {/* Side panel */}
-            <div style={card}>
-              <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px'}}>
-                <Flag country={sel.flag} size="lg"/>
-                <div>
-                  <div style={{fontSize:'16px',fontWeight:800,color:'var(--text-primary)'}}>{sel.name}</div>
-                  <div style={{fontSize:'11px',color:'var(--text-muted)'}}>#{sel.rank} · {sel.region}</div>
+            <div className="floating-card !p-5">
+              <div className="text-[10px] font-black text-text-light uppercase tracking-widest mb-4">Selected Economy</div>
+              <div className="flex items-center gap-3 mb-4 p-3 bg-background-offwhite rounded-xl">
+                <CountryFlag code={selC.code} size={40}/>
+                <div className="flex-1">
+                  <div className="font-black text-primary-dark">{selC.name}</div>
+                  <span className={selC.cat==='TOP'?'badge-top':'badge-high'}>Rank #{selC.rank}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-4xl font-black font-mono" style={{color:sc(selC.gfr)}}>{selC.gfr}</div>
+                  <div className="text-xs font-bold" style={{color:selC.trend>0?'#2ECC71':'#E74C3C'}}>
+                    {selC.trend>0?`▲+${selC.trend}`:`▼${selC.trend}`}
+                  </div>
                 </div>
               </div>
-              <div style={{fontSize:'40px',fontWeight:900,color:scoreColor(sel.gfr),fontFamily:'var(--font-mono)',marginBottom:'12px'}}>{sel.gfr}</div>
-              <div style={{display:'flex',justifyContent:'center',marginBottom:'14px'}}>
-                <RadarChart datasets={[{label:sel.name,data:[sel.etr,sel.ict,sel.tcm,sel.dtf,sel.sgt,sel.grp],color:scoreColor(sel.gfr)}]} labels={['ETR','ICT','TCM','DTF','SGT','GRP']} size={180}/>
+              <div className="flex justify-center mb-4">
+                <RadarChart
+                  datasets={[{scores:[selC.etr,selC.ict,selC.tcm,selC.dtf,selC.sgt,selC.grp],color:'#2ECC71'}]}
+                  labels={DIMS.map(d=>d.code)} size={200}/>
               </div>
               {DIMS.map(d=>{
-                const v=(sel as any)[d.code.toLowerCase()];
+                const v=(selC as any)[d.code.toLowerCase()]
                 return (
-                  <div key={d.code} style={{marginBottom:'7px'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px',fontSize:'11px'}}>
-                      <span style={{color:'var(--text-muted)'}}>{d.code} <span style={{color:'var(--text-light)',fontSize:'9px'}}>({(d.weight*100).toFixed(0)}%)</span></span>
-                      <span style={{fontWeight:700,color:d.color,fontFamily:'var(--font-mono)'}}>{v}</span>
+                  <div key={d.code} className="mb-2.5">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs text-text-secondary font-medium">{d.code} <span className="text-text-light text-[10px]">({(d.weight*100).toFixed(0)}%)</span></span>
+                      <span className="text-xs font-black font-mono" style={{color:d.color}}>{v}</span>
                     </div>
-                    <div style={{height:'4px',background:'var(--border)',borderRadius:'2px',overflow:'hidden'}}>
-                      <div style={{height:'100%',width:`${v}%`,background:d.color,borderRadius:'2px'}}/>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{width:v+'%',background:d.color}}/>
                     </div>
                   </div>
-                );
+                )
               })}
-              <button onClick={()=>{setCompareSet(p=>p.includes(sel.name)?p:([...p.slice(-3),sel.name]));setTab('compare');}}
-                style={{width:'100%',marginTop:'12px',padding:'9px',background:'var(--primary)',color:'white',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'12px',fontWeight:700,fontFamily:'var(--font-ui)'}}>
-                Compare →
+              <button onClick={()=>{toggleCompare(selC.code);setTab('compare')}}
+                className="w-full mt-4 py-2 text-xs font-bold text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-xl hover:bg-yellow-100 transition-all">
+                {compare.includes(selC.code)?'Remove from Compare':'Add to Compare ⚖'}
               </button>
             </div>
           </div>
         )}
 
-        {tab==='compare' && (
+        {/* COMPARE TAB */}
+        {tab==='compare'&&(
           <div>
-            <div style={{...card,marginBottom:'16px'}}>
-              <div style={{fontSize:'13px',fontWeight:600,color:'var(--text-secondary)',marginBottom:'12px'}}>Select economies (up to 4):</div>
-              <div style={{display:'flex',gap:'7px',flexWrap:'wrap'}}>
-                {GFR.map(c=>{
-                  const idx=compareSet.indexOf(c.name); const isIn=idx!==-1; const col=COMPARE_COLORS[idx%4];
+            <div className="floating-card !p-5 mb-5">
+              <div className="text-sm font-bold text-text-primary mb-3">Select up to 4 economies to compare</div>
+              <div className="flex flex-wrap gap-2">
+                {COUNTRIES.map(c=>{
+                  const idx=compare.indexOf(c.code)
+                  const isIn=idx!==-1
                   return (
-                    <button key={c.name} onClick={()=>setCompareSet(p=>p.includes(c.name)?p.filter(x=>x!==c.name):[...p.slice(-3),c.name])}
-                      style={{display:'flex',alignItems:'center',gap:'6px',padding:'5px 12px',borderRadius:'20px',border:`2px solid ${isIn?col+'60':'var(--border)'}`,background:isIn?`${col}10`:'white',cursor:'pointer',fontSize:'11px',fontWeight:isIn?700:400,color:isIn?col:'var(--text-secondary)',fontFamily:'var(--font-ui)',transition:'all 150ms'}}>
-                      <Flag country={c.flag} size="sm"/> {c.name}
+                    <button key={c.code} onClick={()=>toggleCompare(c.code)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border-2"
+                      style={{borderColor:isIn?COMPARE_COLS[idx]+'60':'#ECF0F1',background:isIn?COMPARE_COLS[idx]+'12':'white',color:isIn?COMPARE_COLS[idx]:'#5A6874'}}>
+                      <CountryFlag code={c.code} size={14}/>
+                      {c.name}
+                      {isIn&&<span className="font-black ml-0.5">#{idx+1}</span>}
                     </button>
-                  );
+                  )
                 })}
               </div>
             </div>
-            {compareCountries.length >= 2 && (
+
+            {compareC.length>=2&&(
               <>
-                <div style={{display:'grid',gridTemplateColumns:'240px 1fr',gap:'16px',marginBottom:'16px'}}>
-                  <div style={card}>
-                    <RadarChart datasets={compareCountries.map((c,i)=>({label:c.name,data:[c.etr,c.ict,c.tcm,c.dtf,c.sgt,c.grp],color:COMPARE_COLORS[i]}))} labels={['ETR','ICT','TCM','DTF','SGT','GRP']} size={210} showLegend/>
-                  </div>
-                  <div style={card}>
-                    <div style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',marginBottom:'14px'}}>Overall GFR Score</div>
-                    {compareCountries.map((c,i)=>(
-                      <div key={c.name} style={{marginBottom:'14px'}}>
-                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
-                          <div style={{display:'flex',alignItems:'center',gap:'8px'}}><Flag country={c.flag} size="md"/><span style={{fontSize:'13px',fontWeight:600}}>{c.name}</span></div>
-                          <span style={{fontSize:'22px',fontWeight:900,color:COMPARE_COLORS[i],fontFamily:'var(--font-mono)'}}>{c.gfr}</span>
-                        </div>
-                        <div style={{height:'10px',background:'var(--bg-subtle)',borderRadius:'5px',overflow:'hidden'}}>
-                          <div style={{height:'100%',width:`${c.gfr}%`,background:COMPARE_COLORS[i],borderRadius:'5px',transition:'width 0.8s ease'}}/>
-                        </div>
-                      </div>
-                    ))}
-                    <div style={{display:'grid',gridTemplateColumns:`repeat(${DIMS.length},1fr)`,gap:'8px',marginTop:'16px'}}>
-                      {DIMS.map(d=>{
-                        const vals=compareCountries.map(c=>(c as any)[d.code.toLowerCase()]);
-                        const best=Math.max(...vals);
-                        return (
-                          <div key={d.code}>
-                            <div style={{fontSize:'9px',fontWeight:700,color:d.color,marginBottom:'6px',textAlign:'center',fontFamily:'var(--font-mono)'}}>{d.code}</div>
-                            {vals.map((v,ci)=>(
-                              <div key={ci} style={{height:'20px',display:'flex',alignItems:'center',marginBottom:'3px'}}>
-                                <div style={{flex:1,height:'6px',background:'var(--bg-subtle)',borderRadius:'3px',overflow:'hidden'}}>
-                                  <div style={{height:'100%',width:`${v}%`,background:COMPARE_COLORS[ci],borderRadius:'3px'}}/>
-                                </div>
-                                <span style={{fontSize:'9px',fontWeight:v===best?900:600,color:COMPARE_COLORS[ci],marginLeft:'4px',minWidth:'24px',fontFamily:'var(--font-mono)'}}>{v===best?'★':''}{v}</span>
-                              </div>
-                            ))}
+                <div className="floating-card !p-5 mb-5">
+                  <h3 className="font-black text-primary-dark mb-5">Radar Comparison — All 6 Dimensions</h3>
+                  <div className="grid grid-cols-[240px_1fr] gap-8 items-center">
+                    <div className="flex flex-col items-center">
+                      <RadarChart
+                        datasets={compareC.map((c,i)=>({scores:[c.etr,c.ict,c.tcm,c.dtf,c.sgt,c.grp],color:COMPARE_COLS[i]}))}
+                        labels={DIMS.map(d=>d.code)} size={230}/>
+                      <div className="flex gap-3 flex-wrap justify-center mt-2">
+                        {compareC.map((c,i)=>(
+                          <div key={c.code} className="flex items-center gap-1.5 text-xs" style={{color:COMPARE_COLS[i]}}>
+                            <div className="w-2.5 h-1 rounded-full" style={{background:COMPARE_COLS[i]}}/>
+                            <CountryFlag code={c.code} size={14}/>{c.name}
                           </div>
-                        );
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      {DIMS.map(dim=>{
+                        const vals=compareC.map(c=>(c as any)[dim.code.toLowerCase()])
+                        const best=Math.max(...vals)
+                        return (
+                          <div key={dim.code}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs font-black font-mono" style={{color:dim.color,minWidth:'32px'}}>{dim.code}</span>
+                              <span className="text-xs text-text-secondary">{dim.name} ({(dim.weight*100).toFixed(0)}%)</span>
+                            </div>
+                            <div className="flex gap-3">
+                              {vals.map((v,i)=>(
+                                <div key={i} className="flex-1 text-center">
+                                  <div className="w-full h-10 bg-gray-100 rounded-lg overflow-hidden flex items-end">
+                                    <div className="w-full rounded-t-lg transition-all"
+                                      style={{height:`${v/100*40}px`,background:COMPARE_COLS[i],boxShadow:v===best?`0 0 8px ${COMPARE_COLS[i]}60`:'none'}}/>
+                                  </div>
+                                  <div className="flex items-center justify-center gap-1 mt-1">
+                                    <CountryFlag code={compareC[i].code} size={10}/>
+                                    <span className="text-[10px] font-black font-mono" style={{color:v===best?COMPARE_COLS[i]:'#5A6874'}}>
+                                      {v===best?`★${v}`:v}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )
                       })}
                     </div>
                   </div>
                 </div>
+
+                {/* Scorecard table */}
+                <div className="floating-card !p-0 overflow-hidden">
+                  <div className="px-5 py-3 bg-background-offwhite border-b border-border-light text-xs font-black text-text-light uppercase tracking-wider">Scorecard — All Dimensions</div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-collapse">
+                      <thead>
+                        <tr className="bg-background-offwhite/50">
+                          <th className="px-4 py-3 text-left text-xs font-black text-text-light uppercase">Dimension</th>
+                          {compareC.map((c,i)=>(
+                            <th key={c.code} className="px-4 py-3 text-center text-xs font-black uppercase" style={{color:COMPARE_COLS[i]}}>
+                              <div className="flex flex-col items-center gap-1">
+                                <CountryFlag code={c.code} size={20}/>
+                                {c.name}
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[{code:'GFR',name:'GFR Total',weight:1},...DIMS].map(dim=>{
+                          const vals=compareC.map(c=>(c as any)[dim.code.toLowerCase()])
+                          const best=Math.max(...vals)
+                          return (
+                            <tr key={dim.code} className="border-t border-border-light hover:bg-background-offwhite/50">
+                              <td className="px-4 py-3 text-xs font-semibold text-text-secondary">{(dim as any).name||dim.code} {dim.weight<1&&<span className="text-text-light">({((dim as any).weight*100).toFixed(0)}%)</span>}</td>
+                              {vals.map((v,ci)=>(
+                                <td key={ci} className="px-4 py-3 text-center font-mono font-black" style={{fontSize:dim.code==='GFR'?'17px':'13px',color:v===best?COMPARE_COLS[ci]:sc(v)}}>
+                                  {v===best?`★ ${v}`:v}
+                                </td>
+                              ))}
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </>
+            )}
+            {compareC.length<2&&(
+              <div className="floating-card text-center py-16">
+                <div className="text-4xl mb-4">⚖</div>
+                <div className="font-bold text-text-primary text-lg mb-2">Select at least 2 economies above</div>
+                <div className="text-text-secondary text-sm">Radar overlay, bar charts, and full scorecard will appear</div>
+              </div>
             )}
           </div>
         )}
 
-        {tab==='methodology' && (
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'16px'}}>
-            {DIMS.map(d=>(
-              <div key={d.code} style={{...card,borderTop:`4px solid ${d.color}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}>
-                  <span style={{fontSize:'20px',fontWeight:900,color:d.color,fontFamily:'var(--font-mono)'}}>{d.code}</span>
-                  <span style={{fontSize:'12px',fontWeight:800,padding:'3px 10px',borderRadius:'12px',background:`${d.color}15`,color:d.color}}>{(d.weight*100).toFixed(0)}%</span>
+        {/* METHODOLOGY TAB */}
+        {tab==='method'&&(
+          <div className="floating-card">
+            <h2 className="text-2xl font-black text-primary-dark mb-3">GFR Methodology</h2>
+            <p className="text-text-secondary mb-6 leading-relaxed max-w-2xl">The Global Future Readiness Ranking measures an economy's preparedness to attract and sustain FDI over the medium-to-long term. Designed to be comparable in rigour to IMD WCR, Kearney GCR, and the World Happiness Report.</p>
+            <div className="grid grid-cols-3 gap-4">
+              {DIMS.map(d=>(
+                <div key={d.code} className="p-5 rounded-2xl border-l-4" style={{borderLeftColor:d.color,background:`${d.color}06`}}>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xl font-black font-mono" style={{color:d.color}}>{d.code}</span>
+                    <span className="text-sm font-black px-3 py-1 rounded-full" style={{background:`${d.color}15`,color:d.color}}>{(d.weight*100).toFixed(0)}%</span>
+                  </div>
+                  <div className="font-bold text-primary-dark mb-2">{d.name}</div>
+                  <div className="text-xs text-text-secondary leading-relaxed">{d.desc}</div>
                 </div>
-                <div style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)'}}>{d.name}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
-      <Footer/>
     </div>
-  );
+  )
 }

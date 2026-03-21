@@ -108,7 +108,7 @@ export default function SettingsPage() {
             <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'6px',color:'var(--accent-green)'}}>Active</span>
           </Row>
           <Row label="API Access" sub="1,000 calls/day · api.fdimonitor.org">
-            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.2)',borderRadius:'6px',color:'#3498DB'}}>Enabled</span>
+            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid #ECF0F1,0.2)',borderRadius:'6px',color:'#3498DB'}}>Enabled</span>
           </Row>
           <Row label="Change Password">
             <button style={{padding:'6px 14px',background:'var(--bg-subtle)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'var(--text-secondary)',fontFamily:'var(--font-ui)'}}>Update</button>

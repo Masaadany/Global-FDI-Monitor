@@ -111,7 +111,7 @@ export default function AboutPage(){
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'12px'}}>
             {AGENTS.map(({id,name,desc},i)=>(
-              <div key={id} style={{padding:'18px',background:'white',border:'1px solid rgba(0,180,216,0.08)',borderRadius:'10px',display:'flex',gap:'12px',alignItems:'flex-start'}}>
+              <div key={id} style={{padding:'18px',background:'white',border:'1px solid #ECF0F1,0.08)',borderRadius:'10px',display:'flex',gap:'12px',alignItems:'flex-start'}}>
                 <div style={{width:'36px',height:'36px',borderRadius:'8px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.15)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'10px',fontWeight:900,color:'var(--accent-green)',fontFamily:'var(--font-mono)'}}>{i+1}</div>
                 <div>
                   <div style={{fontSize:'9px',fontWeight:800,color:'#2ECC71',marginBottom:'2px',letterSpacing:'0.08em',fontFamily:'var(--font-mono)'}}>{id}</div>
