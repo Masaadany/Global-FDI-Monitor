@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
-import type { ReactNode } from 'react';
-
 export const metadata: Metadata = {
-  title: 'FAQ — FDI Monitor',
-  description: 'Frequently asked questions about FDI Monitor. Signals, GFR assessments, reports, API, and trial.',
+  title: 'FAQ Global FDI Monitor | Global FDI Monitor',
+  description: 'Platform pricing data technical answers — powered by GOSA methodology and 304+ official sources.',
+  openGraph: { title: 'FAQ Global FDI Monitor | Global FDI Monitor', description: 'Platform pricing data technical answers' },
 };
-
-export default function Layout({ children }: { children: ReactNode }) {
-  return <>{children}</>;
-}
+export default function Layout({ children }: { children: React.ReactNode }) { return <>{children}</>; }

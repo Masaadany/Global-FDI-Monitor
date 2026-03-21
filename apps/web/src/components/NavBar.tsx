@@ -17,6 +17,8 @@ const NAV_ITEMS = [
       { label: '🏆 GFR Ranking',       href: '/gfr',        desc: '25 economies scored' },
       { label: '🌍 Country Profiles',  href: '/country/MYS',desc: '20+ country deep-dives' },
       { label: '🏭 Sector Monitor',    href: '/sectors',    desc: '9 sectors tracked' },
+      { label: '🔀 Corridor Intel',    href: '/corridors',  desc: '12 bilateral routes' },
+      { label: '⭐ Watchlists',         href: '/watchlists', desc: 'Track economies' },
       { label: '📊 Impact Analysis',   href: '/investment-analysis?tab=impact', desc: 'Model ROI' },
     ],
   },

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { TrialProvider } from '@/components/TrialGate';
+import CookieConsent from '@/components/CookieConsent';
 
 export const metadata: Metadata = {
   title: 'Global FDI Monitor — Intelligence Platform',
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{ background:'#020c14', color:'#e8f4f8', minHeight:'100vh' }}>
         <TrialProvider>
           {children}
+          <CookieConsent/>
         </TrialProvider>
       </body>
     </html>

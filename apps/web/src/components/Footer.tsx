@@ -5,7 +5,8 @@ const COLS = {
   Platform:[
     {l:'Dashboard',h:'/dashboard'},{l:'Investment Analysis',h:'/investment-analysis'},
     {l:'Market Signals',h:'/signals'},{l:'GFR Ranking',h:'/gfr'},
-    {l:'Mission Planning',h:'/pmp'},{l:'PDF Reports',h:'/reports'},
+    {l:'Sector Monitor',h:'/sectors'},{l:'Corridor Intel',h:'/corridors'},
+    {l:'Watchlists',h:'/watchlists'},{l:'PDF Reports',h:'/reports'},
   ],
   Intelligence:[
     {l:'Sector Monitor',h:'/sectors'},
@@ -15,8 +16,8 @@ const COLS = {
   ],
   Company:[
     {l:'About Us',h:'/about'},{l:'Pricing',h:'/pricing'},
-    {l:'Contact',h:'/contact'},{l:'Privacy Policy',h:'/privacy'},
-    {l:'Terms of Service',h:'/terms'},{l:'Admin',h:'/admin'},
+    {l:'Contact',h:'/contact'},{l:'FAQ',h:'/faq'},
+    {l:'Privacy Policy',h:'/privacy'},{l:'Terms of Service',h:'/terms'},
   ],
 };
 

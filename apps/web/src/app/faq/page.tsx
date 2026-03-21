@@ -1,136 +1,79 @@
 'use client';
 import { useState } from 'react';
-import { HelpCircle, ChevronDown, ChevronRight, BookOpen, Users, Globe, Zap, Shield } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
-import PreviewGate from '@/components/PreviewGate';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 
-const FAQ_SECTIONS = [
-  {
-    id:'platform', icon:Globe, label:'Platform & Access',
-    items:[
-      {q:'What is Global FDI Monitor?', a:'Global FDI Monitor is an AI-powered investment intelligence platform covering 215 economies. It provides real-time FDI signals, GFR (Global Future Readiness) assessments, Investment Analysis with 4-layer scoring methodology, mission planning tools, and PDF intelligence reports. It is designed for investment promotion agencies, sovereign wealth funds, government bodies, and strategy consultants.'},
-      {q:'What does the free trial include?', a:'The free trial gives you full platform access for 7 calendar days, including Investment Analysis, live signals, GFR assessment, benchmarking, and the dashboard. It includes 2 PDF report downloads and 3 search or result views. The first limit to fire triggers a transition to read-only mode, after which you are prompted to request a demo.'},
-      {q:'What happens when my trial expires?', a:'When your trial expires (either 7 days, 2 reports used, or 3 searches completed — whichever comes first), your account enters read-only mode. All interactive features including filters, search, downloads, and report generation are disabled. You are redirected to the demo request page where submitting a request lifts the restriction for your session.'},
-      {q:'Is there an Arabic version of the platform?', a:'Yes. The platform supports Arabic (RTL) interface accessible at /ar. Additionally, reports can be generated in Arabic and English. Our AI agent supports 10 official languages including Arabic, Chinese, French, Spanish, German, Japanese, Korean, Portuguese, and Russian.'},
-    ],
-  },
-  {
-    id:'intelligence', icon:Zap, label:'Signal Intelligence',
-    items:[
-      {q:'What is the Signal Confidence Index (SCI)?', a:'The SCI is a 0–100 score assigned to every FDI signal based on five weighted components: Source Credibility (25%), Verification Status (20%), Extraction Accuracy (20%), Temporal Freshness (20%), and Publish Reliability (15%). Signals scoring ≥90 receive PLATINUM grade, ≥75 GOLD, ≥60 SILVER, ≥40 BRONZE.'},
-      {q:'What is Z3 verification?', a:'Z3 is a formal proof and constraint-solving system developed by Microsoft Research. We apply 14 Z3 constraint sets to PLATINUM and GOLD signals. Only records passing all constraints receive a SHA-256 provenance hash, which acts as a tamper-evident digital seal guaranteeing the signal has not been altered since verification.'},
-      {q:'How often are signals updated?', a:'Signals are ingested and processed continuously with an average latency below 2 seconds from source publication. The live signal feed refreshes every 2 seconds. GFR assessment scores are recalculated quarterly, and sector/zone indicator scores are updated monthly.'},
-      {q:'What types of FDI signals are covered?', a:'We cover: Greenfield FDI (new capital investments creating new operations), M&A activity (mergers and acquisitions), Expansion FDI (reinvestment in existing operations), Joint Ventures, Venture Capital and Private Equity investments, and Real Estate investments with economic significance.'},
-    ],
-  },
-  {
-    id:'analysis', icon:BookOpen, label:'Investment Analysis',
-    items:[
-      {q:'What is the Global Opportunity Score Analysis?', a:'The Global Opportunity Score Analysis (GOSA) is our unified investment attractiveness score computed using four layers: (30%) Doing Business Indicators, (20%) Sector Indicators, (25%) Special Investment Zone Indicators, and (25%) Market Intelligence Matrix. Scores range from 0–100: Top Tier (80–100), High Tier (60–79), Developing Tier (below 60).'},
-      {q:'What are the four analysis layers?', a:'Layer 1: Doing Business Indicators — 10 World Bank indicators normalized via Distance-to-Frontier method. Layer 2: Sector Indicators — regulations, incentives, labor, infrastructure, export potential. Layer 3: Special Investment Zone Indicators — land availability, occupancy, infrastructure, zone incentives. Layer 4: Market Intelligence Matrix — signals from IFIs, trade bodies, central banks, company announcements.'},
-      {q:'How does the Benchmark tool work?', a:'The Benchmark tab in Investment Analysis allows you to select 2–5 economies and compare them side-by-side across all four scoring layers. It includes a horizontal bar chart for overall scores, a detailed table of all 10 Doing Business indicators per country, and optional sector-specific Layer 2 comparison bars when a sector is selected.'},
-      {q:'What is Impact Analysis?', a:'Impact Analysis models the economic impact of a hypothetical investment scenario. You select a country, sector, investment size ($50M–$500M+), and specific investment zone. The tool projects: GDP contribution, direct and indirect jobs created, tax savings, time to operation, regulatory risk, and projected ROI. A sensitivity analysis shows ROI across different investment sizes.'},
-    ],
-  },
-  {
-    id:'reports', icon:Shield, label:'Reports & Data',
-    items:[
-      {q:'What PDF report types are available?', a:'We offer 10 report types: Country Intelligence Report, Bilateral Corridor Report, Sector Deep Dive, Signal Intelligence Brief, GFR Country Comparison, Mission Planning Dossier, Foresight 2050 Report, Competitive Position Brief, Watchlist Intelligence Update, and Custom Report Request. Each is 6–45 pages and includes an AI-generated cover image and investment recommendation.'},
-      {q:'Are reports watermarked?', a:'Yes. All PDF reports include dynamic watermarks containing your email address, generation timestamp, IP address, and a unique reference code (format: GFM-RPT-XXXXXX). Reports are protected against copying, printing, and screenshots. Download activity is logged in our audit trail. Redistribution of watermarked reports violates our Terms of Service.'},
-      {q:'What data sources does the platform use?', a:'We use 300+ sources across 4 tiers: T1 Primary (IMF WEO, UNCTAD WIR, World Bank WDI, OECD FDI Stats), T2 Research (fDi Markets, IMD WCR, GII), T3 Intelligence Feeds (news agencies, regulatory filings), and T4 Supplementary (industry reports, zone authority data). Every data point carries a GFM-SRC-XXXXXX reference code.'},
-      {q:'How do I access the API?', a:'API access is available on Professional ($9,588/year, 4,800 credits) and Enterprise (unlimited credits) plans. Your API key is available in Settings > API Access. Full documentation is at /api-docs covering 107 endpoints across signals, GFR assessment, investment analysis, corridor intelligence, reports, and admin. Rate limit: 100 requests/minute.'},
-    ],
-  },
-  {
-    id:'subscription', icon:Users, label:'Subscription & Support',
-    items:[
-      {q:'What is included in the Professional plan?', a:'Professional ($9,588/year) includes: unlimited report downloads, unlimited searches and data exports, full Investment Analysis suite, Mission Planning Dossier generation, API access (4,800 credits/year), 3 user seats, data export (CSV/Excel), priority email support, and access to all 107 API endpoints.'},
-      {q:'What is Enterprise pricing?', a:'Enterprise pricing is custom and negotiated based on user count, API usage volume, and integration requirements. Enterprise includes everything in Professional plus: unlimited user seats, unlimited API credits, white-label reports, custom report templates, dedicated success manager, SLA/uptime guarantee, on-premise deployment option, and live onboarding sessions. Contact us at /contact.'},
-      {q:'How do I request a platform demo?', a:'Visit /contact or click any "Request Demo" button. Fill in your name, email, organisation, and use case. Our team will respond within 24 hours to schedule a 45-minute personalised demonstration covering the modules most relevant to your use case. Submitting the form also lifts the trial read-only restriction for your session.'},
-    ],
-  },
+const FAQS = [
+  { cat:'Platform',q:'What is Global FDI Monitor?',a:'Global FDI Monitor is the world\'s most advanced FDI intelligence platform. We combine World Bank Doing Business methodology (L1), sector-level indicators (L2), special investment zone intelligence (L3), and real-time market signals (L4) to produce a 4-layer GOSA composite score for 215+ economies — updated weekly by our 6-stage AI agent pipeline.'},
+  { cat:'Platform',q:'How is the GOSA score calculated?',a:'GOSA (Global Opportunity Scoring Algorithm) = (0.30 × L1 Doing Business) + (0.20 × L2 Sector) + (0.25 × L3 Investment Zones) + (0.25 × L4 Market Intelligence). Each layer is scored 0-100 using 304+ official T1/T2 government sources. AGT-04 processes all inputs weekly and publishes updated scores every Tuesday.'},
+  { cat:'Platform',q:'How does the GFR Ranking compare to IMD WCR or Kearney GCR?',a:'The Global Future Readiness Ranking is designed to be comparable in methodology and rigour to IMD World Competitiveness Ranking, Kearney Global Cities Report, and the World Happiness Report. It covers 25 economies across 6 weighted dimensions (ETR, ICT, TCM, DTF, SGT, GRP), with transparent weighting and verifiable source attribution.'},
+  { cat:'Platform',q:'How current is the data?',a:'Investment signals update every 2-5 seconds via WebSocket from our live AGT-02 pipeline. GOSA scores and GFR rankings update weekly (every Tuesday at 08:00 GMT). Country economic statistics (GDP, FDI inflows) update quarterly based on official government releases.'},
+  { cat:'Platform',q:'How are signals verified?',a:'Every signal goes through 3 verification stages: (1) AGT-01 harvests raw data from 304+ official T1/T2 sources, (2) AGT-03 applies SHA-256 provenance hashing and deduplication, (3) AGT-02 applies SCI scoring (0-100) based on source authority, timeliness, and investment relevance. Only signals scoring 70+ are published to the feed.'},
+  { cat:'Pricing',q:'Do I need a credit card for the free trial?',a:'No. The 7-day free trial requires no credit card and expires automatically with no charges. The trial includes full platform access with usage limits: 2 PDF report downloads and 3 country profile searches.'},
+  { cat:'Pricing',q:'What does the Professional plan include?',a:'Professional ($9,588/year) includes: unlimited PDF reports, unlimited searches, full API access (1,000 calls/day), weekly Intelligence Brief delivery, mission planning module, benchmark tool, and all 67+ platform pages. Billed annually.'},
+  { cat:'Pricing',q:'Is there an Enterprise plan?',a:'Enterprise plans are custom-priced and include: unlimited API access, white-label PDF reports, custom data integrations, unlimited team seats, dedicated account manager, 99.9% SLA, SSO/SAML, and on-site briefings. Contact info@fdimonitor.org.'},
+  { cat:'Data',q:'Where does the data come from?',a:'All data comes from 304+ official T1/T2 verified sources categorised into 8 groups: International Financial Institutions (18 sources), Investment Promotion Agencies (62), Central Banks (48), Statistical Authorities (44), Special Economic Zone Authorities (38), Trade Databases (42), Rating Agencies (28), and Sector Intelligence Sources (24). See /sources for the full list.'},
+  { cat:'Data',q:'Is the data GDPR compliant?',a:'All data on the platform is derived from publicly available official government sources and does not include personal data. User account data is GDPR compliant — see our Privacy Policy for full details. We use SendGrid, Stripe, and AWS, all GDPR-certified.'},
+  { cat:'Technical',q:'Does the platform have an API?',a:'Yes. The Global FDI Monitor REST API is available on Professional and Enterprise plans. It includes 8 endpoints covering countries, signals, reports, and authentication, plus a WebSocket endpoint for live signal streaming. See /api-docs for full documentation.'},
+  { cat:'Technical',q:'What is the AI agent pipeline?',a:'The platform runs a 6-stage AI agent pipeline: AGT-01 (Data Collection — 304+ sources, 30min cycle), AGT-02 (Signal Detection — SCI scoring), AGT-03 (Verification — SHA-256 provenance), AGT-04 (GOSA Scoring — weekly composite), AGT-05 (GFR Ranking — weekly 25-economy update), AGT-06 (Newsletter — weekly brief generation).'},
 ];
 
-export default function FAQPage() {
-  const [open, setOpen] = useState<string|null>(null);
-  const [section, setSection] = useState('platform');
+const CATS = ['All', ...Array.from(new Set(FAQS.map(f=>f.cat)))];
 
-  const current = FAQ_SECTIONS.find(s=>s.id===section);
-  const total = FAQ_SECTIONS.reduce((s,sec)=>s+sec.items.length, 0);
+export default function FAQPage() {
+  const [open, setOpen] = useState<number|null>(null);
+  const [cat, setCat] = useState('All');
+
+  const filtered = cat === 'All' ? FAQS : FAQS.filter(f=>f.cat===cat);
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <TrialBanner/>
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'40px 24px'}}>
-        <div style={{maxWidth:'1000px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
-              <HelpCircle size={16} color="#74BB65"/>
-              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Help Centre</span>
-            </div>
-            <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'4px'}}>Frequently Asked Questions</h1>
-            <p style={{color:'rgba(226,242,223,0.75)',fontSize:'13px'}}>{total} questions across {FAQ_SECTIONS.length} categories</p>
-          </div>
+      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'48px 24px',textAlign:'center',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
+        <div style={{position:'relative'}}>
+          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:"'Orbitron','Inter',sans-serif"}}>FAQ</div>
+          <h1 style={{fontSize:'28px',fontWeight:900,color:'#e8f4f8',marginBottom:'8px'}}>Frequently Asked Questions</h1>
+          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>Platform · Pricing · Data · Technical</p>
         </div>
-      </section>
-      <div style={{maxWidth:'1000px',margin:'0 auto',padding:'28px 24px',display:'grid',gridTemplateColumns:'200px 1fr',gap:'24px',alignItems:'start'}}>
-        {/* Category nav */}
-        <div style={{position:'sticky',top:'80px',display:'flex',flexDirection:'column',gap:'4px'}}>
-          {FAQ_SECTIONS.map(s=>{
-            const Icon = s.icon;
-            return (
-              <button key={s.id} onClick={()=>{setSection(s.id);setOpen(null);}}
-                style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 14px',borderRadius:'9px',
-                  border:'none',cursor:'pointer',fontSize:'12px',fontWeight:600,textAlign:'left',
-                  background:section===s.id?'#0A3D62':'white',
-                  color:section===s.id?'white':'#0A3D62',
-                  boxShadow:section===s.id?'0 2px 8px rgba(10,61,98,0.15)':'0 1px 4px rgba(10,61,98,0.06)',
-                  transition:'all 0.15s'}}>
-                <Icon size={14}/>{s.label}
+      </div>
+
+      <div style={{maxWidth:'760px',margin:'0 auto',padding:'36px 24px'}}>
+        {/* Category tabs */}
+        <div style={{display:'flex',gap:'8px',marginBottom:'24px',flexWrap:'wrap'}}>
+          {CATS.map(c => (
+            <button key={c} onClick={()=>setCat(c)}
+              style={{padding:'7px 16px',borderRadius:'20px',border:`1px solid ${cat===c?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.08)'}`,background:cat===c?'rgba(0,255,200,0.08)':'rgba(255,255,255,0.03)',cursor:'pointer',fontSize:'12px',fontWeight:cat===c?700:400,color:cat===c?'#00ffc8':'rgba(232,244,248,0.5)',fontFamily:"'Inter',sans-serif",transition:'all 150ms'}}>
+              {c}
+            </button>
+          ))}
+        </div>
+
+        <div style={{display:'flex',flexDirection:'column',gap:'7px'}}>
+          {filtered.map((faq, i) => (
+            <div key={faq.q} style={{background:'rgba(10,22,40,0.7)',borderRadius:'10px',border:'1px solid rgba(0,180,216,0.1)',overflow:'hidden',transition:'border-color 200ms',borderColor:open===i?'rgba(0,255,200,0.2)':'rgba(0,180,216,0.1)'}}>
+              <button onClick={()=>setOpen(open===i?null:i)}
+                style={{width:'100%',padding:'16px 18px',background:'transparent',border:'none',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',fontFamily:"'Inter',sans-serif"}}>
+                <span style={{fontSize:'14px',fontWeight:600,color:'rgba(232,244,248,0.85)',textAlign:'left'}}>{faq.q}</span>
+                <div style={{display:'flex',alignItems:'center',gap:'10px',flexShrink:0,marginLeft:'12px'}}>
+                  <span style={{fontSize:'9px',fontWeight:800,padding:'2px 7px',borderRadius:'4px',background:'rgba(0,255,200,0.07)',color:'rgba(0,255,200,0.5)',letterSpacing:'0.06em'}}>{faq.cat}</span>
+                  <span style={{fontSize:'18px',color:'rgba(0,255,200,0.5)',transition:'transform 200ms ease',transform:open===i?'rotate(45deg)':'none',lineHeight:1}}>+</span>
+                </div>
               </button>
-            );
-          })}
-          <div style={{marginTop:'16px',padding:'14px',borderRadius:'9px',background:'rgba(116,187,101,0.06)',
-            border:'1px solid rgba(116,187,101,0.2)'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#74BB65',marginBottom:'6px'}}>Still have questions?</div>
-            <Link href="/contact" style={{fontSize:'11px',color:'#0A3D62',fontWeight:600,textDecoration:'none',display:'flex',alignItems:'center',gap:'4px'}}>
-              Contact us <ChevronRight size={11}/>
-            </Link>
-          </div>
+              {open===i && (
+                <div style={{padding:'0 18px 16px',fontSize:'13px',color:'rgba(232,244,248,0.6)',lineHeight:1.8,borderTop:'1px solid rgba(0,255,200,0.06)',paddingTop:'12px'}}>{faq.a}</div>
+              )}
+            </div>
+          ))}
         </div>
-        {/* Q&A */}
-        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-          <div style={{fontSize:'15px',fontWeight:700,color:'#0A3D62',marginBottom:'8px',display:'flex',alignItems:'center',gap:'8px'}}>
-            {current && <current.icon size={16} color="#74BB65"/>}
-            {current?.label}
-          </div>
-          {current?.items.map((item,i)=>{
-            const key = `${section}-${i}`;
-            const isOpen = open===key;
-            return (
-              <div key={key} style={{background:'white',borderRadius:'12px',overflow:'hidden',
-                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',
-                border:isOpen?'1px solid rgba(116,187,101,0.3)':'1px solid rgba(10,61,98,0.07)'}}>
-                <button onClick={()=>setOpen(isOpen?null:key)}
-                  style={{width:'100%',padding:'16px 18px',display:'flex',justifyContent:'space-between',
-                    alignItems:'flex-start',gap:'12px',border:'none',background:'transparent',cursor:'pointer',textAlign:'left'}}>
-                  <span style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',lineHeight:'1.4'}}>{item.q}</span>
-                  <span style={{flexShrink:0,marginTop:'2px'}}>
-                    {isOpen ? <ChevronDown size={16} color="#74BB65"/> : <ChevronRight size={16} color="#696969"/>}
-                  </span>
-                </button>
-                {isOpen && (
-                  <div style={{padding:'0 18px 18px',borderTop:'1px solid rgba(10,61,98,0.06)'}}>
-                    <p style={{fontSize:'13px',color:'#696969',lineHeight:'1.75',margin:'14px 0 0',paddingTop:'2px'}}>{item.a}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+
+        <div style={{marginTop:'32px',padding:'20px',background:'rgba(0,255,200,0.04)',borderRadius:'12px',border:'1px solid rgba(0,255,200,0.1)',textAlign:'center'}}>
+          <div style={{fontSize:'14px',fontWeight:700,color:'#e8f4f8',marginBottom:'6px'}}>Can't find your answer?</div>
+          <div style={{fontSize:'12px',color:'rgba(232,244,248,0.45)',marginBottom:'16px'}}>Our team responds within 24 hours</div>
+          <Link href="/contact" style={{padding:'10px 24px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:800}}>
+            Contact Us →
+          </Link>
         </div>
       </div>
       <Footer/>
