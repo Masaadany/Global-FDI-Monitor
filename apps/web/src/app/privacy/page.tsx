@@ -17,7 +17,7 @@ const SECTIONS = [
   {id:'10', title:'Data Retention', content:`Account data is retained while your account is active and for 90 days after deletion. Usage logs are retained for 12 months. Report audit trails are retained for 5 years for compliance purposes. Anonymised analytics data may be retained indefinitely.`},
   {id:'11', title:'Children\'s Privacy', content:`Global FDI Monitor is intended for professional use only. We do not knowingly collect data from individuals under 18 years of age. If you believe we have collected data from a minor, contact privacy@fdimonitor.org immediately.`},
   {id:'12', title:'Changes to This Policy', content:`We will notify you of material changes to this Privacy Policy via email and a prominent notice on the platform. Continued use of the platform after changes constitutes acceptance of the updated policy.`},
-  {id:'13', title:'Contact', content:`Data Controller: Global FDI Monitor, DIFC, Dubai, UAE. Privacy enquiries: privacy@fdimonitor.org. Security issues: security@fdimonitor.org. Response time: within 5 business days.`},
+  {id:'13', title:'Contact', content:`Data Controller: Global FDI Monitor, Dubai, UAE. Privacy enquiries: privacy@fdimonitor.org. Security issues: security@fdimonitor.org. Response time: within 5 business days.`},
 ];
 
 export default function PrivacyPage() {
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
           display:'flex',alignItems:'center',gap:'10px'}}>
           <Mail size={16} color="#74BB65"/>
           <div style={{fontSize:'13px',color:'#696969'}}>
-            Questions? Contact <a href="mailto:privacy@fdimonitor.org" style={{color:'#0A3D62',fontWeight:700}}>privacy@fdimonitor.org</a> · DIFC, Dubai, UAE
+            Questions? Contact <a href="mailto:privacy@fdimonitor.org" style={{color:'#0A3D62',fontWeight:700}}>privacy@fdimonitor.org</a> · Dubai, UAE
           </div>
         </div>
       </div>

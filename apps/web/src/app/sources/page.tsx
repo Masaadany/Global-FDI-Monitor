@@ -1,195 +1,149 @@
 'use client';
 import { useState } from 'react';
-import { Database, Shield, CheckCircle, Globe, TrendingUp, BarChart3, Search, Filter, Clock } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
 import Footer from '@/components/Footer';
-import SourceBadge from '@/components/SourceBadge';
-import PreviewGate from '@/components/PreviewGate';
-import Link from 'next/link';
 
-const TIERS = [
-  {tier:'T1',label:'Primary Official',color:'#0A3D62',bg:'rgba(10,61,98,0.07)',
-   desc:'Authoritative primary sources: multilateral organisations, central banks, national statistics offices.',
-   count:38, verif:'Z3 + SHA-256',
-   sources:[
-     {name:'IMF World Economic Outlook',     org:'IMF',     freq:'Quarterly',  ref:'GFM-SRC-000001'},
-     {name:'UNCTAD World Investment Report',  org:'UNCTAD',  freq:'Annual',     ref:'GFM-SRC-000002'},
-     {name:'World Bank WDI',                 org:'World Bank',freq:'Annual',   ref:'GFM-SRC-000003'},
-     {name:'World Bank Doing Business',       org:'World Bank',freq:'Annual',   ref:'GFM-SRC-000004'},
-     {name:'OECD FDI Statistics',            org:'OECD',    freq:'Quarterly',  ref:'GFM-SRC-000005'},
-     {name:'OECD National Accounts',         org:'OECD',    freq:'Quarterly',  ref:'GFM-SRC-000006'},
-     {name:'Bank for International Settlements',org:'BIS',  freq:'Quarterly',  ref:'GFM-SRC-000007'},
-     {name:'UN Comtrade',                     org:'UN',      freq:'Monthly',    ref:'GFM-SRC-000008'},
-   ]},
-  {tier:'T2',label:'Research & Analytics',color:'#74BB65',bg:'rgba(116,187,101,0.07)',
-   desc:'Leading research institutions, independent analytical bodies, and major index providers.',
-   count:64, verif:'SHA-256',
-   sources:[
-     {name:'fDi Markets Intelligence',       org:'FT',       freq:'Real-time', ref:'GFM-SRC-000101'},
-     {name:'IMD World Competitiveness',      org:'IMD',      freq:'Annual',    ref:'GFM-SRC-000102'},
-     {name:'Global Innovation Index (GII)',  org:'WIPO',     freq:'Annual',    ref:'GFM-SRC-000103'},
-     {name:'World Justice Project Rule of Law',org:'WJP',   freq:'Annual',    ref:'GFM-SRC-000104'},
-     {name:'Transparency International CPI', org:'TI',       freq:'Annual',    ref:'GFM-SRC-000105'},
-     {name:'Oxford Insights AI Government',  org:'Oxford',   freq:'Annual',    ref:'GFM-SRC-000106'},
-     {name:'ITU Digital Development Index',  org:'ITU',      freq:'Annual',    ref:'GFM-SRC-000107'},
-     {name:'Climate Change Performance Index',org:'CAN',     freq:'Annual',    ref:'GFM-SRC-000108'},
-   ]},
-  {tier:'T3',label:'Intelligence Feeds',color:'#1B6CA8',bg:'rgba(27,108,168,0.07)',
-   desc:'Real-time news agencies, official press releases, regulatory filings, and diplomatic channels.',
-   count:124, verif:'Extraction confidence',
-   sources:[
-     {name:'Reuters FDI Wire',               org:'Reuters',  freq:'Real-time', ref:'GFM-SRC-000201'},
-     {name:'Bloomberg Terminal',             org:'Bloomberg',freq:'Real-time', ref:'GFM-SRC-000202'},
-     {name:'SEC EDGAR Filings',              org:'SEC',      freq:'Real-time', ref:'GFM-SRC-000203'},
-     {name:'European Commission Press',      org:'EC',       freq:'As-issued', ref:'GFM-SRC-000204'},
-     {name:'IPA Official Announcements',     org:'Various',  freq:'As-issued', ref:'GFM-SRC-000205'},
-     {name:'Central Bank Publications',      org:'Various',  freq:'Monthly',   ref:'GFM-SRC-000206'},
-     {name:'Stock Exchange Filings',         org:'Various',  freq:'Real-time', ref:'GFM-SRC-000207'},
-     {name:'Ministry of Investment Releases',org:'Various',  freq:'As-issued', ref:'GFM-SRC-000208'},
-   ]},
-  {tier:'T4',label:'Supplementary',color:'#696969',bg:'rgba(105,105,105,0.06)',
-   desc:'Supplementary intelligence: industry associations, zone authorities, academic research, partner feeds.',
-   count:78, verif:'Manual review',
-   sources:[
-     {name:'WAIPA Member Database',          org:'WAIPA',   freq:'Monthly',   ref:'GFM-SRC-000301'},
-     {name:'SEZ Authority Data',             org:'Various', freq:'Monthly',   ref:'GFM-SRC-000302'},
-     {name:'UNCTAD E-Regulations',           org:'UNCTAD',  freq:'Monthly',   ref:'GFM-SRC-000303'},
-     {name:'Academic Research Database',     org:'Various', freq:'Quarterly', ref:'GFM-SRC-000304'},
-     {name:'Industry Association Reports',   org:'Various', freq:'Quarterly', ref:'GFM-SRC-000305'},
-     {name:'Embassy Trade Reports',          org:'Various', freq:'Monthly',   ref:'GFM-SRC-000306'},
-     {name:'Partner Intelligence Feeds',     org:'Private', freq:'Real-time', ref:'GFM-SRC-000307'},
-     {name:'Corporate Annual Reports',       org:'Various', freq:'Annual',    ref:'GFM-SRC-000308'},
-   ]},
-];
-
-const PIPELINE_STEPS = [
-  {n:1,title:'Ingestion',       color:'#0A3D62',desc:'Automated crawlers scrape 300+ sources every 2s. RSS, API, HTML parsing.'},
-  {n:2,title:'Extraction',      color:'#74BB65',desc:'NLP models extract structured fields: economy, company, amount, sector, type.'},
-  {n:3,title:'Validation',      color:'#1B6CA8',desc:'Schema validation, field completeness check, outlier detection.'},
-  {n:4,title:'Z3 Verification', color:'#0A3D62',desc:'14 Z3 formal constraints for PLATINUM/GOLD candidates. Rejects on failure.'},
-  {n:5,title:'SHA Provenance',  color:'#74BB65',desc:'SHA-256 hash seals verified records. Tamper-evident audit trail.'},
-  {n:6,title:'SCI Scoring',     color:'#1B6CA8',desc:'5-component Signal Confidence Index assigned. Grade assigned PLATINUM–BRONZE.'},
+const SOURCE_CATEGORIES = [
+  { cat:'International Financial Institutions', count:18, color:'#2ecc71', sources:[
+    'World Bank Group — Doing Business / IFC','IMF — World Economic Outlook','OECD — Investment Policy Reviews',
+    'Asian Development Bank — FDI Statistics','African Development Bank','Inter-American Development Bank',
+    'European Bank for Reconstruction and Development','Islamic Development Bank','World Trade Organization',
+    'UNCTAD — World Investment Report','UNIDO — Investment Statistics','ILO — Labour Standards',
+    'UN Comtrade — Trade Statistics','FAO — Agricultural Investment','WHO — Health Sector Data',
+    'UNESCO — Education Statistics','IAEA — Energy Investment','ICAO — Aviation Data',
+  ]},
+  { cat:'Investment Promotion Agencies', count:62, color:'#3498db', sources:[
+    'MITI Malaysia — Malaysian Investment Development Authority','Thailand BOI — Board of Investment',
+    'Vietnam MPI — Ministry of Planning and Investment','Indonesia BKPM — Investment Coordinating Board',
+    'MISA Saudi Arabia — Ministry of Investment','UAE ADIO — Abu Dhabi Investment Office',
+    'DIFC — Dubai International Financial Centre','Singapore EDB — Economic Development Board',
+    'India Invest India','Korea KOTRA','Japan JETRO','Germany GTAI','UK DBT — Dept. for Business and Trade',
+    'France Business France','Netherlands RVO','Canada ITC — Investment Trade Canada',
+    'Australia Austrade','New Zealand NZTE','Morocco AMDIE','Egypt GAFI',
+    'Ghana GIB','Rwanda RDB','Kenya KenInvest','Nigeria NIPC','South Africa SARS','Côte d\'Ivoire CEPICI',
+    'Mauritius BOI','Ethiopia EIC','Tanzania TIC','Uganda UIA',
+  ]},
+  { cat:'Central Banks & Finance Ministries', count:48, color:'#9b59b6', sources:[
+    'Bank Negara Malaysia','Bank of Thailand','State Bank of Vietnam','Bank Indonesia',
+    'Saudi Central Bank SAMA','UAE Central Bank','Central Bank Singapore MAS',
+    'Reserve Bank of India RBI','Bank of Korea','Bank of Japan','Bank of England',
+    'European Central Bank','Federal Reserve (US)','Peoples Bank of China',
+    'Bank Al-Maghrib (Morocco)','Central Bank Egypt','South African Reserve Bank',
+    'Brazilian Central Bank','Central Bank of Russia',
+  ]},
+  { cat:'Statistical Authorities', count:44, color:'#f1c40f', sources:[
+    'Malaysia DOSM','Thailand NSO','Vietnam GSO','Indonesia BPS','Saudi GaStat',
+    'UAE Federal Competitiveness & Statistics Authority','Singapore Statistics','India MoSPI',
+    'Korea Statistics Korea','Japan Statistics Bureau','UK ONS','Eurostat','US BEA',
+    'OECD.Stat','UN Statistics Division','World Bank Data','IMF Data',
+  ]},
+  { cat:'Special Economic Zone Authorities', count:38, color:'#e67e22', sources:[
+    'Penang Development Corporation (Malaysia)','Thailand EEC Office','Batam Indonesia Free Zone Authority',
+    'KAEC King Abdullah Economic City','NEOM Authority','JAFZA Jebel Ali Free Zone',
+    'Singapore JTC — Jurong Town Corporation','Tanger Med (Morocco)',
+    'Casablanca Finance City','Shenzhen Special Economic Zone',
+    'Subic Bay Freeport Zone (Philippines)','SEZ Vietnam — Ministry of Planning',
+  ]},
+  { cat:'Trade & Commerce Databases', count:42, color:'#2ecc71', sources:[
+    'ITC Trade Map — International Trade Centre','UN Comtrade','WTO Trade Statistics',
+    'ASEAN Trade Statistics','Arab Trade Finance Program','ECOWAS Trade Statistics',
+    'US Census Bureau — Trade Data','EU Eurostat Trade','Japan METI Trade Statistics',
+    'China MOFCOM FDI Statistics','India DPIIT FDI Statistics',
+  ]},
+  { cat:'Rating Agencies & Index Providers', count:28, color:'#3498db', sources:[
+    'Moody\'s Sovereign Ratings','S&P Global Ratings','Fitch Ratings',
+    'World Economic Forum — Global Competitiveness','Heritage Foundation — Economic Freedom',
+    'Transparency International — Corruption Perceptions','Economist Intelligence Unit',
+    'Political Risk Services — ICRG','Coface Country Risk','Euler Hermes Risk',
+    'Oxford Economics','Capital Economics','MSCI Market Classification',
+  ]},
+  { cat:'Sector Intelligence Sources', count:24, color:'#9b59b6', sources:[
+    'IEA — International Energy Agency (Renewables/Energy)','IRENA — International Renewable Energy Agency',
+    'GSMA Intelligence (Telecom)','IATA — Air Transport Statistics','ISA — International Solar Alliance',
+    'OPEC — Oil & Gas Statistics','BloombergNEF (EV/Clean Energy)','IDC (Technology)',
+    'Gartner (Technology Markets)','McKinsey Global Institute','BCG Strategy Institute',
+    'PwC Global Investment Report','Deloitte FDI Intelligence',
+  ]},
 ];
 
 export default function SourcesPage() {
-  const [activeTier, setActiveTier] = useState('T1');
-  const [search, setSearch] = useState('');
+  const [expanded, setExpanded] = useState<number|null>(null);
+  const [filter, setFilter] = useState('ALL');
 
-  const current = TIERS.find(t=>t.tier===activeTier);
-  const allSources = current?.sources.filter(s=>!search||s.name.toLowerCase().includes(search.toLowerCase())) || [];
+  const cats = filter==='ALL' ? SOURCE_CATEGORIES : SOURCE_CATEGORIES.filter(c=>c.cat.toLowerCase().includes(filter.toLowerCase()));
+  const totalSources = SOURCE_CATEGORIES.reduce((a,c)=>a+c.count,0);
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
-      <NavBar/><TrialBanner/>
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'40px 24px'}}>
-        <div style={{maxWidth:'1200px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:'16px'}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'8px'}}>
-              <Database size={16} color="#74BB65"/>
-              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em',textTransform:'uppercase'}}>Data Sources</span>
-            </div>
-            <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'6px'}}>Source Registry</h1>
-            <p style={{color:'rgba(226,242,223,0.8)',fontSize:'13px'}}>
-              304 verified sources · 4-tier hierarchy · Z3 + SHA-256 verification · GFM-SRC reference codes
-            </p>
-          </div>
-          <div style={{display:'flex',gap:'18px'}}>
-            {[['304','Total Sources'],['T1–T4','Tiers'],['Z3','Top Tier'],['100%','Cited']].map(([v,l])=>(
-              <div key={l} style={{textAlign:'center'}}>
-                <div style={{fontSize:'18px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
-                <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)'}}>{l}</div>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+      <NavBar/>
+      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)',padding:'24px',borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
+        <div style={{maxWidth:'1100px',margin:'0 auto'}}>
+          <div style={{fontSize:'10px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.12em',marginBottom:'6px'}}>DATA SOURCES</div>
+          <h1 style={{fontSize:'24px',fontWeight:900,color:'white',marginBottom:'8px'}}>Intelligence Source Library</h1>
+          <p style={{fontSize:'13px',color:'rgba(255,255,255,0.6)',marginBottom:'16px'}}>
+            {totalSources}+ verified official sources · SHA-256 provenance tracking · Updated weekly by AGT-01 Data Collection Agent
+          </p>
+          <div style={{display:'flex',gap:'14px',flexWrap:'wrap'}}>
+            {[['304+','Total Sources'],['8','Source Categories'],['Weekly','Update Frequency'],['SHA-256','Verification']].map(([v,l])=>(
+              <div key={l} style={{padding:'8px 14px',background:'rgba(255,255,255,0.07)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.1)'}}>
+                <span style={{fontSize:'16px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{v} </span>
+                <span style={{fontSize:'11px',color:'rgba(255,255,255,0.5)'}}>{l}</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'flex',flexDirection:'column',gap:'20px'}}>
-        {/* Tier cards */}
-        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
-          {TIERS.map(t=>(
-            <div key={t.tier} onClick={()=>setActiveTier(t.tier)}
-              style={{background:activeTier===t.tier?`linear-gradient(135deg,${t.color} 0%,${t.color}CC 100%)`:'white',
-                borderRadius:'12px',padding:'18px',cursor:'pointer',
-                boxShadow:activeTier===t.tier?`0 8px 24px ${t.color}30`:'0 2px 8px rgba(10,61,98,0.06)',
-                border:activeTier===t.tier?'none':'1px solid rgba(10,61,98,0.07)',transition:'all 0.2s'}}>
-              <div style={{display:'flex',justifyContent:'space-between',marginBottom:'8px'}}>
-                <span style={{fontSize:'14px',fontWeight:900,
-                  color:activeTier===t.tier?'white':t.color,fontFamily:'monospace'}}>{t.tier}</span>
-                <span style={{fontSize:'11px',fontWeight:800,
-                  color:activeTier===t.tier?'rgba(255,255,255,0.7)':'#696969'}}>{t.count} sources</span>
+      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'24px'}}>
+        {/* Methodology note */}
+        <div style={{background:'white',borderRadius:'14px',border:'1px solid rgba(46,204,113,0.15)',padding:'18px 22px',marginBottom:'20px'}}>
+          <div style={{fontSize:'12px',fontWeight:700,color:'#2ecc71',marginBottom:'6px'}}>SOURCE VERIFICATION METHODOLOGY</div>
+          <p style={{fontSize:'13px',color:'#2c3e50',lineHeight:'1.7',margin:0}}>
+            All sources are verified by AGT-03 Verification Agent using SHA-256 provenance hashing. Sources are classified as T1 (official government/IFI), T2 (multilateral organizations), or T3 (commercial intelligence). Only T1 and T2 sources contribute to GOSA scoring. T3 sources supplement the Market Intelligence Matrix (L4 layer). Every signal includes its source, timestamp, and verification hash.
+          </p>
+        </div>
+
+        {/* Category cards */}
+        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+          {SOURCE_CATEGORIES.map(({cat,count,color,sources},i)=>(
+            <div key={cat} style={{background:'white',borderRadius:'14px',border:'1px solid rgba(26,44,62,0.08)',overflow:'hidden'}}>
+              <div onClick={()=>setExpanded(expanded===i?null:i)}
+                style={{padding:'16px 20px',cursor:'pointer',display:'flex',alignItems:'center',gap:'14px'}}>
+                <div style={{width:'44px',height:'44px',borderRadius:'10px',background:`${color}12`,border:`1px solid ${color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <span style={{fontSize:'20px',fontWeight:900,color,fontFamily:"'JetBrains Mono',monospace"}}>{count}</span>
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:'14px',fontWeight:700,color:'#1a2c3e'}}>{cat}</div>
+                  <div style={{fontSize:'11px',color:'#7f8c8d',marginTop:'2px'}}>{count} official sources · T1/T2 verified</div>
+                </div>
+                <div style={{display:'flex',gap:'4px',flexWrap:'wrap',justifyContent:'flex-end',maxWidth:'300px'}}>
+                  {sources.slice(0,3).map(s=>(
+                    <span key={s} style={{fontSize:'10px',padding:'2px 8px',background:'rgba(26,44,62,0.05)',borderRadius:'10px',color:'#7f8c8d',whiteSpace:'nowrap'}}>{s.split(' — ')[0].split(' — ')[0]}</span>
+                  ))}
+                  {count>3&&<span style={{fontSize:'10px',color:'#7f8c8d'}}>+{count-3} more</span>}
+                </div>
+                <span style={{fontSize:'18px',color:'#7f8c8d',flexShrink:0,marginLeft:'10px'}}>{expanded===i?'−':'+'}</span>
               </div>
-              <div style={{fontSize:'13px',fontWeight:700,
-                color:activeTier===t.tier?'white':'#0A3D62',marginBottom:'5px'}}>{t.label}</div>
-              <div style={{fontSize:'11px',lineHeight:'1.5',
-                color:activeTier===t.tier?'rgba(255,255,255,0.8)':'#696969'}}>{t.desc.slice(0,80)}…</div>
+              {expanded===i && (
+                <div style={{borderTop:'1px solid rgba(26,44,62,0.06)',padding:'16px 20px'}}>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px'}}>
+                    {sources.map(s=>(
+                      <div key={s} style={{padding:'8px 12px',background:'rgba(26,44,62,0.02)',borderRadius:'8px',border:'1px solid rgba(26,44,62,0.06)',fontSize:'12px',color:'#2c3e50',display:'flex',alignItems:'center',gap:'6px'}}>
+                        <span style={{width:'6px',height:'6px',borderRadius:'50%',background:color,flexShrink:0}}/>
+                        {s}
+                      </div>
+                    ))}
+                    {count>sources.length && (
+                      <div style={{padding:'8px 12px',background:'rgba(26,44,62,0.02)',borderRadius:'8px',border:'1px dashed rgba(26,44,62,0.12)',fontSize:'12px',color:'#7f8c8d',textAlign:'center',gridColumn:'span 1'}}>
+                        +{count-sources.length} additional sources
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
-
-        {/* Source list */}
-        {current && (
-          <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-            <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-              <Search size={13} color="#696969"/>
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter sources…"
-                style={{padding:'7px 12px',borderRadius:'7px',border:'1px solid rgba(10,61,98,0.15)',
-                  fontSize:'12px',outline:'none',color:'#000',background:'white',width:'200px'}}/>
-              <div style={{marginLeft:'8px',fontSize:'12px',color:'#696969'}}>
-                Verification: <b style={{color:current.color}}>{current.verif}</b>
-              </div>
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'10px'}}>
-              {allSources.map(src=>(
-                <div key={src.ref} style={{display:'flex',gap:'12px',alignItems:'flex-start',padding:'14px',
-                  background:'white',borderRadius:'10px',boxShadow:'0 2px 8px rgba(10,61,98,0.05)',
-                  border:'1px solid rgba(10,61,98,0.06)'}}>
-                  <div style={{width:'8px',height:'8px',borderRadius:'50%',flexShrink:0,
-                    background:current.color,marginTop:'5px'}}/>
-                  <div style={{flex:1}}>
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'8px'}}>
-                      <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>{src.name}</div>
-                      <div style={{display:'flex',gap:'5px',alignItems:'center',flexShrink:0}}>
-                        <span style={{fontSize:'10px',color:'#696969'}}>{src.freq}</span>
-                        <SourceBadge source={src.name} date="2026" accessed="20 Mar 2026" refCode={src.ref}>
-                          <span style={{fontSize:'10px',fontWeight:700,padding:'1px 6px',borderRadius:'6px',
-                            background:`${current.color}10`,color:current.color,cursor:'default'}}>
-                            {src.ref.split('-').pop()}
-                          </span>
-                        </SourceBadge>
-                      </div>
-                    </div>
-                    <div style={{fontSize:'11px',color:'#696969',marginTop:'2px'}}>{src.org}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pipeline */}
-        <PreviewGate feature="full_profile">
-          <div className="gfm-card" style={{padding:'24px'}}>
-            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
-              <Shield size={14} color="#74BB65"/> 6-Step Verification Pipeline
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px'}}>
-              {PIPELINE_STEPS.map(step=>(
-                <div key={step.n} style={{textAlign:'center',padding:'14px 10px',borderRadius:'10px',
-                  background:`${step.color}05`,border:`1px solid ${step.color}15`}}>
-                  <div style={{width:'32px',height:'32px',borderRadius:'50%',background:step.color,
-                    color:'white',display:'flex',alignItems:'center',justifyContent:'center',
-                    fontSize:'13px',fontWeight:800,margin:'0 auto 8px'}}>
-                    {step.n}
-                  </div>
-                  <div style={{fontSize:'12px',fontWeight:700,color:step.color,marginBottom:'5px'}}>{step.title}</div>
-                  <div style={{fontSize:'10px',color:'#696969',lineHeight:'1.4'}}>{step.desc}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </PreviewGate>
       </div>
       <Footer/>
     </div>

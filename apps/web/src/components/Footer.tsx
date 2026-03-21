@@ -1,61 +1,90 @@
 'use client';
 import Link from 'next/link';
 
-const COLS = [
-  {title:'Platform', links:[['Dashboard','/dashboard'],['Investment Analysis','/investment-analysis'],['Market Signals','/signals'],['GFR Ranking','/gfr'],['Mission Planning','/pmp']]},
-  {title:'Resources', links:[['Publications','/publications'],['Data Sources','/sources'],['API Docs','/api-docs'],['Pricing','/pricing'],['About','/about']]},
-];
+const LINKS = {
+  Platform: [
+    {l:'Dashboard',         h:'/dashboard'},
+    {l:'Investment Analysis',h:'/investment-analysis'},
+    {l:'Market Signals',    h:'/signals'},
+    {l:'GFR Ranking',       h:'/gfr'},
+    {l:'Mission Planning',  h:'/pmp'},
+    {l:'Publications',      h:'/publications'},
+  ],
+  Intelligence: [
+    {l:'GOSA Methodology',  h:'/about#gosa'},
+    {l:'Signal Grades',     h:'/about#signals'},
+    {l:'AI Agent Pipeline', h:'/about#agents'},
+    {l:'Data Sources',      h:'/sources'},
+    {l:'API Documentation', h:'/api-docs'},
+    {l:'Changelog',         h:'/about'},
+  ],
+  Company: [
+    {l:'About Us',          h:'/about'},
+    {l:'Pricing',           h:'/pricing'},
+    {l:'Contact',           h:'/contact'},
+    {l:'Privacy Policy',    h:'/privacy'},
+    {l:'Terms of Service',  h:'/terms'},
+  ],
+};
 
 export default function Footer() {
   return (
-    <footer style={{background:'#0f1e2a',color:'white',padding:'48px 24px 24px',borderTop:'1px solid rgba(46,204,113,0.1)'}}>
+    <footer style={{background:'#0f1e2a',borderTop:'1px solid rgba(46,204,113,0.1)',padding:'48px 24px 24px',marginTop:'auto'}}>
       <div style={{maxWidth:'1440px',margin:'0 auto'}}>
-        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1.5fr',gap:'40px',marginBottom:'40px'}}>
-          {/* Brand */}
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 1fr',gap:'48px',marginBottom:'40px'}}>
+          {/* Brand col */}
           <div>
-            <div style={{fontSize:'16px',fontWeight:900,marginBottom:'14px',letterSpacing:'0.02em'}}>
-              <span>GLOBAL </span><span style={{color:'#2ecc71'}}>FDI</span><span> MONITOR</span>
+            <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'14px'}}>
+              <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="14" stroke="#2ecc71" strokeWidth="1.5" opacity="0.4"/>
+                <circle cx="16" cy="16" r="10" stroke="#2ecc71" strokeWidth="1" opacity="0.6"/>
+                <path d="M16 26 L20 14 L16 6" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                <circle cx="20" cy="14" r="2.5" fill="#2ecc71"/>
+              </svg>
+              <span style={{fontSize:'13px',fontWeight:900}}>
+                <span style={{color:'white'}}>GLOBAL </span>
+                <span style={{color:'#2ecc71'}}>FDI</span>
+                <span style={{color:'white'}}> MONITOR</span>
+              </span>
             </div>
-            <p style={{fontSize:'13px',color:'rgba(255,255,255,0.55)',lineHeight:'1.75',marginBottom:'18px',maxWidth:'300px'}}>
-              The world's most advanced AI-powered FDI intelligence platform. Real-time signals, GOSA scoring, and actionable investment insights.
+            <p style={{fontSize:'13px',color:'rgba(255,255,255,0.45)',lineHeight:'1.75',maxWidth:'300px',marginBottom:'20px'}}>
+              The world's most advanced FDI intelligence platform. 215+ economies, 304+ official sources, 6-stage AI agent pipeline.
             </p>
-            <a href="mailto:info@fdimonitor.org" style={{fontSize:'13px',color:'#2ecc71',textDecoration:'none',fontWeight:600}}>
-              info@fdimonitor.org
-            </a>
-            <div style={{marginTop:'16px',display:'flex',gap:'10px'}}>
-              {['LinkedIn','Twitter'].map(s=>(
-                <span key={s} style={{fontSize:'11px',padding:'4px 10px',background:'rgba(255,255,255,0.06)',borderRadius:'6px',color:'rgba(255,255,255,0.5)',cursor:'pointer'}}>{s}</span>
-              ))}
+            <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'12px'}}>
+              <span style={{width:'7px',height:'7px',borderRadius:'50%',background:'#2ecc71',display:'inline-block'}}/>
+              <span style={{fontSize:'11px',color:'rgba(255,255,255,0.4)'}}>Live signals updating every 2 seconds</span>
             </div>
+            <Link href="/register" style={{display:'inline-block',padding:'9px 20px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:800}}>
+              Start Free Trial →
+            </Link>
           </div>
-          {COLS.map(col=>(
-            <div key={col.title}>
-              <div style={{fontSize:'10px',fontWeight:800,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'14px'}}>{col.title}</div>
-              {col.links.map(([l,h])=>(
-                <div key={l} style={{marginBottom:'9px'}}>
-                  <Link href={h} style={{fontSize:'13px',color:'rgba(255,255,255,0.65)',textDecoration:'none',transition:'color 0.15s'}}>{l}</Link>
-                </div>
+
+          {/* Link cols */}
+          {Object.entries(LINKS).map(([section,links])=>(
+            <div key={section}>
+              <div style={{fontSize:'11px',fontWeight:800,color:'rgba(255,255,255,0.3)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'14px'}}>
+                {section}
+              </div>
+              {links.map(({l,h})=>(
+                <Link key={l} href={h} style={{display:'block',fontSize:'13px',color:'rgba(255,255,255,0.55)',textDecoration:'none',marginBottom:'8px',transition:'color 0.15s'}}>
+                  {l}
+                </Link>
               ))}
             </div>
           ))}
-          {/* Newsletter */}
-          <div>
-            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:'14px'}}>Weekly Brief</div>
-            <p style={{fontSize:'12px',color:'rgba(255,255,255,0.55)',marginBottom:'14px',lineHeight:'1.65'}}>Top FDI signals & investment intelligence, every Monday.</p>
-            <input type="email" placeholder="your@organisation.com"
-              style={{width:'100%',padding:'9px 12px',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.06)',color:'white',fontSize:'12px',outline:'none',fontFamily:'inherit',marginBottom:'8px'}}/>
-            <button style={{width:'100%',padding:'9px',background:'#2ecc71',color:'#0f1e2a',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:'inherit'}}>
-              Subscribe →
-            </button>
-          </div>
         </div>
-        <div style={{borderTop:'1px solid rgba(255,255,255,0.08)',paddingTop:'20px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'8px'}}>
-          <span style={{fontSize:'12px',color:'rgba(255,255,255,0.35)'}}>© 2026 Global FDI Monitor. All rights reserved.</span>
-          <div style={{display:'flex',gap:'20px'}}>
-            {['Privacy','Terms','Security'].map(l=>(
-              <Link key={l} href={`/${l.toLowerCase()}`} style={{fontSize:'12px',color:'rgba(255,255,255,0.35)',textDecoration:'none'}}>{l}</Link>
+
+        {/* Bottom bar */}
+        <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:'20px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
+          <span style={{fontSize:'12px',color:'rgba(255,255,255,0.25)'}}>
+            © 2026 Global FDI Monitor. All rights reserved.
+          </span>
+          <div style={{display:'flex',gap:'16px'}}>
+            {[['Privacy','/privacy'],['Terms','/terms'],['Contact','mailto:info@fdimonitor.org']].map(([l,h])=>(
+              <Link key={l} href={h} style={{fontSize:'12px',color:'rgba(255,255,255,0.3)',textDecoration:'none'}}>{l}</Link>
             ))}
           </div>
+          <span style={{fontSize:'11px',color:'rgba(255,255,255,0.2)'}}>info@fdimonitor.org</span>
         </div>
       </div>
     </footer>

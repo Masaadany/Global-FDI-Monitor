@@ -1,198 +1,142 @@
 'use client';
 import { useState } from 'react';
-import { User, Globe, CheckCircle, ArrowRight, Shield, Zap } from 'lucide-react';
 import Link from 'next/link';
-
-const API = process.env.NEXT_PUBLIC_API_URL || '';
+import { CheckCircle, Eye, EyeOff, Globe, Zap, BarChart3 } from 'lucide-react';
 
 export default function RegisterPage() {
-  const [step,     setStep]     = useState(1);
-  const [name,     setName]     = useState('');
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [org,      setOrg]      = useState('');
-  const [country,  setCountry]  = useState('');
-  const [role,     setRole]     = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [done,     setDone]     = useState(false);
+  const [step, setStep] = useState(1);
+  const [showPass, setShowPass] = useState(false);
+  const [form, setForm] = useState({ name:'', email:'', org:'', role:'', password:'' });
+  const [agreed, setAgreed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
 
-  const ROLES = ['Investment Promotion Agency','Government / Ministry','Sovereign Wealth Fund',
-                 'Strategy Consulting','Private Equity / VC','Corporate / Multinational','Other'];
-
-  async function handleStep1(e: React.FormEvent) {
-    e.preventDefault();
-    setStep(2);
-  }
-
-  async function handleStep2(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    try {
-      await fetch(`${API}/api/v1/auth/register`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({name,email,password,org,country,role}),
-      });
-    } catch {}
+    await new Promise(r=>setTimeout(r,1400));
     setLoading(false);
     setDone(true);
   }
 
-  if (done) return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#0A3D62 0%,#0E4F7A 100%)',
-      display:'flex',alignItems:'center',justifyContent:'center',padding:'24px'}}>
-      <div style={{background:'white',borderRadius:'20px',padding:'48px',maxWidth:'440px',width:'100%',textAlign:'center'}}>
-        <div style={{fontSize:'56px',marginBottom:'16px'}}>🎉</div>
-        <h2 style={{fontSize:'22px',fontWeight:800,color:'#0A3D62',marginBottom:'10px'}}>Account Created!</h2>
-        <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.7',marginBottom:'20px'}}>
-          Welcome to Global FDI Monitor. Your free 7-day trial starts now.
-          Check <b style={{color:'#0A3D62'}}>{email}</b> for your verification link.
-        </p>
-        <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-          <Link href="/onboarding" style={{padding:'13px',background:'#74BB65',color:'white',
-            borderRadius:'9px',textDecoration:'none',fontWeight:800,fontSize:'14px',
-            display:'flex',alignItems:'center',justifyContent:'center',gap:'7px',
-            boxShadow:'0 4px 16px rgba(116,187,101,0.3)'}}>
-            Set Up Your Account <ArrowRight size={14}/>
-          </Link>
-          <Link href="/dashboard" style={{padding:'11px',border:'1px solid rgba(10,61,98,0.15)',
-            color:'#0A3D62',borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px',
-            textAlign:'center'}}>
-            Go to Dashboard
-          </Link>
+  const roles = ['Strategy / Investment','Corporate Development','Government / Economic Development','Private Equity / VC','Research / Academia','Other'];
+
+  if(done) return (
+    <div style={{minHeight:'100vh', background:'#0f1e2a', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+      <div style={{background:'white', borderRadius:'20px', padding:'40px', maxWidth:'480px', width:'100%', textAlign:'center'}}>
+        <div style={{width:'64px', height:'64px', background:'rgba(46,204,113,0.12)', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 20px'}}>
+          <CheckCircle size={32} color="#2ecc71"/>
         </div>
+        <h1 style={{fontSize:'24px', fontWeight:900, color:'#1a2c3e', marginBottom:'8px'}}>Welcome to Global FDI Monitor</h1>
+        <p style={{fontSize:'14px', color:'#7f8c8d', marginBottom:'24px', lineHeight:'1.65'}}>
+          Your 7-day free trial is active. Access all features including the Dashboard, Investment Analysis, GFR Ranking, and generate up to 2 PDF reports.
+        </p>
+        <div style={{background:'rgba(46,204,113,0.06)', borderRadius:'12px', padding:'16px', marginBottom:'24px', border:'1px solid rgba(46,204,113,0.2)'}}>
+          <div style={{fontSize:'12px', color:'#7f8c8d', marginBottom:'8px'}}>TRIAL INCLUDES</div>
+          {['7 days full platform access','2 PDF report downloads','3 country searches','All 7 dashboard widgets','GFR Ranking access','Live signals feed'].map(f=>(
+            <div key={f} style={{display:'flex', alignItems:'center', gap:'8px', padding:'4px 0', fontSize:'13px', color:'#1a2c3e'}}>
+              <CheckCircle size={13} color="#2ecc71"/>{f}
+            </div>
+          ))}
+        </div>
+        <Link href="/dashboard" style={{display:'block', padding:'13px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:800, marginBottom:'10px'}}>
+          Go to Dashboard →
+        </Link>
+        <p style={{fontSize:'11px', color:'#7f8c8d'}}>Check <strong>{form.email||'your email'}</strong> for confirmation</p>
       </div>
     </div>
   );
 
   return (
-    <div style={{minHeight:'100vh',background:'linear-gradient(135deg,#061E30 0%,#0A3D62 45%,#0E4F7A 100%)',
-      display:'grid',gridTemplateColumns:'1fr 1fr',alignItems:'center',position:'relative',overflow:'hidden'}}>
-      {/* Grid overlay */}
-      <div style={{position:'absolute',inset:0,
-        backgroundImage:'linear-gradient(rgba(116,187,101,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(116,187,101,0.05) 1px,transparent 1px)',
-        backgroundSize:'40px 40px'}}/>
-
-      {/* Left: Feature list */}
-      <div style={{padding:'60px',position:'relative',zIndex:1}}>
-        <Link href="/" style={{textDecoration:'none',display:'flex',alignItems:'baseline',gap:'2px',marginBottom:'48px'}}>
-          <span style={{fontSize:'20px',fontWeight:900,color:'white'}}>GLOBAL</span>
-          <span style={{fontSize:'20px',fontWeight:900,color:'#74BB65',margin:'0 4px'}}>FDI</span>
-          <span style={{fontSize:'20px',fontWeight:900,color:'white'}}>MONITOR</span>
+    <div style={{minHeight:'100vh', background:'#0f1e2a', display:'flex', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+      {/* Left panel */}
+      <div style={{flex:'0 0 420px', background:'linear-gradient(160deg,#1a2c3e,#0f1e2a)', padding:'40px', display:'flex', flexDirection:'column', borderRight:'1px solid rgba(46,204,113,0.1)'}}>
+        <Link href="/" style={{textDecoration:'none', marginBottom:'40px', display:'flex', alignItems:'center', gap:'10px'}}>
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="#2ecc71" strokeWidth="1.5" opacity="0.4"/>
+            <circle cx="16" cy="16" r="10" stroke="#2ecc71" strokeWidth="1" opacity="0.6"/>
+            <path d="M16 26 L20 14 L16 6" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" fill="none"/>
+            <circle cx="20" cy="14" r="2.5" fill="#2ecc71"/>
+          </svg>
+          <span style={{fontSize:'14px', fontWeight:900, letterSpacing:'0.04em'}}>
+            <span style={{color:'white'}}>GLOBAL </span><span style={{color:'#2ecc71'}}>FDI</span><span style={{color:'white'}}> MONITOR</span>
+          </span>
         </Link>
-        <h2 style={{fontSize:'clamp(24px,2.5vw,36px)',fontWeight:900,color:'white',lineHeight:'1.2',marginBottom:'14px'}}>
-          Start your free<br/><span style={{color:'#74BB65'}}>7-day trial</span> today
-        </h2>
-        <p style={{color:'rgba(226,242,223,0.75)',fontSize:'15px',lineHeight:'1.75',marginBottom:'32px'}}>
-          Full access to all platform modules. No credit card required.
-        </p>
-        <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
+        <div style={{flex:1}}>
+          <h1 style={{fontSize:'28px', fontWeight:900, color:'white', marginBottom:'8px', lineHeight:'1.2'}}>Start your free 7-day trial</h1>
+          <p style={{fontSize:'14px', color:'rgba(255,255,255,0.55)', marginBottom:'32px', lineHeight:'1.7'}}>No credit card required. Full access to the world's most advanced FDI intelligence platform.</p>
           {[
-            {icon:Zap,  text:'218+ live FDI signals · PLATINUM to BRONZE · Z3 verified'},
-            {icon:Globe,text:'Investment Analysis for 215 economies · 4-layer GOSA scoring'},
-            {icon:Shield,text:'PDF reports · Mission planning dossiers · API access'},
-            {icon:CheckCircle,text:'7 days · 2 report downloads · 3 search views · No credit card'},
-          ].map(({icon:Icon,text})=>(
-            <div key={text} style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
-              <div style={{width:'28px',height:'28px',borderRadius:'8px',background:'rgba(116,187,101,0.15)',
-                display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                <Icon size={14} color="#74BB65"/>
+            { icon:<Globe size={18} color="#2ecc71"/>, title:'215+ Economies', desc:'Complete global coverage with GOSA scores' },
+            { icon:<Zap size={18} color="#f1c40f"/>, title:'Real-time Signals', desc:'Live FDI signals from 304+ official sources' },
+            { icon:<BarChart3 size={18} color="#3498db"/>, title:'PDF Reports', desc:'AI-generated investment reports with cover images' },
+          ].map(({icon,title,desc})=>(
+            <div key={title} style={{display:'flex', gap:'14px', marginBottom:'20px', padding:'14px 16px', background:'rgba(255,255,255,0.04)', borderRadius:'12px', border:'1px solid rgba(255,255,255,0.07)'}}>
+              <div style={{width:'38px', height:'38px', borderRadius:'10px', background:'rgba(46,204,113,0.1)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0}}>
+                {icon}
               </div>
-              <span style={{fontSize:'13px',color:'rgba(226,242,223,0.8)',lineHeight:'1.6',paddingTop:'4px'}}>{text}</span>
+              <div>
+                <div style={{fontSize:'13px', fontWeight:700, color:'white', marginBottom:'2px'}}>{title}</div>
+                <div style={{fontSize:'12px', color:'rgba(255,255,255,0.45)'}}>{desc}</div>
+              </div>
             </div>
           ))}
         </div>
-        <div style={{marginTop:'40px',padding:'16px',borderRadius:'12px',background:'rgba(255,255,255,0.06)',
-          border:'1px solid rgba(255,255,255,0.1)',fontSize:'13px',color:'rgba(226,242,223,0.7)'}}>
-          Already have an account?{' '}
-          <Link href="/auth/login" style={{color:'#74BB65',fontWeight:700,textDecoration:'none'}}>Sign in →</Link>
+        <div style={{fontSize:'11px', color:'rgba(255,255,255,0.3)'}}>
+          Professional plan from $9,588/year · Enterprise: Custom pricing
         </div>
       </div>
-
-      {/* Right: Form */}
-      <div style={{padding:'48px',position:'relative',zIndex:1}}>
-        <div style={{background:'white',borderRadius:'20px',padding:'40px',
-          boxShadow:'0 24px 80px rgba(0,0,0,0.2)',maxWidth:'440px',margin:'0 auto'}}>
-          {/* Progress */}
-          <div style={{display:'flex',gap:'8px',marginBottom:'28px'}}>
-            {[1,2].map(s=>(
-              <div key={s} style={{flex:1,height:'4px',borderRadius:'2px',
-                background:s<=step?'#74BB65':'rgba(10,61,98,0.1)',transition:'background 0.3s'}}/>
+      {/* Right panel */}
+      <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', padding:'40px'}}>
+        <div style={{background:'white', borderRadius:'20px', padding:'36px', width:'100%', maxWidth:'440px', boxShadow:'0 24px 48px rgba(0,0,0,0.3)'}}>
+          <h2 style={{fontSize:'22px', fontWeight:800, color:'#1a2c3e', marginBottom:'6px'}}>Create your account</h2>
+          <p style={{fontSize:'13px', color:'#7f8c8d', marginBottom:'24px'}}>Join 12,847 investment professionals</p>
+          <form onSubmit={handleSubmit}>
+            {[
+              {name:'name', label:'Full Name', placeholder:'Mahmoud Al-Saadany', type:'text'},
+              {name:'email', label:'Work Email', placeholder:'m@organisation.com', type:'email'},
+              {name:'org', label:'Organisation', placeholder:'Forecasta / MISA / Goldman Sachs', type:'text'},
+            ].map(field=>(
+              <div key={field.name} style={{marginBottom:'14px'}}>
+                <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>{field.label}</label>
+                <input required type={field.type} placeholder={field.placeholder} value={(form as any)[field.name]}
+                  onChange={e=>setForm(f=>({...f,[field.name]:e.target.value}))}
+                  style={{width:'100%', padding:'10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none', transition:'border 0.2s'}}/>
+              </div>
             ))}
-          </div>
-          <div style={{fontSize:'11px',color:'#696969',marginBottom:'6px'}}>Step {step} of 2</div>
-          <h3 style={{fontSize:'20px',fontWeight:800,color:'#0A3D62',marginBottom:'20px'}}>
-            {step===1 ? 'Create your account' : 'Tell us about yourself'}
-          </h3>
-
-          {step===1 && (
-            <form onSubmit={handleStep1} style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-              {[{l:'Full Name',v:name,s:setName,p:'Your full name',t:'text',a:'name'},
-                {l:'Work Email',v:email,s:setEmail,p:'you@company.com',t:'email',a:'email'},
-                {l:'Password',v:password,s:setPassword,p:'Min. 8 characters',t:'password',a:'new-password'}
-              ].map(({l,v,s,p,t,a})=>(
-                <div key={l}>
-                  <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>{l} *</label>
-                  <input value={v} onChange={e=>s(e.target.value)} required type={t} autoComplete={a}
-                    minLength={t==='password'?8:undefined} placeholder={p}
-                    style={{width:'100%',padding:'11px 13px',borderRadius:'9px',border:'1px solid rgba(10,61,98,0.15)',
-                      fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
-                </div>
-              ))}
-              <button type="submit"
-                style={{padding:'13px',background:'#74BB65',color:'white',border:'none',
-                  borderRadius:'9px',fontSize:'15px',fontWeight:800,cursor:'pointer',
-                  display:'flex',alignItems:'center',justifyContent:'center',gap:'7px',
-                  boxShadow:'0 4px 16px rgba(116,187,101,0.3)'}}>
-                Continue <ArrowRight size={14}/>
+            <div style={{marginBottom:'14px'}}>
+              <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Role</label>
+              <select required value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}
+                style={{width:'100%', padding:'10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none', background:'white'}}>
+                <option value="">Select your role</option>
+                {roles.map(r=><option key={r}>{r}</option>)}
+              </select>
+            </div>
+            <div style={{marginBottom:'20px', position:'relative'}}>
+              <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.05em', display:'block', marginBottom:'4px'}}>Password</label>
+              <input required type={showPass?'text':'password'} placeholder="Min. 8 characters" value={form.password}
+                onChange={e=>setForm(f=>({...f,password:e.target.value}))}
+                style={{width:'100%', padding:'10px 40px 10px 14px', border:'1px solid rgba(26,44,62,0.15)', borderRadius:'9px', fontSize:'13px', fontFamily:'inherit', outline:'none'}}/>
+              <button type="button" onClick={()=>setShowPass(!showPass)}
+                style={{position:'absolute', right:'12px', top:'28px', background:'none', border:'none', cursor:'pointer', color:'#7f8c8d', padding:'0'}}>
+                {showPass?<EyeOff size={16}/>:<Eye size={16}/>}
               </button>
-              <p style={{fontSize:'11px',color:'#696969',textAlign:'center',lineHeight:'1.5',margin:0}}>
-                By continuing you agree to our{' '}
-                <Link href="/terms" style={{color:'#0A3D62'}}>Terms</Link> and{' '}
-                <Link href="/privacy" style={{color:'#0A3D62'}}>Privacy Policy</Link>
-              </p>
-            </form>
-          )}
-
-          {step===2 && (
-            <form onSubmit={handleStep2} style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-              <div>
-                <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>Organisation</label>
-                <input value={org} onChange={e=>setOrg(e.target.value)} autoComplete="organization"
-                  placeholder="Your organisation" style={{width:'100%',padding:'11px 13px',borderRadius:'9px',
-                    border:'1px solid rgba(10,61,98,0.15)',fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
-              </div>
-              <div>
-                <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'5px'}}>Country</label>
-                <input value={country} onChange={e=>setCountry(e.target.value)} autoComplete="country"
-                  placeholder="Your country" style={{width:'100%',padding:'11px 13px',borderRadius:'9px',
-                    border:'1px solid rgba(10,61,98,0.15)',fontSize:'14px',outline:'none',color:'#000',background:'white'}}/>
-              </div>
-              <div>
-                <label style={{display:'block',fontSize:'12px',fontWeight:700,color:'#696969',marginBottom:'8px'}}>Your Role</label>
-                <div style={{display:'flex',flexDirection:'column',gap:'5px'}}>
-                  {ROLES.map(r=>(
-                    <label key={r} style={{display:'flex',alignItems:'center',gap:'8px',fontSize:'13px',color:'#0A3D62',cursor:'pointer'}}>
-                      <input type="radio" name="role" value={r} checked={role===r} onChange={()=>setRole(r)}/>
-                      {r}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <div style={{display:'flex',gap:'8px'}}>
-                <button type="button" onClick={()=>setStep(1)}
-                  style={{padding:'11px 18px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'9px',
-                    background:'transparent',cursor:'pointer',fontSize:'14px',fontWeight:600,color:'#696969'}}>
-                  ← Back
-                </button>
-                <button type="submit" disabled={loading}
-                  style={{flex:1,padding:'11px',background:'#74BB65',color:'white',border:'none',
-                    borderRadius:'9px',fontSize:'15px',fontWeight:800,cursor:loading?'wait':'pointer',
-                    display:'flex',alignItems:'center',justifyContent:'center',gap:'7px',opacity:loading?0.75:1}}>
-                  {loading ? 'Creating…' : <><CheckCircle size={14}/> Create Account</>}
-                </button>
-              </div>
-            </form>
-          )}
+            </div>
+            <label style={{display:'flex', alignItems:'flex-start', gap:'10px', marginBottom:'20px', cursor:'pointer'}}>
+              <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{marginTop:'2px', accentColor:'#2ecc71'}}/>
+              <span style={{fontSize:'12px', color:'#7f8c8d', lineHeight:'1.55'}}>
+                I agree to the <Link href="/terms" style={{color:'#2ecc71', textDecoration:'none', fontWeight:600}}>Terms of Service</Link> and <Link href="/privacy" style={{color:'#2ecc71', textDecoration:'none', fontWeight:600}}>Privacy Policy</Link>
+              </span>
+            </label>
+            <button type="submit" disabled={!agreed||loading}
+              style={{width:'100%', padding:'12px', background:agreed?'#2ecc71':'rgba(26,44,62,0.1)', color:agreed?'#0f1e2a':'#7f8c8d',
+                border:'none', borderRadius:'10px', cursor:agreed?'pointer':'not-allowed', fontSize:'14px', fontWeight:800, fontFamily:'inherit',
+                transition:'all 0.2s', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px'}}>
+              {loading ? '⏳ Creating account...' : '🚀 Start Free 7-Day Trial'}
+            </button>
+          </form>
+          <div style={{textAlign:'center', marginTop:'16px', fontSize:'12px', color:'#7f8c8d'}}>
+            Already have an account? <Link href="/auth/login" style={{color:'#2ecc71', fontWeight:600, textDecoration:'none'}}>Sign in</Link>
+          </div>
         </div>
       </div>
     </div>

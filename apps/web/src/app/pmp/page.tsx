@@ -1,385 +1,166 @@
 'use client';
-import { Target, Globe, Building2, Users, Briefcase, CheckCircle, ArrowRight, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import TrialBanner from '@/components/TrialBanner';
-import Globe4D from '@/components/Globe4D';
+import Link from 'next/link';
+import { Target, MapPin, Clock, DollarSign, CheckCircle, ChevronRight } from 'lucide-react';
 
-const REGIONS = ['Middle East & North Africa','Asia-Pacific','Europe','Americas','Africa','South Asia'];
-
-const ECONOMIES: Record<string,{fdi:string,growth:string,flag:string,rank:number,topSectors:string[],freezones:number}> = {
-  'UAE':           {fdi:'$25.3B',growth:'▲12%',flag:'🇦🇪',rank:5, topSectors:['Technology','Renewable Energy','Finance','Logistics'],freezones:45},
-  'Saudi Arabia':  {fdi:'$18.2B',growth:'▲15%',flag:'🇸🇦',rank:15,topSectors:['Energy','Technology','Healthcare','Tourism'],freezones:8},
-  'Qatar':         {fdi:'$8.7B', growth:'▲8%', flag:'🇶🇦',rank:22,topSectors:['Finance','Sports','Logistics','Real Estate'],freezones:3},
-  'Egypt':         {fdi:'$9.2B', growth:'▲5%', flag:'🇪🇬',rank:52,topSectors:['Tourism','Agriculture','Manufacturing','Energy'],freezones:10},
-  'Singapore':     {fdi:'$18.5B',growth:'▲6%', flag:'🇸🇬',rank:1, topSectors:['Finance','Technology','Biotech','Logistics'],freezones:12},
-  'India':         {fdi:'$12.3B',growth:'▲9%', flag:'🇮🇳',rank:15,topSectors:['Technology','Manufacturing','Pharma','Renewables'],freezones:24},
-  'Vietnam':       {fdi:'$8.9B', growth:'▲14%',flag:'🇻🇳',rank:16,topSectors:['Manufacturing','Technology','Agriculture','Tourism'],freezones:18},
-  'Germany':       {fdi:'$14.2B',growth:'▲3%', flag:'🇩🇪',rank:4, topSectors:['Auto','Engineering','Tech','Chemicals'],freezones:0},
-  'USA':           {fdi:'$28.5B',growth:'▲7%', flag:'🇺🇸',rank:3, topSectors:['Technology','Finance','Healthcare','Defense'],freezones:85},
-};
-
-const COMPANIES = [
-  {name:'Microsoft Corporation',cic:'CIC-MSFT-001',hq:'🇺🇸 USA',sector:'Technology',ims:94.2,sci:96,grade:'PLATINUM',rev:'$245B',emp:'228K',
-   history:[{y:2025,eco:'UAE',amt:'$5.2B'},{y:2023,eco:'UAE',amt:'$1.2B'}],signals:3},
-  {name:'Google (Alphabet Inc.)',cic:'CIC-GOOG-001',hq:'🇺🇸 USA',sector:'Technology',ims:91.5,sci:94,grade:'PLATINUM',rev:'$307B',emp:'182K',
-   history:[{y:2025,eco:'Singapore',amt:'$2.8B'},{y:2024,eco:'India',amt:'$1.5B'}],signals:2},
-  {name:'Amazon Web Services',  cic:'CIC-AMZN-001',hq:'🇺🇸 USA',sector:'Technology',ims:89.8,sci:92,grade:'GOLD',    rev:'$620B',emp:'1.5M',
-   history:[{y:2025,eco:'Saudi Arabia',amt:'$5.4B'},{y:2024,eco:'UAE',amt:'$1.8B'}],signals:4},
-  {name:'Siemens AG',           cic:'CIC-SIEM-001',hq:'🇩🇪 Germany',sector:'Energy',  ims:85.2,sci:88,grade:'GOLD',    rev:'$84B',emp:'311K',
-   history:[{y:2025,eco:'UAE',amt:'$2.1B'},{y:2023,eco:'Saudi Arabia',amt:'$0.9B'}],signals:2},
-  {name:'CATL',                 cic:'CIC-CATL-001',hq:'🇨🇳 China',  sector:'Manufacturing',ims:88.5,sci:93,grade:'PLATINUM',rev:'$42B',emp:'98K',
-   history:[{y:2025,eco:'Indonesia',amt:'$3.2B'},{y:2024,eco:'Vietnam',amt:'$1.1B'}],signals:3},
-  {name:'BlackRock Inc.',       cic:'CIC-BLK-001', hq:'🇺🇸 USA',sector:'Finance',   ims:83.1,sci:79,grade:'SILVER',  rev:'$17.9B',emp:'20K',
-   history:[{y:2025,eco:'UK',amt:'$0.9B'},{y:2024,eco:'UAE',amt:'$1.2B'}],signals:1},
+const TEMPLATES = [
+  { id:'market_entry', title:'Market Entry Assessment', icon:'🌏', desc:'Evaluate a new country for initial FDI entry. Covers regulatory, tax, zones, and market intelligence layers.', steps:['Country GOSA Analysis','Sector Opportunity Mapping','Zone Selection','Incentive Identification','Risk Assessment','Entry Roadmap'] },
+  { id:'site_selection', title:'Investment Zone Site Selection', icon:'📍', desc:'Compare specific investment zones across multiple countries for optimal site selection.', steps:['Zone Shortlist (3-5 zones)','Infrastructure Assessment','Cost Comparison','Tenant Mix Analysis','Incentive Stack','Recommendation Report'] },
+  { id:'benchmark', title:'Competitive Benchmarking', icon:'📊', desc:'Benchmark your target location against 4 competitor economies across all scoring layers.', steps:['Select Benchmark Peers','GOSA Comparison','DB Indicators Deep-dive','Market Signals Comparison','Incentive Gap Analysis','Strategic Summary'] },
+  { id:'impact', title:'Investment Impact Modeling', icon:'📈', desc:'Project economic impact, ROI, and incentive capture for a specific investment scenario.', steps:['Define Investment Parameters','GDP & Jobs Projection','Incentive Valuation','Risk Quantification','Sensitivity Analysis','Board-ready Report'] },
 ];
 
-const GOV_ENTITIES = [
-  {name:'UAE Ministry of Economy',  type:'MINISTRY',  iso:'🇦🇪',sectors:['All Sectors'],website:'economy.gov.ae'},
-  {name:'Dubai Investment Development Agency',type:'IPA',iso:'🇦🇪',sectors:['Technology','Finance','Logistics'],website:'investindubai.gov.ae'},
-  {name:'Abu Dhabi Investment Office',type:'IPA',     iso:'🇦🇪',sectors:['Technology','Renewables','Healthcare'],website:'investinabudhabi.ae'},
-  {name:'JAFZA — Jebel Ali Free Zone',type:'FREE_ZONE',iso:'🇦🇪',sectors:['Manufacturing','Logistics'],website:'jafza.ae'},
-  {name:'DIFC — Dubai International Financial Centre',type:'FREE_ZONE',iso:'🇦🇪',sectors:['Finance','Technology'],website:'difc.ae'},
-  {name:'INVEST Saudi',             type:'IPA',       iso:'🇸🇦',sectors:['All Sectors'],website:'invest.gov.sa'},
-  {name:'Saudi Vision 2030 Office', type:'MINISTRY',  iso:'🇸🇦',sectors:['Technology','Tourism','Entertainment'],website:'vision2030.gov.sa'},
-  {name:'Singapore EDB',            type:'IPA',       iso:'🇸🇬',sectors:['All Sectors'],website:'edb.gov.sg'},
+const RECENT = [
+  { name:'Vietnam EV Battery Entry Assessment', type:'Market Entry', created:'Mar 18, 2026', status:'Complete', score:79.4 },
+  { name:'ASEAN Data Center Site Selection', type:'Site Selection', created:'Mar 12, 2026', status:'Complete', score:82.1 },
+  { name:'SEA vs Middle East Manufacturing', type:'Benchmark', created:'Mar 5, 2026', status:'Draft', score:null },
 ];
 
-const SECTOR_LEADS = [
-  {name:'H.E. Omar Al Olama',  eco:'🇦🇪 UAE',  sector:'AI & Technology',  role:'Minister of State for Artificial Intelligence', entity:'UAE Ministry of AI'},
-  {name:'H.E. Suhail Al Mazrouei',eco:'🇦🇪 UAE',sector:'Energy',          role:'Minister of Energy & Infrastructure',           entity:'UAE Ministry of Energy'},
-  {name:'Abdullah Al-Swaha',   eco:'🇸🇦 Saudi', sector:'Technology',      role:'Minister of Communications & IT',               entity:'Saudi MCIT'},
-  {name:'Abdulla Bin Touq',    eco:'🇦🇪 UAE',  sector:'Economy',          role:'Minister of Economy',                          entity:'UAE Ministry of Economy'},
-];
+export default function PMP() {
+  const [selected, setSelected] = useState<string|null>(null);
+  const [step, setStep] = useState(0);
 
-const OPPORTUNITIES = [
-  {title:'Green Hydrogen Hub',   eco:'🇦🇪 Abu Dhabi',    range:'$2B–$5B', match:96, sector:'Energy',     partners:'Masdar · ADNOC · Mubadala', jobs:1200},
-  {title:'AI & Cloud Campus',    eco:'🇦🇪 Dubai South',  range:'$1.5B–$3B',match:94, sector:'Technology', partners:'Dubai Future Foundation · DEWA',jobs:3500},
-  {title:'EV Giga-factory',      eco:'🇸🇦 Neom',         range:'$3B–$6B', match:91, sector:'Manufacturing',partners:'Vision 2030 · ACWA Power',   jobs:5000},
-  {title:'FinTech Innovation Hub',eco:'🇶🇦 Qatar',        range:'$0.8B–$1.5B',match:88,sector:'Finance',  partners:'QFC · QIIB',               jobs:800},
-];
-
-const GRADE_C:  Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969'};
-const GRADE_BG: Record<string,string> = {PLATINUM:'rgba(10,61,98,0.1)',GOLD:'rgba(116,187,101,0.12)',SILVER:'rgba(105,105,105,0.1)'};
-const TYPE_C:   Record<string,string> = {MINISTRY:'#0A3D62',IPA:'#74BB65',FREE_ZONE:'#1B6CA8',SECTOR_LEAD:'#696969'};
-
-
-
-export default function PMPPage() {
-  const [tab,       setTab]       = useState<'destinations'|'opportunities'|'companies'|'gov'|'dossier'>('destinations');
-  const [selected,  setSelected]  = useState<string[]>(['UAE','Saudi Arabia']);
-  const [selCos,    setSelCos]    = useState<string[]>([]);
-  const [coSearch,  setCoSearch]  = useState('');
-  const [expanded,  setExpanded]  = useState<string|null>(null);
-
-  const coFiltered = COMPANIES.filter(c =>
-    !coSearch || c.name.toLowerCase().includes(coSearch.toLowerCase()) ||
-    c.sector.toLowerCase().includes(coSearch.toLowerCase())
-  );
-
-  const TABS = [
-    {id:'destinations',  label:'Destination Countries'},
-    {id:'opportunities', label:'Investment Opportunities'},
-    {id:'companies',     label:'Target Companies'},
-    {id:'gov',           label:'Government Entities'},
-    {id:'dossier',       label:'Mission Dossier'},
-  ];
+  const tmpl = TEMPLATES.find(t=>t.id===selected);
 
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh', background:'#f0f4f8', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <TrialBanner/>
-
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'36px 24px 0'}}>
-        <div style={{maxWidth:'1400px',margin:'0 auto'}}>
-          <h1 style={{fontSize:'28px',fontWeight:800,color:'white',marginBottom:'8px'}}>
-            Investment Promotion Mission Planning
-          </h1>
-          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'20px',fontSize:'14px'}}>
-            Select destination economies · Match investors · Identify opportunities · Generate mission dossier
-          </p>
-          <div style={{display:'flex',gap:'0',overflowX:'auto'}}>
-            {TABS.map(t=>(
-              <button key={t.id} onClick={()=>setTab(t.id as any)}
-                style={{padding:'12px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',
-                  borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
-                  background:'transparent',color:tab===t.id?'white':'rgba(226,242,223,0.6)',transition:'all 0.2s'}}>
-                {t.label}
-                {t.id==='companies' && selCos.length>0 && (
-                  <span style={{marginLeft:'6px',background:'#74BB65',color:'white',fontSize:'10px',
-                    padding:'1px 6px',borderRadius:'10px',fontWeight:800}}>{selCos.length}</span>
-                )}
-              </button>
-            ))}
-          </div>
+      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)', padding:'22px 24px', borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
+        <div style={{maxWidth:'1440px', margin:'0 auto'}}>
+          <div style={{fontSize:'10px', fontWeight:800, color:'#2ecc71', letterSpacing:'0.12em', marginBottom:'4px'}}>MISSION PLANNING</div>
+          <h1 style={{fontSize:'22px', fontWeight:900, color:'white', marginBottom:'4px'}}>Investment Mission Planner</h1>
+          <p style={{fontSize:'13px', color:'rgba(255,255,255,0.6)'}}>Structured intelligence workflows for investment decision-making · Guided by GOSA methodology</p>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'24px'}}>
-
-        {/* DESTINATIONS */}
-        {tab==='destinations' && (
-          <div style={{display:'grid',gridTemplateColumns:'340px 1fr',gap:'20px'}}>
-            {/* Selector */}
-            <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-              <div style={{background:'white',borderRadius:'12px',padding:'16px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'10px'}}>Select Destination Countries</div>
-                <input placeholder="🔍 Search 215 countries…"
-                  style={{width:'100%',padding:'8px 12px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',
-                    fontSize:'12px',marginBottom:'10px',outline:'none',color:'#000',background:'white'}}/>
-                {REGIONS.map(reg=>(
-                  <div key={reg} style={{marginBottom:'8px'}}>
-                    <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'4px'}}>{reg}</div>
-                    {Object.entries(ECONOMIES).filter(([,v])=>{
-                      if(reg==='Middle East & North Africa') return ['UAE','Saudi Arabia','Qatar','Egypt'].includes(Object.entries(ECONOMIES).find(([k])=>k)?.[0]||'');
-                      return true;
-                    }).slice(0,3).map(([eco,data])=>(
-                      <label key={eco} style={{display:'flex',alignItems:'center',gap:'7px',padding:'5px 0',cursor:'pointer',fontSize:'12px'}}>
-                        <input type="checkbox" checked={selected.includes(eco)}
-                          onChange={()=>setSelected(s=>s.includes(eco)?s.filter(x=>x!==eco):[...s,eco])}/>
-                        <span style={{fontSize:'16px'}}>{data.flag}</span>
-                        <span style={{fontWeight:600,color:'#0A3D62',flex:1}}>{eco}</span>
-                        <span style={{fontSize:'10px',color:'#696969'}}>{data.fdi}</span>
-                        <span style={{fontSize:'10px',fontWeight:700,color:'#74BB65'}}>{data.growth}</span>
-                      </label>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Economy intelligence panels */}
-            <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
-              {selected.map(eco=>{
-                const data = ECONOMIES[eco];
-                if(!data) return null;
-                return (
-                  <div key={eco} style={{background:'white',borderRadius:'12px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)',overflow:'hidden'}}>
-                    <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'14px 18px',display:'flex',alignItems:'center',gap:'12px'}}>
-                      <span style={{fontSize:'32px'}}>{data.flag}</span>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:'16px',fontWeight:800,color:'white'}}>{eco}</div>
-                        <div style={{fontSize:'11px',color:'rgba(226,242,223,0.7)'}}>GFR Rank #{data.rank} · {data.fdi} FDI · {data.growth}</div>
+      <div style={{maxWidth:'1440px', margin:'0 auto', padding:'24px'}}>
+        <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:'20px', alignItems:'start'}}>
+          <div>
+            {!selected ? (
+              <>
+                <div style={{fontSize:'13px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'14px'}}>Select Mission Template</div>
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'24px'}}>
+                  {TEMPLATES.map(t=>(
+                    <div key={t.id} onClick={()=>setSelected(t.id)}
+                      style={{background:'white', borderRadius:'14px', padding:'22px', cursor:'pointer', border:'2px solid rgba(26,44,62,0.07)',
+                        boxShadow:'0 4px 6px -2px rgba(0,0,0,0.05)', transition:'all 0.2s'}}>
+                      <div style={{fontSize:'28px', marginBottom:'10px'}}>{t.icon}</div>
+                      <div style={{fontSize:'15px', fontWeight:800, color:'#1a2c3e', marginBottom:'6px'}}>{t.title}</div>
+                      <div style={{fontSize:'12px', color:'#7f8c8d', lineHeight:'1.6', marginBottom:'14px'}}>{t.desc}</div>
+                      <div style={{fontSize:'11px', color:'#2ecc71', fontWeight:700, display:'flex', alignItems:'center', gap:'4px'}}>
+                        Start Mission <ChevronRight size={12}/>
                       </div>
-                    </div>
-                    <div style={{padding:'16px',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'10px',marginBottom:'12px'}}>
-                      {[
-                        {l:'FDI Inflows',v:data.fdi,c:'#0A3D62'},
-                        {l:'Growth',v:data.growth,c:'#74BB65'},
-                        {l:'GFR Rank',v:`#${data.rank}`,c:'#1B6CA8'},
-                        {l:'Free Zones',v:`${data.freezones}`,c:'#696969'},
-                      ].map(({l,v,c})=>(
-                        <div key={l} style={{textAlign:'center',padding:'10px',borderRadius:'8px',background:'rgba(10,61,98,0.03)'}}>
-                          <div style={{fontSize:'18px',fontWeight:800,color:c,fontFamily:'monospace'}}>{v}</div>
-                          <div style={{fontSize:'10px',color:'#696969',marginTop:'2px'}}>{l}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{padding:'0 16px 16px'}}>
-                      <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'6px'}}>Top FDI Sectors</div>
-                      <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
-                        {data.topSectors.map(s=>(
-                          <span key={s} style={{fontSize:'11px',padding:'3px 10px',borderRadius:'12px',
-                            background:'rgba(116,187,101,0.1)',color:'#0A3D62',fontWeight:600}}>{s}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* OPPORTUNITIES */}
-        {tab==='opportunities' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}}>
-              <h2 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62'}}>Investment Opportunities · Matched to Your Mission</h2>
-              <span style={{fontSize:'12px',fontWeight:700,color:'#74BB65'}}>🟢 3 NEW</span>
-            </div>
-            {OPPORTUNITIES.map(opp=>(
-              <div key={opp.title} style={{background:'white',borderRadius:'12px',padding:'22px',
-                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',borderLeft:'4px solid #74BB65'}}>
-                <div style={{display:'flex',gap:'16px',alignItems:'flex-start',flexWrap:'wrap'}}>
-                  <div style={{flex:1,minWidth:'200px'}}>
-                    <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'8px',flexWrap:'wrap'}}>
-                      <h3 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',margin:0}}>{opp.title}</h3>
-                      <span style={{fontSize:'11px',padding:'2px 8px',borderRadius:'10px',background:'rgba(116,187,101,0.12)',color:'#0A3D62',fontWeight:600}}>{opp.sector}</span>
-                    </div>
-                    <div style={{fontSize:'13px',color:'#696969',marginBottom:'8px'}}>{opp.eco} · {opp.range}</div>
-                    <div style={{fontSize:'12px',color:'#696969'}}>Partners: <span style={{color:'#0A3D62',fontWeight:600}}>{opp.partners}</span></div>
-                    <div style={{fontSize:'12px',color:'#696969',marginTop:'2px'}}>Est. jobs: <span style={{color:'#74BB65',fontWeight:700}}>{opp.jobs.toLocaleString()}</span></div>
-                  </div>
-                  <div style={{flexShrink:0,textAlign:'center'}}>
-                    <div style={{fontSize:'24px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{opp.match}%</div>
-                    <div style={{fontSize:'10px',color:'#696969'}}>Match Score</div>
-                  </div>
-                  <div style={{display:'flex',gap:'6px',flexWrap:'wrap',alignSelf:'flex-start'}}>
-                    {['VIEW DETAILS','EXPRESS INTEREST','ADD TO MISSION'].map(a=>(
-                      <button key={a} style={{padding:'7px 12px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'7px',
-                        background:a==='ADD TO MISSION'?'#74BB65':'transparent',
-                        color:a==='ADD TO MISSION'?'white':'#0A3D62',fontSize:'11px',fontWeight:700,cursor:'pointer'}}>
-                        {a}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* COMPANIES */}
-        {tab==='companies' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-            <div style={{display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}}>
-              <input value={coSearch} onChange={e=>setCoSearch(e.target.value)}
-                placeholder="🔍 Search companies, sectors…"
-                style={{padding:'9px 14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'13px',background:'white',color:'#000',outline:'none',minWidth:'240px'}}/>
-              <div style={{fontSize:'13px',color:'#696969'}}>{coFiltered.length} results</div>
-              {selCos.length>0 && (
-                <span style={{fontSize:'13px',fontWeight:700,color:'#74BB65'}}>{selCos.length} selected for dossier</span>
-              )}
-            </div>
-
-            {coFiltered.map(co=>(
-              <div key={co.cic} style={{background:'white',borderRadius:'12px',
-                boxShadow:'0 2px 8px rgba(10,61,98,0.06)',overflow:'hidden',
-                border:selCos.includes(co.cic)?'2px solid #74BB65':'1px solid rgba(10,61,98,0.06)'}}>
-                <div style={{padding:'16px 18px',display:'flex',gap:'14px',alignItems:'flex-start',cursor:'pointer'}}
-                  onClick={()=>setExpanded(expanded===co.cic?null:co.cic)}>
-                  <label style={{display:'flex',alignItems:'flex-start',gap:'10px',flex:1,cursor:'pointer'}}>
-                    <input type="checkbox" checked={selCos.includes(co.cic)} style={{marginTop:'3px'}}
-                      onChange={()=>setSelCos(s=>s.includes(co.cic)?s.filter(x=>x!==co.cic):[...s,co.cic])}
-                      onClick={e=>e.stopPropagation()}/>
-                    <div style={{flex:1}}>
-                      <div style={{display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap',marginBottom:'4px'}}>
-                        <span style={{fontSize:'15px',fontWeight:700,color:'#0A3D62'}}>{co.name}</span>
-                        <span style={{fontSize:'11px',fontWeight:700,padding:'2px 8px',borderRadius:'10px',
-                          background:GRADE_BG[co.grade],color:GRADE_C[co.grade]}}>{co.grade}</span>
-                        <span style={{fontSize:'11px',padding:'2px 8px',borderRadius:'10px',background:'rgba(10,61,98,0.06)',color:'#0A3D62'}}>{co.sector}</span>
-                      </div>
-                      <div style={{fontSize:'12px',color:'#696969'}}>
-                        HQ: {co.hq} · Rev: {co.rev} · {co.emp} employees · IMS: <b style={{color:'#74BB65'}}>{co.ims}</b> · SCI: <b style={{color:GRADE_C[co.grade]}}>{co.sci}%</b>
-                      </div>
-                    </div>
-                  </label>
-                  <span style={{color:'#696969',fontSize:'18px'}}>{expanded===co.cic?'▲':'▼'}</span>
-                </div>
-                {expanded===co.cic && (
-                  <div style={{padding:'0 18px 16px',borderTop:'1px solid rgba(10,61,98,0.06)'}}>
-                    <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:'8px',marginTop:'12px'}}>
-                      Investment History · {co.signals} active signals
-                    </div>
-                    <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                      {co.history.map(h=>(
-                        <div key={h.y} style={{padding:'8px 14px',borderRadius:'8px',background:'rgba(10,61,98,0.04)',border:'1px solid rgba(10,61,98,0.08)',fontSize:'12px'}}>
-                          <span style={{fontWeight:700,color:'#0A3D62'}}>{h.y}</span>
-                          <span style={{color:'#696969',margin:'0 4px'}}>·</span>
-                          <span style={{color:'#696969'}}>{h.eco}</span>
-                          <span style={{color:'#696969',margin:'0 4px'}}>·</span>
-                          <span style={{fontWeight:700,color:'#74BB65',fontFamily:'monospace'}}>{h.amt}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* GOV ENTITIES + SECTOR LEADS */}
-        {tab==='gov' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
-            <div>
-              <h2 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Government Entities & Investment Authorities</h2>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:'12px'}}>
-                {GOV_ENTITIES.map(g=>(
-                  <div key={g.name} className="gfm-card" style={{padding:'16px',borderLeft:`4px solid ${TYPE_C[g.type]}`}}>
-                    <div style={{display:'flex',gap:'8px',alignItems:'flex-start',marginBottom:'8px'}}>
-                      <span style={{fontSize:'20px'}}>{g.iso}</span>
-                      <div>
-                        <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',lineHeight:'1.3',marginBottom:'3px'}}>{g.name}</div>
-                        <span style={{fontSize:'10px',fontWeight:700,padding:'1px 7px',borderRadius:'10px',
-                          background:`${TYPE_C[g.type]}12`,color:TYPE_C[g.type]}}>
-                          {g.type.replace('_',' ')}
-                        </span>
-                      </div>
-                    </div>
-                    <div style={{fontSize:'11px',color:'#696969',marginBottom:'6px'}}>
-                      {g.sectors.join(' · ')}
-                    </div>
-                    <a href={`https://${g.website}`} target="_blank" rel="noopener"
-                      style={{fontSize:'11px',color:'#1B6CA8',fontWeight:600}}>↗ {g.website}</a>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h2 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',marginBottom:'14px'}}>Sector Leads</h2>
-              <div className="gfm-card" style={{overflow:'hidden'}}>
-                <table className="gfm-table">
-                  <thead><tr><th>Name</th><th>Economy</th><th>Sector</th><th>Role</th><th>Entity</th></tr></thead>
-                  <tbody>
-                    {SECTOR_LEADS.map(sl=>(
-                      <tr key={sl.name}>
-                        <td style={{fontWeight:600,color:'#0A3D62'}}>{sl.name}</td>
-                        <td>{sl.eco}</td>
-                        <td><span style={{fontSize:'11px',padding:'2px 8px',borderRadius:'10px',background:'rgba(116,187,101,0.1)',color:'#0A3D62',fontWeight:600}}>{sl.sector}</span></td>
-                        <td style={{fontSize:'12px',color:'#696969'}}>{sl.role}</td>
-                        <td style={{fontSize:'12px',color:'#696969'}}>{sl.entity}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* DOSSIER */}
-        {tab==='dossier' && (
-          <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
-            <div className="gfm-card" style={{padding:'24px'}}>
-              <h2 style={{fontSize:'16px',fontWeight:700,color:'#0A3D62',marginBottom:'16px'}}>Mission Dossier Configuration</h2>
-              <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-                <div style={{display:'flex',gap:'16px',flexWrap:'wrap'}}>
-                  {[{l:'Destinations',v:selected.length},{l:'Companies',v:selCos.length},{l:'Opportunities',v:OPPORTUNITIES.length}].map(({l,v})=>(
-                    <div key={l} style={{textAlign:'center',padding:'12px 20px',borderRadius:'10px',background:'rgba(116,187,101,0.08)'}}>
-                      <div style={{fontSize:'24px',fontWeight:800,color:'#74BB65',fontFamily:'monospace'}}>{v}</div>
-                      <div style={{fontSize:'11px',color:'#696969'}}>{l}</div>
                     </div>
                   ))}
                 </div>
-                <div>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'8px'}}>Include Sections:</div>
-                  <div style={{display:'flex',flexWrap:'wrap',gap:'6px'}}>
-                    {['Executive Summary','Destination Country Profiles','Sector Analysis','Selected Company Profiles','Investment History','Signals Analysis','Investment Opportunities','Meeting Preparation Guide','Risk Assessment'].map(s=>(
-                      <label key={s} style={{display:'flex',alignItems:'center',gap:'5px',padding:'5px 10px',borderRadius:'8px',
-                        background:'rgba(10,61,98,0.04)',fontSize:'12px',color:'#0A3D62',cursor:'pointer',fontWeight:600}}>
-                        <input type="checkbox" defaultChecked/> {s}
-                      </label>
-                    ))}
+              </>
+            ) : (
+              <div style={{background:'white', borderRadius:'14px', border:'1px solid rgba(26,44,62,0.08)', overflow:'hidden'}}>
+                <div style={{background:'#1a2c3e', padding:'18px 22px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                  <div>
+                    <div style={{fontSize:'10px', color:'rgba(255,255,255,0.4)', marginBottom:'4px'}}>ACTIVE MISSION</div>
+                    <div style={{fontSize:'18px', fontWeight:800, color:'white'}}>{tmpl?.icon} {tmpl?.title}</div>
+                  </div>
+                  <button onClick={()=>{setSelected(null);setStep(0);}}
+                    style={{padding:'6px 14px', background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:'7px',
+                      color:'white', cursor:'pointer', fontSize:'12px', fontFamily:'inherit'}}>
+                    ← Back
+                  </button>
+                </div>
+                {/* Steps progress */}
+                <div style={{padding:'20px 22px', borderBottom:'1px solid rgba(26,44,62,0.06)', display:'flex', gap:'0', overflowX:'auto'}}>
+                  {tmpl?.steps.map((s,i)=>(
+                    <div key={i} style={{display:'flex', alignItems:'center', flexShrink:0}}>
+                      <div onClick={()=>setStep(i)} style={{display:'flex', flexDirection:'column', alignItems:'center', cursor:'pointer', minWidth:'80px'}}>
+                        <div style={{width:'28px', height:'28px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'11px', fontWeight:800,
+                          background:i<step?'#2ecc71':i===step?'#1a2c3e':'rgba(26,44,62,0.08)',
+                          color:i<=step?'white':'#7f8c8d', marginBottom:'4px'}}>
+                          {i<step?'✓':i+1}
+                        </div>
+                        <div style={{fontSize:'9px', color:i===step?'#1a2c3e':'#7f8c8d', fontWeight:i===step?700:400, textAlign:'center', maxWidth:'70px', lineHeight:'1.3'}}>{s}</div>
+                      </div>
+                      {i<tmpl.steps.length-1 && <div style={{width:'30px', height:'1px', background:'rgba(26,44,62,0.12)', margin:'0 4px 20px'}}/>}
+                    </div>
+                  ))}
+                </div>
+                <div style={{padding:'24px 22px'}}>
+                  <div style={{fontSize:'16px', fontWeight:700, color:'#1a2c3e', marginBottom:'16px'}}>{tmpl?.steps[step]}</div>
+                  {step===0 && (
+                    <div>
+                      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
+                        {[['Target Country','Select Economy'],['Primary Sector','Select Sector'],['Investment Size','Select Range'],['Timeline','Select Timeframe']].map(([l,p])=>(
+                          <div key={l}>
+                            <label style={{fontSize:'11px', fontWeight:700, color:'#7f8c8d', display:'block', marginBottom:'4px', textTransform:'uppercase', letterSpacing:'0.05em'}}>{l}</label>
+                            <select style={{width:'100%', padding:'9px 12px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', fontSize:'13px', fontFamily:'inherit', outline:'none', background:'white'}}>
+                              <option>{p}</option>
+                              {l==='Target Country'&&['Vietnam','Malaysia','Thailand','Indonesia','UAE','Saudi Arabia'].map(c=><option key={c}>{c}</option>)}
+                              {l==='Primary Sector'&&['EV Battery','Data Centers','Manufacturing','Renewables','Semiconductors'].map(s=><option key={s}>{s}</option>)}
+                              {l==='Investment Size'&&['$10M-$50M','$50M-$250M','$250M-$1B','$1B+'].map(s=><option key={s}>{s}</option>)}
+                              {l==='Timeline'&&['6-12 months','1-2 years','2-5 years','5+ years'].map(s=><option key={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {step>0 && step<4 && (
+                    <div style={{padding:'20px', background:'rgba(46,204,113,0.04)', borderRadius:'12px', border:'1px dashed rgba(46,204,113,0.25)', textAlign:'center'}}>
+                      <div style={{fontSize:'24px', marginBottom:'8px'}}>⚙️</div>
+                      <div style={{fontSize:'13px', color:'#7f8c8d'}}>AGT-04 GOSA Scoring Engine processing {tmpl?.steps[step]}...</div>
+                    </div>
+                  )}
+                  {step===5 && (
+                    <div>
+                      <div style={{padding:'18px', background:'rgba(46,204,113,0.06)', borderRadius:'12px', border:'1px solid rgba(46,204,113,0.2)', marginBottom:'14px'}}>
+                        <div style={{fontSize:'12px', fontWeight:700, color:'#2ecc71', marginBottom:'8px'}}>MISSION COMPLETE — GOSA Score: 79.4</div>
+                        <div style={{fontSize:'13px', color:'#1a2c3e'}}>All 6 mission steps completed. Your investment assessment is ready for download.</div>
+                      </div>
+                      <Link href="/reports" style={{display:'inline-block', padding:'10px 22px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'9px', textDecoration:'none', fontSize:'13px', fontWeight:800}}>
+                        Download Full Report →
+                      </Link>
+                    </div>
+                  )}
+                  <div style={{display:'flex', justifyContent:'space-between', marginTop:'20px'}}>
+                    <button onClick={()=>setStep(s=>Math.max(0,s-1))} disabled={step===0}
+                      style={{padding:'9px 18px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', background:'white', cursor:step===0?'not-allowed':'pointer', fontSize:'12px', fontWeight:600, color:'#7f8c8d', fontFamily:'inherit', opacity:step===0?0.4:1}}>
+                      ← Previous
+                    </button>
+                    <button onClick={()=>setStep(s=>Math.min((tmpl?.steps.length||6)-1,s+1))} disabled={step===(tmpl?.steps.length||6)-1}
+                      style={{padding:'9px 18px', background:'#1a2c3e', color:'white', border:'none', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:700, fontFamily:'inherit', opacity:step===(tmpl?.steps.length||6)-1?0.4:1}}>
+                      Next Step →
+                    </button>
                   </div>
                 </div>
-                <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-                  <select style={{padding:'8px 12px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'13px',color:'#0A3D62'}}>
-                    <option>Comprehensive (30–40 pages)</option><option>Brief (5–7 pages)</option>
-                  </select>
-                  <span style={{fontSize:'12px',color:'#696969'}}>Format: PDF ONLY · Watermarked & Secure</span>
-                </div>
-                <button className="gfm-btn-primary" style={{padding:'14px 28px',fontSize:'15px',fontWeight:700,alignSelf:'flex-start'}}>
-                  Generate Mission Dossier →
-                </button>
-                <div style={{fontSize:'11px',color:'#696969'}}>30 intelligence credits · Estimated: 35–45 seconds</div>
               </div>
+            )}
+          </div>
+
+          {/* Recent missions */}
+          <div>
+            <div style={{fontSize:'13px', fontWeight:700, color:'#7f8c8d', textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:'14px'}}>Recent Missions</div>
+            <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+              {RECENT.map(m=>(
+                <div key={m.name} style={{background:'white', borderRadius:'12px', padding:'14px 16px', border:'1px solid rgba(26,44,62,0.08)'}}>
+                  <div style={{fontSize:'12px', fontWeight:700, color:'#1a2c3e', marginBottom:'4px', lineHeight:'1.4'}}>{m.name}</div>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'6px'}}>
+                    <div style={{fontSize:'10px', color:'#7f8c8d'}}>{m.type} · {m.created}</div>
+                    <div style={{display:'flex', gap:'6px', alignItems:'center'}}>
+                      {m.score && <span style={{fontSize:'11px', fontWeight:800, color:'#2ecc71', fontFamily:"'JetBrains Mono',monospace"}}>{m.score}</span>}
+                      <span style={{fontSize:'9px', fontWeight:800, padding:'2px 7px', borderRadius:'8px', background:m.status==='Complete'?'rgba(46,204,113,0.1)':'rgba(241,196,15,0.1)', color:m.status==='Complete'?'#1e8449':'#7a6400'}}>
+                        {m.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <Link href="/reports" style={{display:'block', padding:'10px', background:'rgba(26,44,62,0.04)', border:'1px dashed rgba(26,44,62,0.15)', borderRadius:'12px', textDecoration:'none', fontSize:'12px', fontWeight:600, color:'#7f8c8d', textAlign:'center'}}>
+                + New Mission
+              </Link>
             </div>
           </div>
-        )}
+        </div>
       </div>
       <Footer/>
     </div>

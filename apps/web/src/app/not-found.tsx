@@ -2,33 +2,16 @@ import Link from 'next/link';
 
 export default function NotFound() {
   return (
-    <div style={{minHeight:'100vh',background:'#E2F2DF',display:'flex',alignItems:'center',
-      justifyContent:'center',padding:'24px',textAlign:'center'}}>
-      <div style={{maxWidth:'540px'}}>
-        <div style={{fontSize:'80px',marginBottom:'16px',lineHeight:1}}>🌍</div>
-        <h1 style={{fontSize:'32px',fontWeight:900,color:'#0A3D62',marginBottom:'10px'}}>
-          Page Not Found
-        </h1>
-        <p style={{fontSize:'15px',color:'#696969',lineHeight:'1.75',marginBottom:'28px'}}>
-          The page you're looking for doesn't exist or has been moved. 
-          Explore our investment intelligence platform instead.
+    <div style={{minHeight:'100vh',background:'#0f1e2a',display:'flex',alignItems:'center',justifyContent:'center',padding:'20px',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+      <div style={{textAlign:'center',maxWidth:'500px'}}>
+        <div style={{fontSize:'80px',fontWeight:900,color:'rgba(46,204,113,0.15)',fontFamily:"'JetBrains Mono',monospace",lineHeight:1,marginBottom:'4px'}}>404</div>
+        <div style={{fontSize:'20px',fontWeight:800,color:'white',marginBottom:'10px'}}>Page not found</div>
+        <p style={{fontSize:'14px',color:'rgba(255,255,255,0.5)',lineHeight:'1.65',marginBottom:'28px'}}>
+          The economy or page you are looking for doesn't exist in our database yet. We currently cover 215+ economies — try the Investment Analysis table.
         </p>
-        <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
-          <Link href="/dashboard" style={{padding:'12px 24px',background:'#0A3D62',color:'white',
-            borderRadius:'9px',textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
-            Go to Dashboard
-          </Link>
-          <Link href="/investment-analysis" style={{padding:'12px 22px',background:'#74BB65',color:'white',
-            borderRadius:'9px',textDecoration:'none',fontWeight:700,fontSize:'14px'}}>
-            Investment Analysis
-          </Link>
-          <Link href="/" style={{padding:'12px 18px',border:'1px solid rgba(10,61,98,0.15)',color:'#0A3D62',
-            borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>
-            Home
-          </Link>
-        </div>
-        <div style={{marginTop:'24px',fontSize:'12px',color:'#696969'}}>
-          GFR Assessment · Investment Analysis · FDI Signals · Mission Planning
+        <div style={{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}}>
+          <Link href="/dashboard" style={{padding:'11px 24px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:800}}>Go to Dashboard →</Link>
+          <Link href="/investment-analysis" style={{padding:'11px 20px',border:'1px solid rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',borderRadius:'9px',textDecoration:'none',fontSize:'13px',fontWeight:600}}>Investment Analysis</Link>
         </div>
       </div>
     </div>

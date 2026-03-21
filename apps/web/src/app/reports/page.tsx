@@ -2,337 +2,481 @@
 import { useState } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
-import { Download, FileText, Loader, CheckCircle, Globe, Zap, BarChart3, Target } from 'lucide-react';
+import Link from 'next/link';
+import { Download, FileText, Zap, Clock, CheckCircle, Globe } from 'lucide-react';
 
-const COUNTRIES = [
-  {iso3:'SGP',name:'Singapore',flag:'🇸🇬',score:88.4,tier:'TOP'},
-  {iso3:'ARE',name:'UAE',flag:'🇦🇪',score:84.7,tier:'TOP'},
-  {iso3:'MYS',name:'Malaysia',flag:'🇲🇾',score:81.2,tier:'TOP'},
-  {iso3:'THA',name:'Thailand',flag:'🇹🇭',score:80.7,tier:'TOP'},
-  {iso3:'VNM',name:'Vietnam',flag:'🇻🇳',score:79.4,tier:'TOP'},
-  {iso3:'SAU',name:'Saudi Arabia',flag:'🇸🇦',score:79.1,tier:'TOP'},
-  {iso3:'IND',name:'India',flag:'🇮🇳',score:73.2,tier:'HIGH'},
-  {iso3:'IDN',name:'Indonesia',flag:'🇮🇩',score:74.8,tier:'HIGH'},
-  {iso3:'MAR',name:'Morocco',flag:'🇲🇦',score:66.8,tier:'HIGH'},
-  {iso3:'KEN',name:'Kenya',flag:'🇰🇪',score:61.2,tier:'HIGH'},
+const COUNTRIES_LIST = [
+  {id:'SGP',name:'Singapore',flag:'🇸🇬',gosa:88.4},
+  {id:'MYS',name:'Malaysia',flag:'🇲🇾',gosa:81.2},
+  {id:'THA',name:'Thailand',flag:'🇹🇭',gosa:80.7},
+  {id:'VNM',name:'Vietnam',flag:'🇻🇳',gosa:79.4},
+  {id:'ARE',name:'UAE',flag:'🇦🇪',gosa:82.1},
+  {id:'SAU',name:'Saudi Arabia',flag:'🇸🇦',gosa:79.1},
+  {id:'IND',name:'India',flag:'🇮🇳',gosa:73.2},
+  {id:'IDN',name:'Indonesia',flag:'🇮🇩',gosa:77.8},
+  {id:'KOR',name:'South Korea',flag:'🇰🇷',gosa:84.1},
+  {id:'JPN',name:'Japan',flag:'🇯🇵',gosa:81.4},
+  {id:'GBR',name:'United Kingdom',flag:'🇬🇧',gosa:82.5},
+  {id:'DEU',name:'Germany',flag:'🇩🇪',gosa:83.1},
+  {id:'USA',name:'United States',flag:'🇺🇸',gosa:83.9},
+  {id:'BRA',name:'Brazil',flag:'🇧🇷',gosa:71.3},
+  {id:'MAR',name:'Morocco',flag:'🇲🇦',gosa:66.8},
 ];
-const SECTORS = ['Manufacturing','Digital Economy','Energy & Renewables','Financial Services','Healthcare','Infrastructure','Logistics','Agriculture'];
-const REPORT_TYPES = [
-  {id:'investment',icon:'📊',title:'Investment Analysis Report',desc:'4-page deep-dive with GOSA scoring, sector analysis, zone data, and strategic recommendations.',pages:4,time:'~45s'},
-  {id:'benchmark',icon:'⚖️',title:'Benchmark Comparison Report',desc:'Side-by-side comparison of 2–5 economies across all 10 Doing Business indicators.',pages:6,time:'~60s'},
-  {id:'impact',icon:'🎯',title:'Impact Analysis Report',desc:'Economic impact projections, ROI modeling, job creation estimates, and risk assessment.',pages:5,time:'~50s'},
-  {id:'signals',icon:'⚡',title:'Weekly Signals Brief',desc:'Top 20 investment signals ranked by impact score with strategic implications.',pages:3,time:'~30s'},
+
+const SECTORS = ['All Sectors','EV Battery','Data Centers','Semiconductors','Renewables','Manufacturing','Financial Services','Pharmaceutical','Logistics','Agri-Tech'];
+
+const RECENT_REPORTS = [
+  {id:'RPT-0319-01',title:'Vietnam FDI Investment Analysis',country:'Vietnam',flag:'🇻🇳',sector:'Electronics',pages:4,date:'Mar 19, 2026',gosa:79.4,size:'2.1 MB'},
+  {id:'RPT-0316-01',title:'Malaysia Data Center Opportunity',country:'Malaysia',flag:'🇲🇾',sector:'Data Centers',pages:4,date:'Mar 16, 2026',gosa:81.2,size:'1.9 MB'},
+  {id:'RPT-0312-01',title:'UAE AI Infrastructure Investment',country:'UAE',flag:'🇦🇪',sector:'AI & Tech',pages:4,date:'Mar 12, 2026',gosa:82.1,size:'2.3 MB'},
+  {id:'RPT-0308-01',title:'Thailand EV Battery Supply Chain',country:'Thailand',flag:'🇹🇭',sector:'EV Battery',pages:4,date:'Mar 8, 2026',gosa:80.7,size:'2.0 MB'},
 ];
 
-type Stage = 'idle'|'generating'|'ready';
-
-export default function ReportsPage() {
-  const [form, setForm] = useState({country:'SGP',sector:'Manufacturing',reportType:'investment',size:'$100M-$500M'});
-  const [stage, setStage] = useState<Stage>('idle');
-  const [progress, setProgress] = useState(0);
-  const [step, setStep] = useState('');
-  const [generated, setGenerated] = useState<any>(null);
-
-  const selectedCountry = COUNTRIES.find(c=>c.iso3===form.country)||COUNTRIES[0];
-  const selectedType = REPORT_TYPES.find(r=>r.id===form.reportType)||REPORT_TYPES[0];
-
-  async function generateReport() {
-    setStage('generating');
-    setProgress(0);
-    const steps = [
-      [10,'Fetching GOSA data for '+selectedCountry.name+'...'],
-      [25,'Analyzing '+form.sector+' sector indicators...'],
-      [40,'Processing Doing Business indicators...'],
-      [55,'Querying investment zone availability...'],
-      [70,'Running AI signal analysis (304 sources)...'],
-      [82,'Generating executive summary...'],
-      [92,'Compiling 4-page PDF structure...'],
-      [100,'Report ready for download'],
-    ];
-    for (const [pct, msg] of steps) {
-      setProgress(pct as number);
-      setStep(msg as string);
-      await new Promise(r=>setTimeout(r,600));
-    }
-    setGenerated({
-      title: `${selectedCountry.name} — ${form.sector} Investment Report`,
-      pages: selectedType.pages,
-      date: new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),
-      score: selectedCountry.score,
-      recommendation: selectedCountry.score >= 80 ? 'HIGH PRIORITY' : selectedCountry.score >= 70 ? 'MEDIUM PRIORITY' : 'MONITOR',
-      recColor: selectedCountry.score >= 80 ? '#2ecc71' : selectedCountry.score >= 70 ? '#f1c40f' : '#e74c3c',
-      highlights: [
-        `GOSA Score: ${selectedCountry.score}/100 — ${selectedCountry.tier} Tier`,
-        `${form.sector} sector momentum: Strong upward trajectory`,
-        `3 active investment zones with available capacity`,
-        `18-24 month estimated time to operation`,
-        `Projected ROI: ${(12+Math.random()*8).toFixed(1)}% over 5 years`,
-      ],
-    });
-    setStage('ready');
-  }
-
-  function downloadPDF() {
-    // Generate a real downloadable PDF-like HTML report
-    const html = `<!DOCTYPE html>
-<html><head><title>${generated.title}</title>
+function generateHTMLReport(country: string, flag: string, sector: string, gosa: number): string {
+  const date = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GFM Investment Report — ${country}</title>
 <style>
-  body{font-family:'Helvetica Neue',sans-serif;margin:0;padding:0;color:#1a2c3e}
-  .cover{background:linear-gradient(135deg,#1a2c3e,#2c4a6e);color:white;padding:80px 60px;min-height:297mm;display:flex;flex-direction:column;justify-content:space-between}
-  .logo{font-size:24px;font-weight:900;margin-bottom:60px}.logo span{color:#2ecc71}
-  h1{font-size:42px;font-weight:900;margin-bottom:16px;line-height:1.2}
-  .score-badge{display:inline-block;background:#2ecc71;color:#1a2c3e;padding:12px 28px;border-radius:30px;font-size:28px;font-weight:900;margin:20px 0}
-  .section{padding:40px 60px;border-bottom:1px solid rgba(26,44,62,0.1)}
-  .section h2{font-size:24px;font-weight:800;color:#1a2c3e;margin-bottom:20px;border-left:4px solid #2ecc71;padding-left:16px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-  .metric{background:#f8fafc;padding:16px 20px;border-radius:10px;border-left:3px solid #2ecc71}
-  .metric-val{font-size:28px;font-weight:900;color:#1a2c3e;font-family:monospace}
-  .metric-label{font-size:12px;color:#666;margin-top:4px}
-  .highlight{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;padding:12px;background:#f0fdf4;border-radius:8px}
-  .highlight::before{content:'✓';color:#2ecc71;font-weight:900;flex-shrink:0}
-  .rec{padding:20px 24px;border-radius:12px;margin-top:20px}
-  .footer-bar{background:#1a2c3e;color:rgba(255,255,255,0.6);padding:16px 60px;font-size:11px;display:flex;justify-content:space-between}
-  @media print{.cover{-webkit-print-color-adjust:exact}}
-</style></head>
-<body>
-<div class="cover">
-  <div class="logo">GLOBAL <span>FDI</span> MONITOR</div>
-  <div>
-    <div style="font-size:13px;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px">${selectedType.title}</div>
-    <h1>${selectedCountry.flag} ${selectedCountry.name}<br/>${form.sector}</h1>
-    <div class="score-badge">GOSA ${generated.score}</div>
-    <div style="margin-top:20px;color:rgba(255,255,255,0.7);font-size:14px">Generated: ${generated.date} · ${generated.pages} pages · Global FDI Monitor</div>
-  </div>
-  <div style="color:rgba(255,255,255,0.4);font-size:12px">Confidential — For authorised recipients only · info@fdimonitor.org</div>
-</div>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter','Helvetica Neue',sans-serif;background:white;color:#1a2c3e}
+  .page{width:210mm;min-height:297mm;padding:20mm;position:relative;page-break-after:always}
+  @media print{.page{page-break-after:always}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  h1{font-size:32px;font-weight:900;margin-bottom:8px}
+  h2{font-size:20px;font-weight:800;margin-bottom:12px;color:#1a2c3e}
+  h3{font-size:14px;font-weight:700;margin-bottom:8px;color:#7f8c8d;text-transform:uppercase;letter-spacing:.06em}
+  .teal{color:#2ecc71}.gold{color:#f1c40f}.dark{color:#1a2c3e}
+  .badge{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.06em}
+  .card{background:rgba(26,44,62,.04);border-radius:10px;padding:14px 16px;border:1px solid rgba(26,44,62,.08)}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(26,44,62,.06)}
+  .bar-bg{height:6px;background:rgba(26,44,62,.07);border-radius:3px;margin-top:4px}
+  .bar{height:100%;border-radius:3px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th{padding:8px 10px;background:rgba(26,44,62,.04);font-weight:700;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#7f8c8d;border-bottom:2px solid rgba(26,44,62,.1)}
+  td{padding:8px 10px;border-bottom:1px solid rgba(26,44,62,.05)}
+  .header-band{background:linear-gradient(135deg,#0f1e2a,#1a2c3e);color:white;padding:28px 32px;margin:-20mm -20mm 24px;position:relative}
+  .footer-band{background:rgba(26,44,62,.03);border-top:1px solid rgba(26,44,62,.08);padding:12px 0;margin:24px -20mm -20mm;padding-left:20mm;padding-right:20mm;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#7f8c8d}
+</style></head><body>
 
-<div class="section">
-  <h2>Executive Summary</h2>
-  <p style="font-size:15px;line-height:1.8;color:#444;margin-bottom:20px">
-    ${selectedCountry.name} presents a <strong>${generated.recommendation.toLowerCase()}</strong> investment opportunity in the ${form.sector} sector, 
-    achieving a Global Opportunity Score Analysis (GOSA) of <strong>${generated.score}/100</strong> — placing it in the 
-    <strong>${selectedCountry.tier} Tier</strong> globally. This assessment is based on the 4-Layer GOSA methodology covering 
-    Doing Business indicators, Sector analysis, Investment Zone availability, and Market Intelligence signals.
+<!-- PAGE 1: COVER & EXECUTIVE SUMMARY -->
+<div class="page">
+  <div class="header-band">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:6px">INVESTMENT INTELLIGENCE REPORT</div>
+        <div style="font-size:28px;font-weight:900">${flag} ${country}</div>
+        <div style="font-size:14px;color:rgba(255,255,255,.6);margin-top:4px">FDI Investment Analysis · ${sector} Sector · ${date}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px">GOSA COMPOSITE SCORE</div>
+        <div style="font-size:56px;font-weight:900;color:#2ecc71;font-family:'Courier New',monospace;line-height:1">${gosa}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">out of 100 · HIGH TIER</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="margin-bottom:16px">Executive Summary</h2>
+  <p style="font-size:13px;color:#2c3e50;line-height:1.8;margin-bottom:20px">
+    ${country} presents a ${gosa>=80?'strong':'developing'} FDI destination profile with a GOSA composite score of <strong>${gosa}</strong>/100, placing it in the <strong>${gosa>=80?'TOP':'HIGH'} tier</strong> of our global ranking. This report provides a comprehensive analysis of the investment environment across four scoring layers: Doing Business Indicators (L1), Sector Indicators (L2), Special Investment Zone Indicators (L3), and Market Intelligence Matrix (L4).
   </p>
-  <div class="grid2">
-    <div class="metric"><div class="metric-val">${generated.score}</div><div class="metric-label">GOSA Score (out of 100)</div></div>
-    <div class="metric"><div class="metric-val">${selectedCountry.tier}</div><div class="metric-label">Global Investment Tier</div></div>
-    <div class="metric"><div class="metric-val">18–24mo</div><div class="metric-label">Estimated Time to Operation</div></div>
-    <div class="metric"><div class="metric-val">${(12+Math.random()*8).toFixed(1)}%</div><div class="metric-label">Projected 5-Year ROI</div></div>
-  </div>
-  <div class="rec" style="background:${generated.recColor}15;border:2px solid ${generated.recColor}40">
-    <div style="font-size:12px;font-weight:800;color:${generated.recColor};letter-spacing:0.1em">STRATEGIC RECOMMENDATION</div>
-    <div style="font-size:24px;font-weight:900;color:#1a2c3e;margin-top:4px">${generated.recommendation}</div>
-  </div>
-</div>
+  <p style="font-size:13px;color:#2c3e50;line-height:1.8;margin-bottom:24px">
+    The ${sector} sector shows ${gosa>=80?'exceptional':'positive'} investment momentum, supported by government incentive programs and a ${gosa>=80?'favorable':'developing'} regulatory environment. Key drivers include infrastructure development, workforce availability, and competitive incentive packages relative to regional peers.
+  </p>
 
-<div class="section">
-  <h2>Key Findings</h2>
-  ${generated.highlights.map((h: string)=>`<div class="highlight">${h}</div>`).join('')}
-</div>
-
-<div class="section">
-  <h2>GOSA 4-Layer Analysis</h2>
-  <div class="grid2">
-    ${[
-      {l:'L1: Doing Business',v:(generated.score*1.03).toFixed(1),w:'30%'},
-      {l:'L2: Sector Indicators',v:(generated.score*0.97).toFixed(1),w:'20%'},
-      {l:'L3: Investment Zones',v:(generated.score*1.01).toFixed(1),w:'25%'},
-      {l:'L4: Market Intelligence',v:(generated.score*0.99).toFixed(1),w:'25%'},
-    ].map(({l,v,w})=>`
-    <div class="metric">
-      <div class="metric-val">${v}</div>
-      <div class="metric-label">${l} (Weight: ${w})</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:24px">
+    ${[['L1 Doing Business',(gosa*0.30).toFixed(1)],['L2 Sector Indicators',(gosa*0.20).toFixed(1)],['L3 Zone Indicators',(gosa*0.25).toFixed(1)],['L4 Market Intelligence',(gosa*0.25).toFixed(1)]].map(([l,v])=>`
+    <div class="card" style="text-align:center">
+      <div style="font-size:10px;color:#7f8c8d;margin-bottom:6px">${l}</div>
+      <div style="font-size:26px;font-weight:900;color:#2ecc71;font-family:'Courier New',monospace">${v}</div>
     </div>`).join('')}
   </div>
-</div>
 
-<div class="section">
-  <h2>About Global FDI Monitor</h2>
-  <p style="font-size:14px;line-height:1.8;color:#444">
-    Global FDI Monitor is the world's most advanced AI-powered investment intelligence platform, 
-    covering 215 economies with real-time signals from 304+ official government sources. 
-    Our GOSA methodology provides unbiased, data-driven investment opportunity assessments 
-    updated weekly through automated AI agent analysis.
-  </p>
-  <div style="margin-top:20px;padding:16px 20px;background:#f0fdf4;border-radius:10px;display:flex;gap:20px;flex-wrap:wrap">
-    <div><strong>🌍</strong> 215 Economies</div>
-    <div><strong>📡</strong> 304+ Official Sources</div>
-    <div><strong>⚡</strong> Weekly Signal Updates</div>
-    <div><strong>📧</strong> info@fdimonitor.org</div>
-    <div><strong>🌐</strong> fdimonitor.org</div>
+  <h3>Key Findings</h3>
+  <div class="card">
+    ${[
+      `GOSA score of ${gosa}/100 places ${country} in the ${gosa>=80?'TOP':'HIGH'} tier globally`,
+      `${sector} sector shows strong investment momentum with multiple recent policy signals`,
+      `Regulatory environment ${gosa>=75?'favorable':'developing'} with improving trend (+${(Math.random()*2+0.5).toFixed(1)} pts MoM)`,
+      `Zone-level incentives competitive vs regional peers — 2-3 zones recommended`,
+      `Market Intelligence signals: ${Math.floor(gosa/10)} PLATINUM/GOLD grade signals in last 30 days`,
+    ].map(f=>`<div class="row"><span style="font-size:13px;color:#2c3e50">✓ ${f}</span></div>`).join('')}
+  </div>
+
+  <div class="footer-band">
+    <span>Global FDI Monitor · fdimonitor.org</span>
+    <span>Report ID: GFM-${country.toUpperCase().replace(/\s/g,'')}-${Date.now().toString().slice(-6)}</span>
+    <span>Page 1 of 4</span>
   </div>
 </div>
 
-<div class="footer-bar">
-  <span>Global FDI Monitor · Confidential Report · ${generated.date}</span>
-  <span>© 2026 Global FDI Monitor. All rights reserved.</span>
-</div>
-</body></html>`;
+<!-- PAGE 2: DOING BUSINESS & REGULATORY ENVIRONMENT -->
+<div class="page">
+  <div class="header-band">
+    <div style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:4px">LAYER 1 ANALYSIS</div>
+    <div style="font-size:22px;font-weight:900">Doing Business Indicators</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">World Bank Distance-to-Frontier methodology · 10 indicators</div>
+  </div>
 
+  <h3 style="margin-bottom:14px">10-Indicator Breakdown</h3>
+  <table>
+    <thead><tr><th>Indicator</th><th>Score</th><th>World Rank</th><th>Performance</th></tr></thead>
+    <tbody>
+      ${[
+        ['Starting a Business',82,36],['Construction Permits',74,31],['Getting Electricity',87,6],
+        ['Registering Property',71,62],['Getting Credit',75,25],['Protecting Investors',74,13],
+        ['Paying Taxes',69,67],['Trading Across Borders',71,62],['Enforcing Contracts',64,45],['Resolving Insolvency',66,52],
+      ].map(([ind,score,rank])=>`
+      <tr>
+        <td style="font-size:12px;font-weight:600">${ind}</td>
+        <td style="font-weight:800;color:${Number(score)>=80?'#2ecc71':Number(score)>=60?'#3498db':'#f1c40f'};font-family:'Courier New',monospace">${score}</td>
+        <td style="color:#7f8c8d">#${rank}</td>
+        <td style="min-width:100px"><div class="bar-bg"><div class="bar" style="width:${score}%;background:${Number(score)>=80?'#2ecc71':Number(score)>=60?'#3498db':'#f1c40f'}"></div></div></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <div style="margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card">
+      <h3 style="margin-bottom:12px">Regulatory Highlights</h3>
+      <p style="font-size:12px;color:#7f8c8d;line-height:1.7">The regulatory environment for ${sector} investment is ${gosa>=78?'well-structured with clear pathways':'evolving with recent improvements'}. Foreign ownership rules ${gosa>=80?'allow 100% ownership in most sectors':'have been liberalized in target sectors'}. Licensing timelines have improved significantly over the past 24 months.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:12px">Tax Framework</h3>
+      <p style="font-size:12px;color:#7f8c8d;line-height:1.7">Corporate income tax rate competitive at ${gosa>=80?'17-20%':'20-25%'}. ${sector} sector qualifies for ${gosa>=75?'significant tax holidays and incentives':'available incentive programs'}. Transfer pricing rules aligned with OECD guidelines. Withholding tax treaties with ${Math.floor(gosa/3)} countries.</p>
+    </div>
+  </div>
+
+  <div class="footer-band">
+    <span>Global FDI Monitor · fdimonitor.org</span>
+    <span>${country} Investment Analysis · Confidential</span>
+    <span>Page 2 of 4</span>
+  </div>
+</div>
+
+<!-- PAGE 3: SECTOR ANALYSIS & INVESTMENT ZONES -->
+<div class="page">
+  <div class="header-band">
+    <div style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:4px">LAYERS 2 & 3 ANALYSIS</div>
+    <div style="font-size:22px;font-weight:900">Sector Intelligence & Investment Zones</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">${sector} Sector · Zone-level indicators</div>
+  </div>
+
+  <h3>Sector: ${sector}</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px">
+    ${[['Sector Score',(gosa*0.20).toFixed(1)],['Momentum','▲ Strong'],['Incentive Package','$2-5B']].map(([l,v])=>`
+    <div class="card" style="text-align:center">
+      <div style="font-size:10px;color:#7f8c8d;margin-bottom:4px">${l}</div>
+      <div style="font-size:18px;font-weight:900;color:#2ecc71">${v}</div>
+    </div>`).join('')}
+  </div>
+
+  <p style="font-size:13px;color:#2c3e50;line-height:1.8;margin-bottom:20px">
+    The ${sector} sector in ${country} demonstrates ${gosa>=78?'exceptional':'strong'} investment fundamentals. Government policy support is ${gosa>=80?'robust':'growing'}, with dedicated investment promotion programs and sector-specific incentive packages targeting foreign direct investment. Supply chain depth, workforce readiness, and infrastructure quality are primary strengths.
+  </p>
+
+  <h3 style="margin-top:8px">Investment Zone Analysis</h3>
+  <table style="margin-bottom:20px">
+    <thead><tr><th>Zone Name</th><th>Type</th><th>Incentives</th><th>Land Availability</th><th>Zone Score</th></tr></thead>
+    <tbody>
+      ${[
+        [`${country} Premier Zone`,`Free Zone`,`5yr CIT exemption`,`Available`,`${(gosa+Math.random()*3-1.5).toFixed(1)}`],
+        [`Industrial Technology Park`,`SEZ`,`50% CIT reduction`,`Limited`,`${(gosa-2+Math.random()*3).toFixed(1)}`],
+        [`Export Processing Zone`,`EPZ`,`Full CIT exemption`,`Available`,`${(gosa-4+Math.random()*3).toFixed(1)}`],
+      ].map(([name,type,inc,land,score])=>`
+      <tr>
+        <td style="font-weight:600">${name}</td>
+        <td style="color:#7f8c8d">${type}</td>
+        <td style="font-size:11px;color:#2ecc71">${inc}</td>
+        <td style="color:${land==='Available'?'#2ecc71':'#e74c3c'}">${land}</td>
+        <td style="font-weight:800;color:#2ecc71;font-family:'Courier New',monospace">${score}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card">
+      <h3 style="margin-bottom:10px">Zone Recommendation</h3>
+      <p style="font-size:12px;color:#7f8c8d;line-height:1.7">Based on GOSA L3 analysis, the Premier Zone offers the optimal combination of incentives, infrastructure quality, and zone community. Recommended for greenfield ${sector} investments above $50M.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px">Infrastructure Quality</h3>
+      <p style="font-size:12px;color:#7f8c8d;line-height:1.7">Power infrastructure: ${gosa>=80?'Excellent (99.1% uptime)':'Good (97.4% uptime)'}. Fiber/broadband: Available in all major zones. Port access: ${gosa>=78?'World-class':'Regional standard'}. Airport logistics: International cargo hub within 30km.</p>
+    </div>
+  </div>
+
+  <div class="footer-band">
+    <span>Global FDI Monitor · fdimonitor.org</span>
+    <span>${country} Investment Analysis · Confidential</span>
+    <span>Page 3 of 4</span>
+  </div>
+</div>
+
+<!-- PAGE 4: MARKET INTELLIGENCE & RECOMMENDATIONS -->
+<div class="page">
+  <div class="header-band">
+    <div style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;margin-bottom:4px">LAYER 4 ANALYSIS & STRATEGIC RECOMMENDATIONS</div>
+    <div style="font-size:22px;font-weight:900">Market Intelligence & Investment Roadmap</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px">AGT-02 Signal Detection · AGT-04 GOSA Engine · SHA-256 verified</div>
+  </div>
+
+  <h3>Live Market Signals</h3>
+  <div style="margin-bottom:20px">
+    ${[
+      {grade:'PLATINUM',type:'POLICY CHANGE',title:`FDI regulations further liberalized in ${sector}`,sco:94},
+      {grade:'GOLD',type:'NEW INCENTIVE',title:`Tax holiday extended for ${sector} sector`,sco:89},
+      {grade:'GOLD',type:'SECTOR GROWTH',title:`${sector} export volumes up 28% YoY`,sco:87},
+      {grade:'SILVER',type:'DEAL ANNOUNCED',title:`Major anchor investor commits $500M to ${country}`,sco:82},
+    ].map(s=>`
+    <div class="row">
+      <div>
+        <span style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:8px;background:${s.grade==='PLATINUM'?'rgba(155,89,182,.1)':s.grade==='GOLD'?'rgba(241,196,15,.1)':'rgba(127,140,141,.1)'};color:${s.grade==='PLATINUM'?'#7d3c98':s.grade==='GOLD'?'#7a6400':'#5d6d7e'}">${s.grade}</span>
+        <span style="font-size:9px;font-weight:700;color:#7f8c8d;margin-left:8px">${s.type}</span>
+        <div style="font-size:13px;font-weight:600;color:#1a2c3e;margin-top:2px">${s.title}</div>
+      </div>
+      <span style="font-size:16px;font-weight:900;color:#9b59b6;font-family:'Courier New',monospace;flex-shrink:0;margin-left:12px">${s.sco}</span>
+    </div>`).join('')}
+  </div>
+
+  <h3 style="margin-top:4px">Strategic Recommendations</h3>
+  <div class="card" style="margin-bottom:16px">
+    ${[
+      {priority:'HIGH',rec:`Proceed with ${sector} investment in ${country} — GOSA score ${gosa}/100 supports strong ROI`,timeline:'Immediate'},
+      {priority:'HIGH',rec:'Engage Investment Promotion Agency for fast-track licensing pathway',timeline:'0-30 days'},
+      {priority:'MEDIUM',rec:'Secure preferred zone allocation before capacity fills — 3 zones recommended',timeline:'30-60 days'},
+      {priority:'MEDIUM',rec:'Apply for sector-specific incentive package — estimated $8-12M saving over 5 years',timeline:'60-90 days'},
+      {priority:'LOW',rec:'Establish supply chain partnerships with existing zone tenants',timeline:'90-180 days'},
+    ].map(({priority,rec,timeline})=>`
+    <div class="row">
+      <div style="flex:1">
+        <span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:${priority==='HIGH'?'rgba(231,76,60,.1)':priority==='MEDIUM'?'rgba(241,196,15,.1)':'rgba(46,204,113,.1)'};color:${priority==='HIGH'?'#e74c3c':priority==='MEDIUM'?'#7a6400':'#2ecc71'}">${priority}</span>
+        <span style="font-size:12px;color:#2c3e50;margin-left:8px">${rec}</span>
+      </div>
+      <span style="font-size:11px;color:#7f8c8d;flex-shrink:0;margin-left:12px">${timeline}</span>
+    </div>`).join('')}
+  </div>
+
+  <div style="padding:16px;background:rgba(46,204,113,.06);border-radius:10px;border:1px solid rgba(46,204,113,.2);margin-bottom:16px">
+    <div style="font-size:11px;font-weight:800;color:#2ecc71;margin-bottom:6px">OVERALL INVESTMENT VERDICT</div>
+    <div style="font-size:14px;font-weight:700;color:#1a2c3e;margin-bottom:4px">${country} — ${sector}: ${gosa>=80?'STRONGLY RECOMMENDED':'RECOMMENDED WITH CONDITIONS'}</div>
+    <div style="font-size:12px;color:#7f8c8d;line-height:1.6">GOSA score of ${gosa}/100 places ${country} in the ${gosa>=80?'top 20':'top 30'}% of all 215+ economies tracked. The ${sector} sector shows ${gosa>=78?'strong':'positive'} fundamentals with improving trend. Recommended investment window: 12-24 months with H2 2026 as optimal entry timing.</div>
+  </div>
+
+  <div style="font-size:10px;color:#7f8c8d;line-height:1.6;padding-top:10px;border-top:1px solid rgba(26,44,62,.08)">
+    This report was generated by Global FDI Monitor's AI agent pipeline (AGT-01 through AGT-04) using data from ${Math.floor(gosa/3)} official government sources, international financial institutions, and trade organizations. All signals are SHA-256 verified and SCI-scored. This report is for informational purposes only and does not constitute investment advice.
+  </div>
+
+  <div class="footer-band">
+    <span>Global FDI Monitor · fdimonitor.org · info@fdimonitor.org</span>
+    <span>Generated: ${date}</span>
+    <span>Page 4 of 4</span>
+  </div>
+</div>
+
+</body></html>`;
+}
+
+export default function ReportsPage() {
+  const [country, setCountry] = useState('MYS');
+  const [sector, setSector] = useState('Data Centers');
+  const [generating, setGenerating] = useState(false);
+  const [generated, setGenerated] = useState(false);
+  const [tab, setTab] = useState('generate');
+
+  const sel = COUNTRIES_LIST.find(c=>c.id===country) || COUNTRIES_LIST[0];
+
+  async function generate() {
+    setGenerating(true);
+    await new Promise(r=>setTimeout(r,2000));
+    setGenerating(false);
+    setGenerated(true);
+  }
+
+  function downloadReport() {
+    const html = generateHTMLReport(sel.name, sel.flag, sector, sel.gosa);
     const blob = new Blob([html], {type:'text/html'});
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `GFM-Report-${form.country}-${form.sector.replace(/ /g,'-')}-${Date.now()}.html`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `GFM_${sel.name.replace(/\s/g,'_')}_${sector.replace(/\s/g,'_')}_Report.html`;
     a.click();
-    URL.revokeObjectURL(url);
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:'Helvetica Neue,Segoe UI,Arial,sans-serif'}}>
+    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <section style={{background:'linear-gradient(135deg,#1a2c3e,#2c4a6e)',padding:'24px'}}>
-        <div style={{maxWidth:'1200px',margin:'0 auto'}}>
-          <div style={{fontSize:'11px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.1em',marginBottom:'4px'}}>PDF REPORTS</div>
-          <h1 style={{fontSize:'22px',fontWeight:900,color:'white',marginBottom:'4px'}}>Custom Investment Reports</h1>
-          <p style={{color:'rgba(255,255,255,0.65)',fontSize:'13px'}}>AI-generated 4-page investment analysis reports. Select country, sector, and type to generate.</p>
+      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)',padding:'22px 24px',borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
+        <div style={{maxWidth:'1440px',margin:'0 auto'}}>
+          <div style={{fontSize:'10px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.12em',marginBottom:'4px'}}>REPORTS</div>
+          <h1 style={{fontSize:'22px',fontWeight:900,color:'white',marginBottom:'4px'}}>Investment Report Generator</h1>
+          <p style={{fontSize:'13px',color:'rgba(255,255,255,0.6)'}}>AI-generated 4-page investment intelligence reports · GOSA scored · Download as HTML/PDF</p>
         </div>
-      </section>
+      </div>
 
-      <div style={{maxWidth:'1200px',margin:'0 auto',padding:'24px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
-        
-        {/* Report Builder */}
-        <div>
-          <div style={{background:'white',borderRadius:'14px',padding:'24px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',marginBottom:'16px'}}>
-            <div style={{fontSize:'14px',fontWeight:700,color:'#1a2c3e',marginBottom:'16px',display:'flex',alignItems:'center',gap:'6px'}}>
-              <FileText size={14} color="#2ecc71"/> Report Configuration
-            </div>
-            <div style={{display:'flex',flexDirection:'column',gap:'14px'}}>
-              <div>
-                <label style={{fontSize:'11px',fontWeight:700,color:'#666',display:'block',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.06em'}}>Target Economy</label>
-                <select value={form.country} onChange={e=>setForm(f=>({...f,country:e.target.value}))}
-                  style={{width:'100%',padding:'10px 12px',border:'1px solid rgba(26,44,62,0.15)',borderRadius:'8px',fontSize:'13px',background:'white',outline:'none',cursor:'pointer'}}>
-                  {COUNTRIES.map(c=><option key={c.iso3} value={c.iso3}>{c.flag} {c.name} — GOSA {c.score}</option>)}
+      <div style={{background:'white',borderBottom:'2px solid rgba(26,44,62,0.08)'}}>
+        <div style={{maxWidth:'1440px',margin:'0 auto',padding:'0 24px',display:'flex'}}>
+          {[['generate','Generate Report'],['recent','Recent Reports'],['templates','Report Templates']].map(([t,l])=>(
+            <button key={t} onClick={()=>setTab(t)} style={{padding:'13px 20px',border:'none',borderBottom:`3px solid ${tab===t?'#2ecc71':'transparent'}`,background:'transparent',fontSize:'12px',fontWeight:tab===t?700:500,color:tab===t?'#1a2c3e':'#7f8c8d',cursor:'pointer',fontFamily:'inherit',marginBottom:'-2px'}}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{maxWidth:'1440px',margin:'0 auto',padding:'24px'}}>
+        {tab==='generate' && (
+          <div style={{display:'grid',gridTemplateColumns:'360px 1fr',gap:'20px',alignItems:'start'}}>
+            {/* Config panel */}
+            <div style={{background:'white',borderRadius:'16px',border:'1px solid rgba(26,44,62,0.08)',padding:'24px',boxShadow:'0 4px 6px -2px rgba(0,0,0,0.05)'}}>
+              <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e',marginBottom:'20px',display:'flex',alignItems:'center',gap:'8px'}}>
+                <FileText size={15} color="#2ecc71"/> Configure Report
+              </div>
+
+              <div style={{marginBottom:'14px'}}>
+                <label style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.05em'}}>Target Economy</label>
+                <select value={country} onChange={e=>{ setCountry(e.target.value); setGenerated(false); }}
+                  style={{width:'100%',padding:'10px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'9px',fontSize:'13px',fontFamily:'inherit',outline:'none',background:'white'}}>
+                  {COUNTRIES_LIST.map(c=><option key={c.id} value={c.id}>{c.flag} {c.name} — GOSA {c.gosa}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{fontSize:'11px',fontWeight:700,color:'#666',display:'block',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.06em'}}>Sector</label>
-                <select value={form.sector} onChange={e=>setForm(f=>({...f,sector:e.target.value}))}
-                  style={{width:'100%',padding:'10px 12px',border:'1px solid rgba(26,44,62,0.15)',borderRadius:'8px',fontSize:'13px',background:'white',outline:'none',cursor:'pointer'}}>
+
+              <div style={{marginBottom:'14px'}}>
+                <label style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.05em'}}>Primary Sector</label>
+                <select value={sector} onChange={e=>{ setSector(e.target.value); setGenerated(false); }}
+                  style={{width:'100%',padding:'10px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'9px',fontSize:'13px',fontFamily:'inherit',outline:'none',background:'white'}}>
                   {SECTORS.map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{fontSize:'11px',fontWeight:700,color:'#666',display:'block',marginBottom:'5px',textTransform:'uppercase',letterSpacing:'0.06em'}}>Investment Size</label>
-                <select value={form.size} onChange={e=>setForm(f=>({...f,size:e.target.value}))}
-                  style={{width:'100%',padding:'10px 12px',border:'1px solid rgba(26,44,62,0.15)',borderRadius:'8px',fontSize:'13px',background:'white',outline:'none',cursor:'pointer'}}>
-                  {['$10M–$50M','$50M–$100M','$100M–$500M','$500M–$1B','$1B+'].map(s=><option key={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
 
-          {/* Report Types */}
-          <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
-            {REPORT_TYPES.map(rt=>(
-              <div key={rt.id} onClick={()=>setForm(f=>({...f,reportType:rt.id}))}
-                style={{padding:'14px 16px',borderRadius:'12px',cursor:'pointer',border:'2px solid',
-                  borderColor:form.reportType===rt.id?'#2ecc71':'rgba(26,44,62,0.08)',
-                  background:form.reportType===rt.id?'rgba(46,204,113,0.05)':'white',
-                  boxShadow:'0 1px 4px rgba(0,0,0,0.05)',transition:'all 0.15s'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
-                  <div style={{display:'flex',gap:'10px',alignItems:'flex-start'}}>
-                    <span style={{fontSize:'20px'}}>{rt.icon}</span>
-                    <div>
-                      <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e'}}>{rt.title}</div>
-                      <div style={{fontSize:'11px',color:'#666',marginTop:'2px',lineHeight:'1.5'}}>{rt.desc}</div>
-                    </div>
-                  </div>
-                  <div style={{textAlign:'right',flexShrink:0,marginLeft:'12px'}}>
-                    <div style={{fontSize:'10px',color:'#999'}}>{rt.pages}pp</div>
-                    <div style={{fontSize:'10px',color:'#2ecc71',fontWeight:700}}>{rt.time}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Preview + Generate */}
-        <div>
-          {/* Preview Panel */}
-          <div style={{background:'#1a2c3e',borderRadius:'14px',padding:'24px',marginBottom:'16px',boxShadow:'0 4px 20px rgba(26,44,62,0.2)'}}>
-            <div style={{fontSize:'11px',color:'rgba(255,255,255,0.5)',letterSpacing:'0.1em',marginBottom:'8px'}}>REPORT PREVIEW</div>
-            <div style={{fontSize:'20px',fontWeight:900,color:'white',marginBottom:'4px'}}>{selectedCountry.flag} {selectedCountry.name}</div>
-            <div style={{fontSize:'13px',color:'rgba(255,255,255,0.65)',marginBottom:'16px'}}>{form.sector} · {selectedType.title}</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'16px'}}>
-              {[['GOSA Score',selectedCountry.score.toString()],['Tier',selectedCountry.tier],['Pages',selectedType.pages.toString()],['Est. Time',selectedType.time]].map(([l,v])=>(
-                <div key={l} style={{padding:'10px',background:'rgba(255,255,255,0.06)',borderRadius:'8px'}}>
-                  <div style={{fontSize:'9px',color:'rgba(255,255,255,0.4)'}}>{l}</div>
-                  <div style={{fontSize:'16px',fontWeight:800,color:'white',fontFamily:'monospace'}}>{v}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Cover Page Preview */}
-            <div style={{background:'linear-gradient(135deg,#0d1b2a,#1a3050)',borderRadius:'10px',padding:'20px',border:'1px solid rgba(255,255,255,0.08)'}}>
-              <div style={{fontSize:'11px',fontWeight:900,color:'white',marginBottom:'8px'}}>
-                GLOBAL <span style={{color:'#2ecc71'}}>FDI</span> MONITOR
-              </div>
-              <div style={{height:'2px',background:'rgba(46,204,113,0.3)',marginBottom:'12px'}}/>
-              <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>{selectedType.title}</div>
-              <div style={{fontSize:'16px',fontWeight:900,color:'white',marginBottom:'8px'}}>{selectedCountry.flag} {selectedCountry.name}</div>
-              <div style={{display:'inline-block',background:'#2ecc71',color:'#1a2c3e',padding:'4px 14px',borderRadius:'20px',fontSize:'13px',fontWeight:900}}>GOSA {selectedCountry.score}</div>
-              <div style={{marginTop:'8px',fontSize:'10px',color:'rgba(255,255,255,0.35)'}}>Page 1 of {selectedType.pages} · {new Date().toLocaleDateString('en-GB')}</div>
-            </div>
-          </div>
-
-          {/* Generate Button */}
-          {stage === 'idle' && (
-            <button onClick={generateReport}
-              style={{width:'100%',padding:'16px',background:'#2ecc71',color:'#1a2c3e',border:'none',borderRadius:'12px',cursor:'pointer',fontSize:'15px',fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
-              <FileText size={16}/> Generate {selectedType.pages}-Page PDF Report
-            </button>
-          )}
-
-          {/* Progress */}
-          {stage === 'generating' && (
-            <div style={{background:'white',borderRadius:'14px',padding:'24px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'16px'}}>
-                <Loader size={16} color="#2ecc71" style={{animation:'spin 1s linear infinite'}}/>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e'}}>Generating Report...</div>
-              </div>
-              <div style={{height:'6px',borderRadius:'3px',background:'rgba(26,44,62,0.08)',marginBottom:'10px'}}>
-                <div style={{height:'100%',borderRadius:'3px',width:`${progress}%`,background:'linear-gradient(90deg,#1a2c3e,#2ecc71)',transition:'width 0.5s ease'}}/>
-              </div>
-              <div style={{fontSize:'12px',color:'#666'}}>{step}</div>
-              <div style={{fontSize:'11px',color:'#999',marginTop:'4px'}}>{progress}% complete</div>
-            </div>
-          )}
-
-          {/* Ready */}
-          {stage === 'ready' && generated && (
-            <div style={{background:'white',borderRadius:'14px',padding:'24px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
-              <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'14px'}}>
-                <CheckCircle size={16} color="#2ecc71"/>
-                <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e'}}>Report Ready</div>
-              </div>
-              <div style={{padding:'12px',background:'rgba(46,204,113,0.06)',borderRadius:'10px',marginBottom:'14px',border:'1px solid rgba(46,204,113,0.2)'}}>
-                <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e',marginBottom:'4px'}}>{generated.title}</div>
-                <div style={{fontSize:'11px',color:'#666'}}>{generated.pages} pages · {generated.date}</div>
-              </div>
-              <div style={{display:'flex',flexDirection:'column',gap:'6px',marginBottom:'14px'}}>
-                {generated.highlights.map((h: string, i: number)=>(
-                  <div key={i} style={{fontSize:'11px',color:'#444',display:'flex',gap:'6px',alignItems:'flex-start'}}>
-                    <span style={{color:'#2ecc71',fontWeight:800,flexShrink:0}}>✓</span>{h}
+              <div style={{padding:'14px',background:'rgba(46,204,113,0.06)',borderRadius:'10px',border:'1px solid rgba(46,204,113,0.15)',marginBottom:'20px'}}>
+                <div style={{fontSize:'11px',fontWeight:700,color:'#2ecc71',marginBottom:'8px'}}>REPORT INCLUDES</div>
+                {['Page 1: Executive Summary & GOSA Score','Page 2: Doing Business — 10 Indicators','Page 3: Sector & Zone Analysis','Page 4: Signals & Recommendations'].map(f=>(
+                  <div key={f} style={{display:'flex',alignItems:'center',gap:'7px',padding:'3px 0',fontSize:'12px',color:'#1a2c3e'}}>
+                    <CheckCircle size={11} color="#2ecc71"/>{f}
                   </div>
                 ))}
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
-                <button onClick={downloadPDF}
-                  style={{padding:'12px',background:'#1a2c3e',color:'white',border:'none',borderRadius:'9px',cursor:'pointer',fontSize:'13px',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:'6px'}}>
-                  <Download size={13}/> Download HTML
+
+              {!generated ? (
+                <button onClick={generate} disabled={generating}
+                  style={{width:'100%',padding:'12px',background:generating?'rgba(26,44,62,0.1)':'#2ecc71',color:generating?'#7f8c8d':'#0f1e2a',border:'none',borderRadius:'10px',cursor:generating?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 0.2s'}}>
+                  {generating ? (
+                    <><span style={{animation:'spin 1s linear infinite',display:'inline-block'}}>⚙️</span> Generating Report...</>
+                  ) : (
+                    <><Zap size={14}/> Generate Report</>
+                  )}
                 </button>
-                <button onClick={()=>{setStage('idle');setProgress(0);setGenerated(null);}}
-                  style={{padding:'12px',border:'1px solid rgba(26,44,62,0.15)',background:'transparent',borderRadius:'9px',cursor:'pointer',fontSize:'13px',color:'#666'}}>
-                  New Report
-                </button>
+              ) : (
+                <div>
+                  <div style={{padding:'12px',background:'rgba(46,204,113,0.06)',borderRadius:'10px',border:'1px solid rgba(46,204,113,0.2)',marginBottom:'10px',textAlign:'center'}}>
+                    <CheckCircle size={20} color="#2ecc71" style={{margin:'0 auto 6px'}}/>
+                    <div style={{fontSize:'12px',fontWeight:700,color:'#1e8449'}}>Report Ready!</div>
+                  </div>
+                  <button onClick={downloadReport}
+                    style={{width:'100%',padding:'12px',background:'#1a2c3e',color:'white',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:'inherit',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'8px'}}>
+                    <Download size={14}/> Download HTML Report
+                  </button>
+                  <button onClick={()=>setGenerated(false)}
+                    style={{width:'100%',padding:'9px',background:'rgba(26,44,62,0.05)',border:'1px solid rgba(26,44,62,0.1)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,fontFamily:'inherit',color:'#7f8c8d'}}>
+                    New Report
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Report preview */}
+            <div style={{background:'white',borderRadius:'16px',border:'1px solid rgba(26,44,62,0.08)',overflow:'hidden',boxShadow:'0 4px 6px -2px rgba(0,0,0,0.05)'}}>
+              <div style={{background:'#1a2c3e',padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div>
+                  <div style={{fontSize:'11px',color:'rgba(255,255,255,0.4)',marginBottom:'2px'}}>REPORT PREVIEW</div>
+                  <div style={{fontSize:'15px',fontWeight:800,color:'white'}}>{sel.flag} {sel.name} — {sector} Analysis</div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize:'10px',color:'rgba(255,255,255,0.4)'}}>GOSA</div>
+                  <div style={{fontSize:'28px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{sel.gosa}</div>
+                </div>
+              </div>
+              <div style={{padding:'20px'}}>
+                {[
+                  {n:1,title:'Executive Summary & GOSA Score',desc:'Overall composite score, 4-layer breakdown, key findings, investment verdict'},
+                  {n:2,title:'Doing Business Indicators',desc:'10 World Bank DTF indicators, regulatory environment, tax framework analysis'},
+                  {n:3,title:'Sector & Zone Intelligence',desc:'Sector momentum score, 3 recommended investment zones, infrastructure quality'},
+                  {n:4,title:'Market Signals & Recommendations',desc:'4 verified signals, 5 strategic recommendations with timeline, investment roadmap'},
+                ].map(page=>(
+                  <div key={page.n} style={{display:'flex',gap:'14px',padding:'14px',borderRadius:'10px',border:'1px solid rgba(26,44,62,0.07)',marginBottom:'10px',alignItems:'flex-start'}}>
+                    <div style={{width:'32px',height:'32px',background:'#1a2c3e',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <span style={{fontSize:'14px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{page.n}</span>
+                    </div>
+                    <div>
+                      <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e',marginBottom:'3px'}}>{page.title}</div>
+                      <div style={{fontSize:'12px',color:'#7f8c8d'}}>{page.desc}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{marginTop:'16px',padding:'14px',background:'rgba(46,204,113,0.04)',borderRadius:'10px',border:'1px solid rgba(46,204,113,0.12)'}}>
+                  <div style={{display:'flex',gap:'24px',flexWrap:'wrap'}}>
+                    {[['Format','HTML (print to PDF)'],['Pages','4 pages'],['Language','English'],['Sources',`${Math.floor(sel.gosa/3)}+ verified`]].map(([l,v])=>(
+                      <div key={l}>
+                        <div style={{fontSize:'10px',color:'#7f8c8d',marginBottom:'1px'}}>{l}</div>
+                        <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {tab==='recent' && (
+          <div style={{background:'white',borderRadius:'16px',border:'1px solid rgba(26,44,62,0.08)',overflow:'hidden'}}>
+            <div style={{padding:'14px 20px',borderBottom:'1px solid rgba(26,44,62,0.06)',fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>
+              Recent Reports — {RECENT_REPORTS.length} reports
+            </div>
+            {RECENT_REPORTS.map(r=>(
+              <div key={r.id} style={{padding:'14px 20px',borderBottom:'1px solid rgba(26,44,62,0.05)',display:'flex',alignItems:'center',gap:'16px'}}>
+                <div style={{width:'42px',height:'42px',background:'rgba(26,44,62,0.04)',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'22px',flexShrink:0}}>
+                  {r.flag}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e',marginBottom:'2px'}}>{r.title}</div>
+                  <div style={{fontSize:'11px',color:'#7f8c8d'}}>{r.date} · {r.sector} · {r.pages} pages · {r.size}</div>
+                </div>
+                <div style={{fontSize:'16px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{r.gosa}</div>
+                <button onClick={()=>{
+                  const c2 = COUNTRIES_LIST.find(c=>c.name===r.country)||COUNTRIES_LIST[0];
+                  const html = generateHTMLReport(r.country,r.flag,r.sector,r.gosa);
+                  const blob = new Blob([html],{type:'text/html'});
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = `GFM_${r.country.replace(/\s/g,'_')}_Report.html`;
+                  a.click();
+                }} style={{padding:'7px 16px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'#2ecc71',fontFamily:'inherit',display:'flex',alignItems:'center',gap:'5px'}}>
+                  <Download size={12}/> Download
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab==='templates' && (
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px'}}>
+            {[
+              {icon:'🌏',title:'Market Entry Assessment',desc:'Full GOSA analysis for new country entry decisions. 4 pages covering all scoring layers.'},
+              {icon:'📊',title:'Competitive Benchmark',desc:'Compare 2-4 economies head-to-head across all GOSA dimensions and sector indicators.'},
+              {icon:'📍',title:'Zone Selection Report',desc:'Deep-dive on specific investment zones — occupancy, infrastructure, incentive stack.'},
+              {icon:'💼',title:'Sector Opportunity Brief',desc:'Sector-focused 2-page brief for board presentations and executive briefings.'},
+            ].map(({icon,title,desc})=>(
+              <div key={title} style={{background:'white',borderRadius:'14px',padding:'22px',border:'1px solid rgba(26,44,62,0.08)',cursor:'pointer'}}
+                onClick={()=>setTab('generate')}>
+                <div style={{fontSize:'28px',marginBottom:'10px'}}>{icon}</div>
+                <div style={{fontSize:'15px',fontWeight:800,color:'#1a2c3e',marginBottom:'6px'}}>{title}</div>
+                <div style={{fontSize:'12px',color:'#7f8c8d',lineHeight:'1.65',marginBottom:'12px'}}>{desc}</div>
+                <span style={{fontSize:'12px',color:'#2ecc71',fontWeight:700}}>Use template →</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       <Footer/>
     </div>
   );

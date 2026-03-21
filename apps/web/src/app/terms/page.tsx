@@ -17,7 +17,7 @@ const SECTIONS = [
   {id:'10', title:'Limitation of Liability', content:`To the maximum extent permitted by law, Global FDI Monitor's liability is limited to the amount paid by you in the 12 months preceding the claim. We are not liable for indirect, consequential, or investment losses. Some jurisdictions do not permit liability limitations, so these may not apply to you.`},
   {id:'11', title:'Governing Law', content:`These Terms are governed by the laws of the Dubai International Financial Centre (DIFC). Any disputes shall be subject to the exclusive jurisdiction of the DIFC Courts. For users outside the UAE, local mandatory consumer protection laws may also apply.`},
   {id:'12', title:'Changes to Terms', content:`We will provide 30 days' notice of material changes via email and platform notification. Continued use after the notice period constitutes acceptance. If you do not agree to updated Terms, you may terminate your account before the effective date.`},
-  {id:'13', title:'Contact', content:`Legal enquiries: legal@fdimonitor.org · Support: support@fdimonitor.org · Global FDI Monitor, DIFC, Dubai, UAE. Company registration: DIFC Authority.`},
+  {id:'13', title:'Contact', content:`Legal enquiries: legal@fdimonitor.org · Support: support@fdimonitor.org · Global FDI Monitor, Dubai, UAE. Company registration: DIFC Authority.`},
 ];
 
 export default function TermsPage() {

@@ -1,165 +1,94 @@
 'use client';
-import { Globe, Shield, TrendingUp, CheckCircle, Users, Target, BarChart3, Zap, Building2, Award, Database, Activity } from 'lucide-react';
 import NavBar from '@/components/NavBar';
-import TrialBanner from '@/components/TrialBanner';
-import PreviewGate from '@/components/PreviewGate';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
 
-const INSIGHT = [
-  {letter:'I', word:'Intelligence',   desc:'Real-time FDI signals, Z3-verified, SHA-256 provenance.',                   icon:Zap,      color:'#0A3D62'},
-  {letter:'N', word:'Network',        desc:'300+ primary sources across T1–T4 tiers from 215 economies.',              icon:Globe,    color:'#74BB65'},
-  {letter:'S', word:'Signals',        desc:'218+ live signals graded PLATINUM to BRONZE by Signal Confidence Index.',  icon:Activity, color:'#1B6CA8'},
-  {letter:'I', word:'Indicators',     desc:'World Bank Doing Business 10 indicators normalized via Distance-to-Frontier.', icon:BarChart3,color:'#0A3D62'},
-  {letter:'G', word:'Global',         desc:'GFR assessment across 215 economies — 6 dimensions, 38 indicators.',       icon:Award,    color:'#74BB65'},
-  {letter:'H', word:'Hubs & Zones',   desc:'1,400+ special investment zones evaluated for readiness and incentives.',  icon:Building2,color:'#1B6CA8'},
-  {letter:'T', word:'Transparency',   desc:'Every data point is traceable — GFM-SRC reference, source date, access date.', icon:Shield,  color:'#0A3D62'},
+const TEAM_VALUES = [
+  { icon:'🎯', title:'Precision Over Speed', desc:'Every signal is SHA-256 verified and SCI-scored before reaching our users. We never sacrifice accuracy for recency.' },
+  { icon:'🌍', title:'Truly Global', desc:'215+ economies, 20+ sectors, 304+ official government sources. No region or market is left out of our intelligence.' },
+  { icon:'🤖', title:'AI-First Methodology', desc:'Our 6-stage agent pipeline runs continuously, processing thousands of signals to surface only what matters to investors.' },
+  { icon:'🔒', title:'Source Transparency', desc:'Every signal includes its official government source, timestamp, and SHA-256 provenance hash. Full audit trail.' },
 ];
 
-const LAYERS = [
-  {n:1,name:'Doing Business Indicators',  weight:30, color:'#0A3D62', desc:'10 World Bank indicators via Distance-to-Frontier normalization.'},
-  {n:2,name:'Sector Indicators',          weight:20, color:'#74BB65', desc:'Regulations, incentives, labor, infrastructure, export potential.'},
-  {n:3,name:'Special Investment Zone Indicators',weight:25,color:'#1B6CA8',desc:'Land availability, occupancy, infrastructure readiness, zone incentives.'},
-  {n:4,name:'Market Intelligence Matrix', weight:25, color:'#2E86AB', desc:'IFI signals, trade flows, central bank data, company announcements.'},
+const METHODOLOGY_LAYERS = [
+  { n:'L1', name:'Doing Business Indicators', weight:'30%', color:'#2ecc71', desc:'World Bank\'s 10 Doing Business indicators normalized via Distance-to-Frontier method. Starting a Business, Construction Permits, Getting Electricity, Registering Property, Getting Credit, Protecting Investors, Paying Taxes, Trading Across Borders, Enforcing Contracts, Resolving Insolvency.' },
+  { n:'L2', name:'Sector Indicators', weight:'20%', color:'#3498db', desc:'Sector-specific regulatory environment, incentive packages, labor availability, infrastructure readiness, and export potential. Covers 20+ sectors across all covered economies.' },
+  { n:'L3', name:'Special Investment Zone Indicators', weight:'25%', color:'#9b59b6', desc:'Zone-level intelligence: land availability, occupancy rates, infrastructure quality, zone-specific incentives vs mainland competitiveness, existing tenant cluster analysis.' },
+  { n:'L4', name:'Market Intelligence Matrix', weight:'25%', color:'#f1c40f', desc:'Real-time and forward-looking signals from 304+ sources: international financial institutions, trade organizations, development banks, central banks, company expansion announcements, and investment signals.' },
 ];
-
-
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen" style={{background:'#E2F2DF'}}>
+    <div style={{minHeight:'100vh', background:'#f0f4f8', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <TrialBanner/>
-
       {/* Hero */}
-      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'60px 40px'}}>
-        <div style={{maxWidth:'1100px',margin:'0 auto',textAlign:'center'}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'16px'}}>
-            <Globe size={16} color="#74BB65"/>
-            <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.1em',textTransform:'uppercase'}}>About Global FDI Monitor</span>
-          </div>
-          <h1 style={{fontSize:'clamp(28px,4vw,46px)',fontWeight:900,color:'white',marginBottom:'16px',lineHeight:'1.1'}}>
-            The Global Standard for<br/>Investment Intelligence
-          </h1>
-          <p style={{fontSize:'16px',color:'rgba(226,242,223,0.82)',maxWidth:'680px',margin:'0 auto',lineHeight:'1.75'}}>
-            Global FDI Monitor transforms complex global investment data into actionable strategic decisions for governments, investment promotion agencies, and institutional investors worldwide.
+      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)', padding:'60px 24px', textAlign:'center'}}>
+        <div style={{maxWidth:'700px', margin:'0 auto'}}>
+          <div style={{fontSize:'10px', fontWeight:800, color:'#2ecc71', letterSpacing:'0.12em', marginBottom:'12px'}}>ABOUT GLOBAL FDI MONITOR</div>
+          <h1 style={{fontSize:'36px', fontWeight:900, color:'white', marginBottom:'16px', lineHeight:'1.2'}}>The world's most advanced FDI intelligence platform</h1>
+          <p style={{fontSize:'15px', color:'rgba(255,255,255,0.65)', lineHeight:'1.75', marginBottom:'28px'}}>
+            We combine World Bank Doing Business methodology with sector-level intelligence, zone-specific reality data, and real-time market signals across all countries and all sectors — delivering actionable investment insights for global investors, governments, and economic development organizations.
           </p>
-        </div>
-      </section>
-
-      <div style={{maxWidth:'1100px',margin:'0 auto',padding:'48px 24px',display:'flex',flexDirection:'column',gap:'32px'}}>
-
-        {/* Vision & Mission */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'20px'}}>
-          {[
-            {title:'Our Vision',icon:Target,color:'#74BB65',text:"To become the world's most trusted and comprehensive source of foreign direct investment intelligence — delivering clarity, speed, and precision to investment professionals across 215 economies."},
-            {title:'Our Mission',icon:Zap,color:'#0A3D62',text:'To democratise access to high-quality investment intelligence by combining rigorous methodology, real-time signals, and AI-powered analytics into a single, accessible platform.'},
-          ].map(({title,icon:Icon,color,text})=>(
-            <div key={title} className="gfm-card" style={{padding:'28px',borderTop:`4px solid ${color}`}}>
-              <div style={{display:'flex',alignItems:'center',gap:'9px',marginBottom:'12px'}}>
-                <Icon size={18} color={color}/>
-                <span style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em'}}>{title}</span>
+          <div style={{display:'flex', gap:'24px', justifyContent:'center', flexWrap:'wrap'}}>
+            {[['215+','Economies'],['304+','Official Sources'],['50+','AI Agents'],['12,847','Subscribers']].map(([v,l])=>(
+              <div key={l} style={{textAlign:'center'}}>
+                <div style={{fontSize:'28px', fontWeight:900, color:'#2ecc71', fontFamily:"'JetBrains Mono',monospace"}}>{v}</div>
+                <div style={{fontSize:'11px', color:'rgba(255,255,255,0.5)'}}>{l}</div>
               </div>
-              <p style={{fontSize:'14px',color:'#696969',lineHeight:'1.75',margin:0}}>{text}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{maxWidth:'1200px', margin:'0 auto', padding:'60px 24px'}}>
+        {/* Values */}
+        <h2 style={{fontSize:'26px', fontWeight:800, color:'#1a2c3e', marginBottom:'8px', textAlign:'center'}}>Our Principles</h2>
+        <p style={{fontSize:'13px', color:'#7f8c8d', textAlign:'center', marginBottom:'32px'}}>What drives every decision in our platform</p>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'16px', marginBottom:'60px'}}>
+          {TEAM_VALUES.map(({icon,title,desc})=>(
+            <div key={title} style={{background:'white', borderRadius:'16px', padding:'24px', border:'1px solid rgba(26,44,62,0.08)', display:'flex', gap:'16px', alignItems:'flex-start'}}>
+              <div style={{fontSize:'28px', flexShrink:0}}>{icon}</div>
+              <div>
+                <div style={{fontSize:'16px', fontWeight:800, color:'#1a2c3e', marginBottom:'6px'}}>{title}</div>
+                <div style={{fontSize:'13px', color:'#7f8c8d', lineHeight:'1.7'}}>{desc}</div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* INSIGHT framework */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'20px',display:'flex',alignItems:'center',gap:'8px'}}>
-            <Award size={16} color="#74BB65"/> The INSIGHT Framework
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:'12px'}}>
-            {INSIGHT.map(({letter,word,desc,icon:Icon,color})=>(
-              <div key={word} style={{textAlign:'center',padding:'16px 8px'}}>
-                <div style={{width:'48px',height:'48px',borderRadius:'14px',background:`${color}10`,
-                  border:`2px solid ${color}20`,display:'flex',alignItems:'center',justifyContent:'center',
-                  margin:'0 auto 10px'}}>
-                  <span style={{fontSize:'22px',fontWeight:900,color}}>{letter}</span>
-                </div>
-                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{word}</div>
-                <div style={{fontSize:'10px',color:'#696969',lineHeight:'1.4'}}>{desc}</div>
-              </div>
-            ))}
-          </div>
+        {/* GOSA Methodology */}
+        <h2 style={{fontSize:'26px', fontWeight:800, color:'#1a2c3e', marginBottom:'8px', textAlign:'center'}}>GOSA Methodology</h2>
+        <p style={{fontSize:'13px', color:'#7f8c8d', textAlign:'center', marginBottom:'8px'}}>Global Opportunity Score Analysis — 4-Layer Weighted Composite</p>
+        <div style={{textAlign:'center', padding:'12px 20px', background:'rgba(26,44,62,0.04)', borderRadius:'10px', marginBottom:'32px', display:'inline-block', left:'50%', position:'relative', transform:'translateX(-50%)'}}>
+          <span style={{fontSize:'13px', color:'#1a2c3e', fontFamily:"'JetBrains Mono',monospace"}}>
+            GOSA = (0.30 × L1) + (0.20 × L2) + (0.25 × L3) + (0.25 × L4)
+          </span>
         </div>
-
-        {/* Scoring methodology */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px',display:'flex',alignItems:'center',gap:'8px'}}>
-            <BarChart3 size={16} color="#74BB65"/> Global Opportunity Score Analysis Methodology
-          </div>
-          <div style={{fontFamily:'monospace',fontSize:'13px',color:'#0A3D62',
-            background:'rgba(10,61,98,0.04)',padding:'14px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.1)',
-            marginBottom:'16px',lineHeight:'1.9'}}>
-            GOSA = (0.30 × Layer 1: Doing Business Indicators) +<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.20 × Layer 2: Sector Indicators) +<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.25 × Layer 3: Special Investment Zone Indicators) +<br/>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(0.25 × Layer 4: Market Intelligence Matrix)
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'12px'}}>
-            {LAYERS.map(l=>(
-              <div key={l.n} style={{padding:'14px',borderRadius:'10px',background:`${l.color}06`,
-                border:`1px solid ${l.color}20`,borderLeft:`4px solid ${l.color}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'6px'}}>
-                  <span style={{fontSize:'11px',fontWeight:800,color:l.color}}>LAYER {l.n}</span>
-                  <span style={{fontSize:'11px',fontWeight:700,color:l.color}}>{l.weight}%</span>
-                </div>
-                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62',marginBottom:'5px'}}>{l.name}</div>
-                <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.4'}}>{l.desc}</div>
+        <div style={{display:'flex', flexDirection:'column', gap:'12px', marginBottom:'60px'}}>
+          {METHODOLOGY_LAYERS.map(({n,name,weight,color,desc})=>(
+            <div key={n} style={{background:'white', borderRadius:'14px', padding:'20px 24px', border:'1px solid rgba(26,44,62,0.08)', display:'grid', gridTemplateColumns:'auto 1fr', gap:'20px', alignItems:'start', borderLeft:`5px solid ${color}`}}>
+              <div style={{textAlign:'center', minWidth:'60px'}}>
+                <div style={{fontSize:'20px', fontWeight:900, color:color}}>{n}</div>
+                <div style={{fontSize:'12px', fontWeight:800, padding:'3px 8px', borderRadius:'8px', background:`${color}15`, color}}>{weight}</div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Key strengths */}
-        <div className="gfm-card" style={{padding:'28px'}}>
-          <div style={{fontSize:'14px',fontWeight:800,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'16px',display:'flex',alignItems:'center',gap:'8px'}}>
-            <Shield size={16} color="#74BB65"/> Our Core Strengths
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'14px'}}>
-            {[
-              {icon:Database,  title:'Data Integrity',          desc:'Z3 formal verification + SHA-256 provenance on all PLATINUM/GOLD signals. Every data point traceable.'},
-              {icon:Zap,       title:'Real-Time Intelligence',  desc:'218+ live signals updated every 2 seconds. Ingestion latency below 2s from source publication.'},
-              {icon:Globe,     title:'Global Coverage',         desc:'215 economies, 21 ISIC sectors, 1,400+ investment zones, 300+ verified data sources.'},
-              {icon:BarChart3, title:'Rigorous Methodology',    desc:'World Bank Doing Business methodology combined with proprietary sector and zone intelligence layers.'},
-              {icon:Shield,    title:'Security & Compliance',   desc:'PDF-only reports, dynamic watermarks, copy protection. DIFC registered, GDPR compliant.'},
-              {icon:Users,     title:'Expert Team',             desc:'Investment intelligence professionals with backgrounds at sovereign wealth funds, IPAs, and multilateral institutions.'},
-            ].map(({icon:Icon,title,desc})=>(
-              <div key={title} style={{display:'flex',gap:'12px',padding:'14px',
-                borderRadius:'10px',background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)'}}>
-                <div style={{width:'36px',height:'36px',borderRadius:'10px',background:'rgba(116,187,101,0.1)',
-                  display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <Icon size={18} color="#74BB65"/>
-                </div>
-                <div>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>{title}</div>
-                  <div style={{fontSize:'11px',color:'#696969',lineHeight:'1.5'}}>{desc}</div>
-                </div>
+              <div>
+                <div style={{fontSize:'15px', fontWeight:700, color:'#1a2c3e', marginBottom:'6px'}}>{name}</div>
+                <div style={{fontSize:'12px', color:'#7f8c8d', lineHeight:'1.7'}}>{desc}</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
         {/* CTA */}
-        <div style={{textAlign:'center',padding:'32px',background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'16px'}}>
-          <h3 style={{fontSize:'22px',fontWeight:800,color:'white',marginBottom:'10px'}}>
-            Ready to explore global investment intelligence?
-          </h3>
-          <p style={{color:'rgba(226,242,223,0.8)',marginBottom:'20px',fontSize:'14px'}}>
-            Start a free trial — full access to signals, GFR assessment, and Investment Analysis.
-          </p>
-          <div style={{display:'flex',gap:'12px',justifyContent:'center',flexWrap:'wrap'}}>
-            <Link href="/register"
-              style={{padding:'12px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
-                textDecoration:'none',fontWeight:700,fontSize:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+        <div style={{background:'#1a2c3e', borderRadius:'20px', padding:'40px', textAlign:'center', border:'1px solid rgba(46,204,113,0.15)'}}>
+          <h2 style={{fontSize:'24px', fontWeight:900, color:'white', marginBottom:'10px'}}>Ready to access global FDI intelligence?</h2>
+          <p style={{fontSize:'14px', color:'rgba(255,255,255,0.55)', marginBottom:'24px'}}>Start your free 7-day trial. No credit card required.</p>
+          <div style={{display:'flex', gap:'12px', justifyContent:'center', flexWrap:'wrap'}}>
+            <Link href="/register" style={{padding:'12px 28px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:800}}>
               Start Free Trial →
             </Link>
-            <Link href="/investment-analysis"
-              style={{padding:'12px 24px',border:'1px solid rgba(226,242,223,0.35)',color:'rgba(226,242,223,0.9)',
-                borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>
-              View Investment Analysis
+            <Link href="/contact" style={{padding:'12px 24px', border:'1px solid rgba(255,255,255,0.2)', color:'white', borderRadius:'10px', textDecoration:'none', fontSize:'14px', fontWeight:600}}>
+              Contact Sales
             </Link>
           </div>
         </div>
