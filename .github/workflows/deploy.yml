@@ -3,17 +3,13 @@ on:
   push:
     branches: [main]
 jobs:
-  deploy:
-    name: Deploy to GitHub Pages
+  verify:
+    name: Verify docs exist
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-      - name: Deploy pre-built docs to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          cname: fdimonitor.org
-          enable_jekyll: false
+      - name: Check docs folder
+        run: |
+          echo "docs/ pages: $(find docs -name 'index.html' | wc -l)"
+          echo "docs/ size: $(du -sh docs/ | cut -f1)"
+          ls docs/ | head -5
