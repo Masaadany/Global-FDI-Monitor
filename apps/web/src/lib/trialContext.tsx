@@ -80,13 +80,13 @@ const TrialContext = createContext<TrialContextType>({
 function buildLockMessage(trigger: LockTrigger, reportsMax: number, searchesMax: number): string {
   switch (trigger) {
     case 'time':
-      return 'Your 7-day free trial period has expired.';
+      return 'Your 7-day access period has expired.';
     case 'reports':
-      return `You have used all ${reportsMax} report downloads included in your free trial.`;
+      return `You have used all ${reportsMax} report downloads included in your access.`;
     case 'searches':
-      return `You have completed ${searchesMax} search or result views — the limit for your free trial.`;
+      return `You have completed ${searchesMax} search or result views — the limit for your access.`;
     default:
-      return 'Your free trial has ended.';
+      return 'Your access has ended.';
   }
 }
 

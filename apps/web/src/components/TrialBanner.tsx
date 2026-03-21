@@ -18,7 +18,7 @@ export default function TrialBanner() {
         <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
           <span>🔒</span>
           <span style={{fontSize:'12px',fontWeight:700,color:'white'}}>
-            Account Read-Only — Your free trial has ended. Downloads, exports and report generation are disabled.
+            Account Read-Only — Your access has ended. Downloads, exports and report generation are disabled.
           </span>
         </div>
         <div style={{display:'flex',gap:'6px'}}>
@@ -44,7 +44,7 @@ export default function TrialBanner() {
         <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
           <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#74BB65',animation:'pulse 2s infinite',flexShrink:0}}/>
           <span style={{fontSize:'12px',fontWeight:600,color:'rgba(226,242,223,0.9)'}}>
-            <b style={{color:'#74BB65'}}>Free Trial</b> — {daysLeft} day{daysLeft!==1?'s':''} remaining · {reportsLeft} of {reportsMax} report{reportsMax!==1?'s':''} available
+            <b style={{color:'#74BB65'}}>Access</b> — {daysLeft} day{daysLeft!==1?'s':''} remaining · {reportsLeft} of {reportsMax} report{reportsMax!==1?'s':''} available
           </span>
         </div>
         <Link href="/contact" style={{

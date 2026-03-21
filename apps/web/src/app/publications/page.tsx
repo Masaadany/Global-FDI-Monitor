@@ -75,40 +75,40 @@ export default function PublicationsPage(){
   const [featured,...archive]=ISSUES;
 
   return(
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
 
       {/* HERO */}
-      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'28px 24px',borderBottom:'1px solid rgba(0,255,200,0.08)',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#FFFFFF,#060f1a)',padding:'28px 24px',borderBottom:'1px solid rgba(0,255,200,0.08)',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
         <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
-          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:"'Orbitron','Inter',sans-serif"}}>PUBLICATIONS</div>
-          <h1 style={{fontSize:'28px',fontWeight:900,color:'#e8f4f8',marginBottom:'6px'}}>Weekly Intelligence Brief</h1>
-          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>AI-generated weekly FDI intelligence · 12,847 subscribers · SHA-256 verified · AGT-06 Pipeline</p>
+          <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:'var(--font-display)'}}>PUBLICATIONS</div>
+          <h1 style={{fontSize:'28px',fontWeight:900,color:'var(--text-primary)',marginBottom:'6px'}}>Weekly Intelligence Brief</h1>
+          <p style={{fontSize:'13px',color:'var(--text-muted)'}}>AI-generated weekly FDI intelligence · 12,847 subscribers · SHA-256 verified · AGT-06 Pipeline</p>
         </div>
       </div>
 
       <div style={{maxWidth:'1540px',margin:'0 auto',padding:'24px'}}>
         {/* FEATURED */}
-        <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'28px',marginBottom:'20px',position:'relative',overflow:'hidden',boxShadow:'0 0 0 1px rgba(0,255,200,0.05), 0 8px 32px rgba(0,0,0,0.4)'}}>
+        <div style={{background:'white',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'28px',marginBottom:'20px',position:'relative',overflow:'hidden',boxShadow:'0 0 0 1px rgba(0,255,200,0.05), 0 8px 32px rgba(0,0,0,0.4)'}}>
           <div style={{position:'absolute',top:0,right:0,width:'300px',height:'300px',background:'radial-gradient(circle at top right, rgba(0,255,200,0.06), transparent)',pointerEvents:'none'}}/>
           <div style={{display:'flex',gap:'16px',alignItems:'center',marginBottom:'16px',flexWrap:'wrap'}}>
-            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(0,255,200,0.1)',color:'#00ffc8',border:'1px solid rgba(0,255,200,0.25)',letterSpacing:'0.1em',fontFamily:"'JetBrains Mono',monospace"}}>LATEST ISSUE</span>
-            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(255,68,102,0.1)',color:'#ff4466',border:'1px solid rgba(255,68,102,0.2)',letterSpacing:'0.1em',fontFamily:"'JetBrains Mono',monospace"}}>PENDING REVIEW</span>
-            <span style={{fontSize:'11px',color:'rgba(232,244,248,0.4)',fontFamily:"'JetBrains Mono',monospace"}}>Issue #{featured.id} · {featured.date}</span>
+            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(46,204,113,0.1)',color:'var(--accent-green)',border:'1px solid rgba(0,255,200,0.25)',letterSpacing:'0.1em',fontFamily:'var(--font-mono)'}}>LATEST ISSUE</span>
+            <span style={{fontSize:'9px',fontWeight:800,padding:'3px 10px',borderRadius:'4px',background:'rgba(255,68,102,0.1)',color:'#ff4466',border:'1px solid rgba(255,68,102,0.2)',letterSpacing:'0.1em',fontFamily:'var(--font-mono)'}}>PENDING REVIEW</span>
+            <span style={{fontSize:'11px',color:'var(--text-muted)',fontFamily:'var(--font-mono)'}}>Issue #{featured.id} · {featured.date}</span>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:'24px',alignItems:'start'}}>
             <div>
               <div style={{fontSize:'48px',marginBottom:'14px'}}>{featured.cover}</div>
-              <h2 style={{fontSize:'24px',fontWeight:900,color:'#e8f4f8',marginBottom:'12px',lineHeight:1.2}}>{featured.headline}</h2>
-              <p style={{fontSize:'14px',color:'rgba(232,244,248,0.55)',lineHeight:1.75,marginBottom:'20px',maxWidth:'700px'}}>{featured.summary}</p>
+              <h2 style={{fontSize:'24px',fontWeight:900,color:'var(--text-primary)',marginBottom:'12px',lineHeight:1.2}}>{featured.headline}</h2>
+              <p style={{fontSize:'14px',color:'var(--text-secondary)',lineHeight:1.75,marginBottom:'20px',maxWidth:'700px'}}>{featured.summary}</p>
               <div style={{display:'flex',gap:'12px',flexWrap:'wrap',marginBottom:'20px'}}>
                 {[...featured.regions,...featured.sectors].map(t=>(
                   <span key={t} style={{padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.15)',borderRadius:'20px',fontSize:'10px',color:'rgba(0,180,216,0.8)',fontWeight:600}}>{t}</span>
                 ))}
               </div>
               <div style={{display:'flex',gap:'10px',flexWrap:'wrap'}}>
-                <button onClick={()=>generateReport(featured)} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:"'Inter',sans-serif",boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>
+                <button onClick={()=>generateReport(featured)} style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'var(--primary)',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:'var(--font-ui)',boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>
                   <Download size={13}/> Download Issue #{featured.id}
                 </button>
                 <Link href="/newsletter" style={{display:'flex',alignItems:'center',gap:'8px',padding:'10px 18px',background:'rgba(255,68,102,0.08)',border:'1px solid rgba(255,68,102,0.2)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#ff4466'}}>
@@ -117,10 +117,10 @@ export default function PublicationsPage(){
               </div>
             </div>
             <div style={{display:'flex',flexDirection:'column',gap:'10px',minWidth:'160px'}}>
-              {[['Confidence',`${featured.conf}%`,'#00ffc8'],['Signals',featured.signals,'#9b59b6'],['GOSA Update',featured.gosa_update,'#ffd700']].map(([l,v,c])=>(
-                <div key={String(l)} style={{padding:'14px',background:'rgba(0,0,0,0.3)',borderRadius:'10px',border:`1px solid ${c}15`,textAlign:'center'}}>
-                  <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',marginBottom:'4px',letterSpacing:'0.08em',textTransform:'uppercase'}}>{l}</div>
-                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace",textShadow:`0 0 12px ${c}60`}}>{v}</div>
+              {[['Confidence',`${featured.conf}%`,'#2ECC71'],['Signals',featured.signals,'#9b59b6'],['GOSA Update',featured.gosa_update,'#ffd700']].map(([l,v,c])=>(
+                <div key={String(l)} style={{padding:'14px',background:'var(--bg-subtle)',borderRadius:'10px',border:`1px solid ${c}15`,textAlign:'center'}}>
+                  <div style={{fontSize:'9px',color:'var(--text-light)',marginBottom:'4px',letterSpacing:'0.08em',textTransform:'uppercase'}}>{l}</div>
+                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:'var(--font-mono)',textShadow:`0 0 12px ${c}60`}}>{v}</div>
                 </div>
               ))}
             </div>
@@ -128,37 +128,37 @@ export default function PublicationsPage(){
         </div>
 
         {/* ARCHIVE */}
-        <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.4)',letterSpacing:'0.15em',marginBottom:'14px',fontFamily:"'Orbitron','Inter',sans-serif"}}>ISSUE ARCHIVE</div>
+        <div style={{fontSize:'10px',fontWeight:800,color:'#27ae60',letterSpacing:'0.15em',marginBottom:'14px',fontFamily:'var(--font-display)'}}>ISSUE ARCHIVE</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
           {archive.map(issue=>(
-            <div key={issue.id} style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'20px',transition:'all 250ms ease',position:'relative',overflow:'hidden'}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.2)';e.currentTarget.style.transform='translateY(-2px)';}}
+            <div key={issue.id} style={{background:'white',border:'1px solid var(--border)',borderRadius:'12px',padding:'20px',transition:'all 250ms ease',position:'relative',overflow:'hidden'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(46,204,113,0.25)';e.currentTarget.style.transform='translateY(-2px)';}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(0,180,216,0.1)';e.currentTarget.style.transform='none';}}>
               <div style={{position:'absolute',top:0,right:0,width:'100px',height:'100px',background:'radial-gradient(circle at top right, rgba(0,255,200,0.03), transparent)',pointerEvents:'none'}}/>
               <div style={{display:'flex',gap:'12px',alignItems:'flex-start',marginBottom:'12px'}}>
                 <div style={{fontSize:'36px',flexShrink:0}}>{issue.cover}</div>
                 <div style={{flex:1}}>
                   <div style={{display:'flex',gap:'8px',alignItems:'center',marginBottom:'6px',flexWrap:'wrap'}}>
-                    <span style={{fontSize:'9px',fontWeight:800,color:'rgba(0,255,200,0.5)',fontFamily:"'JetBrains Mono',monospace"}}>#{issue.id}</span>
-                    <span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>{issue.date}</span>
-                    <span style={{fontSize:'8px',fontWeight:800,padding:'2px 6px',borderRadius:'4px',background:'rgba(52,152,219,0.1)',color:'#3498db',border:'1px solid rgba(52,152,219,0.2)',letterSpacing:'0.06em'}}>{issue.tier}</span>
+                    <span style={{fontSize:'9px',fontWeight:800,color:'#2ECC71',fontFamily:'var(--font-mono)'}}>#{issue.id}</span>
+                    <span style={{fontSize:'9px',color:'var(--text-light)'}}>{issue.date}</span>
+                    <span style={{fontSize:'8px',fontWeight:800,padding:'2px 6px',borderRadius:'4px',background:'rgba(52,152,219,0.1)',color:'#3498db',border:'1px solid rgba(52,152,219,0.2)',letterSpacing:'0.06em'}}>{issue.category}</span>
                   </div>
-                  <h3 style={{fontSize:'14px',fontWeight:700,color:'#e8f4f8',lineHeight:1.35,marginBottom:'8px'}}>{issue.headline}</h3>
-                  <p style={{fontSize:'12px',color:'rgba(232,244,248,0.45)',lineHeight:1.65}}>{issue.summary.slice(0,100)}...</p>
+                  <h3 style={{fontSize:'14px',fontWeight:700,color:'var(--text-primary)',lineHeight:1.35,marginBottom:'8px'}}>{issue.headline}</h3>
+                  <p style={{fontSize:'12px',color:'var(--text-muted)',lineHeight:1.65}}>{issue.summary.slice(0,100)}...</p>
                 </div>
               </div>
               <div style={{display:'flex',gap:'8px',flexWrap:'wrap',marginBottom:'12px'}}>
                 {[...issue.regions,...issue.sectors].slice(0,3).map(t=>(
-                  <span key={t} style={{padding:'2px 8px',background:'rgba(0,180,216,0.06)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'20px',fontSize:'9px',color:'rgba(0,180,216,0.7)'}}>{t}</span>
+                  <span key={t} style={{padding:'2px 8px',background:'rgba(0,180,216,0.06)',border:'1px solid var(--border)',borderRadius:'20px',fontSize:'9px',color:'rgba(0,180,216,0.7)'}}>{t}</span>
                 ))}
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div style={{display:'flex',gap:'14px'}}>
-                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.3)'}}>Conf: <span style={{color:'#00ffc8',fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{issue.conf}%</span></span>
-                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.3)'}}>Signals: <span style={{color:'#9b59b6',fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{issue.signals}</span></span>
+                  <span style={{fontSize:'10px',color:'var(--text-light)'}}>Conf: <span style={{color:'var(--accent-green)',fontWeight:700,fontFamily:'var(--font-mono)'}}>{issue.conf}%</span></span>
+                  <span style={{fontSize:'10px',color:'var(--text-light)'}}>Signals: <span style={{color:'#9b59b6',fontWeight:700,fontFamily:'var(--font-mono)'}}>{issue.signals}</span></span>
                 </div>
                 <button onClick={()=>generateReport(issue)}
-                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'7px 14px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'#00ffc8',fontFamily:"'Inter',sans-serif"}}>
+                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'7px 14px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'var(--accent-green)',fontFamily:'var(--font-ui)'}}>
                   <Download size={11}/> Download
                 </button>
               </div>
@@ -170,13 +170,13 @@ export default function PublicationsPage(){
         <div style={{marginTop:'24px',background:'rgba(0,255,200,0.04)',border:'1px solid rgba(0,255,200,0.12)',borderRadius:'14px',padding:'24px',display:'flex',gap:'20px',alignItems:'center',flexWrap:'wrap'}}>
           <div style={{fontSize:'24px'}}>📬</div>
           <div style={{flex:1}}>
-            <div style={{fontSize:'15px',fontWeight:700,color:'#e8f4f8',marginBottom:'4px'}}>Subscribe to Weekly Intelligence Brief</div>
-            <div style={{fontSize:'12px',color:'rgba(232,244,248,0.45)'}}>12,847 investment professionals · Every Tuesday 08:00 GMT · PLATINUM signals included</div>
+            <div style={{fontSize:'15px',fontWeight:700,color:'var(--text-primary)',marginBottom:'4px'}}>Subscribe to Weekly Intelligence Brief</div>
+            <div style={{fontSize:'12px',color:'var(--text-muted)'}}>12,847 investment professionals · Every Tuesday 08:00 GMT · PLATINUM signals included</div>
           </div>
           <div style={{display:'flex',gap:'8px',flexShrink:0}}>
             <input type="email" placeholder="your@organisation.com"
-              style={{padding:'10px 14px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'12px',color:'#e8f4f8',outline:'none',fontFamily:"'Inter',sans-serif",width:'220px'}}/>
-            <button style={{padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:"'Inter',sans-serif",whiteSpace:'nowrap'}}>
+              style={{padding:'10px 14px',background:'var(--bg-subtle)',border:'1px solid var(--border)',borderRadius:'8px',fontSize:'12px',color:'var(--text-primary)',outline:'none',fontFamily:'var(--font-ui)',width:'220px'}}/>
+            <button style={{padding:'10px 20px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'var(--primary)',border:'none',borderRadius:'8px',cursor:'pointer',fontSize:'12px',fontWeight:800,fontFamily:'var(--font-ui)',whiteSpace:'nowrap'}}>
               Subscribe →
             </button>
           </div>

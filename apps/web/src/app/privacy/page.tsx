@@ -14,20 +14,20 @@ export default function PrivacyPage() {
   ];
 
   return (
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
       <div style={{maxWidth:'800px',margin:'0 auto',padding:'48px 24px'}}>
-        <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:"'Orbitron','Inter',sans-serif"}}>LEGAL</div>
-        <h1 style={{fontSize:'28px',fontWeight:900,color:'#e8f4f8',marginBottom:'6px'}}>Privacy Policy</h1>
-        <p style={{fontSize:'13px',color:'rgba(232,244,248,0.4)',marginBottom:'40px'}}>Last updated: March 2026 · GDPR compliant · No data selling</p>
+        <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'8px',fontFamily:'var(--font-display)'}}>LEGAL</div>
+        <h1 style={{fontSize:'28px',fontWeight:900,color:'var(--text-primary)',marginBottom:'6px'}}>Privacy Policy</h1>
+        <p style={{fontSize:'13px',color:'var(--text-muted)',marginBottom:'40px'}}>Last updated: March 2026 · GDPR compliant · No data selling</p>
         {sections.map(([title, body]) => (
           <div key={title} style={{marginBottom:'28px',paddingBottom:'28px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
-            <h2 style={{fontSize:'16px',fontWeight:700,color:'#e8f4f8',marginBottom:'8px'}}>{title}</h2>
-            <p style={{fontSize:'13px',color:'rgba(232,244,248,0.55)',lineHeight:1.85}}>{body}</p>
+            <h2 style={{fontSize:'16px',fontWeight:700,color:'var(--text-primary)',marginBottom:'8px'}}>{title}</h2>
+            <p style={{fontSize:'13px',color:'var(--text-secondary)',lineHeight:1.85}}>{body}</p>
           </div>
         ))}
-        <div style={{padding:'16px',background:'rgba(0,255,200,0.04)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.1)',fontSize:'12px',color:'rgba(232,244,248,0.45)'}}>
-          Questions? Contact <a href="mailto:info@fdimonitor.org" style={{color:'#00ffc8',textDecoration:'none'}}>info@fdimonitor.org</a>
+        <div style={{padding:'16px',background:'rgba(0,255,200,0.04)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.1)',fontSize:'12px',color:'var(--text-muted)'}}>
+          Questions? Contact <a href="mailto:info@fdimonitor.org" style={{color:'var(--accent-green)',textDecoration:'none'}}>info@fdimonitor.org</a>
         </div>
       </div>
       <Footer/>

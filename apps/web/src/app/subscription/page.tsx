@@ -51,7 +51,7 @@ export default function SubscriptionPage() {
           <p style={{color:'rgba(226,242,223,0.82)',fontSize:'15px',lineHeight:'1.7'}}>
             {trial.isProfessional
               ? 'You are on the Professional plan. Manage your subscription below.'
-              : 'Upgrade from your free trial to Professional for unlimited access.'}
+              : 'Upgrade from your access to Professional for unlimited access.'}
           </p>
           {/* Billing toggle */}
           {!trial.isProfessional && (
@@ -163,7 +163,7 @@ export default function SubscriptionPage() {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
               <div>
                 <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'4px'}}>
-                  Free Trial — {trial.daysLeft} day{trial.daysLeft!==1?'s':''} remaining
+                  Access — {trial.daysLeft} day{trial.daysLeft!==1?'s':''} remaining
                 </div>
                 <div style={{fontSize:'12px',color:'#696969'}}>
                   {trial.reportsUsed}/{trial.reportsMax} reports used · {trial.searchesUsed}/{trial.searchesMax} searches used

@@ -86,9 +86,9 @@ export default function SourcesPage() {
             {totalSources}+ verified official sources · SHA-256 provenance tracking · Updated weekly by AGT-01 Data Collection Agent
           </p>
           <div style={{display:'flex',gap:'14px',flexWrap:'wrap'}}>
-            {[['304+','Total Sources'],['8','Source Categories'],['Weekly','Update Frequency'],['SHA-256','Verification']].map(([v,l])=>(
+            {[['1000+','Total Sources'],['8','Source Categories'],['Weekly','Update Frequency'],['SHA-256','Verification']].map(([v,l])=>(
               <div key={l} style={{padding:'8px 14px',background:'rgba(255,255,255,0.07)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.1)'}}>
-                <span style={{fontSize:'16px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{v} </span>
+                <span style={{fontSize:'16px',fontWeight:900,color:'#2ecc71',fontFamily:'var(--font-mono)'}}>{v} </span>
                 <span style={{fontSize:'11px',color:'rgba(255,255,255,0.5)'}}>{l}</span>
               </div>
             ))}
@@ -112,7 +112,7 @@ export default function SourcesPage() {
               <div onClick={()=>setExpanded(expanded===i?null:i)}
                 style={{padding:'16px 20px',cursor:'pointer',display:'flex',alignItems:'center',gap:'14px'}}>
                 <div style={{width:'44px',height:'44px',borderRadius:'10px',background:`${color}12`,border:`1px solid ${color}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                  <span style={{fontSize:'20px',fontWeight:900,color,fontFamily:"'JetBrains Mono',monospace"}}>{count}</span>
+                  <span style={{fontSize:'20px',fontWeight:900,color,fontFamily:'var(--font-mono)'}}>{count}</span>
                 </div>
                 <div style={{flex:1}}>
                   <div style={{fontSize:'14px',fontWeight:700,color:'#1a2c3e'}}>{cat}</div>

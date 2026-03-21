@@ -24,16 +24,16 @@ export default function SettingsPage() {
 
   const Toggle = ({k}: {k:string}) => (
     <button onClick={()=>toggle(k)}
-      style={{width:'44px',height:'24px',borderRadius:'12px',position:'relative',background:(prefs as any)[k]?'#00ffc8':'rgba(255,255,255,0.1)',border:'none',cursor:'pointer',transition:'background 200ms ease',flexShrink:0}}>
+      style={{width:'44px',height:'24px',borderRadius:'12px',position:'relative',background:(prefs as any)[k]?'#2ECC71':'rgba(255,255,255,0.1)',border:'none',cursor:'pointer',transition:'background 200ms ease',flexShrink:0}}>
       <div style={{position:'absolute',top:'3px',left:(prefs as any)[k]?'23px':'3px',width:'18px',height:'18px',borderRadius:'50%',background:'white',transition:'left 200ms ease',boxShadow:'0 1px 4px rgba(0,0,0,0.3)'}}/>
     </button>
   );
 
   const Section = ({icon,title,children}: {icon:any,title:string,children:any}) => (
-    <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',overflow:'hidden',marginBottom:'14px'}}>
-      <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',alignItems:'center',gap:'9px',background:'rgba(0,0,0,0.2)'}}>
-        <span style={{color:'#00ffc8',display:'flex',alignItems:'center'}}>{icon}</span>
-        <span style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.8)',textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:"'Orbitron','Inter',sans-serif"}}>{title}</span>
+    <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'12px',overflow:'hidden',marginBottom:'14px'}}>
+      <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',alignItems:'center',gap:'9px',background:'var(--bg-subtle)'}}>
+        <span style={{color:'var(--accent-green)',display:'flex',alignItems:'center'}}>{icon}</span>
+        <span style={{fontSize:'12px',fontWeight:700,color:'#1A2C3E',textTransform:'uppercase',letterSpacing:'0.08em',fontFamily:'var(--font-display)'}}>{title}</span>
       </div>
       <div style={{padding:'16px 18px'}}>{children}</div>
     </div>
@@ -42,8 +42,8 @@ export default function SettingsPage() {
   const Row = ({label,sub,children}: {label:string,sub?:string,children:any}) => (
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'10px 0',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
       <div>
-        <div style={{fontSize:'13px',fontWeight:500,color:'rgba(232,244,248,0.75)'}}>{label}</div>
-        {sub && <div style={{fontSize:'11px',color:'rgba(232,244,248,0.35)',marginTop:'2px'}}>{sub}</div>}
+        <div style={{fontSize:'13px',fontWeight:500,color:'var(--text-secondary)'}}>{label}</div>
+        {sub && <div style={{fontSize:'11px',color:'var(--text-muted)',marginTop:'2px'}}>{sub}</div>}
       </div>
       <div style={{flexShrink:0,marginLeft:'16px'}}>{children}</div>
     </div>
@@ -51,22 +51,22 @@ export default function SettingsPage() {
 
   const Sel = ({k, opts}: {k:string, opts:string[]}) => (
     <select value={(prefs as any)[k]} onChange={e=>set(k,e.target.value)}
-      style={{padding:'6px 10px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',fontSize:'12px',color:'#e8f4f8',outline:'none',cursor:'pointer',fontFamily:"'Inter',sans-serif"}}>
-      {opts.map(o=><option key={o} style={{background:'#0a1628'}}>{o}</option>)}
+      style={{padding:'6px 10px',background:'var(--bg-subtle)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',fontSize:'12px',color:'var(--text-primary)',outline:'none',cursor:'pointer',fontFamily:'var(--font-ui)'}}>
+      {opts.map(o=><option key={o} style={{background:'white'}}>{o}</option>)}
     </select>
   );
 
   return (
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#FFFFFF,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
         <div style={{maxWidth:'800px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',position:'relative'}}>
           <div>
-            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:"'Orbitron','Inter',sans-serif"}}>SETTINGS</div>
-            <h1 style={{fontSize:'22px',fontWeight:900,color:'#e8f4f8'}}>Account Preferences</h1>
+            <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:'var(--font-display)'}}>SETTINGS</div>
+            <h1 style={{fontSize:'22px',fontWeight:900,color:'var(--text-primary)'}}>Account Preferences</h1>
           </div>
-          <button onClick={save} style={{display:'flex',alignItems:'center',gap:'7px',padding:'10px 22px',background:saved?'rgba(0,255,200,0.1)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:saved?'#00ffc8':'#020c14',border:saved?'1px solid rgba(0,255,200,0.25)':'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",transition:'all 200ms',boxShadow:saved?'none':'0 4px 14px rgba(0,255,200,0.25)'}}>
+          <button onClick={save} style={{display:'flex',alignItems:'center',gap:'7px',padding:'10px 22px',background:saved?'rgba(46,204,113,0.1)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:saved?'#2ECC71':'var(--primary)',border:saved?'1px solid rgba(0,255,200,0.25)':'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:'var(--font-ui)',transition:'all 200ms',boxShadow:saved?'none':'0 4px 14px rgba(0,255,200,0.25)'}}>
             {saved?<><CheckCircle size={14}/>Saved!</>:<>Save Changes</>}
           </button>
         </div>
@@ -93,8 +93,8 @@ export default function SettingsPage() {
           <Row label="HIGH Impact Only" sub="Filter out MED and LOW impact signals"><Toggle k="highImpactOnly"/></Row>
           <Row label="Minimum SCI Score" sub="Only show signals above this threshold">
             <input type="range" min="60" max="95" value={prefs.minSco} onChange={e=>set('minSco',e.target.value)}
-              style={{width:'80px',accentColor:'#00ffc8',cursor:'pointer'}}/>
-            <span style={{fontSize:'13px',fontWeight:800,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",marginLeft:'8px',minWidth:'24px'}}>{prefs.minSco}</span>
+              style={{width:'80px',accentColor:'#2ECC71',cursor:'pointer'}}/>
+            <span style={{fontSize:'13px',fontWeight:800,color:'var(--accent-green)',fontFamily:'var(--font-mono)',marginLeft:'8px',minWidth:'24px'}}>{prefs.minSco}</span>
           </Row>
         </Section>
 
@@ -105,13 +105,13 @@ export default function SettingsPage() {
 
         <Section icon={<Lock size={14}/>} title="Account">
           <Row label="Subscription" sub="Professional — $9,588/year · Renews Jan 2027">
-            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,255,200,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'6px',color:'#00ffc8'}}>Active</span>
+            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'6px',color:'var(--accent-green)'}}>Active</span>
           </Row>
           <Row label="API Access" sub="1,000 calls/day · api.fdimonitor.org">
-            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.2)',borderRadius:'6px',color:'#00b4d8'}}>Enabled</span>
+            <span style={{fontSize:'11px',fontWeight:700,padding:'4px 10px',background:'rgba(0,180,216,0.08)',border:'1px solid rgba(0,180,216,0.2)',borderRadius:'6px',color:'#3498DB'}}>Enabled</span>
           </Row>
           <Row label="Change Password">
-            <button style={{padding:'6px 14px',background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.6)',fontFamily:"'Inter',sans-serif"}}>Update</button>
+            <button style={{padding:'6px 14px',background:'var(--bg-subtle)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'var(--text-secondary)',fontFamily:'var(--font-ui)'}}>Update</button>
           </Row>
         </Section>
       </div>

@@ -414,7 +414,7 @@ export default function NewsletterPreviewPage() {
                   <h2 style={{fontSize:'16px',fontWeight:900,color:'#1a2c3e',textTransform:'uppercase',letterSpacing:'0.08em',margin:0}}>About Global FDI Monitor</h2>
                 </div>
                 <p style={{fontSize:'12px',color:'#555',lineHeight:'1.75',marginBottom:'20px'}}>
-                  Global FDI Monitor is the world's most advanced AI-powered investment intelligence platform. 
+                  Global FDI Monitor is the world's most advanced Smart intelligence investment intelligence platform. 
                   Combining World Bank Doing Business methodology with sector-level intelligence, zone-specific 
                   reality data, and real-time market signals across all countries and all sectors, we deliver 
                   actionable investment insights for global investors, governments, and economic development organisations.

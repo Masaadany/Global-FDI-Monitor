@@ -63,7 +63,7 @@ export default function PreviewGate({
             <h3 className="font-extrabold text-lg mb-2" style={{color:'#0A3D62'}}>{meta.title}</h3>
             <p className="text-sm mb-5" style={{color:'#696969'}}>
               {meta.desc}. Available on Professional ($799/month) and Enterprise plans.
-              Your 3-day free trial provides read-only access to all dashboards.
+              Your 3-day access provides read-only access to all dashboards.
             </p>
             <div className="flex gap-3 justify-center">
               <Link href="/subscription" className="gfm-btn-primary text-sm px-6 py-2.5">Upgrade to Professional</Link>

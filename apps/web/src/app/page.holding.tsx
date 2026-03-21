@@ -18,7 +18,7 @@ const FEATURES = [
   { icon:'📡', title:'Live Market Signals',         desc:'Real-time FDI signals PLATINUM to BRONZE' },
   { icon:'🏆', title:'Future Readiness assessment',    desc:'215 economies across 6 dimensions' },
   { icon:'✈️', title:'Investment Mission Planning', desc:'Target companies, free zones, opportunities' },
-  { icon:'📋', title:'Custom Reports',              desc:'AI-powered PDF intelligence reports' },
+  { icon:'📋', title:'Custom Reports',              desc:'Smart intelligence PDF intelligence reports' },
   { icon:'🔮', title:'Foresight & Outlook 2050',   desc:'Scenario modelling to 2050' },
   { icon:'📚', title:'Resources & Insights',        desc:'Expert publications and briefings' },
   { icon:'📰', title:'Publications Library',        desc:'Sector and country deep dives' },

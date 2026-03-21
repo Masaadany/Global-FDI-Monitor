@@ -29,13 +29,13 @@ export default function CookieConsent() {
     <div style={{
       position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
       width: 'min(640px, calc(100vw - 40px))',
-      background: 'rgba(8,20,36,0.97)',
-      border: '1px solid rgba(0,255,200,0.2)',
+      background: '#FFFFFF',
+      border: '1px solid #ECF0F1',
       borderRadius: '14px',
       padding: '18px 22px',
       zIndex: 9999,
       backdropFilter: 'blur(20px)',
-      boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,255,200,0.08)',
+      boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
       display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap',
       animation: 'slideUp 0.4s ease',
     }}>

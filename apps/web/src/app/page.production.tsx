@@ -22,7 +22,7 @@ const FEATURES = [
   { icon: Zap,       title:'Live Market Signals',        desc:'218+ real-time FDI signals graded PLATINUM to BRONZE. Z3 verified, SHA-256 provenance, 2-second updates.', href:'/signals',         color:'#74BB65' },
   { icon: Award,     title:'Future Readiness assessment',   desc:'GFR assessments for 215 economies across 6 dimensions. Quarterly recalculation with full methodology.', href:'/gfr',              color:'#0A3D62' },
   { icon: Target,    title:'Investment Mission Planning', desc:'Match destination economies, target companies, government entities and sector leads for IPA missions.', href:'/pmp',             color:'#1B6CA8' },
-  { icon: BookOpen,  title:'Custom Intelligence Reports', desc:'10 AI-powered report types. Market briefs to flagship GFR reports. PDF only, dynamically watermarked.', href:'/reports',        color:'#74BB65' },
+  { icon: BookOpen,  title:'Custom Intelligence Reports', desc:'10 Smart intelligence report types. Market briefs to flagship GFR reports. PDF only, dynamically watermarked.', href:'/reports',        color:'#74BB65' },
   { icon: TrendingUp,title:'Foresight & Outlook 2050',   desc:'Probabilistic FDI forecasts to 2050. Optimistic, base, and stress scenarios with what-if analysis.', href:'/forecast',        color:'#0A3D62' },
   { icon: Globe,     title:'Resources & Insights',        desc:'Sector deep dives, regional briefs, policy notes, and research publications from our intelligence team.', href:'/market-insights', color:'#1B6CA8' },
   { icon: BarChart3, title:'Publications Library',        desc:'Quarterly briefs, annual reports, and economy profiles available to Professional subscribers.', href:'/publications',     color:'#74BB65' },
@@ -110,7 +110,7 @@ export default function HomePage() {
                 fontWeight:800,fontSize:'15px',textDecoration:'none',
                 boxShadow:'0 6px 24px rgba(116,187,101,0.4)',transition:'transform 0.2s',
               }}>
-                Start Free Trial <ArrowRight size={16}/>
+                Start Access <ArrowRight size={16}/>
               </Link>
               <button onClick={()=>setDemoPlaying(true)} style={{
                 display:'inline-flex',alignItems:'center',gap:'8px',
@@ -340,7 +340,7 @@ export default function HomePage() {
               fontWeight:900,fontSize:'16px',textDecoration:'none',
               boxShadow:'0 6px 24px rgba(116,187,101,0.4)',
             }}>
-              Start Free Trial <ArrowRight size={16}/>
+              Start Access <ArrowRight size={16}/>
             </Link>
             <Link href="/contact" style={{
               display:'inline-flex',alignItems:'center',gap:'8px',

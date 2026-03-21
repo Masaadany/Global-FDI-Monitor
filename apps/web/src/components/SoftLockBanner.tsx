@@ -21,7 +21,7 @@ export default function SoftLockBanner() {
         <div>
           <div style={{fontWeight:800,color:'white',fontSize:'13px'}}>Account Read-Only</div>
           <div style={{color:'rgba(255,255,255,0.85)',fontSize:'12px',marginTop:'1px'}}>
-            {lockReason || 'Your free trial has ended.'} Upgrade to continue generating reports and exporting data.
+            {lockReason || 'Your access has ended.'} Upgrade to continue generating reports and exporting data.
           </div>
         </div>
       </div>

@@ -102,7 +102,7 @@ function TrialGateModal({ trigger, onClose, state }: { trigger: string; onClose:
   const msg: Record<string, { title: string; desc: string; icon: string }> = {
     report: { title: 'Report Limit Reached', desc: `Your trial includes ${TRIAL_LIMITS.reports} PDF reports. You've used ${state.reportsUsed}/${TRIAL_LIMITS.reports}.`, icon: '📄' },
     search: { title: 'Search Limit Reached', desc: `Your trial includes ${TRIAL_LIMITS.searches} country searches. You've used ${state.searchesUsed}/${TRIAL_LIMITS.searches}.`, icon: '🔍' },
-    expired: { title: 'Trial Expired', desc: 'Your 7-day free trial has ended. Upgrade to Professional for unlimited access.', icon: '⏰' },
+    expired: { title: 'Trial Expired', desc: 'Your 7-day access has ended. Upgrade to Professional for unlimited access.', icon: '⏰' },
     default: { title: 'Professional Access Required', desc: 'This feature requires a Professional or Enterprise subscription.', icon: '🔒' },
   };
   const { title, desc, icon } = msg[trigger] || msg.default;

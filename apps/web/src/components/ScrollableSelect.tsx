@@ -1,265 +1,68 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 
-interface Option {
-  value: string;
-  label: string;
-  flag?: string;
-  sub?: string;
-}
+interface Option { value: string; label: string; flag?: string; sub?: string; }
+interface Props { label?: string; value: string; options: Option[]; onChange: (v: string) => void; width?: string; accentColor?: string; }
 
-interface ScrollableSelectProps {
-  label?: string;
-  value: string;
-  options: Option[];
-  onChange: (value: string) => void;
-  width?: string | number;
-  accentColor?: string;
-  placeholder?: string;
-}
-
-export default function ScrollableSelect({
-  label,
-  value,
-  options,
-  onChange,
-  width = '180px',
-  accentColor = '#00ffc8',
-  placeholder = 'Select...',
-}: ScrollableSelectProps) {
+export default function ScrollableSelect({ label, value, options, onChange, width = '160px', accentColor = '#2ECC71' }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Close on outside click
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-        setSearch('');
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const h = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setSearch(''); } };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
   }, []);
+  useEffect(() => { if (open) setTimeout(() => inputRef.current?.focus(), 50); }, [open]);
 
-  // Focus search when opened
-  useEffect(() => {
-    if (open && searchRef.current) {
-      setTimeout(() => searchRef.current?.focus(), 50);
-    }
-  }, [open]);
-
-  // Scroll selected into view when opened
-  useEffect(() => {
-    if (open && listRef.current) {
-      const selected = listRef.current.querySelector('[data-selected="true"]');
-      if (selected) {
-        (selected as HTMLElement).scrollIntoView({ block: 'nearest' });
-      }
-    }
-  }, [open]);
-
-  const filtered = search
-    ? options.filter(o =>
-        o.label.toLowerCase().includes(search.toLowerCase()) ||
-        o.value.toLowerCase().includes(search.toLowerCase())
-      )
-    : options;
-
+  const filtered = search ? options.filter(o => o.label.toLowerCase().includes(search.toLowerCase())) : options;
   const selected = options.find(o => o.value === value);
-  const displayLabel = selected ? selected.label : placeholder;
   const showSearch = options.length > 8;
 
   return (
     <div ref={ref} style={{ position: 'relative', width, flexShrink: 0 }}>
-      {label && (
-        <div style={{
-          fontSize: '9px', fontWeight: 800, color: 'rgba(0,255,200,0.5)',
-          textTransform: 'uppercase', letterSpacing: '0.1em',
-          marginBottom: '4px', fontFamily: "'Orbitron','Inter',sans-serif",
-        }}>
-          {label}
-        </div>
-      )}
-
-      {/* Trigger button */}
-      <button
-        onClick={() => { setOpen(o => !o); setSearch(''); }}
-        style={{
-          width: '100%',
-          padding: '7px 30px 7px 12px',
-          background: open ? 'rgba(0,255,200,0.06)' : 'rgba(255,255,255,0.04)',
-          border: `1px solid ${open ? accentColor + '40' : 'rgba(255,255,255,0.08)'}`,
-          borderRadius: '7px',
-          fontSize: '12px',
-          fontFamily: "'Inter',sans-serif",
-          color: value ? '#e8f4f8' : 'rgba(232,244,248,0.4)',
-          cursor: 'pointer',
-          textAlign: 'left',
-          position: 'relative',
-          transition: 'all 150ms ease',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          outline: 'none',
-          boxShadow: open ? `0 0 0 2px ${accentColor}15` : 'none',
-        }}
-        onMouseEnter={e => {
-          if (!open) {
-            e.currentTarget.style.borderColor = accentColor + '30';
-            e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-          }
-        }}
-        onMouseLeave={e => {
-          if (!open) {
-            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-            e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-          }
-        }}
-      >
+      {label && <div style={{ fontSize: '10px', fontWeight: 700, color: '#5A6874', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>{label}</div>}
+      <button onClick={() => { setOpen(o => !o); setSearch(''); }}
+        style={{ width: '100%', padding: '8px 32px 8px 12px', background: '#FFFFFF', border: `1.5px solid ${open ? accentColor : '#ECF0F1'}`, borderRadius: '10px', fontSize: '13px', color: '#1A2C3E', cursor: 'pointer', textAlign: 'left', position: 'relative', fontFamily: 'Inter,sans-serif', transition: 'all 0.15s', outline: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', boxShadow: open ? `0 0 0 3px ${accentColor}15` : 'none' }}
+        onMouseEnter={e => { if (!open) e.currentTarget.style.borderColor = accentColor; }}
+        onMouseLeave={e => { if (!open) e.currentTarget.style.borderColor = '#ECF0F1'; }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {selected?.flag && <span style={{ fontSize: '14px', lineHeight: 1 }}>{selected.flag}</span>}
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayLabel}</span>
+          {selected?.flag && <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${selected.flag}.svg`} width="16" height="11" style={{ borderRadius: '2px', flexShrink: 0 }} onError={e => { (e.target as any).style.display = 'none'; }}/>}
+          {selected?.label || 'Select...'}
         </span>
-        {/* Chevron */}
-        <span style={{
-          position: 'absolute', right: '10px', top: '50%',
-          transform: `translateY(-50%) rotate(${open ? '180deg' : '0deg'})`,
-          transition: 'transform 200ms ease',
-          color: open ? accentColor : 'rgba(232,244,248,0.3)',
-          fontSize: '10px', lineHeight: 1, pointerEvents: 'none',
-        }}>▾</span>
+        <span style={{ position: 'absolute', right: '10px', top: '50%', transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`, transition: 'transform 0.2s', color: '#5A6874', fontSize: '10px' }}>▾</span>
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          left: 0,
-          width: Math.max(Number(String(width).replace('px','')) + 40, 200) + 'px',
-          background: 'rgba(8,20,36,0.98)',
-          border: `1px solid ${accentColor}25`,
-          borderRadius: '10px',
-          boxShadow: `0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px ${accentColor}10`,
-          backdropFilter: 'blur(20px)',
-          zIndex: 9999,
-          overflow: 'hidden',
-        }}>
-          {/* Search */}
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: Math.max(parseInt(width)+40, 200) + 'px', background: '#FFFFFF', border: '1px solid #ECF0F1', borderRadius: '14px', boxShadow: '0 20px 40px rgba(0,0,0,0.12)', zIndex: 9999, overflow: 'hidden' }}>
           {showSearch && (
-            <div style={{
-              padding: '8px 10px',
-              borderBottom: '1px solid rgba(0,255,200,0.06)',
-              background: 'rgba(0,0,0,0.2)',
-            }}>
-              <input
-                ref={searchRef}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Search..."
-                style={{
-                  width: '100%',
-                  padding: '5px 10px',
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  color: '#e8f4f8',
-                  fontFamily: "'Inter',sans-serif",
-                  outline: 'none',
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Escape') { setOpen(false); setSearch(''); }
-                  if (e.key === 'Enter' && filtered.length > 0) {
-                    onChange(filtered[0].value);
-                    setOpen(false);
-                    setSearch('');
-                  }
-                }}
-              />
+            <div style={{ padding: '8px', borderBottom: '1px solid #F8F9FA' }}>
+              <input ref={inputRef} value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." onKeyDown={e => { if (e.key === 'Escape') { setOpen(false); setSearch(''); } if (e.key === 'Enter' && filtered[0]) { onChange(filtered[0].value); setOpen(false); setSearch(''); } }}
+                style={{ width: '100%', padding: '7px 10px', border: '1.5px solid #ECF0F1', borderRadius: '8px', fontSize: '12px', outline: 'none', fontFamily: 'Inter,sans-serif', color: '#1A2C3E' }}
+                onFocus={e => { e.target.style.borderColor = accentColor; }} onBlur={e => { e.target.style.borderColor = '#ECF0F1'; }}/>
             </div>
           )}
-
-          {/* Scrollable list */}
-          <div
-            ref={listRef}
-            style={{
-              maxHeight: '220px',
-              overflowY: 'auto',
-              padding: '4px',
-              scrollbarWidth: 'thin',
-              scrollbarColor: `${accentColor}40 transparent`,
-            }}
-          >
+          <div style={{ maxHeight: '240px', overflowY: 'auto', padding: '4px' }}>
             {filtered.length === 0 ? (
-              <div style={{ padding: '12px', textAlign: 'center', fontSize: '11px', color: 'rgba(232,244,248,0.3)' }}>
-                No results
-              </div>
-            ) : (
-              filtered.map(opt => {
-                const isSelected = opt.value === value;
-                return (
-                  <button
-                    key={opt.value}
-                    data-selected={isSelected}
-                    onClick={() => {
-                      onChange(opt.value);
-                      setOpen(false);
-                      setSearch('');
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '8px 10px',
-                      background: isSelected ? `${accentColor}10` : 'transparent',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      transition: 'background 120ms ease',
-                      fontFamily: "'Inter',sans-serif",
-                    }}
-                    onMouseEnter={e => {
-                      if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                    }}
-                    onMouseLeave={e => {
-                      if (!isSelected) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    {opt.flag && (
-                      <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: 1 }}>{opt.flag}</span>
-                    )}
-                    <span style={{ flex: 1, overflow: 'hidden' }}>
-                      <span style={{
-                        display: 'block',
-                        fontSize: '12px',
-                        fontWeight: isSelected ? 700 : 400,
-                        color: isSelected ? accentColor : 'rgba(232,244,248,0.8)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}>
-                        {opt.label}
-                      </span>
-                      {opt.sub && (
-                        <span style={{ display: 'block', fontSize: '10px', color: 'rgba(232,244,248,0.3)', marginTop: '1px' }}>
-                          {opt.sub}
-                        </span>
-                      )}
-                    </span>
-                    {isSelected && (
-                      <span style={{ color: accentColor, fontSize: '12px', flexShrink: 0 }}>✓</span>
-                    )}
-                  </button>
-                );
-              })
-            )}
+              <div style={{ padding: '12px', textAlign: 'center', fontSize: '12px', color: '#5A6874' }}>No results</div>
+            ) : filtered.map(opt => {
+              const isSel = opt.value === value;
+              return (
+                <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false); setSearch(''); }}
+                  style={{ width: '100%', padding: '9px 12px', background: isSel ? `${accentColor}10` : 'transparent', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background 0.1s', fontFamily: 'Inter,sans-serif' }}
+                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = '#F8F9FA'; }}
+                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}>
+                  {opt.flag && <img src={`https://cdn.jsdelivr.net/npm/country-flag-icons@1.5.0/3x2/${opt.flag}.svg`} width="18" height="12" style={{ borderRadius: '2px', flexShrink: 0 }} onError={e => { (e.target as any).style.display = 'none'; }}/>}
+                  <span style={{ flex: 1 }}>
+                    <span style={{ display: 'block', fontSize: '13px', fontWeight: isSel ? 700 : 400, color: isSel ? accentColor : '#1A2C3E' }}>{opt.label}</span>
+                    {opt.sub && <span style={{ display: 'block', fontSize: '10px', color: '#5A6874', marginTop: '1px' }}>{opt.sub}</span>}
+                  </span>
+                  {isSel && <span style={{ color: accentColor, fontSize: '12px' }}>✓</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

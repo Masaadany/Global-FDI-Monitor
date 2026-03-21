@@ -4,7 +4,7 @@ import Link from 'next/link';
 const TIERS = [
   {
     key: 'trial',
-    name: 'Free Trial',
+    name: 'Access',
     price: '$0',
     period: '3 days',
     equiv: 'No credit card required',
@@ -14,7 +14,7 @@ const TIERS = [
     ficSub: '3-day period only',
     ficColor: 'text-slate-500',
     featured: false,
-    cta: 'Start Free Trial',
+    cta: 'Start Access',
     ctaHref: '/register',
     ctaStyle: 'border',
     features: [
@@ -130,7 +130,7 @@ export function PricingSection() {
             Choose Your Intelligence Plan
           </h2>
           <p className="text-slate-400 text-sm">
-            3-day free trial · No credit card required · Annual billing only
+            3-day access · No credit card required · Annual billing only
           </p>
         </div>
 
@@ -222,7 +222,7 @@ export function PricingSection() {
         <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center mt-8 text-xs text-slate-400">
           {[
             '✓ Annual billing only — no monthly subscriptions',
-            '✓ 3-day free trial, no credit card',
+            '✓ 3-day access, no credit card',
             '✓ GDPR & SOC2 compliant',
             '✓ IPA/Government/IFI editions available',
             '✓ Cancel anytime before renewal',

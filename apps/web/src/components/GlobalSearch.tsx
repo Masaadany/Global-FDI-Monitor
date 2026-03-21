@@ -36,9 +36,9 @@ const SEARCH_INDEX = [
   {type:'page',name:'PDF Reports',sub:'AI-generated investment reports',href:'/reports',icon:'📄'},
   {type:'page',name:'Mission Planning',sub:'4 guided investment workflows',href:'/pmp',icon:'🎯'},
   {type:'page',name:'Publications',sub:'Weekly Intelligence Brief',href:'/publications',icon:'📰'},
-  {type:'page',name:'Data Sources',sub:'304+ official sources',href:'/sources',icon:'📡'},
+  {type:'page',name:'Data Sources',sub:'1000+ official sources',href:'/sources',icon:'📡'},
   {type:'page',name:'API Documentation',sub:'REST + WebSocket endpoints',href:'/api-docs',icon:'🔌'},
-  {type:'page',name:'Pricing',sub:'Free trial · Professional · Enterprise',href:'/pricing',icon:'💼'},
+  {type:'page',name:'About',sub:'Free trial · Professional · Enterprise',href:'/pricing',icon:'💼'},
   // Sectors
   {type:'sector',name:'EV Battery',sub:'Momentum: HOT · Top: VNM, THA, IDN',href:'/investment-analysis?sector=ev-battery',icon:'🔋'},
   {type:'sector',name:'Data Centers',sub:'Momentum: HOT · Top: MYS, SGP, ARE',href:'/investment-analysis?sector=data-centers',icon:'🖥'},

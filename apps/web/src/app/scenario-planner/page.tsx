@@ -69,24 +69,24 @@ export default function ScenarioPlanner() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#FFFFFF,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
         <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
-          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'6px',fontFamily:"'Orbitron','Inter',sans-serif"}}>SCENARIO PLANNER</div>
-          <h1 style={{fontSize:'26px',fontWeight:900,color:'#e8f4f8',marginBottom:'4px'}}>What-If Investment Modeller</h1>
-          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>Configure parameters · Get live projections · Save and compare up to 4 scenarios</p>
+          <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'6px',fontFamily:'var(--font-display)'}}>SCENARIO PLANNER</div>
+          <h1 style={{fontSize:'26px',fontWeight:900,color:'var(--text-primary)',marginBottom:'4px'}}>What-If Investment Modeller</h1>
+          <p style={{fontSize:'13px',color:'var(--text-muted)'}}>Configure parameters · Get live projections · Save and compare up to 4 scenarios</p>
         </div>
       </div>
 
       <div style={{maxWidth:'1540px',margin:'0 auto',padding:'20px 24px',display:'grid',gridTemplateColumns:'380px 1fr',gap:'20px',alignItems:'start'}}>
         {/* Config panel */}
-        <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',padding:'22px',position:'sticky',top:'130px'}}>
-          <div style={{fontSize:'11px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.1em',marginBottom:'18px',textTransform:'uppercase',fontFamily:"'Orbitron','Inter',sans-serif"}}>Configure Scenario</div>
+        <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'14px',padding:'22px',position:'sticky',top:'130px'}}>
+          <div style={{fontSize:'11px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.1em',marginBottom:'18px',textTransform:'uppercase',fontFamily:'var(--font-display)'}}>Configure Scenario</div>
           {[
-            {label:'Target Economy', key:'economy',  val:economy,  setter:setEconomy,  opts:ECONOMIES.map(e=>({value:e,label:e,sub:'GOSA '+(GOSA_MAP[e]||'—')})), accent:'#00ffc8'},
-            {label:'Sector',        key:'sector',   val:sector,   setter:setSector,   opts:SECTORS.map(s=>({value:s,label:s})), accent:'#00d4ff'},
+            {label:'Target Economy', key:'economy',  val:economy,  setter:setEconomy,  opts:ECONOMIES.map(e=>({value:e,label:e,sub:'GOSA '+(GOSA_MAP[e]||'—')})), accent:'#2ECC71'},
+            {label:'Sector',        key:'sector',   val:sector,   setter:setSector,   opts:SECTORS.map(s=>({value:s,label:s})), accent:'#3498DB'},
             {label:'Investment Size',key:'size',    val:size,     setter:setSize,     opts:SIZES.map(s=>({value:s,label:s})), accent:'#ffd700'},
             {label:'Timeline',      key:'timeline', val:timeline, setter:setTimeline, opts:TIMELINES.map(t=>({value:t,label:t})), accent:'#9b59b6'},
             {label:'Financing Mix', key:'financing',val:financing,setter:setFinancing,opts:FINANCING.map(f=>({value:f,label:f})), accent:'#e67e22'},
@@ -96,12 +96,12 @@ export default function ScenarioPlanner() {
             </div>
           ))}
           <div style={{marginBottom:'14px'}}>
-            <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.4)',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Scenario Name (optional)</label>
+            <label style={{fontSize:'10px',fontWeight:700,color:'#27ae60',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Scenario Name (optional)</label>
             <input value={scenarioName} onChange={e=>setScenarioName(e.target.value)} placeholder={`${economy} ${sector} ${size}`}
-              style={{width:'100%',padding:'8px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:'8px',fontSize:'12px',color:'#e8f4f8',outline:'none',fontFamily:"'Inter',sans-serif"}}/>
+              style={{width:'100%',padding:'8px 12px',background:'var(--bg-subtle)',border:'1px solid var(--border)',borderRadius:'8px',fontSize:'12px',color:'var(--text-primary)',outline:'none',fontFamily:'var(--font-ui)'}}/>
           </div>
           <button onClick={runScenario} disabled={loading}
-            style={{width:'100%',padding:'12px',background:loading?'rgba(0,255,200,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:loading?'rgba(232,244,248,0.4)':'#020c14',border:'none',borderRadius:'10px',cursor:loading?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:loading?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
+            style={{width:'100%',padding:'12px',background:loading?'rgba(46,204,113,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:loading?'rgba(232,244,248,0.4)':'var(--primary)',border:'none',borderRadius:'10px',cursor:loading?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:'var(--font-ui)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:loading?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
             {loading?<><RefreshCw size={14} style={{animation:'spin 1s linear infinite'}}/> Modelling...</>:<><Zap size={14}/> Run Scenario</>}
           </button>
         </div>
@@ -109,31 +109,31 @@ export default function ScenarioPlanner() {
         {/* Live preview + saved scenarios */}
         <div>
           {/* Live metrics */}
-          <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'20px',marginBottom:'14px',boxShadow:'0 0 0 1px rgba(0,255,200,0.05)'}}>
+          <div style={{background:'white',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'14px',padding:'20px',marginBottom:'14px',boxShadow:'0 0 0 1px rgba(0,255,200,0.05)'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px',flexWrap:'wrap',gap:'8px'}}>
               <div style={{fontSize:'11px',fontWeight:700,color:'rgba(0,255,200,0.6)',textTransform:'uppercase',letterSpacing:'0.1em'}}>Live Projection Preview</div>
               <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-                <span style={{fontSize:'12px',color:'rgba(232,244,248,0.5)'}}>{economy} · {sector} · {size} · {timeline}</span>
+                <span style={{fontSize:'12px',color:'var(--text-muted)'}}>{economy} · {sector} · {size} · {timeline}</span>
               </div>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'12px',marginBottom:'14px'}}>
               {[
-                ['Projected IRR',     irr+'%',   '(post-incentive)',  '#00ffc8'],
+                ['Projected IRR',     irr+'%',   '(post-incentive)',  '#2ECC71'],
                 ['NPV (discounted)',  npv,        `${timeline} horizon`,'#ffd700'],
                 ['Direct Jobs',      jobs.toLocaleString(), '+ 2× indirect', '#9b59b6'],
-                ['GOSA Score',       gosa,       `${economy} composite`,'#00d4ff'],
+                ['GOSA Score',       gosa,       `${economy} composite`,'#3498DB'],
                 ['Tax Revenue',      `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.08)}M/yr`,'5-yr avg','#e67e22'],
-                ['Incentive Value',  `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.12)}M`,'Over 5 years','#00ffc8'],
+                ['Incentive Value',  `$${Math.round(parseFloat(size.replace(/[$MB]/g,''))*(size.endsWith('B')?1000:1)*0.12)}M`,'Over 5 years','#2ECC71'],
               ].map(([l,v,s,c]) => (
-                <div key={String(l)} style={{padding:'14px',background:'rgba(255,255,255,0.02)',borderRadius:'10px',border:'1px solid '+c+'12'}}>
-                  <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.07em'}}>{l as string}</div>
-                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:"'JetBrains Mono',monospace",textShadow:`0 0 12px ${c}40`}}>{v}</div>
-                  <div style={{fontSize:'10px',color:'rgba(232,244,248,0.3)',marginTop:'2px'}}>{s as string}</div>
+                <div key={String(l)} style={{padding:'14px',background:'var(--bg-subtle)',borderRadius:'10px',border:'1px solid '+c+'12'}}>
+                  <div style={{fontSize:'9px',color:'var(--text-light)',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.07em'}}>{l as string}</div>
+                  <div style={{fontSize:'24px',fontWeight:900,color:String(c),fontFamily:'var(--font-mono)',textShadow:`0 0 12px ${c}40`}}>{v}</div>
+                  <div style={{fontSize:'10px',color:'var(--text-light)',marginTop:'2px'}}>{s as string}</div>
                 </div>
               ))}
             </div>
-            <div style={{padding:'12px 14px',background:irr>=18?'rgba(0,255,200,0.05)':irr>=12?'rgba(255,215,0,0.05)':'rgba(255,68,102,0.05)',borderRadius:'10px',border:`1px solid ${irr>=18?'rgba(0,255,200,0.12)':irr>=12?'rgba(255,215,0,0.12)':'rgba(255,68,102,0.12)'}`}}>
-              <div style={{fontSize:'11px',fontWeight:800,color:irr>=18?'#00ffc8':irr>=12?'#ffd700':'#ff4466',marginBottom:'4px'}}>
+            <div style={{padding:'12px 14px',background:irr>=18?'rgba(0,255,200,0.05)':irr>=12?'rgba(255,215,0,0.05)':'rgba(255,68,102,0.05)',borderRadius:'10px',border:`1px solid ${irr>=18?'rgba(46,204,113,0.12)':irr>=12?'rgba(255,215,0,0.12)':'rgba(255,68,102,0.12)'}`}}>
+              <div style={{fontSize:'11px',fontWeight:800,color:irr>=18?'#2ECC71':irr>=12?'#ffd700':'#ff4466',marginBottom:'4px'}}>
                 {irr>=20?'🟢 STRONG CASE':irr>=15?'🟡 VIABLE CASE':irr>=10?'🟠 MARGINAL CASE':'🔴 CHALLENGING'}
               </div>
               <div style={{fontSize:'12px',color:'rgba(232,244,248,0.65)',lineHeight:1.65}}>
@@ -144,34 +144,34 @@ export default function ScenarioPlanner() {
 
           {/* Saved scenarios comparison */}
           {scenarios.length > 0 && (
-            <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',padding:'20px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'rgba(232,244,248,0.4)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'14px'}}>Saved Scenarios — Comparison</div>
+            <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'14px',padding:'20px'}}>
+              <div style={{fontSize:'11px',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:'14px'}}>Saved Scenarios — Comparison</div>
               <div style={{overflowX:'auto'}}>
                 <table style={{width:'100%',borderCollapse:'collapse',fontSize:'12px'}}>
                   <thead>
-                    <tr style={{background:'rgba(0,0,0,0.2)'}}>
+                    <tr style={{background:'var(--bg-subtle)'}}>
                       {['Scenario','Economy','Sector','Size','Timeline','GOSA','IRR','NPV','Jobs'].map(h=>(
-                        <th key={h} style={{padding:'8px 12px',textAlign:h==='Scenario'?'left':'center',fontWeight:700,color:'rgba(232,244,248,0.3)',textTransform:'uppercase',fontSize:'9px',letterSpacing:'0.07em',borderBottom:'1px solid rgba(0,255,200,0.06)',whiteSpace:'nowrap',fontFamily:"'JetBrains Mono',monospace"}}>{h}</th>
+                        <th key={h} style={{padding:'8px 12px',textAlign:h==='Scenario'?'left':'center',fontWeight:700,color:'var(--text-light)',textTransform:'uppercase',fontSize:'9px',letterSpacing:'0.07em',borderBottom:'1px solid rgba(0,255,200,0.06)',whiteSpace:'nowrap',fontFamily:'var(--font-mono)'}}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {scenarios.map((sc,i) => {
                       const bestIrr = Math.max(...scenarios.map(s=>s.irr));
-                      const cols = ['#00ffc8','#00d4ff','#ffd700','#9b59b6'];
+                      const cols = ['#2ECC71','#3498DB','#ffd700','#9b59b6'];
                       return (
                         <tr key={sc.id} style={{borderBottom:'1px solid rgba(255,255,255,0.025)'}}>
                           <td style={{padding:'10px 12px',fontWeight:700,color:cols[i%4]}}>{sc.name}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.7)'}}>{sc.economy}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.55)',fontSize:'11px'}}>{sc.sector}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>{sc.size}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.45)',fontSize:'11px'}}>{sc.timeline}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace"}}>{sc.gosa}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:sc.irr===bestIrr?900:700,color:sc.irr===bestIrr?'#00ffc8':'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'var(--text-secondary)'}}>{sc.economy}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'var(--text-secondary)',fontSize:'11px'}}>{sc.sector}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'var(--text-secondary)',fontFamily:'var(--font-mono)'}}>{sc.size}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'var(--text-muted)',fontSize:'11px'}}>{sc.timeline}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'var(--accent-green)',fontFamily:'var(--font-mono)'}}>{sc.gosa}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:sc.irr===bestIrr?900:700,color:sc.irr===bestIrr?'#2ECC71':'rgba(232,244,248,0.6)',fontFamily:'var(--font-mono)'}}>
                             {sc.irr===bestIrr?'★ ':''}{sc.irr}%
                           </td>
-                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'#ffd700',fontFamily:"'JetBrains Mono',monospace"}}>{sc.npv}</td>
-                          <td style={{padding:'10px 8px',textAlign:'center',color:'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>{sc.jobs.toLocaleString()}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',fontWeight:700,color:'#ffd700',fontFamily:'var(--font-mono)'}}>{sc.npv}</td>
+                          <td style={{padding:'10px 8px',textAlign:'center',color:'var(--text-secondary)',fontFamily:'var(--font-mono)'}}>{sc.jobs.toLocaleString()}</td>
                         </tr>
                       );
                     })}
@@ -179,10 +179,10 @@ export default function ScenarioPlanner() {
                 </table>
               </div>
               <div style={{display:'flex',gap:'10px',marginTop:'12px'}}>
-                <Link href="/reports" style={{padding:'8px 18px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',borderRadius:'9px',textDecoration:'none',fontSize:'12px',fontWeight:800,display:'flex',alignItems:'center',gap:'6px',boxShadow:'0 4px 12px rgba(0,255,200,0.2)'}}>
+                <Link href="/reports" style={{padding:'8px 18px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'var(--primary)',borderRadius:'9px',textDecoration:'none',fontSize:'12px',fontWeight:800,display:'flex',alignItems:'center',gap:'6px',boxShadow:'0 4px 12px rgba(0,255,200,0.2)'}}>
                   <Download size={13}/> Export Full Report
                 </Link>
-                <button onClick={()=>setScenarios([])} style={{padding:'8px 16px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.5)',fontFamily:"'Inter',sans-serif"}}>
+                <button onClick={()=>setScenarios([])} style={{padding:'8px 16px',background:'var(--bg-subtle)',border:'1px solid var(--border)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,color:'var(--text-muted)',fontFamily:'var(--font-ui)'}}>
                   Clear All
                 </button>
               </div>

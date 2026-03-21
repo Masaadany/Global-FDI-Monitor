@@ -26,7 +26,7 @@ export default function ReadOnlyOverlay({ children, feature = 'download', showUp
   if (!isBlocked) return <>{children}</>;
 
   const LABELS: Record<Feature, string> = {
-    download:        'Download unavailable on free trial',
+    download:        'Download unavailable on access',
     generate_report: trial.isSoftLocked ? 'Report generation disabled' : `${trial.reportsLeft} report${trial.reportsLeft!==1?'s':''} remaining`,
     export:          'Data export requires Professional',
     filter:          'Filtering disabled — trial expired',

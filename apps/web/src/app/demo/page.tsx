@@ -67,7 +67,7 @@ export default function DemoPage() {
               <Link href="/register" style={{display:'inline-flex',alignItems:'center',gap:'7px',
                 padding:'13px 28px',background:'#74BB65',color:'white',borderRadius:'9px',
                 textDecoration:'none',fontWeight:800,fontSize:'15px',boxShadow:'0 4px 16px rgba(116,187,101,0.35)'}}>
-                Start Free Trial <ArrowRight size={14}/>
+                Start Access <ArrowRight size={14}/>
               </Link>
               <Link href="/contact" style={{display:'inline-flex',alignItems:'center',gap:'7px',
                 padding:'13px 22px',border:'1px solid rgba(255,255,255,0.25)',color:'rgba(226,242,223,0.9)',
@@ -245,7 +245,7 @@ export default function DemoPage() {
             <Link href="/register" style={{padding:'12px 28px',background:'#74BB65',color:'white',
               borderRadius:'9px',textDecoration:'none',fontWeight:800,fontSize:'14px',
               display:'flex',alignItems:'center',gap:'6px'}}>
-              Start Free Trial <ArrowRight size={14}/>
+              Start Access <ArrowRight size={14}/>
             </Link>
             <Link href="/contact" style={{padding:'12px 22px',border:'1px solid rgba(255,255,255,0.25)',
               color:'rgba(226,242,223,0.9)',borderRadius:'9px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>

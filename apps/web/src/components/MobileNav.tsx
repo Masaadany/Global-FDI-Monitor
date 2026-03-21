@@ -92,7 +92,7 @@ export default function MobileNav() {
         <div className="px-5 pb-5 pt-3 border-t space-y-2" style={{borderTopColor:'rgba(10,61,98,0.15)'}}>
           <Link href="/ar"           className="flex items-center gap-2 text-sm text-fog hover:text-bright px-3 py-2">🌐 العربية</Link>
           <Link href="/auth/login"   className="gfm-btn-outline w-full text-sm py-2.5 text-center" style={{color:'#696969'}}>Sign In</Link>
-          <Link href="/register"     className="gfm-btn-primary w-full text-sm py-2.5 text-center block">Start Free Trial</Link>
+          <Link href="/register"     className="gfm-btn-primary w-full text-sm py-2.5 text-center block">Start Access</Link>
         </div>
       </div>
     </>

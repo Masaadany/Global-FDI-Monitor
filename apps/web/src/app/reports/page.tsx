@@ -85,7 +85,7 @@ function generateHTMLReport(country: string, flag: string, sector: string, gosa:
     <span style="font-size:12px;color:rgba(232,244,248,0.65)">${ind}</span>
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:80px" class="bar"><div class="bar-fill" style="width:${score}%"></div></div>
-      <span style="font-size:13px;font-weight:800;color:${Number(score)>=80?'#00ffc8':Number(score)>=60?'#00d4ff':'#ffd700'};font-family:'JetBrains Mono',monospace;min-width:28px;text-align:right">${score}</span>
+      <span style="font-size:13px;font-weight:800;color:${Number(score)>=80?'#2ECC71':Number(score)>=60?'#3498DB':'#ffd700'};font-family:'JetBrains Mono',monospace;min-width:28px;text-align:right">${score}</span>
     </div>
   </div>`).join('')}
 </div>
@@ -101,7 +101,7 @@ function generateHTMLReport(country: string, flag: string, sector: string, gosa:
 
 <div class="panel">
   <h2>Market Signals (L4 Layer)</h2>
-  ${[['POLICY CHANGE','Favorable regulatory shift detected in '+sector+' sector','#ff4466','HIGH'],['NEW INCENTIVE','Tax package expanded for target sector investments','#00ffc8','HIGH'],['SECTOR GROWTH','Market momentum in '+sector+' confirms investment thesis','#00d4ff','MED']].map(([type,title,color,impact])=>`
+  ${[['POLICY CHANGE','Favorable regulatory shift detected in '+sector+' sector','#ff4466','HIGH'],['NEW INCENTIVE','Tax package expanded for target sector investments','#2ECC71','HIGH'],['SECTOR GROWTH','Market momentum in '+sector+' confirms investment thesis','#3498DB','MED']].map(([type,title,color,impact])=>`
   <div class="signal" style="border-left-color:${color}">
     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
       <span style="font-size:9px;font-weight:800;color:${color};letter-spacing:.06em">${type}</span>
@@ -115,7 +115,7 @@ function generateHTMLReport(country: string, flag: string, sector: string, gosa:
   <h2>Strategic Recommendations</h2>
   ${[['HIGH','Proceed with '+sector+' investment — GOSA score '+gosa+'/100 supports strong ROI','Immediate'],['HIGH','Engage Investment Promotion Agency for fast-track licensing','0-30 days'],['MED','Secure preferred zone allocation — 3 zones recommended','30-60 days'],['MED','Apply for sector-specific incentive package — est. $8-12M saving over 5 years','60-90 days'],['LOW','Establish supply chain partnerships with existing zone tenants','90-180 days']].map(([priority,rec,timeline])=>`
   <div class="row">
-    <div style="flex:1"><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:${priority==='HIGH'?'rgba(255,68,102,0.12)':priority==='MED'?'rgba(255,215,0,0.12)':'rgba(0,255,200,0.12)'};color:${priority==='HIGH'?'#ff4466':priority==='MED'?'#ffd700':'#00ffc8'};margin-right:8px">${priority}</span><span style="font-size:12px;color:rgba(232,244,248,0.7)">${rec}</span></div>
+    <div style="flex:1"><span style="font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;background:${priority==='HIGH'?'rgba(255,68,102,0.12)':priority==='MED'?'rgba(255,215,0,0.12)':'rgba(46,204,113,0.12)'};color:${priority==='HIGH'?'#ff4466':priority==='MED'?'#ffd700':'#2ECC71'};margin-right:8px">${priority}</span><span style="font-size:12px;color:rgba(232,244,248,0.7)">${rec}</span></div>
     <span style="font-size:10px;color:rgba(232,244,248,0.35);flex-shrink:0;margin-left:12px">${timeline}</span>
   </div>`).join('')}
 </div>
@@ -156,23 +156,23 @@ export default function ReportsPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
 
-      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#FFFFFF,#060f1a)',padding:'24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.025) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
         <div style={{maxWidth:'1540px',margin:'0 auto',position:'relative'}}>
-          <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'6px',fontFamily:"'Orbitron','Inter',sans-serif"}}>REPORTS</div>
-          <h1 style={{fontSize:'24px',fontWeight:900,color:'#e8f4f8',marginBottom:'4px'}}>Investment Report Generator</h1>
-          <p style={{fontSize:'13px',color:'rgba(232,244,248,0.45)'}}>AI-generated 4-section intelligence reports · GOSA scored · Download as HTML (print to PDF)</p>
+          <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'6px',fontFamily:'var(--font-display)'}}>REPORTS</div>
+          <h1 style={{fontSize:'24px',fontWeight:900,color:'var(--text-primary)',marginBottom:'4px'}}>Investment Report Generator</h1>
+          <p style={{fontSize:'13px',color:'var(--text-muted)'}}>AI-generated 4-section intelligence reports · GOSA scored · Download as HTML (print to PDF)</p>
         </div>
       </div>
 
-      <div style={{background:'rgba(6,15,26,0.95)',borderBottom:'1px solid rgba(0,255,200,0.06)',backdropFilter:'blur(20px)'}}>
+      <div style={{background:'var(--bg-page)',borderBottom:'1px solid rgba(0,255,200,0.06)',backdropFilter:'blur(20px)'}}>
         <div style={{maxWidth:'1540px',margin:'0 auto',padding:'0 24px',display:'flex'}}>
           {[['generate','Generate Report'],['recent','Recent Reports'],['templates','Templates']].map(([t,l]) => (
             <button key={t} onClick={() => setTab(t)}
-              style={{padding:'13px 20px',border:'none',borderBottom:`2px solid ${tab===t?'#00ffc8':'transparent'}`,background:'transparent',fontSize:'12px',fontWeight:tab===t?700:400,color:tab===t?'#00ffc8':'rgba(232,244,248,0.45)',cursor:'pointer',fontFamily:"'Inter',sans-serif",marginBottom:'-1px'}}>
+              style={{padding:'13px 20px',border:'none',borderBottom:`2px solid ${tab===t?'#2ECC71':'transparent'}`,background:'transparent',fontSize:'12px',fontWeight:tab===t?700:400,color:tab===t?'#2ECC71':'rgba(232,244,248,0.45)',cursor:'pointer',fontFamily:'var(--font-ui)',marginBottom:'-1px'}}>
               {l}
             </button>
           ))}
@@ -183,10 +183,10 @@ export default function ReportsPage() {
         {tab === 'generate' && (
           <div style={{display:'grid',gridTemplateColumns:'360px 1fr',gap:'20px',alignItems:'start'}}>
             {/* Config */}
-            <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',padding:'24px'}}>
-              <div style={{fontSize:'11px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.1em',marginBottom:'18px',fontFamily:"'Orbitron','Inter',sans-serif"}}>CONFIGURE REPORT</div>
+            <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'14px',padding:'24px'}}>
+              <div style={{fontSize:'11px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.1em',marginBottom:'18px',fontFamily:'var(--font-display)'}}>CONFIGURE REPORT</div>
               <div style={{marginBottom:'14px'}}>
-                <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.4)',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Target Economy</label>
+                <label style={{fontSize:'10px',fontWeight:700,color:'#27ae60',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Target Economy</label>
                 <ScrollableSelect
                   value={country}
                   onChange={v => { setCountry(v); setGenerated(false); }}
@@ -196,7 +196,7 @@ export default function ReportsPage() {
                 />
               </div>
               <div style={{marginBottom:'20px'}}>
-                <label style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.4)',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Primary Sector</label>
+                <label style={{fontSize:'10px',fontWeight:700,color:'#27ae60',display:'block',marginBottom:'4px',textTransform:'uppercase',letterSpacing:'0.08em'}}>Primary Sector</label>
                 <ScrollableSelect
                   value={sector}
                   onChange={v => { setSector(v); setGenerated(false); }}
@@ -206,7 +206,7 @@ export default function ReportsPage() {
                 />
               </div>
               <div style={{padding:'14px',background:'rgba(0,255,200,0.04)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.1)',marginBottom:'20px'}}>
-                <div style={{fontSize:'10px',fontWeight:700,color:'rgba(0,255,200,0.5)',marginBottom:'8px',letterSpacing:'0.08em'}}>REPORT INCLUDES</div>
+                <div style={{fontSize:'10px',fontWeight:700,color:'#2ECC71',marginBottom:'8px',letterSpacing:'0.08em'}}>REPORT INCLUDES</div>
                 {['Executive Summary & GOSA Score','Doing Business — 10 Indicators','Zone & Sector Intelligence','Signals & Strategic Recommendations'].map(f => (
                   <div key={f} style={{display:'flex',alignItems:'center',gap:'7px',padding:'3px 0',fontSize:'11px',color:'rgba(232,244,248,0.65)'}}>
                     <CheckCircle size={11} color="#00ffc8"/>{f}
@@ -215,21 +215,21 @@ export default function ReportsPage() {
               </div>
               {!generated ? (
                 <button onClick={generate} disabled={generating}
-                  style={{width:'100%',padding:'12px',background:generating?'rgba(0,255,200,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:generating?'rgba(232,244,248,0.4)':'#020c14',border:'none',borderRadius:'10px',cursor:generating?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:generating?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
+                  style={{width:'100%',padding:'12px',background:generating?'rgba(46,204,113,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:generating?'rgba(232,244,248,0.4)':'var(--primary)',border:'none',borderRadius:'10px',cursor:generating?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:'var(--font-ui)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:generating?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
                   <Zap size={14}/> {generating ? 'Generating Report...' : 'Generate Report'}
                 </button>
               ) : (
                 <div>
                   <div style={{padding:'12px',background:'rgba(0,255,200,0.05)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.15)',marginBottom:'10px',textAlign:'center'}}>
                     <CheckCircle size={20} color="#00ffc8" style={{display:'block',margin:'0 auto 6px',filter:'drop-shadow(0 0 8px rgba(0,255,200,0.5))'}}/>
-                    <div style={{fontSize:'12px',fontWeight:700,color:'#00ffc8'}}>Report Ready!</div>
+                    <div style={{fontSize:'12px',fontWeight:700,color:'var(--accent-green)'}}>Report Ready!</div>
                   </div>
                   <button onClick={downloadReport}
-                    style={{width:'100%',padding:'12px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'#020c14',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:"'Inter',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'8px',boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>
+                    style={{width:'100%',padding:'12px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',color:'var(--primary)',border:'none',borderRadius:'10px',cursor:'pointer',fontSize:'13px',fontWeight:800,fontFamily:'var(--font-ui)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',marginBottom:'8px',boxShadow:'0 4px 16px rgba(0,255,200,0.25)'}}>
                     <Download size={14}/> Download HTML Report
                   </button>
                   <button onClick={() => setGenerated(false)}
-                    style={{width:'100%',padding:'9px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,fontFamily:"'Inter',sans-serif",color:'rgba(232,244,248,0.5)'}}>
+                    style={{width:'100%',padding:'9px',background:'var(--bg-subtle)',border:'1px solid var(--border)',borderRadius:'9px',cursor:'pointer',fontSize:'12px',fontWeight:600,fontFamily:'var(--font-ui)',color:'var(--text-muted)'}}>
                     New Report
                   </button>
                 </div>
@@ -237,15 +237,15 @@ export default function ReportsPage() {
             </div>
 
             {/* Preview */}
-            <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',overflow:'hidden'}}>
-              <div style={{background:'rgba(0,0,0,0.3)',padding:'16px 22px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'14px',overflow:'hidden'}}>
+              <div style={{background:'var(--bg-subtle)',padding:'16px 22px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
                 <div>
-                  <div style={{fontSize:'10px',color:'rgba(232,244,248,0.35)',marginBottom:'4px',letterSpacing:'0.1em',fontFamily:"'JetBrains Mono',monospace"}}>REPORT PREVIEW</div>
-                  <div style={{fontSize:'15px',fontWeight:800,color:'#e8f4f8'}}>{sel.flag} {sel.name} — {sector}</div>
+                  <div style={{fontSize:'10px',color:'var(--text-muted)',marginBottom:'4px',letterSpacing:'0.1em',fontFamily:'var(--font-mono)'}}>REPORT PREVIEW</div>
+                  <div style={{fontSize:'15px',fontWeight:800,color:'var(--text-primary)'}}>{sel.flag} {sel.name} — {sector}</div>
                 </div>
                 <div style={{textAlign:'right'}}>
-                  <div style={{fontSize:'10px',color:'rgba(232,244,248,0.35)'}}>GOSA</div>
-                  <div style={{fontSize:'32px',fontWeight:900,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",textShadow:'0 0 16px rgba(0,255,200,0.4)',lineHeight:1}}>{sel.gosa}</div>
+                  <div style={{fontSize:'10px',color:'var(--text-muted)'}}>GOSA</div>
+                  <div style={{fontSize:'32px',fontWeight:900,color:'var(--accent-green)',fontFamily:'var(--font-mono)',textShadow:'0 0 16px rgba(0,255,200,0.4)',lineHeight:1}}>{sel.gosa}</div>
                 </div>
               </div>
               <div style={{padding:'22px'}}>
@@ -255,13 +255,13 @@ export default function ReportsPage() {
                   {n:3,title:'Zone & Sector Intelligence',desc:'Zone availability, incentive stacks, infrastructure quality, sector momentum'},
                   {n:4,title:'Market Signals & Recommendations',desc:'3 verified signals, 5 strategic recommendations with timeline'},
                 ].map(page => (
-                  <div key={page.n} style={{display:'flex',gap:'14px',padding:'14px',borderRadius:'10px',border:'1px solid rgba(255,255,255,0.04)',marginBottom:'10px',alignItems:'flex-start',transition:'all 200ms ease'}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.12)';e.currentTarget.style.background='rgba(0,255,200,0.02)';}}
+                  <div key={page.n} style={{display:'flex',gap:'14px',padding:'14px',borderRadius:'10px',border:'1px solid var(--border)',marginBottom:'10px',alignItems:'flex-start',transition:'all 200ms ease'}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(46,204,113,0.12)';e.currentTarget.style.background='rgba(0,255,200,0.02)';}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.04)';e.currentTarget.style.background='transparent';}}>
-                    <div style={{width:'34px',height:'34px',background:'rgba(0,255,200,0.08)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'14px',fontWeight:900,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace"}}>{page.n}</div>
+                    <div style={{width:'34px',height:'34px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:'14px',fontWeight:900,color:'var(--accent-green)',fontFamily:'var(--font-mono)'}}>{page.n}</div>
                     <div>
-                      <div style={{fontSize:'13px',fontWeight:700,color:'rgba(232,244,248,0.85)',marginBottom:'3px'}}>{page.title}</div>
-                      <div style={{fontSize:'12px',color:'rgba(232,244,248,0.4)'}}>{page.desc}</div>
+                      <div style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',marginBottom:'3px'}}>{page.title}</div>
+                      <div style={{fontSize:'12px',color:'var(--text-muted)'}}>{page.desc}</div>
                     </div>
                   </div>
                 ))}
@@ -269,8 +269,8 @@ export default function ReportsPage() {
                   <div style={{display:'flex',gap:'20px',flexWrap:'wrap'}}>
                     {[['Format','HTML → Print to PDF'],['Sections','4'],['Language','English'],['Sources',Math.floor(sel.gosa/3)+' verified']].map(([l,v]) => (
                       <div key={l}>
-                        <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',marginBottom:'1px',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</div>
-                        <div style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.7)'}}>{v}</div>
+                        <div style={{fontSize:'9px',color:'var(--text-light)',marginBottom:'1px',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</div>
+                        <div style={{fontSize:'12px',fontWeight:700,color:'var(--text-secondary)'}}>{v}</div>
                       </div>
                     ))}
                   </div>
@@ -281,20 +281,20 @@ export default function ReportsPage() {
         )}
 
         {tab === 'recent' && (
-          <div style={{background:'rgba(10,22,40,0.8)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'14px',overflow:'hidden'}}>
-            <div style={{padding:'14px 20px',borderBottom:'1px solid rgba(0,255,200,0.06)',fontSize:'11px',fontWeight:700,color:'rgba(232,244,248,0.5)',textTransform:'uppercase',letterSpacing:'0.1em',fontFamily:"'Orbitron','Inter',sans-serif",background:'rgba(0,0,0,0.2)'}}>
+          <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'14px',overflow:'hidden'}}>
+            <div style={{padding:'14px 20px',borderBottom:'1px solid rgba(0,255,200,0.06)',fontSize:'11px',fontWeight:700,color:'var(--text-muted)',textTransform:'uppercase',letterSpacing:'0.1em',fontFamily:'var(--font-display)',background:'var(--bg-subtle)'}}>
               Recent Reports
             </div>
             {RECENT_REPORTS.map(r => (
               <div key={r.id} style={{padding:'14px 20px',borderBottom:'1px solid rgba(255,255,255,0.03)',display:'flex',alignItems:'center',gap:'16px'}}>
                 <span style={{fontSize:'24px'}}>{r.flag}</span>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'rgba(232,244,248,0.85)',marginBottom:'2px'}}>{r.title}</div>
-                  <div style={{fontSize:'11px',color:'rgba(232,244,248,0.35)'}}>{r.date} · {r.sector}</div>
+                  <div style={{fontSize:'13px',fontWeight:700,color:'var(--text-primary)',marginBottom:'2px'}}>{r.title}</div>
+                  <div style={{fontSize:'11px',color:'var(--text-muted)'}}>{r.date} · {r.sector}</div>
                 </div>
-                <div style={{fontSize:'18px',fontWeight:900,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace"}}>{r.gosa}</div>
+                <div style={{fontSize:'18px',fontWeight:900,color:'var(--accent-green)',fontFamily:'var(--font-mono)'}}>{r.gosa}</div>
                 <button onClick={() => generateHTMLReport(r.country, r.flag, r.sector, r.gosa, r.id.slice(-3))}
-                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'7px 14px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'#00ffc8',fontFamily:"'Inter',sans-serif"}}>
+                  style={{display:'flex',alignItems:'center',gap:'6px',padding:'7px 14px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:700,color:'var(--accent-green)',fontFamily:'var(--font-ui)'}}>
                   <Download size={11}/> Download
                 </button>
               </div>
@@ -305,18 +305,18 @@ export default function ReportsPage() {
         {tab === 'templates' && (
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px'}}>
             {[
-              {icon:'🌏',title:'Market Entry Assessment',desc:'Full GOSA analysis for new country entry decisions. 4 sections covering all scoring layers.',color:'#00ffc8'},
-              {icon:'📊',title:'Competitive Benchmark',desc:'Compare 2-4 economies head-to-head across all GOSA dimensions and sector indicators.',color:'#00d4ff'},
+              {icon:'🌏',title:'Market Entry Assessment',desc:'Full GOSA analysis for new country entry decisions. 4 sections covering all scoring layers.',color:'var(--accent-green)'},
+              {icon:'📊',title:'Competitive Benchmark',desc:'Compare 2-4 economies head-to-head across all GOSA dimensions and sector indicators.',color:'var(--accent-blue)'},
               {icon:'📍',title:'Zone Selection Report',desc:'Deep-dive on specific investment zones — occupancy, infrastructure, incentive stack.',color:'#ffd700'},
               {icon:'💼',title:'Sector Opportunity Brief',desc:'Sector-focused 2-section brief for board presentations and executive briefings.',color:'#9b59b6'},
             ].map(({icon,title,desc,color}) => (
-              <div key={title} style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(255,255,255,0.05)',borderRadius:'14px',padding:'22px',cursor:'pointer',transition:'all 250ms ease'}}
+              <div key={title} style={{background:'white',border:'1px solid #ECF0F1',borderRadius:'14px',padding:'22px',cursor:'pointer',transition:'all 250ms ease'}}
                 onClick={() => setTab('generate')}
                 onMouseEnter={e=>{e.currentTarget.style.borderColor=color+'20';e.currentTarget.style.transform='translateY(-2px)';}}
                 onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.05)';e.currentTarget.style.transform='none';}}>
                 <div style={{fontSize:'28px',marginBottom:'10px'}}>{icon}</div>
-                <div style={{fontSize:'15px',fontWeight:800,color:'#e8f4f8',marginBottom:'6px'}}>{title}</div>
-                <div style={{fontSize:'12px',color:'rgba(232,244,248,0.45)',lineHeight:1.65,marginBottom:'12px'}}>{desc}</div>
+                <div style={{fontSize:'15px',fontWeight:800,color:'var(--text-primary)',marginBottom:'6px'}}>{title}</div>
+                <div style={{fontSize:'12px',color:'var(--text-muted)',lineHeight:1.65,marginBottom:'12px'}}>{desc}</div>
                 <span style={{fontSize:'12px',color:color,fontWeight:700}}>Use template →</span>
               </div>
             ))}

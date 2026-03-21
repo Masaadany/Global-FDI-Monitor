@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { Activity, Users, FileText, Zap, TrendingUp, Globe, Bell } from 'lucide-react';
 
 const STATS = [
-  {l:'Active Subscribers',v:'12,847',d:'+124 this week',c:'#00ffc8',icon:<Users size={14} color="#00ffc8"/>},
-  {l:'Reports Generated',v:'3,241',d:'+48 today',c:'#00d4ff',icon:<FileText size={14} color="#00d4ff"/>},
+  {l:'Active Subscribers',v:'12,847',d:'+124 this week',c:'#2ECC71',icon:<Users size={14} color="#00ffc8"/>},
+  {l:'Reports Generated',v:'3,241',d:'+48 today',c:'#3498DB',icon:<FileText size={14} color="#00d4ff"/>},
   {l:'Signals Processed',v:'1,847',d:'Last 7 days',c:'#ffd700',icon:<Zap size={14} color="#ffd700"/>},
   {l:'Economies Tracked',v:'215',d:'Weekly GOSA updates',c:'#9b59b6',icon:<Globe size={14} color="#9b59b6"/>},
   {l:'API Calls Today',v:'48,291',d:'+12% vs yesterday',c:'#e67e22',icon:<Activity size={14} color="#e67e22"/>},
-  {l:'Newsletter Open Rate',v:'41.2%',d:'+2.1% vs last issue',c:'#00ffc8',icon:<Bell size={14} color="#00ffc8"/>},
+  {l:'Newsletter Open Rate',v:'41.2%',d:'+2.1% vs last issue',c:'#2ECC71',icon:<Bell size={14} color="#00ffc8"/>},
 ];
 const AGENTS = [
   {id:'AGT-01',name:'Data Collection',    status:'ACTIVE',last:'2m ago',signals:29,uptime:'99.8%'},
@@ -36,21 +36,21 @@ export default function AdminPage(){
   const [time,setTime]=useState(new Date());
   useEffect(()=>{const iv=setInterval(()=>setTime(new Date()),1000);return()=>clearInterval(iv);},[]);
 
-  const tc:Record<string,string>={signal:'#00ffc8',trial:'#ffd700',report:'#00d4ff',user:'#9b59b6',score:'#e67e22',newsletter:'#00ffc8',api:'#ff4466'};
+  const tc:Record<string,string>={signal:'#2ECC71',trial:'#ffd700',report:'#3498DB',user:'#9b59b6',score:'#e67e22',newsletter:'#2ECC71',api:'#ff4466'};
 
   return(
-    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh',background:'var(--bg-page)',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
-      <div style={{background:'linear-gradient(135deg,#020c14,#060f1a)',padding:'18px 24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#FFFFFF,#060f1a)',padding:'18px 24px',borderBottom:'1px solid rgba(0,255,200,0.06)',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(0,255,200,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,0.02) 1px,transparent 1px)',backgroundSize:'64px 64px',pointerEvents:'none'}}/>
         <div style={{maxWidth:'1540px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px',position:'relative'}}>
           <div>
-            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:"'Orbitron','Inter',sans-serif"}}>ADMIN DASHBOARD</div>
-            <h1 style={{fontSize:'20px',fontWeight:900,color:'#e8f4f8'}}>Platform Operations Center</h1>
+            <div style={{fontSize:'10px',fontWeight:800,color:'#2ECC71',letterSpacing:'0.2em',marginBottom:'4px',fontFamily:'var(--font-display)'}}>ADMIN DASHBOARD</div>
+            <h1 style={{fontSize:'20px',fontWeight:900,color:'var(--text-primary)'}}>Platform Operations Center</h1>
           </div>
           <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
-            <div style={{fontSize:'16px',fontWeight:800,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",padding:'6px 14px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.12)',borderRadius:'8px'}}>{time.toLocaleTimeString()}</div>
-            <Link href="/newsletter" style={{padding:'7px 14px',background:'rgba(0,255,200,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#00ffc8'}}>Newsletter Admin →</Link>
+            <div style={{fontSize:'16px',fontWeight:800,color:'var(--accent-green)',fontFamily:'var(--font-mono)',padding:'6px 14px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.12)',borderRadius:'8px'}}>{time.toLocaleTimeString()}</div>
+            <Link href="/newsletter" style={{padding:'7px 14px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'var(--accent-green)'}}>Newsletter Admin →</Link>
           </div>
         </div>
       </div>
@@ -59,30 +59,30 @@ export default function AdminPage(){
         {/* Stats */}
         <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'10px',marginBottom:'16px'}}>
           {STATS.map(({l,v,d,c,icon})=>(
-            <div key={l} style={{padding:'18px',background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.08)',borderRadius:'12px',borderTop:`2px solid ${c}`}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}><span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</span>{icon}</div>
-              <div style={{fontSize:'22px',fontWeight:900,color:c,fontFamily:"'JetBrains Mono',monospace",textShadow:`0 0 12px ${c}40`}}>{v}</div>
-              <div style={{fontSize:'10px',color:'rgba(232,244,248,0.3)',marginTop:'3px'}}>{d}</div>
+            <div key={l} style={{padding:'18px',background:'white',border:'1px solid rgba(0,180,216,0.08)',borderRadius:'12px',borderTop:`2px solid ${c}`}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'8px'}}><span style={{fontSize:'9px',color:'var(--text-light)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{l}</span>{icon}</div>
+              <div style={{fontSize:'22px',fontWeight:900,color:c,fontFamily:'var(--font-mono)',textShadow:`0 0 12px ${c}40`}}>{v}</div>
+              <div style={{fontSize:'10px',color:'var(--text-light)',marginTop:'3px'}}>{d}</div>
             </div>
           ))}
         </div>
 
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'16px',marginBottom:'16px'}}>
           {/* Agent pipeline */}
-          <div style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',overflow:'hidden'}}>
-            <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.2)'}}>
-              <span style={{fontSize:'11px',fontWeight:800,color:'rgba(232,244,248,0.7)',letterSpacing:'0.08em',textTransform:'uppercase',fontFamily:"'Orbitron','Inter',sans-serif"}}>AI Agent Pipeline</span>
-              <span style={{fontSize:'8px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:'rgba(0,255,200,0.08)',color:'#00ffc8',letterSpacing:'0.08em',fontFamily:"'JetBrains Mono',monospace"}}>ALL ACTIVE</span>
+          <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'12px',overflow:'hidden'}}>
+            <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--bg-subtle)'}}>
+              <span style={{fontSize:'11px',fontWeight:800,color:'var(--text-secondary)',letterSpacing:'0.08em',textTransform:'uppercase',fontFamily:'var(--font-display)'}}>AI Agent Pipeline</span>
+              <span style={{fontSize:'8px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:'rgba(46,204,113,0.08)',color:'var(--accent-green)',letterSpacing:'0.08em',fontFamily:'var(--font-mono)'}}>ALL ACTIVE</span>
             </div>
             {AGENTS.map(ag=>(
               <div key={ag.id} style={{padding:'11px 18px',borderBottom:'1px solid rgba(255,255,255,0.025)',display:'flex',alignItems:'center',gap:'12px'}}>
-                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:ag.status==='ACTIVE'?'#00ffc8':'#ffd700',boxShadow:`0 0 6px ${ag.status==='ACTIVE'?'#00ffc8':'#ffd700'}`,flexShrink:0}}/>
+                <div style={{width:'7px',height:'7px',borderRadius:'50%',background:ag.status==='ACTIVE'?'#2ECC71':'#ffd700',boxShadow:`0 0 6px ${ag.status==='ACTIVE'?'#2ECC71':'#ffd700'}`,flexShrink:0}}/>
                 <div style={{flex:1}}>
-                  <div style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.8)'}}>{ag.id} — {ag.name}</div>
-                  <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>Last: {ag.last} · Uptime: {ag.uptime}</div>
+                  <div style={{fontSize:'12px',fontWeight:700,color:'#1A2C3E'}}>{ag.id} — {ag.name}</div>
+                  <div style={{fontSize:'9px',color:'var(--text-light)',fontFamily:'var(--font-mono)'}}>Last: {ag.last} · Uptime: {ag.uptime}</div>
                 </div>
-                <div style={{fontSize:'11px',color:'rgba(232,244,248,0.5)',textAlign:'right',fontFamily:"'JetBrains Mono',monospace"}}>
-                  <div style={{fontWeight:700,color:'#00ffc8'}}>{ag.signals}</div>
+                <div style={{fontSize:'11px',color:'var(--text-muted)',textAlign:'right',fontFamily:'var(--font-mono)'}}>
+                  <div style={{fontWeight:700,color:'var(--accent-green)'}}>{ag.signals}</div>
                   <div style={{fontSize:'9px'}}>items</div>
                 </div>
               </div>
@@ -90,10 +90,10 @@ export default function AdminPage(){
           </div>
 
           {/* Live activity */}
-          <div style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',overflow:'hidden'}}>
-            <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'rgba(0,0,0,0.2)'}}>
-              <span style={{fontSize:'11px',fontWeight:800,color:'rgba(232,244,248,0.7)',letterSpacing:'0.08em',textTransform:'uppercase',fontFamily:"'Orbitron','Inter',sans-serif"}}>Live Activity</span>
-              <span style={{fontSize:'8px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:'rgba(0,180,216,0.08)',color:'#00b4d8',letterSpacing:'0.08em',fontFamily:"'JetBrains Mono',monospace"}}>REAL-TIME</span>
+          <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'12px',overflow:'hidden'}}>
+            <div style={{padding:'12px 18px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',background:'var(--bg-subtle)'}}>
+              <span style={{fontSize:'11px',fontWeight:800,color:'var(--text-secondary)',letterSpacing:'0.08em',textTransform:'uppercase',fontFamily:'var(--font-display)'}}>Live Activity</span>
+              <span style={{fontSize:'8px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:'rgba(0,180,216,0.08)',color:'#3498DB',letterSpacing:'0.08em',fontFamily:'var(--font-mono)'}}>REAL-TIME</span>
             </div>
             <div style={{maxHeight:'320px',overflowY:'auto'}}>
               {ACTIVITY.map(({t,a,type},i)=>(
@@ -101,7 +101,7 @@ export default function AdminPage(){
                   <div style={{width:'7px',height:'7px',borderRadius:'50%',background:tc[type]||'#7f8c8d',flexShrink:0,marginTop:'4px',boxShadow:`0 0 4px ${tc[type]||'#7f8c8d'}`}}/>
                   <div style={{flex:1}}>
                     <div style={{fontSize:'12px',color:'rgba(232,244,248,0.65)',lineHeight:1.5}}>{a}</div>
-                    <div style={{fontSize:'9px',color:'rgba(232,244,248,0.25)',marginTop:'2px',fontFamily:"'JetBrains Mono',monospace"}}>{t}</div>
+                    <div style={{fontSize:'9px',color:'var(--text-light)',marginTop:'2px',fontFamily:'var(--font-mono)'}}>{t}</div>
                   </div>
                 </div>
               ))}
@@ -110,21 +110,21 @@ export default function AdminPage(){
         </div>
 
         {/* Infrastructure */}
-        <div style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.1)',borderRadius:'12px',padding:'18px'}}>
-          <div style={{fontSize:'11px',fontWeight:800,color:'rgba(232,244,248,0.5)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'14px',fontFamily:"'Orbitron','Inter',sans-serif"}}>Infrastructure Status</div>
+        <div style={{background:'white',border:'1px solid var(--border)',borderRadius:'12px',padding:'18px'}}>
+          <div style={{fontSize:'11px',fontWeight:800,color:'var(--text-muted)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'14px',fontFamily:'var(--font-display)'}}>Infrastructure Status</div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'10px'}}>
             {[
-              {l:'Frontend (GitHub Pages)',s:'LIVE',v:'fdimonitor.org',c:'#00ffc8'},
-              {l:'API (Azure Container)',s:'LIVE',v:'api.fdimonitor.org',c:'#00ffc8'},
+              {l:'Frontend (GitHub Pages)',s:'LIVE',v:'fdimonitor.org',c:'#2ECC71'},
+              {l:'API (Azure Container)',s:'LIVE',v:'api.fdimonitor.org',c:'#2ECC71'},
               {l:'PostgreSQL (Azure)',s:'DEMO MODE',v:'fdi-db-prod',c:'#ffd700'},
-              {l:'Redis Cache (Azure)',s:'LIVE',v:'fdi-cache-prod',c:'#00ffc8'},
+              {l:'Redis Cache (Azure)',s:'LIVE',v:'fdi-cache-prod',c:'#2ECC71'},
             ].map(({l,s,v,c})=>(
-              <div key={l} style={{padding:'12px',background:'rgba(255,255,255,0.02)',borderRadius:'10px',border:`1px solid ${c}15`}}>
+              <div key={l} style={{padding:'12px',background:'var(--bg-subtle)',borderRadius:'10px',border:`1px solid ${c}15`}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}}>
-                  <span style={{fontSize:'9px',color:'rgba(232,244,248,0.35)'}}>{l}</span>
+                  <span style={{fontSize:'9px',color:'var(--text-muted)'}}>{l}</span>
                   <span style={{fontSize:'8px',fontWeight:800,padding:'2px 6px',borderRadius:'4px',background:`${c}12`,color:c,letterSpacing:'0.06em'}}>{s}</span>
                 </div>
-                <div style={{fontSize:'11px',color:'rgba(232,244,248,0.6)',fontFamily:"'JetBrains Mono',monospace"}}>{v}</div>
+                <div style={{fontSize:'11px',color:'var(--text-secondary)',fontFamily:'var(--font-mono)'}}>{v}</div>
               </div>
             ))}
           </div>

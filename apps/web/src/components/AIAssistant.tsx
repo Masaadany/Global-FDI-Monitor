@@ -88,8 +88,8 @@ export default function AIAssistant() {
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 8000,
           width: '54px', height: '54px', borderRadius: '50%',
-          background: open ? 'rgba(10,22,40,0.95)' : 'linear-gradient(135deg, #00ffc8, #00c49a)',
-          border: open ? '1px solid rgba(0,255,200,0.3)' : 'none',
+          background: open ? '#FFFFFF' : '#2ECC71',
+          border: open ? '1px solid #ECF0F1' : 'none',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           boxShadow: `0 4px 20px ${open ? 'rgba(0,255,200,0.2)' : 'rgba(0,255,200,0.4)'}`,
           transition: 'all 300ms ease',
@@ -98,7 +98,7 @@ export default function AIAssistant() {
         title="FDI AI Assistant"
       >
         {open
-          ? <X size={20} color="#00ffc8" />
+          ? <X size={20} color="#1A2C3E" />
           : <MessageSquare size={22} color="#020c14" />
         }
         {!open && (
@@ -117,25 +117,25 @@ export default function AIAssistant() {
         <div style={{
           position: 'fixed', bottom: '88px', right: '24px', zIndex: 8000,
           width: '380px', height: '520px',
-          background: 'rgba(8,20,36,0.98)',
-          border: '1px solid rgba(0,255,200,0.2)',
+          background: '#FFFFFF',
+          border: '1px solid #ECF0F1',
           borderRadius: '16px',
-          boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,255,200,0.08)',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.15)',
           backdropFilter: 'blur(20px)',
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
           animation: 'slideUpChat 0.3s ease',
         }}>
           {/* Header */}
-          <div style={{ padding: '14px 16px', borderBottom: '1px solid rgba(0,255,200,0.08)', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+          <div style={{ padding: '14px 16px', borderBottom: '1px solid #ECF0F1', display: 'flex', alignItems: 'center', gap: '10px', background: '#FAFBFC', flexShrink: 0 }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg,#00ffc8,#00c49a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Zap size={16} color="#020c14" />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: '#e8f4f8' }}>FDI AI Assistant</div>
+              <div style={{ fontSize: '13px', fontWeight: 800, color: '#1A2C3E' }}>FDI AI Assistant</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#00ffc8', boxShadow: '0 0 6px #00ffc8' }} />
-                <span style={{ fontSize: '10px', color: 'rgba(0,255,200,0.7)', fontFamily: "'JetBrains Mono',monospace" }}>claude-powered · FDI specialist</span>
+                <span style={{ fontSize: '10px', color: '#27ae60', fontFamily: "'JetBrains Mono',monospace" }}>claude-powered · FDI specialist</span>
               </div>
             </div>
             {messages.length > 0 && (
@@ -152,14 +152,14 @@ export default function AIAssistant() {
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '16px 8px' }}>
                 <div style={{ fontSize: '28px', marginBottom: '10px' }}>🌍</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#e8f4f8', marginBottom: '6px' }}>FDI Intelligence Assistant</div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: '#1A2C3E', marginBottom: '6px' }}>FDI Intelligence Assistant</div>
                 <div style={{ fontSize: '12px', color: 'rgba(232,244,248,0.45)', lineHeight: 1.65, marginBottom: '16px' }}>
                   Ask me anything about investment opportunities, GOSA scores, GFR rankings, or FDI signals.
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {SUGGESTIONS.map(s => (
                     <button key={s} onClick={() => sendMessage(s)}
-                      style={{ padding: '8px 12px', background: 'rgba(0,255,200,0.05)', border: '1px solid rgba(0,255,200,0.15)', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', color: 'rgba(0,255,200,0.8)', fontFamily: "'Inter',sans-serif", textAlign: 'left', transition: 'all 150ms ease' }}
+                      style={{ padding: '8px 12px', background: 'rgba(46,204,113,0.06)', border: '1px solid rgba(46,204,113,0.2)', borderRadius: '8px', cursor: 'pointer', fontSize: '11px', color: '#27ae60', fontFamily: "'Inter',sans-serif", textAlign: 'left', transition: 'all 150ms ease' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.1)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,255,200,0.05)'; }}>
                       {s}
@@ -198,7 +198,7 @@ export default function AIAssistant() {
                 <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg,#00ffc8,#00c49a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Zap size={12} color="#020c14" />
                 </div>
-                <div style={{ padding: '10px 14px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px 12px 12px 3px', border: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div style={{ padding: '10px 14px', background: '#F8F9FA', borderRadius: '12px 12px 12px 3px', border: '1px solid #ECF0F1', display: 'flex', gap: '4px', alignItems: 'center' }}>
                   {[0, 1, 2].map(i => (
                     <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#00ffc8', animation: `dotPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                   ))}
@@ -209,7 +209,7 @@ export default function AIAssistant() {
           </div>
 
           {/* Input */}
-          <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(0,255,200,0.08)', flexShrink: 0, background: 'rgba(0,0,0,0.15)' }}>
+          <div style={{ padding: '10px 12px', borderTop: '1px solid #ECF0F1', flexShrink: 0, background: '#FAFBFC' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
               <textarea
                 ref={inputRef}
@@ -219,8 +219,8 @@ export default function AIAssistant() {
                 placeholder="Ask about FDI opportunities..."
                 rows={1}
                 style={{
-                  flex: 1, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '9px',
-                  padding: '9px 12px', fontSize: '12px', color: '#e8f4f8', fontFamily: "'Inter',sans-serif",
+                  flex: 1, background: '#F8F9FA', border: '1.5px solid #ECF0F1', borderRadius: '9px',
+                  padding: '9px 12px', fontSize: '12px', color: '#1A2C3E', fontFamily: "'Inter',sans-serif",
                   outline: 'none', resize: 'none', lineHeight: 1.5, maxHeight: '80px', overflowY: 'auto',
                   transition: 'border-color 150ms',
                 }}
@@ -232,7 +232,7 @@ export default function AIAssistant() {
                 <Send size={15} color={input.trim() ? '#020c14' : 'rgba(232,244,248,0.3)'} />
               </button>
             </div>
-            <div style={{ fontSize: '9px', color: 'rgba(232,244,248,0.2)', marginTop: '5px', textAlign: 'center' }}>
+            <div style={{ fontSize: '9px', color: '#C8D0D6', marginTop: '5px', textAlign: 'center' }}>
               Powered by Claude · FDI specialist · Press Enter to send
             </div>
           </div>
