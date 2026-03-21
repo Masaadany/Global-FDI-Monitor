@@ -1,16 +1,28 @@
 'use client'
 import Link from 'next/link'
-import { Globe3D } from '@/components/hero/Globe3D'
-import { BackgroundVideo } from '@/components/shared/BackgroundVideo'
+import dynamic from 'next/dynamic'
 import { CountryFlag } from '@/components/shared/CountryFlag'
 import { useState, useEffect, useRef } from 'react'
 import { ChevronRight, ArrowRight, Zap, Globe, Shield, TrendingUp, BarChart3 } from 'lucide-react'
 
-function AnimatedCounter({ target, suffix='' }:{ target:number; suffix?:string }) {
-  const [count, setCount] = useState(0)
-  const ref = useRef<HTMLDivElement>(null)
+// Load Globe dynamically (WebGL needs browser)
+const Globe3D = dynamic(() => import('@/components/hero/Globe3D').then(m=>({ default:m.Globe3D })), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full flex items-center justify-center" style={{aspectRatio:'16/9',maxHeight:'520px',background:'linear-gradient(135deg,#0d1f35,#1a3a5c)',borderRadius:'20px'}}>
+      <div className="text-center">
+        <div className="w-16 h-16 border-2 border-green-400 rounded-full border-t-transparent animate-spin mx-auto mb-3"/>
+        <div style={{fontSize:'13px',color:'rgba(255,255,255,0.5)',fontFamily:'Inter,sans-serif'}}>Loading 3D Globe…</div>
+      </div>
+    </div>
+  )
+})
+
+function AnimatedCounter({ target, suffix='' }: { target:number; suffix?:string }) {
+  const [count,setCount]=useState(0)
+  const ref=useRef<HTMLDivElement>(null)
   useEffect(()=>{
-    const obs = new IntersectionObserver(entries=>{
+    const obs=new IntersectionObserver(entries=>{
       if(entries[0].isIntersecting){
         let s=0; const step=target/50
         const t=setInterval(()=>{ s+=step; if(s>=target){setCount(target);clearInterval(t)}else setCount(Math.floor(s)) },20)
@@ -23,104 +35,121 @@ function AnimatedCounter({ target, suffix='' }:{ target:number; suffix?:string }
 }
 
 const LIVE_SIGNALS = [
-  {grade:'PLATINUM',type:'POLICY',  code:'MY',country:'Malaysia',   title:'FDI cap in data centers raised to 100%',sco:96,ts:'2m'},
-  {grade:'PLATINUM',type:'DEAL',    code:'AE',country:'UAE',         title:'Microsoft $3.3B AI commitment',          sco:97,ts:'1h'},
-  {grade:'PLATINUM',type:'INCENTIVE',code:'TH',country:'Thailand',  title:'$2B EV battery subsidy approved',         sco:95,ts:'3h'},
-  {grade:'GOLD',    type:'POLICY',  code:'SA',country:'Saudi Arabia','title':'30-day FDI license guarantee',           sco:94,ts:'6h'},
-  {grade:'GOLD',    type:'GROWTH',  code:'VN',country:'Vietnam',     title:'Electronics exports surge 34% YoY',       sco:92,ts:'1d'},
+  {grade:'PLATINUM',code:'MY',country:'Malaysia',   title:'FDI cap in data centers raised to 100%',sco:96,ts:'2m'},
+  {grade:'PLATINUM',code:'AE',country:'UAE',         title:'Microsoft $3.3B AI commitment',          sco:97,ts:'1h'},
+  {grade:'PLATINUM',code:'TH',country:'Thailand',   title:'$2B EV battery subsidy approved',         sco:95,ts:'3h'},
+  {grade:'GOLD',    code:'SA',country:'Saudi Arabia','title':'30-day FDI license guarantee live',      sco:94,ts:'6h'},
+  {grade:'GOLD',    code:'VN',country:'Vietnam',     title:'Electronics exports surge 34% YoY',       sco:92,ts:'1d'},
 ]
 
 const FEATURES = [
-  {icon:<Globe size={22} className="text-primary-teal"/>,title:'GOSA Intelligence',desc:'4-layer composite scoring across 215+ economies using 1000+ official sources.',link:'/investment-analysis'},
-  {icon:<Zap size={22} className="text-primary-teal"/>,title:'Real-Time Signals',desc:'PLATINUM, GOLD and SILVER signals delivered every 2 seconds via WebSocket.',link:'/signals'},
-  {icon:<BarChart3 size={22} className="text-primary-teal"/>,title:'GFR Ranking',desc:'6-dimension composite ranking comparable to IMD WCR and Kearney GCR.',link:'/gfr'},
-  {icon:<Shield size={22} className="text-primary-teal"/>,title:'SHA-256 Verified',desc:'Every signal hash-verified through AGT-03. No unverified data reaches the platform.',link:'/sources'},
-  {icon:<TrendingUp size={22} className="text-primary-teal"/>,title:'Corridor Intel',desc:'12 active bilateral FDI corridors with flow data and sector mapping.',link:'/corridors'},
-  {icon:<ArrowRight size={22} className="text-primary-teal"/>,title:'Scenario Planner',desc:'What-if IRR and NPV modelling with up to 4 scenarios compared.',link:'/scenario-planner'},
+  {icon:<Globe size={22}/>,    title:'GOSA Intelligence',   desc:'4-layer composite scoring across 215+ economies using 1000+ official sources.',link:'/investment-analysis'},
+  {icon:<Zap size={22}/>,      title:'Real-Time Signals',   desc:'PLATINUM, GOLD and SILVER signals delivered every 2 seconds, SHA-256 verified.',link:'/signals'},
+  {icon:<BarChart3 size={22}/>,title:'GFR Ranking',         desc:'6-dimension composite ranking comparable to IMD WCR and Kearney GCR.',link:'/gfr'},
+  {icon:<Shield size={22}/>,   title:'Verified Intelligence',desc:'Every signal hash-verified through AGT-03. No unverified data reaches the platform.',link:'/sources'},
+  {icon:<TrendingUp size={22}/>,title:'Corridor Intelligence',desc:'12 active bilateral FDI corridors with flow data and sector mapping.',link:'/corridors'},
+  {icon:<ArrowRight size={22}/>,title:'Scenario Planner',   desc:'What-if IRR and NPV modelling with up to 4 scenarios compared side-by-side.',link:'/scenario-planner'},
 ]
 
 export default function HomePage() {
   return (
     <div>
-      <BackgroundVideo/>
+      {/* ── CINEMATIC DARK HERO ─────────────────────────────────────────── */}
+      <section className="relative overflow-hidden" style={{background:'linear-gradient(135deg,#060d18 0%,#0d1f35 50%,#0a1628 100%)',minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+        {/* Background grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{backgroundImage:'linear-gradient(rgba(46,204,113,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(46,204,113,0.03) 1px,transparent 1px)',backgroundSize:'60px 60px'}}/>
+        {/* Radial glow */}
+        <div className="absolute inset-0 pointer-events-none" style={{backgroundImage:'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(26,60,110,0.4) 0%, transparent 70%)'}}/>
 
-      {/* ── HERO ── */}
-      <section className="relative bg-white border-b border-border-light pb-16 overflow-hidden">
-        <div className="max-w-[1540px] mx-auto px-6 pt-10">
-          <div className="text-center mb-10 animate-slide-up">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.25)'}}>
-              <div className="w-2 h-2 rounded-full bg-primary-teal animate-pulse"/>
-              <span className="text-sm font-semibold text-green-700">Live · 2-second updates · 1000+ verified sources</span>
+        <div className="max-w-[1540px] mx-auto px-6 pt-24 pb-8 relative z-10 w-full">
+          {/* Badge */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+              style={{background:'rgba(46,204,113,0.08)',border:'1px solid rgba(46,204,113,0.2)'}}>
+              <div className="w-2 h-2 rounded-full bg-green-400" style={{animation:'pulseGreen 1.5s infinite',boxShadow:'0 0 8px #2ECC71'}}/>
+              <span style={{fontSize:'12px',fontWeight:700,color:'rgba(46,204,113,0.9)',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}>
+                Live · 2-second updates · 1000+ verified sources · SHA-256 provenance
+              </span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-black text-primary-dark leading-tight mb-5" style={{letterSpacing:'-0.02em'}}>
+          </div>
+
+          {/* Headline */}
+          <div className="text-center mb-8">
+            <h1 style={{fontSize:'clamp(36px,5vw,68px)',fontWeight:900,color:'#FFFFFF',lineHeight:1.08,letterSpacing:'-0.03em',marginBottom:'20px',fontFamily:'Inter,sans-serif'}}>
               Global Investment Intelligence.<br/>
-              <span className="text-primary-teal">Real-Time. Verified. Smart.</span>
+              <span style={{color:'#2ECC71'}}>Real-Time. Verified. Smart.</span>
             </h1>
-            <p className="text-lg text-text-secondary max-w-xl mx-auto mb-8 leading-relaxed">
-              The world's most advanced FDI intelligence platform. GOSA-scored intelligence across 215+ economies.
+            <p style={{fontSize:'18px',color:'rgba(255,255,255,0.5)',maxWidth:'560px',margin:'0 auto 32px',lineHeight:1.7,fontFamily:'Inter,sans-serif'}}>
+              The world's most advanced FDI intelligence platform. GOSA-scored intelligence across 215+ economies, powered by 6 AI agents.
             </p>
+            {/* CTAs */}
             <div className="flex flex-wrap justify-center gap-3">
-              <Link href="/dashboard" className="btn-primary flex items-center gap-2 text-base px-8 py-3">
+              <Link href="/dashboard" style={{display:'flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'50px',background:'#2ECC71',color:'white',textDecoration:'none',fontSize:'15px',fontWeight:800,boxShadow:'0 4px 24px rgba(46,204,113,0.35)',fontFamily:'Inter,sans-serif',transition:'all 0.2s'}}
+                onMouseEnter={e=>{(e.currentTarget as any).style.transform='translateY(-2px)';(e.currentTarget as any).style.boxShadow='0 8px 32px rgba(46,204,113,0.45)'}}
+                onMouseLeave={e=>{(e.currentTarget as any).style.transform='none';(e.currentTarget as any).style.boxShadow='0 4px 24px rgba(46,204,113,0.35)'}}>
                 Explore Dashboard <ChevronRight size={16}/>
               </Link>
-              <Link href="/signals" className="btn-outline flex items-center gap-2 text-base px-8 py-3">
-                <Zap size={15} className="text-primary-teal"/> View Signals
+              <Link href="/signals" style={{display:'flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'50px',background:'rgba(255,255,255,0.06)',color:'white',textDecoration:'none',fontSize:'15px',fontWeight:600,border:'1px solid rgba(255,255,255,0.12)',fontFamily:'Inter,sans-serif',backdropFilter:'blur(6px)'}}>
+                <Zap size={15} color="#2ECC71"/> View Signals
               </Link>
-              <Link href="/investment-analysis" className="flex items-center gap-2 text-base px-8 py-3 rounded-full font-medium text-green-700 transition-all"
-                style={{background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.25)'}}>
+              <Link href="/investment-analysis" style={{display:'flex',alignItems:'center',gap:'8px',padding:'14px 32px',borderRadius:'50px',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.75)',textDecoration:'none',fontSize:'15px',fontWeight:600,border:'1px solid rgba(255,255,255,0.08)',fontFamily:'Inter,sans-serif'}}>
                 Investment Analysis <ArrowRight size={15}/>
               </Link>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex justify-center gap-12 py-6 border-t border-b border-border-light mb-8 flex-wrap">
-            {[['215+','Economies'],['1000+','Official Sources'],['2s','Update Frequency']].map(([v,l])=>(
+          {/* Stats row */}
+          <div className="flex justify-center gap-10 mb-8 flex-wrap">
+            {[['215+','Economies'],['1,000+','Official Sources'],['2s','Update Frequency'],['6','AI Agents']].map(([v,l])=>(
               <div key={l} className="text-center">
-                <div className="text-2xl font-black text-primary-dark font-mono">{v}</div>
-                <div className="text-sm text-text-secondary font-medium mt-0.5">{l}</div>
+                <div style={{fontSize:'24px',fontWeight:900,color:'#FFFFFF',fontFamily:'JetBrains Mono,monospace',lineHeight:1}}>{v}</div>
+                <div style={{fontSize:'11px',color:'rgba(255,255,255,0.35)',fontFamily:'Inter,sans-serif',marginTop:'3px',fontWeight:500,letterSpacing:'0.03em'}}>{l}</div>
               </div>
             ))}
           </div>
 
-          {/* Globe */}
-          <div className="floating-card !p-5 !rounded-3xl" style={{animation:'fadeIn 0.8s ease 0.3s both',opacity:0}}>
-            <div className="text-xs font-bold text-text-secondary uppercase tracking-widest text-center mb-3">
-              Global Opportunity Map — Click any economy to explore
+          {/* ── 3D WEBGL GLOBE ── */}
+          <div style={{background:'linear-gradient(135deg,#060d18,#0d1f35)',borderRadius:'24px',padding:'4px',border:'1px solid rgba(46,204,113,0.12)',boxShadow:'0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)'}}>
+            <div style={{borderRadius:'20px',overflow:'hidden',position:'relative'}}>
+              <Globe3D/>
             </div>
-            <Globe3D />
           </div>
+
+          {/* Caption */}
+          <p style={{textAlign:'center',marginTop:'12px',fontSize:'11px',color:'rgba(255,255,255,0.2)',fontFamily:'Inter,sans-serif',letterSpacing:'0.04em'}}>
+            INTERACTIVE 3D GLOBE · CLICK ANY ECONOMY · DRAG TO ROTATE · {19} ECONOMIES TRACKED
+          </p>
         </div>
       </section>
 
-      {/* ── LIVE SIGNALS STRIP ── */}
-      <section className="bg-primary-dark py-12">
-        <div className="max-w-[1540px] mx-auto px-6">
-          <div className="flex justify-between items-center mb-6">
+      {/* ── LIVE SIGNALS STRIP ──────────────────────────────────────────── */}
+      <section style={{background:'#1A2C3E',padding:'48px 24px',borderTop:'1px solid rgba(255,255,255,0.06)'}}>
+        <div className="max-w-[1540px] mx-auto">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
             <div>
-              <div className="section-label opacity-70">LIVE INTELLIGENCE</div>
-              <h2 className="text-2xl font-black text-white">Latest Investment Signals</h2>
+              <div style={{fontSize:'10px',fontWeight:800,color:'rgba(46,204,113,0.6)',letterSpacing:'0.2em',marginBottom:'4px',textTransform:'uppercase',fontFamily:'Inter,sans-serif'}}>LIVE INTELLIGENCE</div>
+              <h2 style={{fontSize:'22px',fontWeight:900,color:'#FFFFFF',fontFamily:'Inter,sans-serif'}}>Latest Investment Signals</h2>
             </div>
-            <Link href="/signals" className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-bold text-primary-teal"
-              style={{background:'rgba(46,204,113,0.12)',border:'1px solid rgba(46,204,113,0.25)'}}>
+            <Link href="/signals" style={{display:'flex',alignItems:'center',gap:'6px',padding:'8px 18px',background:'rgba(46,204,113,0.1)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:'50px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#2ECC71',fontFamily:'Inter,sans-serif'}}>
               Full Feed <ArrowRight size={13}/>
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-4" style={{gridTemplateColumns:'repeat(5,1fr)'}}>
             {LIVE_SIGNALS.map((sig,i)=>{
               const gc=sig.grade==='PLATINUM'?'#9B59B6':'#F1C40F'
               return (
-                <div key={i} className="p-4 rounded-2xl border transition-all hover:-translate-y-1"
-                  style={{background:'rgba(255,255,255,0.05)',borderColor:'rgba(255,255,255,0.08)'}}>
+                <div key={i} style={{background:'rgba(255,255,255,0.04)',borderRadius:'16px',padding:'16px',border:'1px solid rgba(255,255,255,0.07)',transition:'all 0.2s'}}
+                  onMouseEnter={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.07)';(e.currentTarget as any).style.transform='translateY(-3px)'}}
+                  onMouseLeave={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.04)';(e.currentTarget as any).style.transform='none'}}>
                   <div className="flex justify-between mb-3">
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full" style={{background:`${gc}20`,color:gc}}>{sig.grade}</span>
-                    <span className="text-[9px] text-white/30 font-mono">{sig.ts} ago</span>
+                    <span style={{fontSize:'9px',fontWeight:800,padding:'2px 7px',borderRadius:'4px',background:`${gc}18`,color:gc,letterSpacing:'0.05em'}}>{sig.grade}</span>
+                    <span style={{fontSize:'9px',color:'rgba(255,255,255,0.25)',fontFamily:'JetBrains Mono,monospace'}}>{sig.ts} ago</span>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
                     <CountryFlag code={sig.code} size={18}/>
-                    <span className="text-xs font-bold text-white/70">{sig.country}</span>
+                    <span style={{fontSize:'11px',fontWeight:700,color:'rgba(255,255,255,0.65)',fontFamily:'Inter,sans-serif'}}>{sig.country}</span>
                   </div>
-                  <div className="text-xs text-white/80 leading-snug font-medium">{sig.title}</div>
+                  <div style={{fontSize:'12px',color:'rgba(255,255,255,0.8)',lineHeight:1.45,fontWeight:500,fontFamily:'Inter,sans-serif'}}>{sig.title}</div>
                 </div>
               )
             })}
@@ -128,18 +157,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section className="py-20 bg-background-offwhite">
+      {/* ── FEATURES ────────────────────────────────────────────────────── */}
+      <section className="py-20" style={{background:'#F8F9FA'}}>
         <div className="max-w-[1540px] mx-auto px-6">
           <div className="text-center mb-12">
             <div className="section-label">PLATFORM CAPABILITIES</div>
             <h2 className="text-4xl font-black text-primary-dark">Everything you need for FDI intelligence</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-3 gap-5">
             {FEATURES.map((f,i)=>(
-              <Link key={f.title} href={f.link} className="floating-card group block"
-                style={{animationDelay:`${i*80}ms`}}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{background:'rgba(46,204,113,0.1)'}}>
+              <Link key={f.title} href={f.link} className="floating-card group block">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4" style={{background:'rgba(46,204,113,0.1)',color:'#2ECC71'}}>
                   {f.icon}
                 </div>
                 <h3 className="text-lg font-black text-primary-dark mb-2">{f.title}</h3>
@@ -153,18 +181,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF ── */}
+      {/* ── SOCIAL PROOF ────────────────────────────────────────────────── */}
       <section className="py-20 bg-white">
         <div className="max-w-[1540px] mx-auto px-6">
           <div className="text-center mb-12">
             <div className="section-label">TRUSTED BY</div>
             <h2 className="text-4xl font-black text-primary-dark">Used by 12,847 investment professionals</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-3 gap-6 mb-12">
             {[
               {q:'"The GOSA scoring gives us a single comparable metric across markets. We use it every Monday morning."',name:'Head of Investment Strategy',org:'Southeast Asian Sovereign Wealth Fund',flag:'SG'},
               {q:'"GFR Ranking is now part of our annual competitiveness assessment. Comparable to IMD and Kearney, but with live data."',name:'Director of FDI Policy',org:'Middle East Investment Promotion Agency',flag:'AE'},
-              {q:'"We evaluated 11 locations in 6 countries. The Benchmark Tool saved 3 weeks of analyst time."',name:'VP Corporate Development',org:'European Manufacturing Group',flag:'DE'},
+              {q:'"We evaluated 11 locations in 6 countries. The Export Report tool saved 3 weeks of analyst time."',name:'VP Corporate Development',org:'European Manufacturing Group',flag:'DE'},
             ].map(({q,name,org,flag})=>(
               <div key={name} className="floating-card">
                 <div className="text-4xl text-primary-teal font-serif mb-3">"</div>
@@ -179,8 +207,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          {/* Animated counters */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {[{val:12847,suf:'',label:'Active Users'},{val:1000,suf:'+',label:'Verified Sources'},{val:215,suf:'+',label:'Economies'},{val:23,suf:'',label:'Country Profiles'}].map(({val,suf,label})=>(
               <div key={label} className="floating-card text-center !py-6">
                 <AnimatedCounter target={val} suffix={suf}/>
@@ -191,28 +218,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section className="py-20 bg-primary-dark text-center">
+      {/* ── CTA ─────────────────────────────────────────────────────────── */}
+      <section className="py-20 text-center" style={{background:'linear-gradient(135deg,#1A2C3E,#0d1f35)'}}>
         <div className="max-w-2xl mx-auto px-6">
           <h2 className="text-4xl font-black text-white mb-4">Start tracking global investment opportunities</h2>
           <p className="text-white/55 text-lg mb-8 leading-relaxed">Join investment professionals using Global FDI Monitor for real-time intelligence.</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <Link href="/register" className="flex items-center gap-2 px-9 py-3.5 rounded-full font-black text-white text-base"
-              style={{background:'#2ECC71',boxShadow:'0 4px 20px rgba(46,204,113,0.4)'}}>
+            <Link href="/register" style={{display:'flex',alignItems:'center',gap:'8px',padding:'14px 36px',borderRadius:'50px',background:'#2ECC71',color:'white',textDecoration:'none',fontSize:'15px',fontWeight:800,boxShadow:'0 4px 20px rgba(46,204,113,0.4)',fontFamily:'Inter,sans-serif'}}>
               Create Account <ChevronRight size={16}/>
             </Link>
-            <Link href="/dashboard" className="flex items-center gap-2 px-9 py-3.5 rounded-full font-semibold text-white text-base"
-              style={{background:'rgba(255,255,255,0.08)',border:'1.5px solid rgba(255,255,255,0.15)'}}>
+            <Link href="/dashboard" style={{display:'flex',alignItems:'center',gap:'8px',padding:'14px 36px',borderRadius:'50px',background:'rgba(255,255,255,0.07)',color:'white',textDecoration:'none',fontSize:'15px',fontWeight:600,border:'1.5px solid rgba(255,255,255,0.12)',fontFamily:'Inter,sans-serif'}}>
               Explore Platform
             </Link>
           </div>
         </div>
       </section>
-
-      <style>{`
-        @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
-        [style*="animation:fadeIn"] { animation: fadeIn 0.8s ease 0.3s both !important; }
-      `}</style>
     </div>
   )
 }
