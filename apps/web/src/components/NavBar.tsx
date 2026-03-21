@@ -17,6 +17,7 @@ const NAV = [
       { label: '🔀 Corridor Intel',     href: '/corridors',     desc: '12 bilateral routes' },
       { label: '📈 Market Insights',    href: '/insights',      desc: 'Macro trends' },
       { label: '⭐ Watchlists',          href: '/watchlists',    desc: 'Track economies' },
+      { label: '📊 Agent Report',        href: '/pipeline-report', desc: '6-stage pipeline data' },
     ],
   },
   {
