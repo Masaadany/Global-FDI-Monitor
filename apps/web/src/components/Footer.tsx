@@ -8,6 +8,7 @@ const COLS = {
     {l:'Mission Planning',h:'/pmp'},{l:'PDF Reports',h:'/reports'},
   ],
   Intelligence:[
+    {l:'Sector Monitor',h:'/sectors'},
     {l:'GOSA Methodology',h:'/about#gosa'},{l:'Signal Grades',h:'/about#signals'},
     {l:'AI Agent Pipeline',h:'/about#agents'},{l:'Data Sources (304+)',h:'/sources'},
     {l:'API Documentation',h:'/api-docs'},{l:'Publications',h:'/publications'},

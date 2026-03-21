@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Search, X, Menu, Zap, Bell, ChevronDown } from 'lucide-react';
+import { SearchOverlay } from './GlobalSearch';
 
 const NAV_ITEMS = [
   { label: 'Dashboard',           href: '/dashboard',           hot: false },
@@ -15,6 +16,7 @@ const NAV_ITEMS = [
       { label: '⚡ Market Signals',    href: '/signals',    desc: 'Live signal feed' },
       { label: '🏆 GFR Ranking',       href: '/gfr',        desc: '25 economies scored' },
       { label: '🌍 Country Profiles',  href: '/country/MYS',desc: '20+ country deep-dives' },
+      { label: '🏭 Sector Monitor',    href: '/sectors',    desc: '9 sectors tracked' },
       { label: '📊 Impact Analysis',   href: '/investment-analysis?tab=impact', desc: 'Model ROI' },
     ],
   },
@@ -25,10 +27,10 @@ const NAV_ITEMS = [
 
 export default function NavBar() {
   const path = usePathname();
-  const [search, setSearch] = useState(false);
-  const [query, setQuery] = useState('');
+  const [_search, _setSearch] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdown, setDropdown] = useState<string|null>(null);
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -135,24 +137,15 @@ export default function NavBar() {
             </div>
 
             {/* Search */}
-            {search ? (
-              <div style={{display:'flex',alignItems:'center',gap:'8px',background:'rgba(13,29,48,0.9)',borderRadius:'8px',padding:'6px 12px',border:'1px solid rgba(0,255,200,0.25)',backdropFilter:'blur(10px)'}}>
-                <Search size={13} color="#00ffc8"/>
-                <input autoFocus value={query} onChange={e=>setQuery(e.target.value)}
-                  placeholder="Search economies, signals..."
-                  style={{background:'transparent',border:'none',outline:'none',color:'#e8f4f8',fontSize:'12px',width:'200px',fontFamily:"'Inter',sans-serif"}}
-                  onKeyDown={e=>{if(e.key==='Escape'){setSearch(false);setQuery('');}}}/>
-                <button onClick={()=>{setSearch(false);setQuery('');}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(232,244,248,0.4)',padding:0,lineHeight:1}}>
-                  <X size={13}/>
-                </button>
-              </div>
-            ) : (
-              <button onClick={()=>setSearch(true)} style={{width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)',transition:'all 150ms ease'}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.3)';e.currentTarget.style.color='#00ffc8';}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='rgba(232,244,248,0.6)';}}>
-                <Search size={14}/>
-              </button>
-            )}
+            <button onClick={()=>setSearchOverlayOpen(true)}
+              style={{display:'flex',alignItems:'center',gap:'8px',padding:'6px 12px',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:'8px',cursor:'pointer',color:'rgba(232,244,248,0.5)',transition:'all 150ms ease',fontFamily:"'Inter',sans-serif",fontSize:'12px'}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.3)';e.currentTarget.style.color='#00ffc8';e.currentTarget.style.background='rgba(0,255,200,0.04)';}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='rgba(232,244,248,0.5)';e.currentTarget.style.background='rgba(255,255,255,0.04)';}}>
+              <Search size={13}/>
+              <span>Search</span>
+              <span style={{padding:'1px 6px',background:'rgba(255,255,255,0.06)',borderRadius:'4px',fontSize:'10px',color:'rgba(232,244,248,0.3)'}}>⌘K</span>
+            </button>
+            <SearchOverlay open={searchOverlayOpen} onClose={()=>setSearchOverlayOpen(false)}/>
 
             {/* Notifications */}
             <button style={{position:'relative',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)'}}>

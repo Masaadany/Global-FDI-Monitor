@@ -1,13 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /settings
-Disallow: /api/
+Disallow: /newsletter
 Disallow: /auth/
-Disallow: /onboarding
-Disallow: /dashboard/success
-Disallow: /fic/success
 
 Sitemap: https://fdimonitor.org/sitemap.xml
-
-# FDI Monitor — fdimonitor.org

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { useTrialGate } from '@/components/TrialGate';
 import Link from 'next/link';
 import { CheckCircle, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
@@ -10,10 +11,12 @@ export default function RegisterPage(){
   const [loading,setLoading]=useState(false);
   const [done,setDone]=useState(false);
 
+  const { startTrial } = useTrialGate();
   async function handleSubmit(e:React.FormEvent){
     e.preventDefault();
     setLoading(true);
     await new Promise(r=>setTimeout(r,1400));
+    startTrial();
     setLoading(false);
     setDone(true);
   }

@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import ScrollableSelect from '@/components/ScrollableSelect';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 
@@ -71,6 +72,7 @@ export default function SourcesPage() {
   const [filter, setFilter] = useState('ALL');
 
   const cats = filter==='ALL' ? SOURCE_CATEGORIES : SOURCE_CATEGORIES.filter(c=>c.cat.toLowerCase().includes(filter.toLowerCase()));
+  const catOptions = [{value:'ALL',label:'All Categories'}, ...SOURCE_CATEGORIES.map(c=>({value:c.cat,label:c.cat,sub:c.count+' sources'}))];
   const totalSources = SOURCE_CATEGORIES.reduce((a,c)=>a+c.count,0);
 
   return (

@@ -1,14 +1,10 @@
-import Skeleton from '@/components/Skeleton';
-
 export default function Loading() {
   return (
-    <div className="min-h-screen" style={{background:'#0F0A0A'}}>
-      <div className="max-w-screen-xl mx-auto px-6 py-8">
-        <Skeleton variant="card" className="h-32 mb-6"/>
-        <div className="grid md:grid-cols-3 gap-4 mb-6">
-          {[1,2,3].map(i=><Skeleton key={i} variant="card" className="h-24"/>)}
-        </div>
-        <Skeleton variant="table"/>
+    <div style={{minHeight:'100vh',background:'#020c14',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'16px'}}>
+        <div style={{width:'48px',height:'48px',border:'3px solid rgba(0,255,200,0.15)',borderTop:'3px solid #00ffc8',borderRadius:'50%',animation:'spin 1s linear infinite'}}/>
+        <div style={{fontSize:'12px',color:'rgba(0,255,200,0.5)',fontFamily:"'JetBrains Mono',monospace",letterSpacing:'0.1em'}}>LOADING...</div>
+        <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
 import Globe3D from '@/components/Globe3D';
 import ScrollableSelect from '@/components/ScrollableSelect';
+import { TrialStatusBar } from '@/components/TrialGate';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Zap, Activity, Globe, Shield, Target, BarChart3, ChevronRight } from 'lucide-react';
 
@@ -202,6 +203,7 @@ export default function Dashboard() {
   return (
     <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
+      <TrialStatusBar/>
 
       {/* ── DASHBOARD HEADER ───────────────────────────────────────── */}
       <div style={{background:'linear-gradient(180deg,rgba(4,14,28,0.97),rgba(2,12,20,0.93))',borderBottom:'1px solid rgba(0,255,200,0.08)',padding:'12px 24px',position:'sticky',top:'58px',zIndex:200,backdropFilter:'blur(20px)'}}>
