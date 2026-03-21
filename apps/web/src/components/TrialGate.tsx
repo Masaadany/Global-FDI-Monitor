@@ -54,7 +54,7 @@ export default function TrialGate({ children }: TrialGateProps) {
             padding:'24px',
           }}>
           <div style={{
-            background:'white',borderRadius:'20px',maxWidth:'480px',width:'100%',
+            background:'rgba(10,22,40,0.8)',borderRadius:'20px',maxWidth:'480px',width:'100%',
             padding:'40px 36px',textAlign:'center',boxShadow:'0 24px 80px rgba(10,61,98,0.3)',
           }}>
             {/* Lock icon */}

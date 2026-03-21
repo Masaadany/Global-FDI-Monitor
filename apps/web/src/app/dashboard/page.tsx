@@ -1,216 +1,118 @@
 'use client';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import NavBar from '@/components/NavBar';
 import Footer from '@/components/Footer';
+import Globe3D from '@/components/Globe3D';
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, Minus, ChevronRight, Download, Globe, Zap, BarChart3, Target, Filter, RefreshCw, ExternalLink } from 'lucide-react';
+import { TrendingUp, TrendingDown, Zap, Activity, Globe, Shield, Target, BarChart3, ChevronRight, RefreshCw } from 'lucide-react';
 
-// ── MASTER DATA ───────────────────────────────────────────────────────────────
+/* ── DATA ──────────────────────────────────────────────────────────── */
 const TOP_ECONOMIES = [
-  {iso3:'SGP',name:'Singapore',    flag:'🇸🇬',score:88.4,l1:92.1,l2:85.3,l3:87.2,l4:89.0,trend:+0.2,tier:'TOP',region:'Asia Pacific',lat:1.35,lng:103.8},
-  {iso3:'NZL',name:'New Zealand',  flag:'🇳🇿',score:86.7,l1:89.5,l2:84.1,l3:85.8,l4:87.3,trend:-0.1,tier:'TOP',region:'Oceania',     lat:-41.3,lng:174.8},
-  {iso3:'DNK',name:'Denmark',      flag:'🇩🇰',score:85.3,l1:87.2,l2:83.5,l3:84.9,l4:85.6,trend:+0.3,tier:'TOP',region:'Europe',      lat:55.7,lng:12.6},
-  {iso3:'KOR',name:'South Korea',  flag:'🇰🇷',score:84.1,l1:86.0,l2:82.8,l3:83.5,l4:84.2,trend:+0.1,tier:'TOP',region:'Asia Pacific',lat:37.6,lng:127.0},
-  {iso3:'USA',name:'United States',flag:'🇺🇸',score:83.9,l1:85.3,l2:82.1,l3:83.0,l4:85.1,trend:-0.2,tier:'TOP',region:'Americas',    lat:38.9,lng:-77.0},
-  {iso3:'GBR',name:'United Kingdom',flag:'🇬🇧',score:82.5,l1:84.1,l2:81.4,l3:82.2,l4:82.3,trend:-0.1,tier:'TOP',region:'Europe',     lat:51.5,lng:-0.1},
-  {iso3:'MYS',name:'Malaysia',     flag:'🇲🇾',score:81.2,l1:82.5,l2:80.7,l3:81.8,l4:79.8,trend:+0.4,tier:'HIGH',region:'Asia Pacific',lat:3.1,lng:101.7},
-  {iso3:'THA',name:'Thailand',     flag:'🇹🇭',score:80.7,l1:81.8,l2:80.2,l3:81.0,l4:79.8,trend:+0.2,tier:'HIGH',region:'Asia Pacific',lat:13.7,lng:100.5},
-  {iso3:'VNM',name:'Vietnam',      flag:'🇻🇳',score:79.4,l1:80.5,l2:79.1,l3:78.9,l4:79.1,trend:+0.5,tier:'HIGH',region:'Asia Pacific',lat:21.0,lng:105.8},
-  {iso3:'IDN',name:'Indonesia',    flag:'🇮🇩',score:77.8,l1:78.9,l2:77.3,l3:77.5,l4:77.5,trend:+0.1,tier:'HIGH',region:'Asia Pacific',lat:-6.2,lng:106.8},
-  {iso3:'ARE',name:'UAE',          flag:'🇦🇪',score:82.1,l1:83.4,l2:81.2,l3:82.8,l4:81.0,trend:+1.2,tier:'TOP',region:'Middle East', lat:25.2,lng:55.3},
-  {iso3:'SAU',name:'Saudi Arabia', flag:'🇸🇦',score:79.1,l1:77.3,l2:80.4,l3:82.1,l4:76.6,trend:+2.1,tier:'HIGH',region:'Middle East', lat:24.7,lng:46.7},
-  {iso3:'DEU',name:'Germany',      flag:'🇩🇪',score:80.2,l1:83.2,l2:78.4,l3:78.9,l4:80.3,trend:-0.3,tier:'TOP',region:'Europe',      lat:52.5,lng:13.4},
-  {iso3:'IND',name:'India',        flag:'🇮🇳',score:73.2,l1:69.8,l2:74.6,l3:74.8,l4:73.6,trend:+0.8,tier:'HIGH',region:'Asia Pacific',lat:28.6,lng:77.2},
-  {iso3:'BRA',name:'Brazil',       flag:'🇧🇷',score:71.3,l1:68.4,l2:72.8,l3:71.2,l4:72.8,trend:+0.4,tier:'HIGH',region:'Americas',   lat:-23.5,lng:-46.6},
-  {iso3:'MAR',name:'Morocco',      flag:'🇲🇦',score:66.8,l1:63.8,l2:68.2,l3:68.4,l4:66.8,trend:+0.6,tier:'HIGH',region:'Africa',     lat:34.0,lng:-6.8},
+  {id:'SGP',flag:'🇸🇬',name:'Singapore',    gosa:88.4,trend:+0.2,fdi:'$91B',l1:92.1,l2:85.3,l3:87.2,l4:89.0,tier:'TOP',color:'#00ffc8'},
+  {id:'ARE',flag:'🇦🇪',name:'UAE',          gosa:82.1,trend:+1.2,fdi:'$23B',l1:83.4,l2:81.2,l3:82.8,l4:81.0,tier:'TOP',color:'#00ffc8'},
+  {id:'USA',flag:'🇺🇸',name:'United States',gosa:83.9,trend:-0.2,fdi:'$349B',l1:85.3,l2:82.1,l3:83.0,l4:85.1,tier:'TOP',color:'#00ffc8'},
+  {id:'MYS',flag:'🇲🇾',name:'Malaysia',    gosa:81.2,trend:+0.4,fdi:'$22B',l1:82.5,l2:80.7,l3:81.8,l4:79.8,tier:'HIGH',color:'#00d4ff'},
+  {id:'VNM',flag:'🇻🇳',name:'Vietnam',     gosa:79.4,trend:+0.5,fdi:'$24B',l1:80.5,l2:79.1,l3:78.9,l4:79.1,tier:'HIGH',color:'#00d4ff'},
 ];
 
-const DB_DATA: Record<string, Record<string,number>> = {
-  VNM:{starting_business:84,construction_permits:62,getting_electricity:78,registering_property:71,getting_credit:80,protecting_investors:82,paying_taxes:73,trading_borders:91,enforcing_contracts:65,resolving_insolvency:68},
-  SGP:{starting_business:96,construction_permits:88,getting_electricity:98,registering_property:90,getting_credit:92,protecting_investors:95,paying_taxes:91,trading_borders:99,enforcing_contracts:87,resolving_insolvency:89},
-  MYS:{starting_business:88,construction_permits:72,getting_electricity:82,registering_property:75,getting_credit:78,protecting_investors:80,paying_taxes:75,trading_borders:88,enforcing_contracts:70,resolving_insolvency:72},
-  THA:{starting_business:82,construction_permits:70,getting_electricity:76,registering_property:68,getting_credit:75,protecting_investors:78,paying_taxes:71,trading_borders:85,enforcing_contracts:68,resolving_insolvency:65},
-  ARE:{starting_business:93,construction_permits:85,getting_electricity:95,registering_property:88,getting_credit:85,protecting_investors:88,paying_taxes:92,trading_borders:96,enforcing_contracts:82,resolving_insolvency:80},
-  SAU:{starting_business:85,construction_permits:74,getting_electricity:88,registering_property:78,getting_credit:72,protecting_investors:79,paying_taxes:80,trading_borders:82,enforcing_contracts:75,resolving_insolvency:70},
-};
-const DB_LABELS: Record<string,string> = {
-  starting_business:'Starting a Business',construction_permits:'Construction Permits',getting_electricity:'Getting Electricity',
-  registering_property:'Registering Property',getting_credit:'Getting Credit',protecting_investors:'Protecting Investors',
-  paying_taxes:'Paying Taxes',trading_borders:'Trading Across Borders',enforcing_contracts:'Enforcing Contracts',resolving_insolvency:'Resolving Insolvency'
-};
+const DB_INDICATORS = [
+  {ind:'Starting a Business',  globe:82.3,avg:72.4,color:'#00ffc8'},
+  {ind:'Construction Permits', globe:74.8,avg:67.1,color:'#00d4ff'},
+  {ind:'Getting Electricity',  globe:87.2,avg:78.6,color:'#ffd700'},
+  {ind:'Registering Property', globe:71.4,avg:61.8,color:'#9b59b6'},
+  {ind:'Getting Credit',       globe:75.0,avg:65.4,color:'#00ffc8'},
+  {ind:'Protecting Investors', globe:81.8,avg:71.2,color:'#00d4ff'},
+  {ind:'Paying Taxes',         globe:78.6,avg:64.8,color:'#ffd700'},
+  {ind:'Trading Across Borders',globe:82.4,avg:74.2,color:'#9b59b6'},
+  {ind:'Enforcing Contracts',  globe:72.1,avg:58.4,color:'#00ffc8'},
+  {ind:'Resolving Insolvency', globe:82.4,avg:61.6,color:'#00d4ff'},
+];
 
-const SECTORS = [
-  {name:'EV/Battery',     x:85,y:92,size:32,color:'#2ecc71',inv:'$15B'},
-  {name:'Semiconductors', x:82,y:89,size:26,color:'#9b59b6',inv:'$8B'},
-  {name:'AI Data Centers',x:78,y:85,size:28,color:'#3498db',inv:'$12B'},
-  {name:'Digital Economy',x:74,y:80,size:22,color:'#2ecc71',inv:'$5B'},
-  {name:'Agribusiness',   x:71,y:72,size:16,color:'#f1c40f',inv:'$2B'},
-  {name:'Renewables',     x:76,y:78,size:20,color:'#1abc9c',inv:'$6B'},
-  {name:'Fintech',        x:79,y:76,size:18,color:'#e67e22',inv:'$3B'},
-  {name:'Pharma',         x:68,y:68,size:14,color:'#e74c3c',inv:'$2B'},
+const SECTOR_MATRIX = [
+  {s:'EV Battery',      x:82,y:91,size:16,color:'#00ffc8',momentum:'HOT'},
+  {s:'Data Centers',    x:76,y:88,size:14,color:'#00d4ff',momentum:'HOT'},
+  {s:'Semiconductors',  x:84,y:78,size:13,color:'#ffd700',momentum:'RISING'},
+  {s:'Renewables',      x:71,y:82,size:12,color:'#00ffc8',momentum:'RISING'},
+  {s:'FinTech',         x:68,y:74,size:10,color:'#9b59b6',momentum:'STABLE'},
+  {s:'Pharma/Health',   x:79,y:69,size:11,color:'#00d4ff',momentum:'STABLE'},
+  {s:'Aerospace',       x:74,y:64,size:9, color:'#ffd700',momentum:'STABLE'},
+  {s:'Logistics',       x:61,y:72,size:10,color:'#ff4466',momentum:'COOLING'},
 ];
 
 const ZONES = [
-  {name:'Ho Chi Minh High-Tech Park',country:'Vietnam',  flag:'🇻🇳',occ:85,avail:120,infra:'Premium',incentive:'CIT 10% · 5yr holiday',tenants:'Samsung, Intel, LG'},
-  {name:'VSIP Binh Duong',            country:'Vietnam',  flag:'🇻🇳',occ:65,avail:85, infra:'Standard',incentive:'Customs waiver',       tenants:'Nestlé, Unilever'},
-  {name:'Dinh Vu Industrial Zone',    country:'Vietnam',  flag:'🇻🇳',occ:45,avail:200,infra:'Developing',incentive:'Land cost 50% off',  tenants:'New zone'},
-  {name:'King Abdullah Econ. City',   country:'Saudi Arabia',flag:'🇸🇦',occ:35,avail:800,infra:'Premium', incentive:'0% income tax',     tenants:'SABIC, Alfanar'},
-  {name:'Dubai Multi Commodities',    country:'UAE',      flag:'🇦🇪',occ:78,avail:45, infra:'Premium',incentive:'0% tax 50yr',         tenants:'Aramex, Agility'},
-  {name:'Penang Science Park',        country:'Malaysia', flag:'🇲🇾',occ:72,avail:38, infra:'Premium',incentive:'MSC Status benefits',  tenants:'Intel, Dell, HP'},
+  {name:'Jurong Island, SG',    country:'SGP',type:'Industrial',avail:34,total:100,color:'#00ffc8'},
+  {name:'Jebel Ali FZ, UAE',    country:'ARE',type:'Multi-use', avail:22,total:100,color:'#00d4ff'},
+  {name:'Penang FIZ, Malaysia', country:'MYS',type:'Tech',      avail:41,total:100,color:'#ffd700'},
+  {name:'Eastern EEC, Thailand',country:'THA',type:'EV/Auto',   avail:58,total:100,color:'#9b59b6'},
+  {name:'VSIP, Vietnam',        country:'VNM',type:'Manufacturing',avail:47,total:100,color:'#00ffc8'},
+  {name:'NEOM, Saudi Arabia',   country:'SAU',type:'Mixed-use', avail:78,total:100,color:'#e67e22'},
 ];
 
 const POLICIES = [
-  {status:'NEW',    country:'Vietnam',     flag:'🇻🇳',sector:'Manufacturing',    title:'EV Battery Tax Holiday',            body:'50% CIT reduction for first 5 years for EV battery manufacturers in approved zones.',source:'Ministry of Finance Vietnam',valid:'Dec 2028',color:'#2ecc71'},
-  {status:'ACTIVE', country:'Thailand',    flag:'🇹🇭',sector:'EV Sector',         title:'8-Year Corporate Tax Exemption',    body:'Full CIT exemption for EV battery, cells, and module manufacturing (standard rate 20%).',source:'Thailand BOI',valid:'Dec 2030',color:'#3498db'},
-  {status:'EXPIRING',country:'Malaysia',   flag:'🇲🇾',sector:'High-Tech',         title:'Pioneer Status Incentive',          body:'70% income tax exemption expires December 2026 — apply within 90 days.',source:'MIDA Malaysia',valid:'Sep 2026',color:'#f1c40f'},
-  {status:'NEW',    country:'Saudi Arabia',flag:'🇸🇦',sector:'All Sectors',       title:'Vision 2030 FDI Fast-Track',        body:'30-day investment license guarantee under new FDI acceleration framework.',source:'MISA Saudi Arabia',valid:'Dec 2030',color:'#2ecc71'},
-  {status:'ACTIVE', country:'UAE',         flag:'🇦🇪',sector:'Digital Economy',   title:'100% Foreign Ownership',            body:'100% foreign ownership now permitted across all mainland sectors.',source:'MOEI UAE',valid:'Permanent',color:'#3498db'},
+  {country:'Malaysia',flag:'🇲🇾',policy:'100% FDI in data centers',status:'NEW',   date:'Mar 2026',c:'#00ffc8'},
+  {country:'UAE',    flag:'🇦🇪',policy:'100% mainland ownership',  status:'ACTIVE', date:'Feb 2026',c:'#00d4ff'},
+  {country:'Thailand',flag:'🇹🇭',policy:'$2B EV battery incentive', status:'NEW',   date:'Mar 2026',c:'#ffd700'},
+  {country:'Vietnam', flag:'🇻🇳',policy:'50% CIT reduction EV mfg', status:'ACTIVE', date:'Jan 2026',c:'#9b59b6'},
+  {country:'Saudi Arabia',flag:'🇸🇦',policy:'30-day license guarantee',status:'NEW', date:'Mar 2026',c:'#e67e22'},
 ];
 
-const LIVE_SIGNALS = [
-  {id:1,type:'POLICY CHANGE',   cls:'signal-policy',   eco:'Malaysia',  flag:'🇲🇾',title:'FDI cap in data centers raised to 100%',implication:'Positions Malaysia as most accessible data center hub in SEA — $5B+ expected.',time:'2m',impact:'HIGH',source:'MITI Malaysia',color:'#e74c3c'},
-  {id:2,type:'NEW INCENTIVE',   cls:'signal-incentive',eco:'Thailand',   flag:'🇹🇭',title:'$2B EV battery subsidy package approved',implication:'Strengthens EV supply chain competitiveness — 5-8 new facilities by 2028.',time:'1h',impact:'HIGH',source:'Thailand BOI',color:'#2ecc71'},
-  {id:3,type:'SECTOR GROWTH',   cls:'signal-growth',   eco:'Vietnam',    flag:'🇻🇳',title:'Electronics exports surge 34% YoY',implication:'Vietnam solidifies #2 ASEAN electronics exporter position.',time:'3h',impact:'MEDIUM',source:'GSO Vietnam',color:'#3498db'},
-  {id:4,type:'ZONE AVAILABILITY',cls:'signal-zone',    eco:'Indonesia',  flag:'🇮🇩',title:'New Batam zone — 200ha ready for occupancy',implication:'Alleviates land shortage, opens manufacturing relocation opportunities.',time:'5h',impact:'MEDIUM',source:'Batam Authority',color:'#f1c40f'},
-  {id:5,type:'COMPETITOR MOVE', cls:'signal-competitor',eco:'Indonesia',  flag:'🇮🇩',title:'$15B nickel processing investment confirmed',implication:'Strengthens nickel dominance — EV competitors face higher raw material costs.',time:'1d',impact:'HIGH',source:'Ministry of Investment',color:'#9b59b6'},
+const INITIAL_SIGNALS = [
+  {id:1,type:'POLICY',grade:'PLATINUM',country:'Malaysia',flag:'🇲🇾',title:'FDI cap in data centers raised to 100%',sco:96,impact:'HIGH',ts:'2m'},
+  {id:2,type:'INCENTIVE',grade:'PLATINUM',country:'Thailand',flag:'🇹🇭',title:'$2B EV battery subsidy package approved',sco:95,impact:'HIGH',ts:'1h'},
+  {id:3,type:'DEAL',grade:'PLATINUM',country:'UAE',flag:'🇦🇪',title:'Microsoft $3.3B AI data center announced',sco:97,impact:'HIGH',ts:'2d'},
+  {id:4,type:'GROWTH',grade:'GOLD',country:'Vietnam',flag:'🇻🇳',title:'Electronics exports surge 34% YoY',sco:92,impact:'MED',ts:'3h'},
+  {id:5,type:'ZONE',grade:'GOLD',country:'Indonesia',flag:'🇮🇩',title:'New Batam zone — 200ha ready',sco:91,impact:'MED',ts:'5h'},
 ];
 
-function scoreColor(s: number) { return s>=80?'#2ecc71':s>=60?'#3498db':s>=40?'#f1c40f':'#e74c3c'; }
-function TrendIcon({v}:{v:number}) {
-  if(v>0) return <TrendingUp size={11} color="#2ecc71"/>;
-  if(v<0) return <TrendingDown size={11} color="#e74c3c"/>;
-  return <Minus size={11} color="#7f8c8d"/>;
+function scoreColor(s:number){ return s>=80?'#00ffc8':s>=60?'#00d4ff':s>=40?'#ffd700':'#ff4466'; }
+function gradeBg(g:string){ return g==='PLATINUM'?'rgba(155,89,182,0.15)':g==='GOLD'?'rgba(255,215,0,0.12)':'rgba(148,168,179,0.1)'; }
+function gradeColor(g:string){ return g==='PLATINUM'?'#c39bd3':g==='GOLD'?'#ffd700':'#94a8b3'; }
+function typeColor(t:string){ const m:any={POLICY:'#ff4466',INCENTIVE:'#00ffc8',DEAL:'#e67e22',GROWTH:'#00d4ff',ZONE:'#9b59b6'}; return m[t]||'#94a8b3'; }
+
+/* ── MINI RADAR ─────────────────────────────────────────────────────── */
+function RadarMini({data,size=90}:{data:number[];size?:number}){
+  const n=data.length; const cx=size/2,cy=size/2,r=size*0.38;
+  function pt(i:number,v:number){const a=(Math.PI*2*i/n)-Math.PI/2;const d=(v/100)*r;return{x:cx+d*Math.cos(a),y:cy+d*Math.sin(a)};}
+  const pts=data.map((v,i)=>pt(i,v));
+  const poly=pts.map(p=>`${p.x},${p.y}`).join(' ');
+  return(
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      {[20,40,60,80,100].map(l=>{const ps=data.map((_,i)=>pt(i,l));return <polygon key={l} points={ps.map(p=>`${p.x},${p.y}`).join(' ')} fill="none" stroke="rgba(0,255,200,0.06)" strokeWidth="0.5"/>;})}
+      {data.map((_,i)=>{const p=pt(i,100);return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="rgba(0,255,200,0.06)" strokeWidth="0.5"/>;})}
+      <polygon points={poly} fill="rgba(0,255,200,0.15)" stroke="#00ffc8" strokeWidth="1.5"/>
+      {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#00ffc8" style={{filter:'drop-shadow(0 0 4px #00ffc8)'}}/>)}
+    </svg>
+  );
 }
 
-// ── GLOBE ─────────────────────────────────────────────────────────────────────
-function GlobeViz({onSelect, selected}:{onSelect:(iso3:string)=>void, selected:string}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rotRef = useRef(0);
-  const animRef = useRef(0);
-  const hovRef = useRef('');
-  const pauseRef = useRef(false);
-
-  useEffect(()=>{
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
-    const W=canvas.width, H=canvas.height, cx=W/2, cy=H/2, R=Math.min(W,H)*0.42;
-
-    function proj(lat:number,lng:number) {
-      const phi=(90-lat)*Math.PI/180, th=(lng+rotRef.current)*Math.PI/180;
-      const x=R*Math.sin(phi)*Math.cos(th), y=R*Math.cos(phi), z=R*Math.sin(phi)*Math.sin(th);
-      return {x:cx+x,y:cy-y,z,vis:z>-R*0.1};
-    }
-
-    function draw() {
-      ctx.clearRect(0,0,W,H);
-      // Base
-      const grad=ctx.createRadialGradient(cx-R*.25,cy-R*.25,R*.05,cx,cy,R);
-      grad.addColorStop(0,'#1e3a5f'); grad.addColorStop(.6,'#1a2c3e'); grad.addColorStop(1,'#0d1b2a');
-      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle=grad; ctx.fill();
-      // Atmosphere glow
-      const atm=ctx.createRadialGradient(cx,cy,R*.9,cx,cy,R*1.1);
-      atm.addColorStop(0,'transparent'); atm.addColorStop(1,'rgba(46,204,113,0.12)');
-      ctx.beginPath(); ctx.arc(cx,cy,R*1.05,0,Math.PI*2); ctx.fillStyle=atm; ctx.fill();
-      // Grid
-      ctx.strokeStyle='rgba(46,204,113,0.05)'; ctx.lineWidth=.5;
-      [-60,-30,0,30,60].forEach(lat=>{
-        ctx.beginPath(); let f=true;
-        for(let lng=-180;lng<=180;lng+=3){const p=proj(lat,lng);if(p.vis){f?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);f=false;}else f=true;} ctx.stroke();
-      });
-      for(let lng=-150;lng<180;lng+=30){
-        ctx.beginPath(); let f=true;
-        for(let lat=-80;lat<=80;lat+=3){const p=proj(lat,lng);if(p.vis){f?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);f=false;}else f=true;} ctx.stroke();
-      }
-      // Economies
-      const visible=TOP_ECONOMIES.map(e=>({...e,p:proj(e.lat,e.lng)})).filter(e=>e.p.vis).sort((a,b)=>b.p.z-a.p.z);
-      visible.forEach(e=>{
-        const {x,y}=e.p; const c=scoreColor(e.score);
-        const isSel=e.iso3===selected, isHov=e.iso3===hovRef.current;
-        const r=isSel?9:e.score>=80?7:e.score>=65?5:4;
-        // Pulse ring for selected
-        if(isSel){
-          ctx.beginPath(); ctx.arc(x,y,r+8,0,Math.PI*2);
-          ctx.strokeStyle=c+'60'; ctx.lineWidth=2; ctx.stroke();
-          ctx.beginPath(); ctx.arc(x,y,r+4,0,Math.PI*2);
-          ctx.strokeStyle=c+'80'; ctx.lineWidth=1; ctx.stroke();
-        }
-        // Glow
-        if(isSel||isHov){ctx.shadowBlur=16;ctx.shadowColor=c;}
-        ctx.beginPath(); ctx.arc(x,y,r+2,0,Math.PI*2);
-        ctx.fillStyle=c+'25'; ctx.fill();
-        ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2);
-        ctx.fillStyle=isSel?c:c+'cc'; ctx.fill();
-        ctx.shadowBlur=0;
-        // Labels
-        if(e.score>=83||isSel){
-          ctx.font=`${isSel?'bold ':''}10px Inter,sans-serif`;
-          ctx.fillStyle=isSel?'white':'rgba(255,255,255,0.85)';
-          ctx.fillText(e.name,x+r+4,y+3);
-        }
-      });
-      // Edge
-      const edge=ctx.createRadialGradient(cx,cy,R*.82,cx,cy,R);
-      edge.addColorStop(0,'transparent'); edge.addColorStop(1,'rgba(46,204,113,0.1)');
-      ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fillStyle=edge; ctx.fill();
-      if(!pauseRef.current) rotRef.current+=.1;
-      animRef.current=requestAnimationFrame(draw);
-    }
-    draw();
-
-    function onClick(e:MouseEvent){
-      const r=canvas.getBoundingClientRect(), sx=W/r.width, sy=H/r.height;
-      const px=(e.clientX-r.left)*sx, py=(e.clientY-r.top)*sy;
-      let best='',bestD=22;
-      TOP_ECONOMIES.forEach(eco=>{const p=proj(eco.lat,eco.lng);if(!p.vis)return;const d=Math.hypot(p.x-px,p.y-py);if(d<bestD){bestD=d;best=eco.iso3;}});
-      if(best)onSelect(best);
-    }
-    function onMove(e:MouseEvent){
-      const r=canvas.getBoundingClientRect(), sx=W/r.width, sy=H/r.height;
-      const px=(e.clientX-r.left)*sx, py=(e.clientY-r.top)*sy;
-      let best='',bestD=22;
-      TOP_ECONOMIES.forEach(eco=>{const p=proj(eco.lat,eco.lng);if(!p.vis)return;const d=Math.hypot(p.x-px,p.y-py);if(d<bestD){bestD=d;best=eco.iso3;}});
-      hovRef.current=best; canvas.style.cursor=best?'pointer':'default';
-    }
-    function onEnter(){pauseRef.current=true;} function onLeave(){pauseRef.current=false;}
-    canvas.addEventListener('click',onClick); canvas.addEventListener('mousemove',onMove);
-    canvas.addEventListener('mouseenter',onEnter); canvas.addEventListener('mouseleave',onLeave);
-    return()=>{cancelAnimationFrame(animRef.current);canvas.removeEventListener('click',onClick);canvas.removeEventListener('mousemove',onMove);canvas.removeEventListener('mouseenter',onEnter);canvas.removeEventListener('mouseleave',onLeave);};
-  },[selected]);
-
-  return <canvas ref={canvasRef} width={520} height={520} style={{width:'100%',height:'auto',maxWidth:'520px',filter:'drop-shadow(0 0 30px rgba(46,204,113,0.15))'}}/>;
-}
-
-// ── SECTOR MATRIX SVG ─────────────────────────────────────────────────────────
-function SectorMatrix({hoverSector,setHoverSector}:{hoverSector:string,setHoverSector:(s:string)=>void}) {
-  const W=300, H=220, padL=36, padB=30, padR=12, padT=12;
-  const iW=W-padL-padR, iH=H-padT-padB;
-  function px(x:number){return padL+(x-60)/(100-60)*iW;}
-  function py(y:number){return padT+(100-y)/(100-60)*iH;}
-  return (
-    <svg width={W} height={H} style={{overflow:'visible',width:'100%'}}>
-      <defs>
-        <radialGradient id="sectorBg" cx="50%" cy="50%"><stop offset="0%" stopColor="#f8fff8"/><stop offset="100%" stopColor="#f0f8ff"/></radialGradient>
-      </defs>
-      <rect x={padL} y={padT} width={iW} height={iH} fill="url(#sectorBg)" rx="6"/>
-      {[.25,.5,.75].map(t=>(
-        <g key={t}>
-          <line x1={padL+t*iW} y1={padT} x2={padL+t*iW} y2={padT+iH} stroke="rgba(26,44,62,0.06)" strokeWidth=".5" strokeDasharray="3,3"/>
-          <line x1={padL} y1={padT+t*iH} x2={padL+iW} y2={padT+t*iH} stroke="rgba(26,44,62,0.06)" strokeWidth=".5" strokeDasharray="3,3"/>
-        </g>
+/* ── SECTOR SCATTER ─────────────────────────────────────────────────── */
+function SectorScatter(){
+  const [hov,setHov]=useState<string|null>(null);
+  const W=320,H=200;
+  return(
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{width:'100%'}}>
+      {/* Grid */}
+      {[0,25,50,75,100].map(v=>(
+        <line key={v} x1={v/100*(W-40)+20} y1={8} x2={v/100*(W-40)+20} y2={H-24} stroke="rgba(0,255,200,0.06)" strokeWidth="0.5" strokeDasharray="3,6"/>
       ))}
-      <line x1={padL} y1={padT+iH} x2={padL+iW} y2={padT+iH} stroke="rgba(26,44,62,0.15)" strokeWidth="1"/>
-      <line x1={padL} y1={padT} x2={padL} y2={padT+iH} stroke="rgba(26,44,62,0.15)" strokeWidth="1"/>
-      <text x={padL+iW/2} y={H-4} fontSize="9" fill="#7f8c8d" textAnchor="middle">Country Readiness →</text>
-      <text x={10} y={padT+iH/2} fontSize="9" fill="#7f8c8d" textAnchor="middle" transform={`rotate(-90,10,${padT+iH/2})`}>Opportunity →</text>
-      {SECTORS.map(s=>{
-        const bx=px(s.x), by=py(s.y), r=s.size/2;
-        const isHov=hoverSector===s.name;
-        return (
-          <g key={s.name} onMouseEnter={()=>setHoverSector(s.name)} onMouseLeave={()=>setHoverSector('')} style={{cursor:'pointer'}}>
-            <circle cx={bx} cy={by} r={r+3} fill={s.color} fillOpacity={isHov?.15:.05}/>
-            <circle cx={bx} cy={by} r={r} fill={s.color} fillOpacity={isHov?.9:.7} stroke={s.color} strokeWidth="1.5"/>
-            <text x={bx} y={by-r-4} fontSize={isHov?9:8} fill="#1a2c3e" textAnchor="middle" fontWeight={isHov?"700":"600"}>{s.name}</text>
-            {isHov&&<text x={bx} y={by+r+12} fontSize={8} fill={s.color} textAnchor="middle" fontWeight="800">{s.inv} invested</text>}
+      {[0,25,50,75,100].map(v=>(
+        <line key={v} x1={20} y1={(1-v/100)*(H-32)+8} x2={W-20} y2={(1-v/100)*(H-32)+8} stroke="rgba(0,255,200,0.06)" strokeWidth="0.5" strokeDasharray="3,6"/>
+      ))}
+      {/* Axis labels */}
+      <text x={W/2} y={H-6} textAnchor="middle" fill="rgba(232,244,248,0.3)" fontSize="8" fontFamily="'JetBrains Mono',monospace">INCENTIVE STRENGTH →</text>
+      <text x={8} y={H/2} textAnchor="middle" fill="rgba(232,244,248,0.3)" fontSize="8" fontFamily="'JetBrains Mono',monospace" transform={`rotate(-90,8,${H/2})`}>MARKET ATTRACTIVENESS →</text>
+      {/* Quadrant label */}
+      <text x={W-60} y={22} textAnchor="middle" fill="rgba(0,255,200,0.3)" fontSize="7" fontFamily="'JetBrains Mono',monospace">PRIORITY ZONE</text>
+      {/* Points */}
+      {SECTOR_MATRIX.map(s=>{
+        const px=20+(s.x/100)*(W-40);
+        const py=8+((100-s.y)/100)*(H-32);
+        const isH=hov===s.s;
+        return(
+          <g key={s.s} onMouseEnter={()=>setHov(s.s)} onMouseLeave={()=>setHov(null)} style={{cursor:'pointer'}}>
+            <circle cx={px} cy={py} r={s.size+2} fill={`${s.color}08`} stroke={`${s.color}20`} strokeWidth="1" style={{filter:isH?`drop-shadow(0 0 8px ${s.color})`:'none'}}/>
+            <circle cx={px} cy={py} r={s.size/2} fill={s.color} opacity="0.85" style={{filter:isH?`drop-shadow(0 0 12px ${s.color})`:'none'}}/>
+            {isH&&<text x={px} y={py-s.size-4} textAnchor="middle" fill={s.color} fontSize="8" fontWeight="700" fontFamily="'Inter',sans-serif">{s.s}</text>}
           </g>
         );
       })}
@@ -218,449 +120,319 @@ function SectorMatrix({hoverSector,setHoverSector}:{hoverSector:string,setHoverS
   );
 }
 
-// ── MAIN DASHBOARD ────────────────────────────────────────────────────────────
+/* ── MAIN COMPONENT ─────────────────────────────────────────────────── */
 export default function Dashboard() {
-  const [sel, setSel] = useState('VNM');
-  const [sigFilter, setSigFilter] = useState('ALL');
-  const [signals, setSignals] = useState(LIVE_SIGNALS);
-  const [hoverSector, setHoverSector] = useState('');
-  const [tick, setTick] = useState(0);
-
-  const eco = TOP_ECONOMIES.find(e=>e.iso3===sel)||TOP_ECONOMIES[0];
-  const dbData = DB_DATA[sel]||DB_DATA.VNM;
-  const top5 = [...TOP_ECONOMIES].sort((a,b)=>b.score-a.score).slice(0,5);
+  const [signals,setSignals]=useState(INITIAL_SIGNALS);
+  const [selCountry,setSelCountry]=useState(TOP_ECONOMIES[0]);
+  const [lastUpdate,setLastUpdate]=useState(new Date());
+  const [time,setTime]=useState(new Date());
 
   useEffect(()=>{
     const iv=setInterval(()=>{
-      setTick(t=>t+1);
-      if(Math.random()>.65){
-        const types=[{t:'POLICY CHANGE',cls:'signal-policy',c:'#e74c3c'},{t:'NEW INCENTIVE',cls:'signal-incentive',c:'#2ecc71'},{t:'SECTOR GROWTH',cls:'signal-growth',c:'#3498db'},{t:'ZONE AVAILABILITY',cls:'signal-zone',c:'#f1c40f'}];
-        const ecos=[{eco:'Singapore',flag:'🇸🇬'},{eco:'UAE',flag:'🇦🇪'},{eco:'Vietnam',flag:'🇻🇳'},{eco:'Malaysia',flag:'🇲🇾'}];
-        const tp=types[Math.floor(Math.random()*types.length)];
-        const eo=ecos[Math.floor(Math.random()*ecos.length)];
-        const titles=['New investment incentive announced','FDI policy framework updated','Sector investment record set','Zone expansion confirmed'];
-        setSignals(p=>[{id:Date.now(),...tp,type:tp.t,...eo,title:titles[Math.floor(Math.random()*4)],implication:'Strategic significance under analysis.',time:'Now',impact:'MEDIUM',source:'Official source',color:tp.c},...p.slice(0,11)]);
+      setTime(new Date());
+      if(Math.random()>0.65){
+        const types=['POLICY','INCENTIVE','DEAL','GROWTH','ZONE'];
+        const ctrs=[{n:'Malaysia',f:'🇲🇾'},{n:'UAE',f:'🇦🇪'},{n:'Vietnam',f:'🇻🇳'},{n:'Thailand',f:'🇹🇭'},{n:'Singapore',f:'🇸🇬'}];
+        const g=['PLATINUM','GOLD','SILVER'][Math.floor(Math.random()*3)];
+        const c=ctrs[Math.floor(Math.random()*ctrs.length)];
+        setSignals(p=>[{id:Date.now(),type:types[Math.floor(Math.random()*types.length)],grade:g,country:c.n,flag:c.f,title:'New investment signal detected — SCI scoring in progress',sco:70+Math.floor(Math.random()*26),impact:['HIGH','MED','LOW'][Math.floor(Math.random()*3)],ts:'now'},...p.slice(0,8)]);
+        setLastUpdate(new Date());
       }
-    },5000);
-    return()=>clearInterval(iv);
+    },4000);
+    return ()=>clearInterval(iv);
   },[]);
 
-  const filtSigs=sigFilter==='ALL'?signals:signals.filter(s=>s.type===sigFilter);
+  const Panel=({children,style={}}:{children:any,style?:any})=>(
+    <div style={{background:'rgba(10,22,40,0.7)',border:'1px solid rgba(0,180,216,0.12)',borderRadius:'12px',backdropFilter:'blur(10px)',boxShadow:'0 8px 32px rgba(0,0,0,0.4)',overflow:'hidden',...style}}>
+      {children}
+    </div>
+  );
 
-  const impactC:Record<string,string>={HIGH:'#e74c3c',MEDIUM:'#f1c40f',LOW:'#2ecc71'};
+  const PanelHeader=({icon,title,badge,extra}:{icon:any,title:string,badge?:string,extra?:any})=>(
+    <div style={{padding:'12px 16px',borderBottom:'1px solid rgba(0,255,200,0.06)',display:'flex',alignItems:'center',gap:'10px',background:'rgba(0,0,0,0.2)'}}>
+      <span style={{color:'#00ffc8'}}>{icon}</span>
+      <span style={{fontSize:'11px',fontWeight:800,color:'rgba(232,244,248,0.8)',letterSpacing:'0.1em',textTransform:'uppercase',fontFamily:"'Orbitron','Inter',sans-serif",flex:1}}>{title}</span>
+      {badge&&<span style={{fontSize:'8px',fontWeight:800,padding:'2px 8px',borderRadius:'4px',background:'rgba(0,255,200,0.08)',color:'#00ffc8',border:'1px solid rgba(0,255,200,0.2)',letterSpacing:'0.08em',fontFamily:"'JetBrains Mono',monospace"}}>{badge}</span>}
+      {extra}
+    </div>
+  );
 
-  return (
-    <div style={{minHeight:'100vh',background:'#f0f4f8',fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+  return(
+    <div style={{minHeight:'100vh',background:'#020c14',fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
 
-      {/* Dashboard Header */}
-      <div style={{background:'linear-gradient(135deg,#0f1e2a 0%,#1a2c3e 60%,#1e3a5f 100%)',padding:'18px 24px',borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
-        <div style={{maxWidth:'1600px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'12px'}}>
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'4px'}}>
-              <span style={{width:'8px',height:'8px',borderRadius:'50%',background:'#2ecc71',display:'inline-block',animation:'livePulse 2s infinite'}}/>
-              <span style={{fontSize:'11px',fontWeight:800,color:'#2ecc71',letterSpacing:'0.1em'}}>LIVE · {signals.length} Active Signals · Real-time Updates</span>
+      {/* ── DASHBOARD HEADER ──────────────────────────────────────── */}
+      <div style={{background:'linear-gradient(180deg,rgba(4,14,28,0.95),rgba(2,12,20,0.9))',borderBottom:'1px solid rgba(0,255,200,0.08)',padding:'14px 24px',position:'sticky',top:'58px',zIndex:100,backdropFilter:'blur(20px)'}}>
+        <div style={{maxWidth:'1900px',margin:'0 auto',display:'flex',alignItems:'center',gap:'16px',flexWrap:'wrap'}}>
+          {/* Title */}
+          <div style={{flex:1}}>
+            <div style={{fontSize:'10px',fontWeight:800,color:'rgba(0,255,200,0.5)',letterSpacing:'0.15em',fontFamily:"'Orbitron','Inter',sans-serif"}}>INTELLIGENCE DASHBOARD</div>
+            <div style={{fontSize:'18px',fontWeight:900,color:'#e8f4f8'}}>Global FDI Monitor — Live Operations</div>
+          </div>
+          {/* Time */}
+          <div style={{textAlign:'center',padding:'6px 16px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.1)',borderRadius:'8px'}}>
+            <div style={{fontSize:'16px',fontWeight:800,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace"}}>{time.toLocaleTimeString()}</div>
+            <div style={{fontSize:'9px',color:'rgba(0,255,200,0.4)',letterSpacing:'0.1em'}}>{time.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase()}</div>
+          </div>
+          {/* Status badges */}
+          {[['AGT-02','SIGNAL'],['AGT-04','GOSA'],['AGT-05','GFR'],['API','LIVE']].map(([a,l])=>(
+            <div key={a} style={{display:'flex',alignItems:'center',gap:'5px',padding:'4px 10px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.12)',borderRadius:'20px'}}>
+              <div style={{width:'5px',height:'5px',borderRadius:'50%',background:'#00ffc8',boxShadow:'0 0 6px #00ffc8'}}/>
+              <span style={{fontSize:'9px',fontWeight:700,color:'rgba(0,255,200,0.7)',fontFamily:"'JetBrains Mono',monospace"}}>{a}</span>
+              <span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>{l}</span>
             </div>
-            <h1 style={{fontSize:'20px',fontWeight:900,color:'white',letterSpacing:'-0.3px'}}>Global FDI Intelligence Dashboard</h1>
-          </div>
-          <div style={{display:'flex',gap:'8px',flexWrap:'wrap'}}>
-            <Link href="/investment-analysis" style={{padding:'8px 18px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:800,display:'flex',alignItems:'center',gap:'6px'}}>
-              <BarChart3 size={13}/> Investment Analysis
-            </Link>
-            <Link href="/reports" style={{padding:'8px 16px',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.85)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>
-              <Download size={13}/> PDF Report
-            </Link>
-            <Link href="/signals" style={{padding:'8px 16px',border:'1px solid rgba(255,255,255,0.15)',color:'rgba(255,255,255,0.7)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:600,display:'flex',alignItems:'center',gap:'6px'}}>
-              <Zap size={13}/> All Signals
-            </Link>
-          </div>
+          ))}
+          <div style={{fontSize:'11px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>Updated: {lastUpdate.toLocaleTimeString()}</div>
         </div>
       </div>
 
-      <div style={{maxWidth:'1600px',margin:'0 auto',padding:'20px 24px'}}>
+      {/* ── MAIN GRID ─────────────────────────────────────────────── */}
+      <div style={{maxWidth:'1900px',margin:'0 auto',padding:'20px 24px',display:'grid',gridTemplateColumns:'1fr 1fr 1fr 380px',gridTemplateRows:'auto auto auto',gap:'14px'}}>
 
-        {/* WIDGET 1: GLOBAL OPPORTUNITY MAP — Full width */}
-        <div style={{background:'#1a2c3e',borderRadius:'16px',padding:'0',marginBottom:'16px',boxShadow:'0 20px 40px rgba(0,0,0,0.25)',overflow:'hidden',border:'1px solid rgba(46,204,113,0.1)'}}>
-          <div style={{padding:'16px 20px',borderBottom:'1px solid rgba(46,204,113,0.1)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-              <Globe size={14} color="#2ecc71"/>
-              <span style={{fontSize:'13px',fontWeight:700,color:'#2ecc71'}}>Global Opportunity Map</span>
-              <span style={{fontSize:'11px',color:'rgba(255,255,255,0.4)'}}>Click any economy to update all widgets</span>
+        {/* ── W1: GLOBAL OPPORTUNITY MAP ───────────────── */}
+        <Panel style={{gridColumn:'1/3',gridRow:'1/2'}}>
+          <PanelHeader icon={<Globe size={13}/>} title="Global Opportunity Map" badge="INTERACTIVE"/>
+          <div style={{padding:'12px 16px',display:'flex',gap:'16px',alignItems:'center',minHeight:'460px'}}>
+            <div style={{flex:'0 0 auto'}}>
+              <Globe3D width={420} height={420} onCountryClick={(c:any)=>{
+                const ec=TOP_ECONOMIES.find(e=>e.name===c.country||e.id===c.id);
+                if(ec)setSelCountry(ec);
+              }}/>
             </div>
-            <div style={{display:'flex',gap:'14px'}}>
-              {[{c:'#2ecc71',l:'Top Tier (80-100)'},{c:'#3498db',l:'High Tier (60-79)'},{c:'#f1c40f',l:'Developing (<60)'}].map(({c,l})=>(
-                <div key={l} style={{display:'flex',alignItems:'center',gap:'5px'}}>
-                  <div style={{width:'8px',height:'8px',borderRadius:'50%',background:c}}/>
-                  <span style={{fontSize:'10px',color:'rgba(255,255,255,0.5)'}}>{l}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{display:'flex',alignItems:'center',minHeight:'500px'}}>
-            {/* Globe */}
-            <div style={{flex:'0 0 560px',display:'flex',justifyContent:'center',alignItems:'center',padding:'24px'}}>
-              <GlobeViz onSelect={setSel} selected={sel}/>
-            </div>
-            {/* Selected country panel */}
-            <div style={{flex:1,padding:'24px 24px 24px 0'}}>
-              <div style={{marginBottom:'16px'}}>
-                <div style={{fontSize:'11px',color:'rgba(255,255,255,0.4)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'4px'}}>Selected Economy</div>
-                <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
-                  <span style={{fontSize:'36px'}}>{eco.flag}</span>
+            <div style={{flex:1}}>
+              {/* Selected country detail */}
+              <div style={{padding:'16px',background:'rgba(0,0,0,0.3)',borderRadius:'10px',border:'1px solid rgba(0,255,200,0.1)',marginBottom:'12px'}}>
+                <div style={{fontSize:'9px',color:'rgba(0,255,200,0.4)',letterSpacing:'0.15em',marginBottom:'8px',fontFamily:"'Orbitron','Inter',sans-serif"}}>SELECTED ECONOMY</div>
+                <div style={{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px'}}>
+                  <span style={{fontSize:'36px'}}>{selCountry.flag}</span>
                   <div>
-                    <div style={{fontSize:'22px',fontWeight:900,color:'white',letterSpacing:'-0.3px'}}>{eco.name}</div>
-                    <div style={{fontSize:'12px',color:'rgba(255,255,255,0.5)'}}>{eco.region}</div>
+                    <div style={{fontSize:'18px',fontWeight:900,color:'#e8f4f8'}}>{selCountry.name}</div>
+                    <div style={{fontSize:'11px',color:'rgba(0,255,200,0.5)'}}>GOSA Score · {selCountry.tier} Tier</div>
                   </div>
                   <div style={{marginLeft:'auto',textAlign:'right'}}>
-                    <div style={{fontSize:'36px',fontWeight:900,color:scoreColor(eco.score),fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{eco.score}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:'4px',justifyContent:'flex-end',marginTop:'3px'}}>
-                      <TrendIcon v={eco.trend}/>
-                      <span style={{fontSize:'12px',fontWeight:700,color:eco.trend>0?'#2ecc71':eco.trend<0?'#e74c3c':'#7f8c8d'}}>{eco.trend>0?'+':''}{eco.trend} MoM</span>
+                    <div style={{fontSize:'38px',fontWeight:900,color:'#00ffc8',fontFamily:"'JetBrains Mono',monospace",textShadow:'0 0 20px rgba(0,255,200,0.5)',lineHeight:1}}>{selCountry.gosa}</div>
+                    <div style={{fontSize:'10px',color:selCountry.trend>0?'#00ffc8':'#ff4466',fontWeight:700,display:'flex',alignItems:'center',gap:'3px',justifyContent:'flex-end'}}>
+                      {selCountry.trend>0?<TrendingUp size={10}/>:<TrendingDown size={10}/>}
+                      {selCountry.trend>0?'+':''}{selCountry.trend} MoM
                     </div>
                   </div>
                 </div>
+                <RadarMini data={[selCountry.l1,selCountry.l2,selCountry.l3,selCountry.l4,selCountry.l1*0.9,selCountry.l2*0.95]}/>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px',marginBottom:'16px'}}>
-                {[['L1: Doing Business',eco.l1,0.30],['L2: Sector',eco.l2,0.20],['L3: Zones',eco.l3,0.25],['L4: Market Intel',eco.l4,0.25]].map(([l,v,w])=>(
-                  <div key={l as string} style={{padding:'10px 12px',background:'rgba(255,255,255,0.05)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <div style={{fontSize:'9px',color:'rgba(255,255,255,0.4)',marginBottom:'3px',textTransform:'uppercase',letterSpacing:'0.05em'}}>{l} <span style={{color:'rgba(46,204,113,0.6)'}}>w:{(w as number)*100}%</span></div>
-                    <div style={{fontSize:'18px',fontWeight:900,color:'white',fontFamily:"'JetBrains Mono',monospace"}}>{(v as number).toFixed(1)}</div>
-                    <div style={{height:'3px',background:'rgba(255,255,255,0.08)',borderRadius:'2px',marginTop:'4px'}}>
-                      <div style={{height:'100%',width:`${v}%`,background:scoreColor(v as number),borderRadius:'2px'}}/>
-                    </div>
+              {/* Layer scores */}
+              {[['L1 Doing Business',selCountry.l1,'#00ffc8'],['L2 Sector',selCountry.l2,'#00d4ff'],['L3 Zones',selCountry.l3,'#ffd700'],['L4 Market Intel',selCountry.l4,'#9b59b6']].map(([l,v,c])=>(
+                <div key={l as string} style={{marginBottom:'8px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
+                    <span style={{fontSize:'11px',color:'rgba(232,244,248,0.5)'}}>{l}</span>
+                    <span style={{fontSize:'12px',fontWeight:800,color:c as string,fontFamily:"'JetBrains Mono',monospace"}}>{v}</span>
                   </div>
-                ))}
-              </div>
-              <div style={{padding:'12px',background:'rgba(46,204,113,0.08)',borderRadius:'10px',border:'1px solid rgba(46,204,113,0.2)'}}>
-                <div style={{fontSize:'10px',color:'rgba(46,204,113,0.8)',fontWeight:700,marginBottom:'4px',letterSpacing:'0.06em',textTransform:'uppercase'}}>GOSA Formula</div>
-                <div style={{fontSize:'12px',color:'rgba(255,255,255,0.7)',fontFamily:"'JetBrains Mono',monospace"}}>
-                  ({eco.l1.toFixed(1)}×0.30)+({eco.l2.toFixed(1)}×0.20)+({eco.l3.toFixed(1)}×0.25)+({eco.l4.toFixed(1)}×0.25) = <span style={{color:'#2ecc71',fontWeight:700}}>{eco.score}</span>
-                </div>
-              </div>
-              <div style={{marginTop:'14px',display:'flex',gap:'8px'}}>
-                <Link href="/investment-analysis" style={{padding:'8px 16px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:700,display:'flex',alignItems:'center',gap:'5px'}}>
-                  Full Analysis <ChevronRight size={12}/>
-                </Link>
-                <Link href="/reports" style={{padding:'8px 14px',border:'1px solid rgba(255,255,255,0.2)',color:'rgba(255,255,255,0.8)',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:600}}>
-                  Generate PDF
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* WIDGETS 2+3: Investment Analysis + Doing Business — side by side */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 2fr',gap:'16px',marginBottom:'16px'}}>
-          
-          {/* WIDGET 2: Global Investment Analysis */}
-          <div className="card">
-            <div className="widget-header">
-              <div className="widget-title"><BarChart3 size={13} color="#2ecc71"/> Global Investment Analysis</div>
-              <Link href="/investment-analysis" style={{fontSize:'11px',color:'#2ecc71',fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:'2px'}}>
-                View Full <ChevronRight size={11}/>
-              </Link>
-            </div>
-            <div style={{padding:'12px 16px'}}>
-              <div style={{fontSize:'10px',fontWeight:700,color:'#7f8c8d',marginBottom:'10px'}}>Top 5 by Global Opportunity Score</div>
-              {top5.map((e,i)=>(
-                <div key={e.iso3} onClick={()=>setSel(e.iso3)}
-                  style={{display:'flex',alignItems:'center',gap:'10px',padding:'9px 10px',borderRadius:'10px',cursor:'pointer',marginBottom:'3px',
-                    background:sel===e.iso3?'rgba(46,204,113,0.08)':'transparent',
-                    border:sel===e.iso3?'1px solid rgba(46,204,113,0.2)':'1px solid transparent',transition:'all 0.15s'}}>
-                  <span style={{fontSize:'11px',fontWeight:700,color:'#7f8c8d',minWidth:'16px'}}>{i+1}</span>
-                  <span style={{fontSize:'18px'}}>{e.flag}</span>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{e.name}</div>
-                    <div style={{height:'3px',background:'rgba(26,44,62,0.07)',borderRadius:'2px',marginTop:'4px'}}>
-                      <div style={{height:'100%',width:`${e.score}%`,background:scoreColor(e.score),borderRadius:'2px'}}/>
-                    </div>
-                  </div>
-                  <div style={{textAlign:'right'}}>
-                    <div style={{fontSize:'14px',fontWeight:900,color:'#1a2c3e',fontFamily:"'JetBrains Mono',monospace"}}>{e.score}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:'2px',justifyContent:'flex-end'}}>
-                      <TrendIcon v={e.trend}/>
-                      <span style={{fontSize:'10px',fontWeight:700,color:e.trend>0?'#2ecc71':'#e74c3c'}}>{e.trend>0?'+':''}{e.trend}</span>
-                    </div>
+                  <div style={{height:'4px',background:'rgba(255,255,255,0.05)',borderRadius:'2px',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${v as number}%`,background:c as string,borderRadius:'2px',boxShadow:`0 0 8px ${c}60`}}/>
                   </div>
                 </div>
               ))}
-              <Link href="/investment-analysis" style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'4px',marginTop:'12px',padding:'9px',background:'rgba(46,204,113,0.06)',border:'1px solid rgba(46,204,113,0.15)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,color:'#2ecc71'}}>
-                View Full Analysis →
-              </Link>
-            </div>
-          </div>
-
-          {/* WIDGET 3: Doing Business Indicators */}
-          <div className="card">
-            <div className="widget-header">
-              <div className="widget-title"><Filter size={13} color="#2ecc71"/> Doing Business Indicators Panel</div>
-              <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
-                <span style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{eco.flag} {eco.name}</span>
-                <span style={{fontSize:'10px',color:'#7f8c8d'}}>(from map selection)</span>
-              </div>
-            </div>
-            <div style={{padding:'14px 20px'}}>
-              <div style={{display:'flex',gap:'12px',marginBottom:'14px'}}>
-                <div style={{display:'flex',alignItems:'center',gap:'5px'}}><div style={{width:'10px',height:'4px',background:'linear-gradient(90deg,#2c4c6e,#2ecc71)',borderRadius:'2px'}}/><span style={{fontSize:'10px',color:'#7f8c8d'}}>Selected economy</span></div>
-                <div style={{display:'flex',alignItems:'center',gap:'5px'}}><div style={{width:'10px',height:'4px',background:'rgba(26,44,62,0.12)',borderRadius:'2px'}}/><span style={{fontSize:'10px',color:'#7f8c8d'}}>Global average</span></div>
-              </div>
-              <div style={{display:'flex',flexDirection:'column',gap:'7px'}}>
-                {Object.entries(DB_LABELS).map(([key,label])=>{
-                  const score=dbData[key]||65, globalAvg=Math.round(score*.82);
-                  return (
-                    <div key={key}>
-                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
-                        <span style={{fontSize:'11px',color:'#2c3e50',fontWeight:500}}>{label}</span>
-                        <span style={{fontSize:'11px',fontWeight:700,color:'#1a2c3e',fontFamily:"'JetBrains Mono',monospace"}}>{score}/100</span>
-                      </div>
-                      <div style={{height:'6px',borderRadius:'3px',background:'rgba(26,44,62,0.06)',position:'relative'}}>
-                        <div style={{position:'absolute',height:'100%',width:`${globalAvg}%`,background:'rgba(26,44,62,0.12)',borderRadius:'3px'}}/>
-                        <div style={{position:'absolute',height:'100%',width:`${score}%`,background:`linear-gradient(90deg,#2c4c6e,${scoreColor(score)})`,borderRadius:'3px',transition:'width 0.8s ease'}}/>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
               <div style={{display:'flex',gap:'8px',marginTop:'14px'}}>
-                <button style={{flex:1,padding:'8px',background:'rgba(26,44,62,0.05)',border:'1px solid rgba(26,44,62,0.1)',borderRadius:'7px',cursor:'pointer',fontSize:'11px',fontWeight:600,color:'#1a2c3e',fontFamily:'inherit'}}>
-                  Historical Trends
-                </button>
-                <Link href="/investment-analysis?tab=benchmark" style={{flex:1,padding:'8px',background:'rgba(46,204,113,0.06)',border:'1px solid rgba(46,204,113,0.2)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:600,color:'#2ecc71',textAlign:'center',display:'block'}}>
-                  Compare Countries
-                </Link>
+                <Link href={`/country/${selCountry.id}`} style={{flex:1,padding:'8px',background:'rgba(0,255,200,0.08)',border:'1px solid rgba(0,255,200,0.2)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#00ffc8',textAlign:'center'}}>Full Profile →</Link>
+                <Link href="/reports" style={{flex:1,padding:'8px',background:'rgba(255,215,0,0.08)',border:'1px solid rgba(255,215,0,0.2)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#ffd700',textAlign:'center'}}>Report →</Link>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* WIDGET 4: Sector Attractiveness Matrix — Full width */}
-        <div className="card" style={{marginBottom:'16px'}}>
-          <div className="widget-header">
-            <div className="widget-title"><Target size={13} color="#2ecc71"/> Sector Attractiveness Matrix</div>
-            <div style={{display:'flex',gap:'8px',alignItems:'center'}}>
-              <span style={{fontSize:'11px',color:'#7f8c8d'}}>Y: Opportunity Score · X: Country Readiness · Size: Investment Volume</span>
-            </div>
-          </div>
-          <div style={{padding:'16px 20px',display:'flex',gap:'24px',alignItems:'flex-start'}}>
-            <div style={{flex:'0 0 340px'}}>
-              <SectorMatrix hoverSector={hoverSector} setHoverSector={setHoverSector}/>
-              <div style={{display:'flex',flexWrap:'wrap',gap:'6px',marginTop:'12px'}}>
-                {SECTORS.map(s=>(
-                  <div key={s.name} style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'10px',padding:'3px 8px',borderRadius:'12px',background:`${s.color}12`,border:`1px solid ${s.color}30`,cursor:'pointer'}}
-                    onMouseEnter={()=>setHoverSector(s.name)} onMouseLeave={()=>setHoverSector('')}>
-                    <div style={{width:'7px',height:'7px',borderRadius:'50%',background:s.color}}/>
-                    <span style={{color:'#2c3e50',fontWeight:500}}>{s.name}</span>
-                  </div>
+              {/* Quick select */}
+              <div style={{marginTop:'12px',display:'flex',gap:'6px',flexWrap:'wrap'}}>
+                {TOP_ECONOMIES.map(e=>(
+                  <button key={e.id} onClick={()=>setSelCountry(e)}
+                    style={{padding:'4px 10px',background:selCountry.id===e.id?'rgba(0,255,200,0.12)':'rgba(255,255,255,0.04)',border:`1px solid ${selCountry.id===e.id?'rgba(0,255,200,0.3)':'rgba(255,255,255,0.06)'}`,borderRadius:'20px',cursor:'pointer',fontSize:'11px',color:selCountry.id===e.id?'#00ffc8':'rgba(232,244,248,0.5)',fontFamily:'inherit',display:'flex',alignItems:'center',gap:'5px'}}>
+                    {e.flag} {e.name}
+                  </button>
                 ))}
               </div>
             </div>
-            {/* Detail panel */}
-            <div style={{flex:1}}>
-              {hoverSector ? (()=>{
-                const s=SECTORS.find(x=>x.name===hoverSector)!;
-                return (
-                  <div style={{padding:'20px',background:`${s.color}08`,borderRadius:'12px',border:`1px solid ${s.color}20`}}>
-                    <div style={{fontSize:'18px',fontWeight:900,color:'#1a2c3e',marginBottom:'4px'}}>{s.name}</div>
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginTop:'12px'}}>
-                      {[['Opportunity Score',s.y+'/100'],['Country Readiness',s.x+'/100'],['Investment (12mo)',s.inv],['Market Position','Top Tier']].map(([l,v])=>(
-                        <div key={l} style={{padding:'10px 14px',background:'white',borderRadius:'8px',boxShadow:'0 1px 4px rgba(0,0,0,0.06)'}}>
-                          <div style={{fontSize:'10px',color:'#7f8c8d',marginBottom:'2px',textTransform:'uppercase',letterSpacing:'0.05em'}}>{l}</div>
-                          <div style={{fontSize:'16px',fontWeight:800,color:s.color,fontFamily:"'JetBrains Mono',monospace"}}>{v}</div>
-                        </div>
-                      ))}
+          </div>
+        </Panel>
+
+        {/* ── W2: GLOBAL INVESTMENT ANALYSIS ──────────── */}
+        <Panel style={{gridColumn:'3/4',gridRow:'1/2'}}>
+          <PanelHeader icon={<BarChart3 size={13}/>} title="Global Investment Analysis" badge="TOP 5"/>
+          <div style={{padding:'14px 16px'}}>
+            {TOP_ECONOMIES.map((c,i)=>(
+              <div key={c.id} onClick={()=>setSelCountry(c)}
+                style={{padding:'10px 12px',borderRadius:'9px',marginBottom:'8px',cursor:'pointer',background:selCountry.id===c.id?'rgba(0,255,200,0.06)':'rgba(255,255,255,0.02)',border:`1px solid ${selCountry.id===c.id?'rgba(0,255,200,0.2)':'rgba(255,255,255,0.04)'}`,transition:'all 200ms ease'}}>
+                <div style={{display:'flex',alignItems:'center',gap:'10px',marginBottom:'6px'}}>
+                  <span style={{fontSize:'9px',fontWeight:800,color:scoreColor(c.gosa),fontFamily:"'JetBrains Mono',monospace",minWidth:'18px'}}>#{i+1}</span>
+                  <span style={{fontSize:'18px'}}>{c.flag}</span>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:'12px',fontWeight:700,color:'#e8f4f8'}}>{c.name}</div>
+                    <div style={{fontSize:'9px',color:'rgba(232,244,248,0.4)'}}>FDI {c.fdi}</div>
+                  </div>
+                  <div style={{textAlign:'right'}}>
+                    <div style={{fontSize:'18px',fontWeight:900,color:scoreColor(c.gosa),fontFamily:"'JetBrains Mono',monospace"}}>{c.gosa}</div>
+                    <div style={{fontSize:'9px',color:c.trend>0?'#00ffc8':'#ff4466',fontWeight:700,display:'flex',alignItems:'center',gap:'2px',justifyContent:'flex-end'}}>
+                      {c.trend>0?'▲':'▼'}{Math.abs(c.trend)}
                     </div>
                   </div>
-                );
-              })() : (
-                <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e',marginBottom:'4px'}}>Top Sector Opportunities</div>
-                  {SECTORS.slice(0,4).map(s=>(
-                    <div key={s.name} style={{display:'flex',alignItems:'center',gap:'12px',padding:'12px 14px',borderRadius:'10px',background:'rgba(26,44,62,0.02)',border:'1px solid rgba(26,44,62,0.07)'}}>
-                      <div style={{width:'10px',height:'10px',borderRadius:'50%',background:s.color,flexShrink:0}}/>
-                      <div style={{flex:1}}>
-                        <div style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{s.name}</div>
-                        <div style={{height:'4px',background:'rgba(26,44,62,0.06)',borderRadius:'2px',marginTop:'4px'}}>
-                          <div style={{height:'100%',width:`${s.y}%`,background:s.color,borderRadius:'2px'}}/>
-                        </div>
-                      </div>
-                      <div style={{textAlign:'right'}}>
-                        <div style={{fontSize:'13px',fontWeight:800,color:s.color,fontFamily:"'JetBrains Mono',monospace"}}>{s.y}</div>
-                        <div style={{fontSize:'10px',color:'#7f8c8d'}}>{s.inv}</div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
-            </div>
+                <div style={{height:'3px',background:'rgba(255,255,255,0.05)',borderRadius:'2px',overflow:'hidden'}}>
+                  <div style={{height:'100%',width:`${c.gosa}%`,background:`linear-gradient(90deg, ${scoreColor(c.gosa)}80, ${scoreColor(c.gosa)})`,borderRadius:'2px'}}/>
+                </div>
+              </div>
+            ))}
+            <Link href="/investment-analysis" style={{display:'block',textAlign:'center',padding:'8px',marginTop:'8px',background:'rgba(0,255,200,0.05)',border:'1px solid rgba(0,255,200,0.1)',borderRadius:'8px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'rgba(0,255,200,0.7)'}}>
+              View All 15 Economies →
+            </Link>
           </div>
-          <div style={{padding:'0 20px 14px',display:'flex',gap:'8px',flexWrap:'wrap'}}>
-            {['Region: All','Investment Size: All','Sector Category: All'].map(f=>(
-              <select key={f} style={{padding:'6px 10px',border:'1px solid rgba(26,44,62,0.1)',borderRadius:'7px',fontSize:'11px',fontFamily:'inherit',background:'white',color:'#1a2c3e',outline:'none',cursor:'pointer'}}>
-                <option>{f}</option>
-              </select>
+        </Panel>
+
+        {/* ── W7: SIGNALS FEED ──────────────────────────────────────── */}
+        <Panel style={{gridColumn:'4/5',gridRow:'1/3'}}>
+          <PanelHeader icon={<Zap size={13}/>} title="Investment Signals" badge="LIVE">
+            <span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>{signals.length}</span>
+          </PanelHeader>
+          <div style={{height:'680px',overflowY:'auto',padding:'10px'}}>
+            {signals.map((s,i)=>(
+              <div key={s.id} style={{padding:'10px 11px',borderRadius:'8px',marginBottom:'6px',background:'rgba(255,255,255,0.02)',border:`1px solid rgba(255,255,255,0.04)`,borderLeft:`2px solid ${typeColor(s.type)}`,animation:i===0?'slideIn 0.3s ease':'none',transition:'all 200ms ease'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}}>
+                  <div style={{display:'flex',gap:'4px',alignItems:'center'}}>
+                    <span style={{fontSize:'8px',fontWeight:800,padding:'1px 6px',borderRadius:'3px',background:gradeBg(s.grade),color:gradeColor(s.grade),letterSpacing:'0.04em'}}>{s.grade}</span>
+                    <span style={{fontSize:'10px',padding:'1px 6px',background:`${typeColor(s.type)}15`,color:typeColor(s.type),borderRadius:'3px',fontWeight:700,letterSpacing:'0.03em'}}>{s.type}</span>
+                  </div>
+                  <span style={{fontSize:'11px',fontWeight:900,color:'#9b59b6',fontFamily:"'JetBrains Mono',monospace"}}>{s.sco}</span>
+                </div>
+                <div style={{fontSize:'11px',color:'rgba(232,244,248,0.75)',lineHeight:1.5,marginBottom:'5px'}}>{s.title}</div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.35)'}}>{s.flag} {s.country}</span>
+                  <span style={{fontSize:'9px',color:'rgba(0,255,200,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>{s.ts} ago</span>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
+          <div style={{padding:'10px',borderTop:'1px solid rgba(0,255,200,0.06)'}}>
+            <Link href="/signals" style={{display:'block',textAlign:'center',padding:'8px',background:'rgba(0,255,200,0.06)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#00ffc8'}}>
+              Full Signals Feed →
+            </Link>
+          </div>
+        </Panel>
 
-        {/* WIDGET 5: Special Investment Zones */}
-        <div className="card" style={{marginBottom:'16px'}}>
-          <div className="widget-header">
-            <div className="widget-title">🏭 Special Investment Zones Map</div>
-            <div style={{display:'flex',gap:'8px'}}>
-              <button className="btn-ghost">View All Zones</button>
-              <button className="btn-ghost">Compare Zones</button>
-              <Link href="/reports" style={{padding:'6px 12px',background:'#2ecc71',color:'#0f1e2a',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700}}>
-                Generate Zone Report → PDF
-              </Link>
+        {/* ── W3: DOING BUSINESS INDICATORS ──────────── */}
+        <Panel style={{gridColumn:'1/2',gridRow:'2/3'}}>
+          <PanelHeader icon={<Shield size={13}/>} title="Doing Business Indicators" badge="L1 LAYER"/>
+          <div style={{padding:'14px 16px'}}>
+            {DB_INDICATORS.map(({ind,globe,avg,color})=>(
+              <div key={ind} style={{marginBottom:'9px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'3px'}}>
+                  <span style={{fontSize:'10px',color:'rgba(232,244,248,0.55)',fontWeight:500}}>{ind}</span>
+                  <div style={{display:'flex',gap:'6px',alignItems:'center'}}>
+                    <span style={{fontSize:'11px',fontWeight:700,color:'rgba(232,244,248,0.35)',fontFamily:"'JetBrains Mono',monospace"}}>{avg}</span>
+                    <span style={{fontSize:'12px',fontWeight:800,color,fontFamily:"'JetBrains Mono',monospace"}}>{globe}</span>
+                  </div>
+                </div>
+                <div style={{position:'relative',height:'5px',background:'rgba(255,255,255,0.05)',borderRadius:'3px',overflow:'hidden'}}>
+                  <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${avg}%`,background:'rgba(255,255,255,0.06)',borderRadius:'3px'}}/>
+                  <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${globe}%`,background:`linear-gradient(90deg, ${color}60, ${color})`,borderRadius:'3px',boxShadow:`0 0 6px ${color}60`}}/>
+                </div>
+              </div>
+            ))}
+            <div style={{display:'flex',gap:'12px',marginTop:'10px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>
+                <div style={{width:'16px',height:'3px',background:'rgba(255,255,255,0.15)',borderRadius:'2px'}}/>
+                Global Avg
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'9px',color:'rgba(232,244,248,0.3)'}}>
+                <div style={{width:'16px',height:'3px',background:'linear-gradient(90deg, #00ffc860, #00ffc8)',borderRadius:'2px'}}/>
+                Selected Economy
+              </div>
             </div>
           </div>
-          <div style={{padding:'16px 20px',display:'flex',flexDirection:'column',gap:'10px'}}>
+        </Panel>
+
+        {/* ── W4: SECTOR MATRIX ─────────────────────── */}
+        <Panel style={{gridColumn:'2/3',gridRow:'2/3'}}>
+          <PanelHeader icon={<Target size={13}/>} title="Sector Attractiveness Matrix" badge="L2 LAYER"/>
+          <div style={{padding:'14px 16px'}}>
+            <SectorScatter/>
+            <div style={{display:'flex',gap:'8px',flexWrap:'wrap',marginTop:'10px'}}>
+              {[['HOT','#00ffc8'],['RISING','#ffd700'],['STABLE','#00d4ff'],['COOLING','#ff4466']].map(([l,c])=>(
+                <div key={l} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'9px',color:`${c}80`,padding:'3px 8px',background:`${c}10`,borderRadius:'10px',border:`1px solid ${c}20`}}>
+                  <div style={{width:'6px',height:'6px',borderRadius:'50%',background:c}}/>
+                  {l}
+                </div>
+              ))}
+            </div>
+            <Link href="/investment-analysis" style={{display:'block',textAlign:'center',padding:'7px',marginTop:'10px',background:'rgba(0,212,255,0.05)',border:'1px solid rgba(0,212,255,0.12)',borderRadius:'7px',textDecoration:'none',fontSize:'10px',fontWeight:700,color:'rgba(0,212,255,0.7)'}}>
+              Full Investment Analysis →
+            </Link>
+          </div>
+        </Panel>
+
+        {/* ── W5: INVESTMENT ZONES ──────────────────── */}
+        <Panel style={{gridColumn:'3/4',gridRow:'2/3'}}>
+          <PanelHeader icon={<Globe size={13}/>} title="Special Investment Zones" badge="L3 LAYER"/>
+          <div style={{padding:'12px 16px'}}>
             {ZONES.map(z=>{
-              const occColor=z.occ>=80?'#e74c3c':z.occ>=60?'#f1c40f':'#2ecc71';
-              const availStatus=z.occ<=40?{l:'Very High',c:'#2ecc71'}:z.occ<=65?{l:'High',c:'#3498db'}:z.occ<=80?{l:'Medium',c:'#f1c40f'}:{l:'Low',c:'#e74c3c'};
-              return (
-                <div key={z.name} style={{padding:'14px 16px',borderRadius:'12px',background:'rgba(26,44,62,0.02)',border:'1px solid rgba(26,44,62,0.07)',display:'grid',gridTemplateColumns:'1fr auto auto',gap:'16px',alignItems:'center'}}>
-                  <div>
-                    <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'4px'}}>
-                      <span style={{fontSize:'16px'}}>{z.flag}</span>
-                      <div>
-                        <div style={{fontSize:'13px',fontWeight:700,color:'#1a2c3e'}}>{z.name}</div>
-                        <div style={{fontSize:'11px',color:'#7f8c8d'}}>{z.country} · {z.infra} Infrastructure · {z.incentive}</div>
-                      </div>
-                      <span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:`${availStatus.c}15`,color:availStatus.c,border:`1px solid ${availStatus.c}30`,marginLeft:'4px'}}>
-                        {availStatus.l} Availability
-                      </span>
+              const pct=(z.total-z.avail)/z.total*100;
+              return(
+                <div key={z.name} style={{marginBottom:'10px',padding:'10px 12px',background:'rgba(255,255,255,0.02)',borderRadius:'8px',border:'1px solid rgba(255,255,255,0.04)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'4px'}}>
+                    <div>
+                      <div style={{fontSize:'11px',fontWeight:700,color:'rgba(232,244,248,0.85)'}}>{z.name}</div>
+                      <div style={{fontSize:'9px',color:'rgba(232,244,248,0.35)'}}>{z.type}</div>
                     </div>
-                    <div style={{fontSize:'11px',color:'#7f8c8d'}}>Tenants: {z.tenants}</div>
-                  </div>
-                  <div style={{textAlign:'center',minWidth:'100px'}}>
-                    <div style={{fontSize:'11px',color:'#7f8c8d',marginBottom:'4px'}}>Occupancy</div>
-                    <div style={{height:'6px',width:'100px',background:'rgba(26,44,62,0.08)',borderRadius:'3px'}}>
-                      <div style={{height:'100%',width:`${z.occ}%`,background:occColor,borderRadius:'3px'}}/>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:'15px',fontWeight:900,color:z.color,fontFamily:"'JetBrains Mono',monospace"}}>{z.avail}<span style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',fontWeight:400}}>% avail</span></div>
                     </div>
-                    <div style={{fontSize:'12px',fontWeight:800,color:occColor,marginTop:'3px',fontFamily:"'JetBrains Mono',monospace"}}>{z.occ}%</div>
                   </div>
-                  <div style={{textAlign:'center',minWidth:'80px'}}>
-                    <div style={{fontSize:'11px',color:'#7f8c8d',marginBottom:'2px'}}>Available</div>
-                    <div style={{fontSize:'18px',fontWeight:900,color:'#2ecc71',fontFamily:"'JetBrains Mono',monospace"}}>{z.avail}</div>
-                    <div style={{fontSize:'10px',color:'#7f8c8d'}}>hectares</div>
+                  <div style={{height:'4px',background:'rgba(255,255,255,0.05)',borderRadius:'2px',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${pct}%`,background:`linear-gradient(90deg, ${z.color}40, ${z.color})`,borderRadius:'2px'}}/>
                   </div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </Panel>
 
-        {/* WIDGET 6: Policy & Incentives */}
-        <div className="card" style={{marginBottom:'16px'}}>
-          <div className="widget-header">
-            <div className="widget-title">📋 Policy & Incentives Widget</div>
-            <div style={{display:'flex',gap:'6px',flexWrap:'wrap'}}>
-              {['Country: All','Sector: All','Status: Active'].map(f=>(
-                <select key={f} style={{padding:'5px 10px',border:'1px solid rgba(26,44,62,0.1)',borderRadius:'7px',fontSize:'11px',background:'white',color:'#1a2c3e',outline:'none',cursor:'pointer',fontFamily:'inherit'}}>
-                  <option>{f}</option>
-                </select>
-              ))}
-              <Link href="/signals" style={{padding:'6px 12px',background:'rgba(26,44,62,0.06)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:600,color:'#1a2c3e'}}>View All Policies</Link>
-            </div>
-          </div>
-          <div style={{padding:'16px 20px',display:'flex',flexDirection:'column',gap:'10px'}}>
+        {/* ── W6: POLICIES & INCENTIVES ─────────────────────────────── */}
+        <Panel style={{gridColumn:'1/3',gridRow:'3/4'}}>
+          <PanelHeader icon={<Activity size={13}/>} title="Policy & Incentives Monitor" badge="LIVE"/>
+          <div style={{padding:'12px 16px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
             {POLICIES.map(p=>(
-              <div key={p.title} style={{padding:'14px 16px',borderRadius:'12px',border:`1px solid ${p.color}20`,background:`${p.color}04`,borderLeft:`4px solid ${p.color}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'6px'}}>
-                  <div style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-                    <span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:`${p.color}18`,color:p.color}}>{p.status}</span>
-                    <span style={{fontSize:'13px'}}>{p.flag}</span>
-                    <span style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{p.title}</span>
-                    <span style={{fontSize:'10px',color:'#7f8c8d'}}>· {p.country} · {p.sector}</span>
+              <div key={p.policy} style={{padding:'12px 14px',background:'rgba(255,255,255,0.02)',borderRadius:'9px',border:`1px solid ${p.c}18`,borderLeft:`3px solid ${p.c}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'6px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
+                    <span style={{fontSize:'16px'}}>{p.flag}</span>
+                    <span style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.8)'}}>{p.country}</span>
                   </div>
-                  <span style={{fontSize:'10px',color:'#7f8c8d',flexShrink:0}}>Valid: {p.valid}</span>
+                  <span style={{fontSize:'8px',fontWeight:800,padding:'2px 7px',borderRadius:'4px',background:p.status==='NEW'?'rgba(0,255,200,0.1)':'rgba(0,180,216,0.1)',color:p.status==='NEW'?'#00ffc8':'#00b4d8',letterSpacing:'0.06em'}}>{p.status}</span>
                 </div>
-                <div style={{fontSize:'12px',color:'#2c3e50',lineHeight:'1.6',marginBottom:'8px'}}>{p.body}</div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontSize:'10px',color:'#7f8c8d'}}>Source: {p.source}</span>
-                  <button style={{fontSize:'11px',fontWeight:600,color:p.color,background:`${p.color}10`,border:`1px solid ${p.color}30`,borderRadius:'6px',padding:'4px 10px',cursor:'pointer',fontFamily:'inherit'}}>View Details</button>
-                </div>
+                <div style={{fontSize:'12px',color:'rgba(232,244,248,0.65)',lineHeight:1.5,marginBottom:'4px'}}>{p.policy}</div>
+                <div style={{fontSize:'9px',color:'rgba(232,244,248,0.3)',fontFamily:"'JetBrains Mono',monospace"}}>{p.date}</div>
               </div>
             ))}
           </div>
-        </div>
+        </Panel>
 
-        {/* WIDGET 7: Investment Signals Feed */}
-        <div className="card" style={{marginBottom:'16px'}}>
-          <div className="widget-header">
-            <div className="widget-title">
-              <Zap size={13} color="#2ecc71"/>
-              Investment Signals Feed
-              <span style={{fontSize:'10px',fontWeight:600,color:'rgba(46,204,113,0.7)',background:'rgba(46,204,113,0.1)',padding:'2px 7px',borderRadius:'10px'}}>WebSocket · Live</span>
-            </div>
-            <div style={{display:'flex',gap:'6px',flexWrap:'wrap',alignItems:'center'}}>
-              {['ALL','POLICY CHANGE','NEW INCENTIVE','SECTOR GROWTH','ZONE AVAILABILITY'].map(f=>(
-                <button key={f} onClick={()=>setSigFilter(f)}
-                  style={{padding:'4px 10px',border:'none',borderRadius:'14px',cursor:'pointer',fontSize:'9px',fontWeight:800,letterSpacing:'0.04em',
-                    background:sigFilter===f?'#1a2c3e':'rgba(26,44,62,0.07)',
-                    color:sigFilter===f?'white':'#7f8c8d',transition:'all 0.15s'}}>
-                  {f}
-                </button>
-              ))}
-              <Link href="/signals" style={{fontSize:'11px',color:'#2ecc71',fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:'2px'}}>View All <ExternalLink size={10}/></Link>
-            </div>
-          </div>
-          <div style={{padding:'16px 20px',display:'flex',flexDirection:'column',gap:'8px'}}>
-            {filtSigs.slice(0,5).map((s)=>(
-              <div key={s.id} className={`signal-card ${s.cls}`} style={{animation:'fadeInUp 0.3s ease'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'5px'}}>
-                  <div style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-                    <span style={{fontSize:'9px',fontWeight:800,padding:'2px 8px',borderRadius:'10px',background:`${s.color}15`,color:s.color}}>{s.type}</span>
-                    <span style={{fontSize:'14px'}}>{s.flag}</span>
-                    <span style={{fontSize:'12px',fontWeight:700,color:'#1a2c3e'}}>{s.eco}</span>
-                  </div>
-                  <div style={{display:'flex',gap:'8px',alignItems:'center',flexShrink:0}}>
-                    <span style={{fontSize:'9px',fontWeight:800,padding:'2px 7px',borderRadius:'8px',background:(impactC[s.impact]||'#7f8c8d')+'15',color:impactC[s.impact]||'#7f8c8d'}}>
-                      {s.impact}
-                    </span>
-                    <span style={{fontSize:'10px',color:'#7f8c8d'}}>{s.time}</span>
-                  </div>
+        {/* ── W BOTTOM: QUICK LINKS ─────────────────────────────────── */}
+        <Panel style={{gridColumn:'3/5',gridRow:'3/4'}}>
+          <PanelHeader icon={<ChevronRight size={13}/>} title="Platform Navigation" />
+          <div style={{padding:'14px 16px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}}>
+            {[
+              {href:'/gfr',icon:'🏆',l:'GFR Ranking',d:'25 economies · 6 dimensions',c:'#ffd700'},
+              {href:'/reports',icon:'📄',l:'PDF Reports',d:'4-page AI intelligence',c:'#e67e22'},
+              {href:'/pmp',icon:'🎯',l:'Mission Planning',d:'4 guided workflows',c:'#ff4466'},
+              {href:'/sources',icon:'📡',l:'Data Sources',d:'304+ official sources',c:'#00d4ff'},
+            ].map(({href,icon,l,d,c})=>(
+              <Link key={href} href={href} style={{padding:'12px',background:'rgba(255,255,255,0.02)',border:`1px solid rgba(255,255,255,0.04)`,borderRadius:'9px',textDecoration:'none',display:'flex',gap:'10px',alignItems:'center',transition:'all 200ms ease'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor=`${c}25`;e.currentTarget.style.background=`${c}06`;}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.04)';e.currentTarget.style.background='rgba(255,255,255,0.02)';}}>
+                <span style={{fontSize:'22px'}}>{icon}</span>
+                <div>
+                  <div style={{fontSize:'12px',fontWeight:700,color:'rgba(232,244,248,0.8)'}}>{l}</div>
+                  <div style={{fontSize:'10px',color:`${c}70`}}>{d}</div>
                 </div>
-                <div style={{fontSize:'13px',fontWeight:600,color:'#1a2c3e',marginBottom:'4px'}}>{s.title}</div>
-                <div style={{fontSize:'11px',color:'#7f8c8d',lineHeight:'1.55',marginBottom:'6px'}}>
-                  <span style={{fontWeight:600,color:'#2c3e50'}}>Strategic: </span>{s.implication}
-                </div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span style={{fontSize:'10px',color:'#7f8c8d'}}>Source: {s.source}</span>
-                  <button style={{fontSize:'11px',fontWeight:600,color:s.color,background:`${s.color}10`,border:'none',borderRadius:'6px',padding:'4px 10px',cursor:'pointer',fontFamily:'inherit'}}>View Signal Details</button>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
-          {/* Subscribe */}
-          <div style={{padding:'14px 20px',borderTop:'1px solid rgba(26,44,62,0.06)',display:'flex',gap:'10px',alignItems:'center',flexWrap:'wrap'}}>
-            <span style={{fontSize:'12px',color:'#7f8c8d'}}>Subscribe to signals:</span>
-            <input type="email" placeholder="your@organisation.com" style={{flex:1,minWidth:'200px',padding:'7px 12px',border:'1px solid rgba(26,44,62,0.12)',borderRadius:'7px',fontSize:'12px',fontFamily:'inherit',outline:'none'}}/>
-            <button style={{padding:'7px 16px',background:'#1a2c3e',color:'white',border:'none',borderRadius:'7px',cursor:'pointer',fontSize:'12px',fontWeight:700,fontFamily:'inherit'}}>Subscribe</button>
-          </div>
-        </div>
-
-        {/* Quick Actions Bar */}
-        <div style={{background:'#1a2c3e',borderRadius:'14px',padding:'16px 24px',display:'flex',gap:'12px',flexWrap:'wrap',alignItems:'center',justifyContent:'center',border:'1px solid rgba(46,204,113,0.1)'}}>
-          <span style={{fontSize:'12px',fontWeight:700,color:'rgba(255,255,255,0.6)',marginRight:'8px'}}>QUICK ACTIONS</span>
-          {[
-            {l:'Go to Investment Analysis',h:'/investment-analysis',primary:true},
-            {l:'Generate PDF Report',h:'/reports',primary:false},
-            {l:'Compare Countries',h:'/investment-analysis?tab=benchmark',primary:false},
-            {l:'Export Dashboard Data',h:'/signals',primary:false},
-          ].map(({l,h,primary})=>(
-            <Link key={l} href={h}
-              style={{padding:'9px 18px',background:primary?'#2ecc71':'rgba(255,255,255,0.08)',color:primary?'#0f1e2a':'rgba(255,255,255,0.8)',
-                border:primary?'none':'1px solid rgba(255,255,255,0.12)',borderRadius:'8px',textDecoration:'none',
-                fontSize:'12px',fontWeight:primary?800:600,transition:'all 0.2s'}}>
-              {l}
-            </Link>
-          ))}
-        </div>
-
+        </Panel>
       </div>
+
       <Footer/>
+      <style>{`@keyframes slideIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}`}</style>
     </div>
   );
 }

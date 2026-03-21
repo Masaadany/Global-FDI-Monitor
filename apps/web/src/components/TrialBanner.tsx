@@ -22,7 +22,7 @@ export default function TrialBanner() {
           </span>
         </div>
         <div style={{display:'flex',gap:'6px'}}>
-          <Link href="/contact" style={{padding:'5px 14px',borderRadius:'6px',fontWeight:700,fontSize:'12px',background:'white',color:'#C62828',textDecoration:'none'}}>
+          <Link href="/contact" style={{padding:'5px 14px',borderRadius:'6px',fontWeight:700,fontSize:'12px',background:'rgba(10,22,40,0.8)',color:'#C62828',textDecoration:'none'}}>
             Request Demo →
           </Link>
           <Link href="/pricing" style={{padding:'5px 12px',borderRadius:'6px',fontWeight:600,fontSize:'11px',background:'rgba(255,255,255,0.15)',color:'white',textDecoration:'none',border:'1px solid rgba(255,255,255,0.3)'}}>

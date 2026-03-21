@@ -1,114 +1,216 @@
 'use client';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useState } from 'react';
-import { Search, X, Menu, Zap } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { Search, X, Menu, Zap, Bell, ChevronDown } from 'lucide-react';
 
-const NAV = [
-  { label:'Dashboard',          href:'/dashboard' },
-  { label:'Investment Analysis',href:'/investment-analysis' },
-  { label:'Market Signals',     href:'/signals' },
-  { label:'GFR Ranking',        href:'/gfr' },
-  { label:'Mission Planning',   href:'/pmp' },
-  { label:'Publications',       href:'/publications' },
-  { label:'Pricing',            href:'/pricing' },
+const NAV_ITEMS = [
+  { label: 'Dashboard',           href: '/dashboard',           hot: false },
+  { label: 'Investment Analysis', href: '/investment-analysis', hot: false },
+  {
+    label: 'Intelligence',
+    href: '#',
+    hot: true,
+    children: [
+      { label: '⚡ Market Signals',    href: '/signals',    desc: 'Live signal feed' },
+      { label: '🏆 GFR Ranking',       href: '/gfr',        desc: '25 economies scored' },
+      { label: '🌍 Country Profiles',  href: '/country/MYS',desc: '20+ country deep-dives' },
+      { label: '📊 Impact Analysis',   href: '/investment-analysis?tab=impact', desc: 'Model ROI' },
+    ],
+  },
+  { label: 'Mission Planning',    href: '/pmp',                 hot: false },
+  { label: 'Publications',        href: '/publications',        hot: false },
+  { label: 'Pricing',             href: '/pricing',             hot: false },
 ];
 
 export default function NavBar() {
-  const [searchOpen, setSearchOpen] = useState(false);
+  const path = usePathname();
+  const [search, setSearch] = useState(false);
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [dropdown, setDropdown] = useState<string|null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handler);
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
   return (
-    <nav style={{background:'#0f1e2a',borderBottom:'1px solid rgba(46,204,113,0.12)',position:'sticky',top:0,zIndex:200,backdropFilter:'blur(20px)'}}>
-      <div style={{maxWidth:'1440px',margin:'0 auto',padding:'0 20px',display:'flex',alignItems:'center',height:'60px',gap:0,position:'relative'}}>
-        
-        {/* Logo */}
-        <Link href="/" style={{textDecoration:'none',marginRight:'28px',flexShrink:0,display:'flex',alignItems:'center',gap:'9px'}}>
-          <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" stroke="#2ecc71" strokeWidth="1.5" opacity="0.4"/>
-            <circle cx="16" cy="16" r="10" stroke="#2ecc71" strokeWidth="1" opacity="0.6"/>
-            <ellipse cx="16" cy="16" rx="5" ry="14" stroke="#2ecc71" strokeWidth="1" opacity="0.5"/>
-            <line x1="2" y1="16" x2="30" y2="16" stroke="#2ecc71" strokeWidth="0.75" opacity="0.4"/>
-            <path d="M16 26 L20 14 L16 6" stroke="#2ecc71" strokeWidth="2" strokeLinecap="round" fill="none"/>
-            <circle cx="20" cy="14" r="2.5" fill="#2ecc71"/>
-          </svg>
-          <span style={{fontSize:'13px',fontWeight:900,letterSpacing:'0.05em'}}>
-            <span style={{color:'white'}}>GLOBAL </span>
-            <span style={{color:'#2ecc71'}}>FDI</span>
-            <span style={{color:'white'}}> MONITOR</span>
-          </span>
-        </Link>
+    <>
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 500,
+        background: scrolled
+          ? 'rgba(2,12,20,0.96)'
+          : 'linear-gradient(180deg,rgba(2,12,20,0.98),rgba(6,15,26,0.95))',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        borderBottom: `1px solid rgba(0,255,200,${scrolled?0.12:0.08})`,
+        boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.6)' : 'none',
+        transition: 'all 300ms ease',
+      }}>
+        <div style={{maxWidth:'1540px', margin:'0 auto', padding:'0 24px', height:'58px', display:'flex', alignItems:'center', gap:0, position:'relative'}}>
 
-        {/* Nav Links — hidden on mobile */}
-        <div style={{display:'flex',flex:1,overflowX:'auto',msOverflowStyle:'none',scrollbarWidth:'none'} as React.CSSProperties}>
-          {NAV.map(({label,href})=>(
-            <Link key={href} href={href}
-              style={{padding:'0 11px',fontSize:'12px',fontWeight:500,color:'rgba(255,255,255,0.7)',textDecoration:'none',
-                height:'60px',display:'flex',alignItems:'center',whiteSpace:'nowrap',
-                borderBottom:'2px solid transparent',transition:'all 0.15s',flexShrink:0}}>
-              {label}
-            </Link>
-          ))}
-        </div>
-
-        {/* Right CTA zone */}
-        <div style={{display:'flex',alignItems:'center',gap:'6px',flexShrink:0,marginLeft:'8px'}}>
-          {/* Live signals indicator */}
-          <div style={{display:'flex',alignItems:'center',gap:'5px',padding:'4px 10px',background:'rgba(46,204,113,0.08)',borderRadius:'20px',border:'1px solid rgba(46,204,113,0.2)',marginRight:'4px'}}>
-            <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'#2ecc71',display:'inline-block',animation:'pulse 2s infinite'}}/>
-            <span style={{fontSize:'10px',fontWeight:700,color:'#2ecc71'}}>LIVE</span>
-          </div>
-
-          {/* Search */}
-          {searchOpen ? (
-            <div style={{display:'flex',alignItems:'center',gap:'6px',background:'rgba(255,255,255,0.08)',borderRadius:'8px',padding:'6px 12px',border:'1px solid rgba(46,204,113,0.3)'}}>
-              <Search size={12} color="#2ecc71"/>
-              <input autoFocus value={query} onChange={e=>setQuery(e.target.value)}
-                placeholder="Countries, sectors, signals..."
-                style={{background:'transparent',border:'none',outline:'none',color:'white',fontSize:'12px',width:'180px',fontFamily:'inherit'}}
-                onKeyDown={e=>{if(e.key==='Escape'){setSearchOpen(false);setQuery('');}}}/>
-              <button onClick={()=>{setSearchOpen(false);setQuery('');}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(255,255,255,0.4)',padding:0}}><X size={13}/></button>
+          {/* ── LOGO ──────────────────────────────────────────────── */}
+          <Link href="/" style={{textDecoration:'none', marginRight:'36px', flexShrink:0, display:'flex', alignItems:'center', gap:'10px'}}>
+            {/* Animated globe icon */}
+            <div style={{position:'relative', width:'34px', height:'34px'}}>
+              <svg width="34" height="34" viewBox="0 0 40 40" fill="none">
+                <circle cx="20" cy="20" r="17" stroke="rgba(0,255,200,0.3)" strokeWidth="1.5"/>
+                <circle cx="20" cy="20" r="11" stroke="rgba(0,212,255,0.4)" strokeWidth="1"/>
+                <ellipse cx="20" cy="20" rx="6" ry="17" stroke="rgba(0,255,200,0.3)" strokeWidth="0.8"/>
+                <line x1="3" y1="20" x2="37" y2="20" stroke="rgba(0,255,200,0.2)" strokeWidth="0.8"/>
+                <line x1="20" y1="3" x2="20" y2="37" stroke="rgba(0,255,200,0.15)" strokeWidth="0.8"/>
+                <path d="M20 32 L24 18 L20 6" stroke="#00ffc8" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+                <circle cx="24" cy="18" r="3" fill="#00ffc8" style={{filter:'drop-shadow(0 0 6px #00ffc8)'}}/>
+              </svg>
+              <div style={{position:'absolute', inset:0, borderRadius:'50%', background:'radial-gradient(circle, rgba(0,255,200,0.1) 0%, transparent 70%)'}}/>
             </div>
-          ) : (
-            <button onClick={()=>setSearchOpen(true)} style={{width:'34px',height:'34px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(255,255,255,0.7)'}}>
-              <Search size={14}/>
+            <div style={{lineHeight:1}}>
+              <div style={{fontSize:'13px', fontWeight:900, letterSpacing:'0.06em', fontFamily:"'Orbitron','Inter',sans-serif"}}>
+                <span style={{color:'#e8f4f8'}}>GLOBAL </span>
+                <span style={{color:'#00ffc8', textShadow:'0 0 16px rgba(0,255,200,0.6)'}}>FDI</span>
+                <span style={{color:'#e8f4f8'}}> MONITOR</span>
+              </div>
+              <div style={{fontSize:'8px', color:'rgba(0,255,200,0.5)', letterSpacing:'0.2em', marginTop:'2px', fontFamily:"'JetBrains Mono',monospace"}}>INTELLIGENCE PLATFORM</div>
+            </div>
+          </Link>
+
+          {/* ── NAV LINKS ─────────────────────────────────────────── */}
+          <div style={{display:'flex', flex:1, overflowX:'auto', msOverflowStyle:'none', scrollbarWidth:'none'} as React.CSSProperties}>
+            {NAV_ITEMS.map((item) => {
+              const isActive = path === item.href || (item.children?.some(c=>path===c.href));
+              if(item.children) return (
+                <div key={item.label} style={{position:'relative'}}
+                  onMouseEnter={()=>setDropdown(item.label)}
+                  onMouseLeave={()=>setDropdown(null)}>
+                  <button style={{
+                    display:'flex', alignItems:'center', gap:'4px',
+                    padding:'0 14px', height:'58px', background:'transparent', border:'none', cursor:'pointer',
+                    fontSize:'12px', fontWeight:500, color:isActive?'#00ffc8':'rgba(232,244,248,0.7)',
+                    fontFamily:"'Inter',sans-serif", whiteSpace:'nowrap', letterSpacing:'0.02em',
+                    borderBottom:`2px solid ${isActive?'#00ffc8':'transparent'}`,
+                    transition:'all 200ms ease',
+                  }}>
+                    {item.label}
+                    {item.hot && <span style={{fontSize:'8px',fontWeight:800,padding:'1px 5px',background:'rgba(0,255,200,0.12)',color:'#00ffc8',borderRadius:'4px',letterSpacing:'0.06em'}}>LIVE</span>}
+                    <ChevronDown size={12} style={{opacity:0.5, transition:'transform 200ms ease', transform:dropdown===item.label?'rotate(180deg)':'none'}}/>
+                  </button>
+                  {dropdown===item.label && (
+                    <div style={{position:'absolute', top:'100%', left:0, minWidth:'220px', background:'rgba(6,15,26,0.98)', border:'1px solid rgba(0,255,200,0.15)', borderRadius:'10px', padding:'6px', boxShadow:'0 16px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,255,200,0.05)', backdropFilter:'blur(20px)', zIndex:600}}>
+                      {item.children.map(child=>(
+                        <Link key={child.href} href={child.href}
+                          style={{display:'flex', flexDirection:'column', gap:'2px', padding:'10px 12px', borderRadius:'7px', textDecoration:'none', transition:'background 150ms ease', background:'transparent'}}
+                          onMouseEnter={e=>(e.currentTarget.style.background='rgba(0,255,200,0.06)')}
+                          onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                          <span style={{fontSize:'12px', fontWeight:600, color:'#e8f4f8'}}>{child.label}</span>
+                          <span style={{fontSize:'10px', color:'rgba(0,255,200,0.5)'}}>{child.desc}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+              return (
+                <Link key={item.href} href={item.href}
+                  style={{
+                    padding:'0 14px', fontSize:'12px', fontWeight:500, letterSpacing:'0.02em',
+                    color:isActive?'#00ffc8':'rgba(232,244,248,0.7)',
+                    textDecoration:'none', height:'58px', display:'flex', alignItems:'center',
+                    whiteSpace:'nowrap', borderBottom:`2px solid ${isActive?'#00ffc8':'transparent'}`,
+                    transition:'all 200ms ease', flexShrink:0, fontFamily:"'Inter',sans-serif",
+                  }}>
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* ── RIGHT ZONE ──────────────────────────────────────────── */}
+          <div style={{display:'flex', alignItems:'center', gap:'8px', flexShrink:0}}>
+            {/* Live indicator */}
+            <div style={{display:'flex', alignItems:'center', gap:'6px', padding:'4px 10px', background:'rgba(0,255,200,0.06)', border:'1px solid rgba(0,255,200,0.15)', borderRadius:'20px', marginRight:'4px'}}>
+              <div className="live-dot" style={{width:'6px',height:'6px'}}/>
+              <span style={{fontSize:'9px', fontWeight:800, color:'#00ffc8', letterSpacing:'0.1em', fontFamily:"'JetBrains Mono',monospace"}}>LIVE</span>
+            </div>
+
+            {/* Search */}
+            {search ? (
+              <div style={{display:'flex',alignItems:'center',gap:'8px',background:'rgba(13,29,48,0.9)',borderRadius:'8px',padding:'6px 12px',border:'1px solid rgba(0,255,200,0.25)',backdropFilter:'blur(10px)'}}>
+                <Search size={13} color="#00ffc8"/>
+                <input autoFocus value={query} onChange={e=>setQuery(e.target.value)}
+                  placeholder="Search economies, signals..."
+                  style={{background:'transparent',border:'none',outline:'none',color:'#e8f4f8',fontSize:'12px',width:'200px',fontFamily:"'Inter',sans-serif"}}
+                  onKeyDown={e=>{if(e.key==='Escape'){setSearch(false);setQuery('');}}}/>
+                <button onClick={()=>{setSearch(false);setQuery('');}} style={{background:'none',border:'none',cursor:'pointer',color:'rgba(232,244,248,0.4)',padding:0,lineHeight:1}}>
+                  <X size={13}/>
+                </button>
+              </div>
+            ) : (
+              <button onClick={()=>setSearch(true)} style={{width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)',transition:'all 150ms ease'}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(0,255,200,0.3)';e.currentTarget.style.color='#00ffc8';}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,0.07)';e.currentTarget.style.color='rgba(232,244,248,0.6)';}}>
+                <Search size={14}/>
+              </button>
+            )}
+
+            {/* Notifications */}
+            <button style={{position:'relative',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.6)'}}>
+              <Bell size={14}/>
+              <span style={{position:'absolute',top:'6px',right:'6px',width:'6px',height:'6px',borderRadius:'50%',background:'#ff4466',border:'1px solid rgba(2,12,20,0.8)',boxShadow:'0 0 6px rgba(255,68,102,0.8)'}}/>
             </button>
-          )}
 
-          {/* Sign in */}
-          <Link href="/auth/login" style={{padding:'7px 14px',background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:600,color:'rgba(255,255,255,0.8)',whiteSpace:'nowrap'}}>
-            Sign In
-          </Link>
-
-          {/* Start Trial CTA */}
-          <Link href="/register" style={{padding:'7px 14px',background:'#2ecc71',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:800,color:'#0f1e2a',whiteSpace:'nowrap'}}>
-            Free Trial
-          </Link>
-
-          {/* Mobile menu */}
-          <button onClick={()=>setMenuOpen(!menuOpen)} style={{display:'none',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)',cursor:'pointer',alignItems:'center',justifyContent:'center',color:'white'}}>
-            {menuOpen?<X size={16}/>:<Menu size={16}/>}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu dropdown */}
-      {menuOpen && (
-        <div style={{background:'#1a2c3e',borderTop:'1px solid rgba(46,204,113,0.1)',padding:'12px 20px',display:'flex',flexDirection:'column',gap:'4px'}}>
-          {NAV.map(({label,href})=>(
-            <Link key={href} href={href} onClick={()=>setMenuOpen(false)}
-              style={{padding:'10px 12px',fontSize:'13px',fontWeight:500,color:'rgba(255,255,255,0.8)',textDecoration:'none',borderRadius:'8px',display:'block'}}>
-              {label}
+            {/* Auth CTAs */}
+            <Link href="/auth/login"
+              style={{padding:'7px 14px',background:'transparent',border:'1px solid rgba(232,244,248,0.12)',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.7)',letterSpacing:'0.02em',transition:'all 150ms ease'}}
+              onMouseEnter={(e:any)=>{e.target.style.borderColor='rgba(0,255,200,0.3)';e.target.style.color='#00ffc8';}}
+              onMouseLeave={(e:any)=>{e.target.style.borderColor='rgba(232,244,248,0.12)';e.target.style.color='rgba(232,244,248,0.7)';}}>
+              Sign In
             </Link>
-          ))}
-          <div style={{borderTop:'1px solid rgba(255,255,255,0.07)',marginTop:'8px',paddingTop:'8px',display:'flex',gap:'8px'}}>
-            <Link href="/auth/login" style={{flex:1,padding:'9px',textAlign:'center',background:'rgba(255,255,255,0.07)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:600,color:'white'}}>Sign In</Link>
-            <Link href="/register" style={{flex:1,padding:'9px',textAlign:'center',background:'#2ecc71',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:800,color:'#0f1e2a'}}>Free Trial</Link>
+            <Link href="/register"
+              style={{padding:'7px 16px',background:'linear-gradient(135deg,#00ffc8,#00c49a)',border:'none',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:800,color:'#020c14',letterSpacing:'0.02em',boxShadow:'0 4px 16px rgba(0,255,200,0.3)',transition:'all 150ms ease',whiteSpace:'nowrap'}}
+              onMouseEnter={(e:any)=>{e.target.style.boxShadow='0 6px 24px rgba(0,255,200,0.5)';e.target.style.transform='translateY(-1px)';}}
+              onMouseLeave={(e:any)=>{e.target.style.boxShadow='0 4px 16px rgba(0,255,200,0.3)';e.target.style.transform='none';}}>
+              Free Trial
+            </Link>
+
+            {/* Mobile hamburger */}
+            <button onClick={()=>setMenuOpen(!menuOpen)}
+              style={{display:'none',width:'34px',height:'34px',borderRadius:'8px',background:'rgba(13,29,48,0.7)',border:'1px solid rgba(255,255,255,0.07)',cursor:'pointer',alignItems:'center',justifyContent:'center',color:'rgba(232,244,248,0.7)'}}>
+              {menuOpen?<X size={16}/>:<Menu size={16}/>}
+            </button>
           </div>
         </div>
-      )}
 
-      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}`}</style>
-    </nav>
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div style={{background:'rgba(6,15,26,0.98)',borderTop:'1px solid rgba(0,255,200,0.1)',padding:'12px 16px',backdropFilter:'blur(20px)'}}>
+            {NAV_ITEMS.map(item=>(
+              item.children ? item.children.map(c=>(
+                <Link key={c.href} href={c.href} onClick={()=>setMenuOpen(false)}
+                  style={{display:'block',padding:'10px 12px',fontSize:'13px',color:'rgba(232,244,248,0.8)',textDecoration:'none',borderRadius:'8px'}}>
+                  {c.label}
+                </Link>
+              )) : (
+                <Link key={item.href} href={item.href} onClick={()=>setMenuOpen(false)}
+                  style={{display:'block',padding:'10px 12px',fontSize:'13px',color:'rgba(232,244,248,0.8)',textDecoration:'none',borderRadius:'8px'}}>
+                  {item.label}
+                </Link>
+              )
+            ))}
+            <div style={{display:'flex',gap:'8px',padding:'10px 0',borderTop:'1px solid rgba(255,255,255,0.06)',marginTop:'8px'}}>
+              <Link href="/auth/login" style={{flex:1,padding:'9px',textAlign:'center',background:'rgba(255,255,255,0.06)',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:600,color:'rgba(232,244,248,0.8)'}}>Sign In</Link>
+              <Link href="/register" style={{flex:1,padding:'9px',textAlign:'center',background:'linear-gradient(135deg,#00ffc8,#00c49a)',borderRadius:'7px',textDecoration:'none',fontSize:'12px',fontWeight:800,color:'#020c14'}}>Free Trial</Link>
+            </div>
+          </div>
+        )}
+      </nav>
+      <style>{`
+        @keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,200,0.4)}50%{opacity:0.7;box-shadow:0 0 0 6px rgba(0,255,200,0)}}
+        @keyframes liveRing{0%{transform:scale(1);opacity:0.8}100%{transform:scale(2.5);opacity:0}}
+        .live-dot{border-radius:50%;background:#00ffc8;position:relative;animation:livePulse 2s ease-in-out infinite}
+        .live-dot::after{content:'';position:absolute;inset:-2px;border-radius:50%;border:1.5px solid #00ffc8;animation:liveRing 1.5s ease-out infinite}
+      `}</style>
+    </>
   );
 }

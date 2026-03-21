@@ -28,7 +28,7 @@ export default function SoftLockBanner() {
       <div style={{display:'flex',gap:'8px',flexShrink:0}}>
         <Link href="/contact" style={{
           padding:'7px 18px', borderRadius:'7px', fontWeight:700, fontSize:'13px',
-          background:'white', color:'#C62828', textDecoration:'none',
+          background:'rgba(10,22,40,0.8)', color:'#C62828', textDecoration:'none',
           border:'none', cursor:'pointer',
         }}>
           Request Demo →

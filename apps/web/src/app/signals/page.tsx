@@ -7,9 +7,9 @@ import { Zap, Filter, ExternalLink, Clock, TrendingUp, RefreshCw, Bell } from 'l
 
 const SIGNAL_TYPES = [
   { id:'POLICY_CHANGE',    label:'Policy Change',    color:'#e74c3c', emoji:'🔴' },
-  { id:'NEW_INCENTIVE',    label:'New Incentive',    color:'#2ecc71', emoji:'🟢' },
+  { id:'NEW_INCENTIVE',    label:'New Incentive',    color:'#00ffc8', emoji:'🟢' },
   { id:'SECTOR_GROWTH',   label:'Sector Growth',    color:'#3498db', emoji:'🔵' },
-  { id:'ZONE_AVAIL',      label:'Zone Availability',color:'#f1c40f', emoji:'🟡' },
+  { id:'ZONE_AVAIL',      label:'Zone Availability',color:'#ffd700', emoji:'🟡' },
   { id:'COMPETITOR_MOVE', label:'Competitor Move',   color:'#9b59b6', emoji:'🟣' },
   { id:'DEAL_ANNOUNCED',  label:'Deal Announced',   color:'#e67e22', emoji:'🟠' },
 ];
@@ -80,19 +80,19 @@ export default function SignalsPage() {
     GOLD:{ bg:'rgba(241,196,15,0.1)', color:'#7a6400', border:'rgba(241,196,15,0.3)' },
     SILVER:{ bg:'rgba(127,140,141,0.1)', color:'#5d6d7e', border:'rgba(127,140,141,0.3)' },
   };
-  const impactColors: Record<string,string> = { HIGH:'#e74c3c', MEDIUM:'#f1c40f', LOW:'#2ecc71' };
+  const impactColors: Record<string,string> = { HIGH:'#e74c3c', MEDIUM:'#ffd700', LOW:'#2ecc71' };
 
   return (
-    <div style={{minHeight:'100vh', background:'#f0f4f8', fontFamily:"Inter,'Helvetica Neue',sans-serif"}}>
+    <div style={{minHeight:'100vh', background:'#020c14', fontFamily:"'Inter','Helvetica Neue',sans-serif"}}>
       <NavBar/>
       {/* Hero */}
-      <div style={{background:'linear-gradient(135deg,#0f1e2a,#1a2c3e)', padding:'20px 24px', borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
+      <div style={{background:'linear-gradient(135deg,#020c14,#0a1628)', padding:'20px 24px', borderBottom:'1px solid rgba(46,204,113,0.1)'}}>
         <div style={{maxWidth:'1440px', margin:'0 auto'}}>
           <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'12px'}}>
             <div>
               <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'4px'}}>
                 <span style={{width:'7px', height:'7px', borderRadius:'50%', background:'#2ecc71', display:'inline-block', animation:'livePulse 2s infinite'}}/>
-                <span style={{fontSize:'10px', fontWeight:800, color:'#2ecc71', letterSpacing:'0.1em'}}>LIVE · AGT-02 Signal Detection · Auto-updating</span>
+                <span style={{fontSize:'10px', fontWeight:800, color:'#00ffc8', letterSpacing:'0.1em'}}>LIVE · AGT-02 Signal Detection · Auto-updating</span>
               </div>
               <h1 style={{fontSize:'22px', fontWeight:900, color:'white', marginBottom:'4px'}}>Investment Signals Feed</h1>
               <p style={{color:'rgba(255,255,255,0.6)', fontSize:'12px'}}>
@@ -100,7 +100,7 @@ export default function SignalsPage() {
               </p>
             </div>
             <div style={{display:'flex', gap:'8px'}}>
-              <Link href="/reports" style={{padding:'8px 16px', background:'#2ecc71', color:'#0f1e2a', borderRadius:'8px', textDecoration:'none', fontSize:'12px', fontWeight:800}}>
+              <Link href="/reports" style={{padding:'8px 16px', background:'#2ecc71', color:'#020c14', borderRadius:'8px', textDecoration:'none', fontSize:'12px', fontWeight:800}}>
                 Generate Report
               </Link>
               <Link href="/publications" style={{padding:'8px 14px', border:'1px solid rgba(255,255,255,0.2)', color:'rgba(255,255,255,0.8)', borderRadius:'8px', textDecoration:'none', fontSize:'12px', fontWeight:600}}>
@@ -111,7 +111,7 @@ export default function SignalsPage() {
           {/* Stats */}
           <div style={{display:'flex', gap:'16px', marginTop:'14px', flexWrap:'wrap'}}>
             {[['PLATINUM', signals.filter(s=>s.grade==='PLATINUM').length, '#9b59b6'],
-              ['GOLD', signals.filter(s=>s.grade==='GOLD').length, '#f1c40f'],
+              ['GOLD', signals.filter(s=>s.grade==='GOLD').length, '#ffd700'],
               ['HIGH Impact', signals.filter(s=>s.impact==='HIGH').length, '#e74c3c'],
               ['This Week', signals.length, '#2ecc71'],
             ].map(([l,v,c])=>(
@@ -126,10 +126,10 @@ export default function SignalsPage() {
 
       <div style={{maxWidth:'1440px', margin:'0 auto', padding:'20px 24px'}}>
         {/* Filters */}
-        <div style={{background:'white', borderRadius:'14px', padding:'14px 18px', marginBottom:'16px', border:'1px solid rgba(26,44,62,0.08)', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center'}}>
+        <div style={{background:'rgba(10,22,40,0.8)', borderRadius:'14px', padding:'14px 18px', marginBottom:'16px', border:'1px solid rgba(0,180,216,0.1)', display:'flex', gap:'10px', flexWrap:'wrap', alignItems:'center'}}>
           <Zap size={14} color="#2ecc71"/>
           <input placeholder="Search signals..." value={search} onChange={e=>setSearch(e.target.value)}
-            style={{padding:'7px 12px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', fontSize:'12px', outline:'none', fontFamily:'inherit', minWidth:'160px'}}/>
+            style={{padding:'7px 12px', border:'1px solid rgba(0,180,216,0.12)', borderRadius:'8px', fontSize:'12px', outline:'none', fontFamily:'inherit', minWidth:'160px'}}/>
           {[
             {label:'Type', val:filterType, setter:setFilterType, opts:['ALL',...SIGNAL_TYPES.map(t=>t.id)]},
             {label:'Grade', val:filterGrade, setter:setFilterGrade, opts:['ALL','PLATINUM','GOLD','SILVER']},
@@ -137,11 +137,11 @@ export default function SignalsPage() {
             {label:'Region', val:filterRegion, setter:setFilterRegion, opts:['ALL','Asia Pacific','Middle East','Americas','Europe','Africa']},
           ].map(({val,setter,opts})=>(
             <select key={val} value={val} onChange={e=>setter(e.target.value)}
-              style={{padding:'7px 12px', border:'1px solid rgba(26,44,62,0.12)', borderRadius:'8px', fontSize:'12px', background:'white', outline:'none', cursor:'pointer', fontFamily:'inherit'}}>
+              style={{padding:'7px 12px', border:'1px solid rgba(0,180,216,0.12)', borderRadius:'8px', fontSize:'12px', background:'rgba(10,22,40,0.8)', outline:'none', cursor:'pointer', fontFamily:'inherit'}}>
               {opts.map(o=><option key={o}>{o}</option>)}
             </select>
           ))}
-          <span style={{marginLeft:'auto', fontSize:'12px', color:'#7f8c8d'}}>{filtered.length} signals</span>
+          <span style={{marginLeft:'auto', fontSize:'12px', color:'rgba(232,244,248,0.4)'}}>{filtered.length} signals</span>
         </div>
 
         {/* Signal cards */}
@@ -152,7 +152,7 @@ export default function SignalsPage() {
             const isExp = expanded === sig.id;
             return (
               <div key={sig.id} onClick={()=>setExpanded(isExp?null:sig.id)}
-                style={{background:'white', borderRadius:'14px', border:`1px solid rgba(26,44,62,0.07)`, borderLeft:`4px solid ${st.color}`,
+                style={{background:'rgba(10,22,40,0.8)', borderRadius:'14px', border:`1px solid rgba(26,44,62,0.07)`, borderLeft:`4px solid ${st.color}`,
                   cursor:'pointer', transition:'all 0.2s', boxShadow: isExp ? '0 8px 20px rgba(0,0,0,0.08)' : '0 2px 4px rgba(0,0,0,0.04)'}}>
                 <div style={{padding:'14px 18px'}}>
                   <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'12px'}}>
@@ -161,38 +161,38 @@ export default function SignalsPage() {
                         <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'10px', background:`${st.color}15`, color:st.color, letterSpacing:'0.04em'}}>{st.emoji} {st.label.toUpperCase()}</span>
                         <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'10px', background:gc.bg, color:gc.color, border:`1px solid ${gc.border}`}}>{sig.grade}</span>
                         <span style={{fontSize:'14px'}}>{sig.flag}</span>
-                        <span style={{fontSize:'12px', fontWeight:700, color:'#1a2c3e'}}>{sig.country}</span>
-                        <span style={{fontSize:'10px', color:'#7f8c8d'}}>· {sig.sector}</span>
+                        <span style={{fontSize:'12px', fontWeight:700, color:'#e8f4f8'}}>{sig.country}</span>
+                        <span style={{fontSize:'10px', color:'rgba(232,244,248,0.4)'}}>· {sig.sector}</span>
                       </div>
-                      <div style={{fontSize:'14px', fontWeight:700, color:'#1a2c3e', marginBottom:'4px', lineHeight:'1.4'}}>{sig.title}</div>
-                      <div style={{fontSize:'11px', color:'#7f8c8d'}}>
-                        <span style={{fontWeight:600, color:'#2c3e50'}}>Strategic: </span>{sig.implication.slice(0,110)}{sig.implication.length>110&&!isExp?'...':''}
+                      <div style={{fontSize:'14px', fontWeight:700, color:'#e8f4f8', marginBottom:'4px', lineHeight:'1.4'}}>{sig.title}</div>
+                      <div style={{fontSize:'11px', color:'rgba(232,244,248,0.4)'}}>
+                        <span style={{fontWeight:600, color:'rgba(232,244,248,0.7)'}}>Strategic: </span>{sig.implication.slice(0,110)}{sig.implication.length>110&&!isExp?'...':''}
                       </div>
                     </div>
                     <div style={{display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'6px', flexShrink:0}}>
                       <span style={{fontSize:'9px', fontWeight:800, padding:'2px 8px', borderRadius:'8px', background:`${impactColors[sig.impact]}15`, color:impactColors[sig.impact]}}>{sig.impact}</span>
                       <div style={{textAlign:'right'}}>
-                        <div style={{fontSize:'16px', fontWeight:900, color:sig.sco>=85?'#9b59b6':sig.sco>=70?'#f1c40f':'#7f8c8d', fontFamily:"'JetBrains Mono',monospace"}}>{sig.sco}</div>
-                        <div style={{fontSize:'9px', color:'#7f8c8d'}}>SCI Score</div>
+                        <div style={{fontSize:'16px', fontWeight:900, color:sig.sco>=85?'#9b59b6':sig.sco>=70?'#ffd700':'#7f8c8d', fontFamily:"'JetBrains Mono',monospace"}}>{sig.sco}</div>
+                        <div style={{fontSize:'9px', color:'rgba(232,244,248,0.4)'}}>SCI Score</div>
                       </div>
-                      <div style={{display:'flex', alignItems:'center', gap:'4px', fontSize:'10px', color:'#7f8c8d'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:'4px', fontSize:'10px', color:'rgba(232,244,248,0.4)'}}>
                         <Clock size={10}/>{sig.time} ago
                       </div>
                     </div>
                   </div>
                   {isExp && (
-                    <div style={{marginTop:'14px', padding:'14px', background:'rgba(26,44,62,0.02)', borderRadius:'10px', border:'1px solid rgba(26,44,62,0.06)'}}>
-                      <div style={{fontSize:'13px', color:'#2c3e50', lineHeight:'1.7', marginBottom:'12px'}}>{sig.body}</div>
-                      <div style={{fontSize:'12px', color:'#2c3e50', marginBottom:'12px'}}>
-                        <strong style={{color:'#1a2c3e'}}>Strategic Implication: </strong>{sig.implication}
+                    <div style={{marginTop:'14px', padding:'14px', background:'rgba(26,44,62,0.02)', borderRadius:'10px', border:'1px solid rgba(0,255,200,0.06)'}}>
+                      <div style={{fontSize:'13px', color:'rgba(232,244,248,0.7)', lineHeight:'1.7', marginBottom:'12px'}}>{sig.body}</div>
+                      <div style={{fontSize:'12px', color:'rgba(232,244,248,0.7)', marginBottom:'12px'}}>
+                        <strong style={{color:'#e8f4f8'}}>Strategic Implication: </strong>{sig.implication}
                       </div>
                       <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'8px'}}>
-                        <span style={{fontSize:'11px', color:'#7f8c8d'}}>Source: <strong>{sig.source}</strong> · SHA-256 verified · SCI: {sig.sco}</span>
+                        <span style={{fontSize:'11px', color:'rgba(232,244,248,0.4)'}}>Source: <strong>{sig.source}</strong> · SHA-256 verified · SCI: {sig.sco}</span>
                         <div style={{display:'flex', gap:'8px'}}>
-                          <Link href="/reports" onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(46,204,113,0.08)', border:'1px solid rgba(46,204,113,0.2)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#2ecc71'}}>
+                          <Link href="/reports" onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(0,255,200,0.08)', border:'1px solid rgba(0,255,200,0.2)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#00ffc8'}}>
                             Generate Report
                           </Link>
-                          <Link href={`/investment-analysis`} onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(26,44,62,0.06)', border:'1px solid rgba(26,44,62,0.1)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#1a2c3e', display:'flex', alignItems:'center', gap:'4px'}}>
+                          <Link href={`/investment-analysis`} onClick={e=>e.stopPropagation()} style={{padding:'6px 14px', background:'rgba(26,44,62,0.06)', border:'1px solid rgba(26,44,62,0.1)', borderRadius:'7px', textDecoration:'none', fontSize:'11px', fontWeight:600, color:'#e8f4f8', display:'flex', alignItems:'center', gap:'4px'}}>
                             Full Analysis <ExternalLink size={10}/>
                           </Link>
                         </div>
@@ -206,7 +206,7 @@ export default function SignalsPage() {
         </div>
 
         {/* Subscribe */}
-        <div style={{marginTop:'20px', background:'#1a2c3e', borderRadius:'14px', padding:'20px 24px', display:'flex', gap:'16px', alignItems:'center', flexWrap:'wrap', border:'1px solid rgba(46,204,113,0.1)'}}>
+        <div style={{marginTop:'20px', background:'rgba(6,15,26,0.95)', borderRadius:'14px', padding:'20px 24px', display:'flex', gap:'16px', alignItems:'center', flexWrap:'wrap', border:'1px solid rgba(46,204,113,0.1)'}}>
           <Bell size={20} color="#2ecc71"/>
           <div style={{flex:1}}>
             <div style={{fontSize:'14px', fontWeight:700, color:'white', marginBottom:'2px'}}>Subscribe to Investment Signals</div>
@@ -215,7 +215,7 @@ export default function SignalsPage() {
           <div style={{display:'flex', gap:'8px'}}>
             <input type="email" placeholder="your@organisation.com"
               style={{padding:'9px 14px', border:'1px solid rgba(255,255,255,0.15)', borderRadius:'8px', fontSize:'12px', background:'rgba(255,255,255,0.08)', color:'white', outline:'none', fontFamily:'inherit', minWidth:'200px'}}/>
-            <button style={{padding:'9px 18px', background:'#2ecc71', color:'#0f1e2a', border:'none', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:800, fontFamily:'inherit', whiteSpace:'nowrap'}}>
+            <button style={{padding:'9px 18px', background:'#2ecc71', color:'#020c14', border:'none', borderRadius:'8px', cursor:'pointer', fontSize:'12px', fontWeight:800, fontFamily:'inherit', whiteSpace:'nowrap'}}>
               Subscribe →
             </button>
           </div>
