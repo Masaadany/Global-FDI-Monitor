@@ -1,356 +1,438 @@
 'use client';
-import { Zap, Globe, BarChart3, TrendingUp, Activity, Bell, Target, ArrowRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NavBar from '@/components/NavBar';
-import Link from 'next/link';
 import Footer from '@/components/Footer';
-import TrialBanner from '@/components/TrialBanner';
-import Globe4D from '@/components/Globe4D';
-import FDIFlowMap from '@/components/FDIFlowMap';
-import AdvancedAnalytics from '@/components/AdvancedAnalytics';
-import BentoDashboard from '@/components/BentoDashboard';
-import InvestmentHeatmap from '@/components/InvestmentHeatmap';
+import { Globe, TrendingUp, Zap, BarChart3, Filter, RefreshCw, Download, ChevronRight } from 'lucide-react';
+import Link from 'next/link';
 
-const SECTORS    = ['All Sectors','Technology','Energy','Healthcare','Finance','Logistics','Manufacturing','Agribusiness','Real Estate'];
-const INV_TYPES  = ['Greenfield','M&A','Expansion','Joint Venture','VC/PE'];
-const REGIONS    = ['All','North America','Europe','MENA','Asia-Pacific','Latin America','Africa'];
-const SCI_GRADES = ['Platinum','Gold','Silver','Bronze'];
+const API = process.env.NEXT_PUBLIC_API_URL || 'https://api.fdimonitor.org';
 
+// Top economies data
+const TOP_ECON = [
+  {iso3:'SGP',name:'Singapore',flag:'🇸🇬',score:88.4,tier:'TOP',region:'Asia Pacific',trend:'+0.4'},
+  {iso3:'ARE',name:'UAE',flag:'🇦🇪',score:84.7,tier:'TOP',region:'Middle East',trend:'+4.2'},
+  {iso3:'MYS',name:'Malaysia',flag:'🇲🇾',score:81.2,tier:'TOP',region:'Asia Pacific',trend:'+2.1'},
+  {iso3:'THA',name:'Thailand',flag:'🇹🇭',score:80.7,tier:'TOP',region:'Asia Pacific',trend:'+1.8'},
+  {iso3:'VNM',name:'Vietnam',flag:'🇻🇳',score:79.4,tier:'TOP',region:'Asia Pacific',trend:'+3.2'},
+  {iso3:'SAU',name:'Saudi Arabia',flag:'🇸🇦',score:79.1,tier:'TOP',region:'Middle East',trend:'+5.4'},
+  {iso3:'IND',name:'India',flag:'🇮🇳',score:73.2,tier:'HIGH',region:'Asia Pacific',trend:'+3.4'},
+  {iso3:'IDN',name:'Indonesia',flag:'🇮🇩',score:74.8,tier:'HIGH',region:'Asia Pacific',trend:'+2.8'},
+];
+
+// Live signals
 const SIGNALS = [
-  {company:'Microsoft',    amount:'$5.2B', sector:'Technology',    iso:'🇦🇪', country:'UAE',       sci:94, grade:'PLATINUM'},
-  {company:'CATL',         amount:'$3.2B', sector:'Manufacturing', iso:'🇮🇩', country:'Indonesia', sci:92, grade:'PLATINUM'},
-  {company:'Siemens',      amount:'$2.1B', sector:'Energy',        iso:'🇩🇪', country:'Germany',   sci:88, grade:'GOLD'},
-  {company:'BYD',          amount:'$1.8B', sector:'Auto',          iso:'🇸🇦', country:'Saudi Arabia',sci:86,grade:'GOLD'},
-  {company:'BlackRock',    amount:'$0.9B', sector:'Finance',       iso:'🇬🇧', country:'UK',        sci:79, grade:'SILVER'},
-  {company:'ACWA Power',   amount:'$0.7B', sector:'Energy',        iso:'🇲🇦', country:'Morocco',   sci:74, grade:'SILVER'},
+  {id:1,type:'POLICY CHANGE',color:'#E57373',eco:'Malaysia',text:'FDI cap in data centers raised to 100%',grade:'PLATINUM',time:'2m ago'},
+  {id:2,type:'NEW INCENTIVE',color:'#74BB65',eco:'Thailand',text:'$2B EV battery subsidy package approved',grade:'GOLD',time:'8m ago'},
+  {id:3,type:'SECTOR GROWTH',color:'#1B6CA8',eco:'Vietnam',text:'Electronics exports surge 34% YoY',grade:'GOLD',time:'15m ago'},
+  {id:4,type:'ZONE AVAILABLE',color:'#FFB347',eco:'Indonesia',text:'New Batam zone: 200ha ready for investment',grade:'SILVER',time:'24m ago'},
+  {id:5,type:'COMPETITOR MOVE',color:'#1B6CA8',eco:'Indonesia',text:'$15B nickel processing investment confirmed',grade:'PLATINUM',time:'31m ago'},
+  {id:6,type:'POLICY CHANGE',color:'#E57373',eco:'Saudi Arabia',text:'Vision 2030 new FDI framework activated',grade:'PLATINUM',time:'45m ago'},
+  {id:7,type:'NEW INCENTIVE',color:'#74BB65',eco:'UAE',text:'Dubai launches $10B AI infrastructure fund',grade:'GOLD',time:'1h ago'},
+  {id:8,type:'SECTOR GROWTH',color:'#1B6CA8',eco:'India',text:'Semiconductor manufacturing FDI up 280%',grade:'PLATINUM',time:'1h ago'},
 ];
 
-const GFR_MOVERS = [
-  {flag:'🇸🇬', name:'Singapore',    chg:+2, score:88.5},
-  {flag:'🇦🇪', name:'UAE',          chg:+3, score:80.0},
-  {flag:'🇸🇦', name:'Saudi Arabia', chg:+8, score:86.2},
-  {flag:'🇮🇳', name:'India',        chg:+4, score:82.1},
-  {flag:'🇨🇭', name:'Switzerland',  chg:-1, score:87.5},
+// Doing Business indicators
+const DB_INDICATORS = [
+  {name:'Starting a Business',score:82,global_avg:71},
+  {name:'Construction Permits',score:78,global_avg:66},
+  {name:'Getting Electricity',score:85,global_avg:74},
+  {name:'Registering Property',score:79,global_avg:68},
+  {name:'Getting Credit',score:76,global_avg:63},
+  {name:'Protecting Investors',score:83,global_avg:72},
+  {name:'Paying Taxes',score:81,global_avg:69},
+  {name:'Trading Across Borders',score:77,global_avg:65},
+  {name:'Enforcing Contracts',score:74,global_avg:61},
+  {name:'Resolving Insolvency',score:72,global_avg:58},
 ];
 
-const GRADE_C: Record<string,string> = {PLATINUM:'#0A3D62',GOLD:'#74BB65',SILVER:'#696969',BRONZE:'#9E9E9E'};
-const GRADE_BG: Record<string,string> = {PLATINUM:'rgba(10,61,98,0.1)',GOLD:'rgba(116,187,101,0.12)',SILVER:'rgba(105,105,105,0.1)',BRONZE:'rgba(158,158,158,0.1)'};
+// Sector data for scatter
+const SECTORS_DATA = [
+  {name:'EV Battery',x:82,y:92,size:24,color:'#74BB65'},
+  {name:'AI Data Centers',x:78,y:85,size:20,color:'#1B6CA8'},
+  {name:'Semiconductors',x:75,y:88,size:22,color:'#9A6D00'},
+  {name:'Renewables',x:80,y:79,size:18,color:'#74BB65'},
+  {name:'Pharma',x:72,y:74,size:16,color:'#E57373'},
+  {name:'Logistics',x:69,y:71,size:14,color:'#1B6CA8'},
+  {name:'Fintech',x:76,y:80,size:17,color:'#9A6D00'},
+  {name:'Aerospace',x:71,y:76,size:15,color:'#74BB65'},
+];
 
+// Regional scores
+const REGIONS = [
+  {name:'Asia Pacific',score:78.4,change:'+0.6',color:'#74BB65',countries:45},
+  {name:'Middle East',score:76.8,change:'+2.1',color:'#1B6CA8',countries:18},
+  {name:'Europe',score:74.2,change:'-0.2',color:'#9A6D00',countries:44},
+  {name:'Americas',score:69.8,change:'+0.3',color:'#E57373',countries:35},
+  {name:'Africa',score:62.4,change:'+1.4',color:'#FFB347',countries:54},
+  {name:'Oceania',score:80.8,change:'+0.2',color:'#74BB65',countries:14},
+];
 
-
-export default function DashboardPage() {
-  const [tab,        setTab]        = useState('overview');
-  const [filterOpen, setFilterOpen] = useState(true);
-  const [sectors,    setSectors]    = useState<string[]>([]);
-  const [invTypes,   setInvTypes]   = useState<string[]>(['Greenfield']);
-  const [sciGrades,  setSciGrades]  = useState<string[]>(['Platinum','Gold']);
-  const [dateFrom,   setDateFrom]   = useState('2025-01-01');
-  const [dateTo,     setDateTo]     = useState('2026-03-31');
-  const [minInvest,  setMinInvest]  = useState(50);
-  const [ticker,     setTicker]     = useState(0);
+function GlobeMap() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const rotRef = useRef(0);
 
   useEffect(() => {
-    const t = setInterval(()=>setTicker(n=>(n+1)%SIGNALS.length), 2000);
-    return ()=>clearInterval(t);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const W = canvas.width, H = canvas.height;
+    const cx = W/2, cy = H/2, R = Math.min(W,H)*0.38;
+
+    const DOTS = [
+      // Asia Pacific
+      {lat:1.35,lng:103.8,score:88,name:'Singapore'},{lat:25.2,lng:55.3,score:85,name:'UAE'},
+      {lat:3.1,lng:101.7,score:81,name:'Malaysia'},{lat:13.7,lng:100.5,score:81,name:'Thailand'},
+      {lat:21.0,lng:105.8,score:79,name:'Vietnam'},{lat:24.7,lng:46.7,score:79,name:'Riyadh'},
+      {lat:28.6,lng:77.2,score:73,name:'India'},{lat:-6.2,lng:106.8,score:75,name:'Jakarta'},
+      {lat:35.7,lng:139.7,score:77,name:'Tokyo'},{lat:37.6,lng:127.0,score:77,name:'Seoul'},
+      {lat:31.2,lng:121.5,score:74,name:'Shanghai'},{lat:22.3,lng:114.2,score:80,name:'HK'},
+      // Europe
+      {lat:51.5,lng:-0.1,score:80,name:'London'},{lat:48.9,lng:2.3,score:77,name:'Paris'},
+      {lat:52.5,lng:13.4,score:79,name:'Berlin'},{lat:52.4,lng:4.9,score:79,name:'Amsterdam'},
+      {lat:47.4,lng:8.5,score:84,name:'Zurich'},{lat:59.9,lng:10.8,score:81,name:'Oslo'},
+      // Americas
+      {lat:40.7,lng:-74.0,score:78,name:'New York'},{lat:37.8,lng:-122.4,score:78,name:'SF'},
+      {lat:-23.5,lng:-46.6,score:71,name:'Sao Paulo'},{lat:19.4,lng:-99.1,score:71,name:'Mexico City'},
+      // Africa
+      {lat:-26.2,lng:28.0,score:69,name:'Joburg'},{lat:30.0,lng:31.2,score:67,name:'Cairo'},
+      {lat:-1.3,lng:36.8,score:61,name:'Nairobi'},{lat:6.4,lng:3.4,score:58,name:'Lagos'},
+    ];
+
+    function project(lat: number, lng: number, rot: number) {
+      const phi = (90 - lat) * Math.PI/180;
+      const theta = (lng + rot) * Math.PI/180;
+      const x = R * Math.sin(phi) * Math.cos(theta);
+      const y = R * Math.cos(phi);
+      const z = R * Math.sin(phi) * Math.sin(theta);
+      return {x: cx + x, y: cy - y, z, visible: z > -R*0.1};
+    }
+
+    function draw() {
+      ctx.clearRect(0,0,W,H);
+
+      // Globe background
+      const grad = ctx.createRadialGradient(cx-R*0.2, cy-R*0.2, R*0.1, cx, cy, R);
+      grad.addColorStop(0, '#1a4a6e');
+      grad.addColorStop(1, '#0A1520');
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI*2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(116,187,101,0.08)';
+      ctx.lineWidth = 0.5;
+      for (let lat = -60; lat <= 60; lat += 30) {
+        ctx.beginPath();
+        let first = true;
+        for (let lng = -180; lng <= 180; lng += 3) {
+          const p = project(lat, lng, rotRef.current);
+          if (p.visible) {
+            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+            else ctx.lineTo(p.x, p.y);
+          } else first = true;
+        }
+        ctx.stroke();
+      }
+      for (let lng = -180; lng < 180; lng += 30) {
+        ctx.beginPath();
+        let first = true;
+        for (let lat = -80; lat <= 80; lat += 3) {
+          const p = project(lat, lng, rotRef.current);
+          if (p.visible) {
+            if (first) { ctx.moveTo(p.x, p.y); first = false; }
+            else ctx.lineTo(p.x, p.y);
+          } else first = true;
+        }
+        ctx.stroke();
+      }
+
+      // Cities/dots
+      const visible = DOTS.map(d => ({...d, proj: project(d.lat, d.lng, rotRef.current)}))
+        .filter(d => d.proj.visible)
+        .sort((a,b) => b.proj.z - a.proj.z);
+
+      visible.forEach(d => {
+        const {x,y} = d.proj;
+        const color = d.score >= 80 ? '#74BB65' : d.score >= 70 ? '#1B6CA8' : '#9A6D00';
+        const r = d.score >= 80 ? 5 : d.score >= 70 ? 4 : 3;
+
+        ctx.beginPath();
+        ctx.arc(x, y, r+2, 0, Math.PI*2);
+        ctx.fillStyle = color.replace(')', ',0.2)').replace('rgb','rgba').replace('#','');
+        ctx.fillStyle = color + '33';
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI*2);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        if (d.score >= 80) {
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.font = 'bold 9px sans-serif';
+          ctx.fillText(d.name, x+r+3, y+3);
+        }
+      });
+
+      // Globe edge glow
+      const edgeGrad = ctx.createRadialGradient(cx, cy, R*0.85, cx, cy, R);
+      edgeGrad.addColorStop(0, 'transparent');
+      edgeGrad.addColorStop(1, 'rgba(116,187,101,0.15)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI*2);
+      ctx.fillStyle = edgeGrad;
+      ctx.fill();
+
+      rotRef.current += 0.15;
+      animRef.current = requestAnimationFrame(draw);
+    }
+
+    draw();
+    return () => cancelAnimationFrame(animRef.current);
   }, []);
 
-  const TABS = [
-    {id:'overview',   label:'Overview'},
-    {id:'foresight',  label:'Foresight'},
-    {id:'scenario',   label:'Scenario'},
-    {id:'benchmark',  label:'Benchmark'},
-    {id:'bilateral',  label:'Bilateral'},
-    {id:'reports',    label:'Reports'},
-  ];
+  return (
+    <canvas ref={canvasRef} width={400} height={400}
+      style={{borderRadius:'50%',boxShadow:'0 0 60px rgba(116,187,101,0.2)'}}/>
+  );
+}
+
+function DoingBusinessChart() {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
+      {DB_INDICATORS.map(ind => (
+        <div key={ind.name}>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:'2px'}}>
+            <span style={{fontSize:'10px',color:'#696969'}}>{ind.name}</span>
+            <span style={{fontSize:'10px',fontWeight:700,color:'#0A3D62',fontFamily:'monospace'}}>{ind.score}</span>
+          </div>
+          <div style={{height:'6px',borderRadius:'3px',background:'rgba(10,61,98,0.08)',position:'relative'}}>
+            <div style={{height:'100%',borderRadius:'3px',width:`${ind.global_avg}%`,background:'rgba(10,61,98,0.15)',position:'absolute'}}/>
+            <div style={{height:'100%',borderRadius:'3px',width:`${ind.score}%`,background:'linear-gradient(90deg,#1B6CA8,#74BB65)',position:'absolute'}}/>
+          </div>
+        </div>
+      ))}
+      <div style={{display:'flex',gap:'12px',marginTop:'4px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:'4px'}}><div style={{width:'10px',height:'4px',borderRadius:'2px',background:'linear-gradient(90deg,#1B6CA8,#74BB65)'}}/><span style={{fontSize:'10px',color:'#696969'}}>Platform avg</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:'4px'}}><div style={{width:'10px',height:'4px',borderRadius:'2px',background:'rgba(10,61,98,0.15)'}}/><span style={{fontSize:'10px',color:'#696969'}}>Global avg</span></div>
+      </div>
+    </div>
+  );
+}
+
+function SectorMatrix() {
+  const W = 260, H = 180;
+  const pad = 30;
+  return (
+    <svg width={W} height={H}>
+      {/* Axes */}
+      <line x1={pad} y1={H-pad} x2={W-10} y2={H-pad} stroke="rgba(10,61,98,0.15)" strokeWidth={1}/>
+      <line x1={pad} y1={10} x2={pad} y2={H-pad} stroke="rgba(10,61,98,0.15)" strokeWidth={1}/>
+      <text x={W/2} y={H-4} textAnchor="middle" fontSize={9} fill="#696969">Country Readiness →</text>
+      <text x={10} y={H/2} textAnchor="middle" fontSize={9} fill="#696969" transform={`rotate(-90,10,${H/2})`}>Opportunity →</text>
+      {/* Quadrant lines */}
+      <line x1={pad+(W-pad)/2} y1={10} x2={pad+(W-pad)/2} y2={H-pad} stroke="rgba(10,61,98,0.08)" strokeDasharray="3,3"/>
+      <line x1={pad} y1={(H-pad)/2} x2={W-10} y2={(H-pad)/2} stroke="rgba(10,61,98,0.08)" strokeDasharray="3,3"/>
+      {SECTORS_DATA.map(s => {
+        const px = pad + ((s.x-60)/(100-60))*(W-pad-10);
+        const py = H-pad - ((s.y-60)/(100-60))*(H-pad-10);
+        return (
+          <g key={s.name}>
+            <circle cx={px} cy={py} r={s.size/2} fill={s.color} fillOpacity={0.7} stroke={s.color} strokeWidth={1}/>
+            <text x={px} y={py-s.size/2-3} textAnchor="middle" fontSize={8} fill="#0A3D62" fontWeight="bold">{s.name}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+export default function DashboardPage() {
+  const [liveSignals, setLiveSignals] = useState(SIGNALS);
+  const [filter, setFilter] = useState('ALL');
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setLastUpdate(new Date());
+      // Simulate new signal arriving
+      if (Math.random() > 0.7) {
+        const newSig = {
+          id: Date.now(),
+          type: ['POLICY CHANGE','NEW INCENTIVE','SECTOR GROWTH','ZONE AVAILABLE'][Math.floor(Math.random()*4)],
+          color: ['#E57373','#74BB65','#1B6CA8','#FFB347'][Math.floor(Math.random()*4)],
+          eco: ['Singapore','UAE','Vietnam','Malaysia','Indonesia'][Math.floor(Math.random()*5)],
+          text: ['New investment zone opened','FDI incentive expanded','Sector growth confirmed'][Math.floor(Math.random()*3)],
+          grade: ['PLATINUM','GOLD','SILVER'][Math.floor(Math.random()*3)],
+          time: 'Just now',
+        };
+        setLiveSignals(prev => [newSig, ...prev.slice(0,9)]);
+      }
+    }, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const filteredSignals = filter === 'ALL' ? liveSignals : liveSignals.filter(s => s.type === filter);
 
   return (
     <div className="min-h-screen" style={{background:'#E2F2DF'}}>
       <NavBar/>
-      <TrialBanner/>
 
-      {/* Sticky tab bar */}
-      <div style={{position:'sticky',top:'64px',zIndex:40,background:'white',borderBottom:'1px solid rgba(10,61,98,0.1)',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-        <div style={{maxWidth:'1600px',margin:'0 auto',padding:'0 16px',display:'flex',gap:'0',overflowX:'auto'}}>
-          {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{padding:'14px 18px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',
-                borderBottom:tab===t.id?'3px solid #74BB65':'3px solid transparent',
-                background:'transparent',color:tab===t.id?'#0A3D62':'#696969',transition:'all 0.2s'}}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div style={{maxWidth:'1600px',margin:'0 auto',padding:'16px',display:'grid',
-        gridTemplateColumns:filterOpen?'260px 1fr 280px':'0px 1fr 280px',gap:'16px',transition:'grid-template-columns 0.3s ease'}}>
-
-        {/* ── LEFT: FILTER PANEL ── */}
-        <div style={{overflow:'hidden',transition:'all 0.3s'}}>
-          <div style={{background:'white',borderRadius:'12px',boxShadow:'0 2px 12px rgba(10,61,98,0.07)',
-            padding:'16px',minWidth:'260px',maxHeight:'calc(100vh - 140px)',overflowY:'auto',position:'sticky',top:'120px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
-              <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>FILTERS</div>
-              <button onClick={()=>setFilterOpen(false)}
-                style={{border:'none',background:'rgba(10,61,98,0.06)',borderRadius:'5px',padding:'3px 7px',cursor:'pointer',fontSize:'12px',color:'#696969'}}>
-                Hide ‹‹
-              </button>
+      {/* Header */}
+      <section style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',padding:'20px 24px'}}>
+        <div style={{maxWidth:'1400px',margin:'0 auto',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:'10px'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'4px'}}>
+              <div style={{width:'8px',height:'8px',borderRadius:'50%',background:'#74BB65',animation:'pulse 1.5s infinite'}}/>
+              <span style={{fontSize:'11px',fontWeight:800,color:'#74BB65',letterSpacing:'0.08em'}}>LIVE · {liveSignals.length} Active Signals</span>
+              <span style={{fontSize:'11px',color:'rgba(226,242,223,0.5)'}}>Updated {lastUpdate.toLocaleTimeString()}</span>
             </div>
-
-            {/* Sectors */}
-            <div style={{marginBottom:'16px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Sectors</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
-                {SECTORS.map(s=>(
-                  <label key={s} style={{display:'flex',alignItems:'center',gap:'7px',fontSize:'12px',color:'#0A3D62',cursor:'pointer'}}>
-                    <input type="checkbox" checked={sectors.includes(s)||s==='All Sectors'}
-                      onChange={()=>setSectors(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s])}/>
-                    {s}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Investment type */}
-            <div style={{marginBottom:'16px',borderTop:'1px solid rgba(10,61,98,0.06)',paddingTop:'12px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Investment Type</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
-                {INV_TYPES.map(t=>(
-                  <label key={t} style={{display:'flex',alignItems:'center',gap:'7px',fontSize:'12px',color:'#0A3D62',cursor:'pointer'}}>
-                    <input type="checkbox" checked={invTypes.includes(t)}
-                      onChange={()=>setInvTypes(p=>p.includes(t)?p.filter(x=>x!==t):[...p,t])}/>
-                    {t}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div style={{marginBottom:'16px',borderTop:'1px solid rgba(10,61,98,0.06)',paddingTop:'12px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Duration</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
-                <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}
-                  style={{padding:'5px 8px',borderRadius:'6px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'11px',color:'#0A3D62',background:'white'}}/>
-                <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)}
-                  style={{padding:'5px 8px',borderRadius:'6px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'11px',color:'#0A3D62',background:'white'}}/>
-              </div>
-            </div>
-
-            {/* Investment size */}
-            <div style={{marginBottom:'16px',borderTop:'1px solid rgba(10,61,98,0.06)',paddingTop:'12px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'6px'}}>
-                Investment Size (USD min)
-              </div>
-              <input type="range" min={0} max={1000} step={50} value={minInvest}
-                onChange={e=>setMinInvest(+e.target.value)}
-                style={{width:'100%',accentColor:'#74BB65'}}/>
-              <div style={{fontSize:'11px',color:'#0A3D62',fontWeight:700,fontFamily:'monospace'}}>${minInvest}M+</div>
-            </div>
-
-            {/* Signal confidence */}
-            <div style={{marginBottom:'16px',borderTop:'1px solid rgba(10,61,98,0.06)',paddingTop:'12px'}}>
-              <div style={{fontSize:'11px',fontWeight:700,color:'#696969',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>Signal Confidence</div>
-              <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
-                {SCI_GRADES.map(g=>(
-                  <label key={g} style={{display:'flex',alignItems:'center',gap:'7px',fontSize:'12px',cursor:'pointer'}}>
-                    <input type="checkbox" checked={sciGrades.includes(g)}
-                      onChange={()=>setSciGrades(p=>p.includes(g)?p.filter(x=>x!==g):[...p,g])}/>
-                    <span style={{color:GRADE_C[g.toUpperCase()],fontWeight:700}}>{g}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div style={{display:'flex',gap:'6px'}}>
-              <button className="gfm-btn-primary" style={{flex:1,padding:'8px',fontSize:'12px'}}>Apply</button>
-              <button style={{flex:1,padding:'8px',fontSize:'12px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'8px',background:'transparent',color:'#696969',cursor:'pointer'}}>Clear</button>
-            </div>
+            <h1 style={{fontSize:'22px',fontWeight:800,color:'white'}}>Global FDI Intelligence Dashboard</h1>
+          </div>
+          <div style={{display:'flex',gap:'8px'}}>
+            <Link href="/investment-analysis" style={{padding:'9px 16px',background:'#74BB65',color:'white',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:700,display:'flex',alignItems:'center',gap:'5px'}}>
+              <BarChart3 size={13}/> Investment Analysis
+            </Link>
+            <Link href="/signals" style={{padding:'9px 16px',border:'1px solid rgba(255,255,255,0.25)',color:'rgba(226,242,223,0.9)',borderRadius:'8px',textDecoration:'none',fontSize:'12px',fontWeight:600,display:'flex',alignItems:'center',gap:'5px'}}>
+              <Zap size={13}/> All Signals
+            </Link>
           </div>
         </div>
+      </section>
 
-        {/* ── CENTER: TAB CONTENT ── */}
-        <div style={{minWidth:0}}>
-          {!filterOpen && (
-            <button onClick={()=>setFilterOpen(true)}
-              style={{marginBottom:'12px',border:'none',background:'white',borderRadius:'8px',padding:'7px 14px',
-                cursor:'pointer',fontSize:'12px',fontWeight:700,color:'#0A3D62',boxShadow:'0 2px 8px rgba(10,61,98,0.07)'}}>
-              ›› Filters
-            </button>
-          )}
+      <div style={{maxWidth:'1400px',margin:'0 auto',padding:'20px 24px',display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'14px'}}>
 
-          {/* OVERVIEW TAB */}
-          {tab==='overview' && (
-            <div style={{display:'flex',flexDirection:'column',gap:'16px'}}>
-              {/* Globe + time slider */}
-              <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'16px',padding:'20px',position:'relative',overflow:'hidden'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'12px'}}>
-                  <div>
-                    <div style={{fontSize:'12px',fontWeight:700,color:'rgba(226,242,223,0.7)',textTransform:'uppercase',letterSpacing:'0.06em'}}>4D Globe Visualization</div>
-                    <div style={{fontSize:'10px',color:'rgba(226,242,223,0.5)',marginTop:'2px'}}>FDI Flows · Signals · GFR · Sectors · Targets</div>
-                  </div>
-                  <div style={{display:'flex',gap:'4px'}}>
-                    {['FDI Flows','Signals','GFR'].map(l=>(
-                      <span key={l} style={{fontSize:'10px',padding:'3px 8px',borderRadius:'10px',background:'rgba(116,187,101,0.2)',color:'#74BB65',fontWeight:700}}>{l}</span>
-                    ))}
-                  </div>
-                </div>
-                <div style={{height:'200px',display:'flex',justifyContent:'center',alignItems:'center',position:'relative'}}>
-                  <FDIFlowMap height={200}/>
-                </div>
-                <div style={{marginTop:'12px'}}>
-                  <div style={{fontSize:'10px',color:'rgba(226,242,223,0.6)',marginBottom:'4px'}}>Time Slider: 2015 → 2050</div>
-                  <input type="range" min={2015} max={2050} defaultValue={2026}
-                    style={{width:'100%',accentColor:'#74BB65'}}/>
-                </div>
-              </div>
+        {/* ROW 1: Globe + Regional Scores + Signals */}
 
-              {/* Quick stats */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'10px'}}>
-                {[
-                  {label:'Global FDI',     val:'$3.2T', chg:'▲12% YoY', color:'#74BB65'},
-                  {label:'Active Signals', val:'1,234',  chg:'▲8 today',  color:'#0A3D62'},
-                  {label:'GFR Composite',  val:'88.5',   chg:'▲2 pts',    color:'#1B6CA8'},
-                  {label:'IRES Score',     val:'89.4',   chg:'▲3 pts',    color:'#74BB65'},
-                  {label:'IMS Momentum',   val:'94.2',   chg:'▲5 pts',    color:'#0A3D62'},
-                  {label:'Projects',       val:'1,234',  chg:'▲15% YoY', color:'#1B6CA8'},
-                ].map(({label,val,chg,color})=>(
-                  <div key={label} style={{background:'white',borderRadius:'10px',padding:'14px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-                    <div style={{fontSize:'11px',color:'#696969',marginBottom:'4px'}}>{label}</div>
-                    <div style={{fontSize:'22px',fontWeight:800,color,fontFamily:'monospace'}}>{val}</div>
-                    <div style={{fontSize:'11px',color:'#74BB65',fontWeight:700,marginTop:'2px'}}>{chg}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Recent signals table */}
-              <div style={{background:'white',borderRadius:'12px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)',overflow:'hidden'}}>
-                <div style={{padding:'14px 18px',borderBottom:'1px solid rgba(10,61,98,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62'}}>Recent Signals <span style={{fontSize:'10px',color:'#74BB65',fontWeight:700,marginLeft:'6px'}}>● LIVE 2s</span></div>
-                  <div style={{display:'flex',gap:'6px'}}>
-                    {['LOAD MORE','EXPORT','CREATE ALERT'].map(a=>(
-                      <button key={a} style={{fontSize:'10px',padding:'4px 10px',border:'1px solid rgba(10,61,98,0.15)',borderRadius:'5px',background:'transparent',cursor:'pointer',color:'#0A3D62',fontWeight:600}}>{a}</button>
-                    ))}
-                  </div>
-                </div>
-                <table className="gfm-table">
-                  <thead><tr><th>Company</th><th>Amount</th><th>Sector</th><th>Country</th><th>SCI</th></tr></thead>
-                  <tbody>
-                    {SIGNALS.map((s,i)=>(
-                      <tr key={i} style={{background:i===ticker?'rgba(116,187,101,0.04)':'transparent',transition:'background 0.3s'}}>
-                        <td style={{fontWeight:600,color:'#0A3D62'}}>{s.company}</td>
-                        <td style={{fontFamily:'monospace',fontWeight:700,color:'#0A3D62'}}>{s.amount}</td>
-                        <td style={{color:'#696969',fontSize:'12px'}}>{s.sector}</td>
-                        <td><span style={{marginRight:'4px'}}>{s.iso}</span>{s.country}</td>
-                        <td>
-                          <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                            <div style={{width:'48px',height:'5px',borderRadius:'3px',background:'rgba(10,61,98,0.08)'}}>
-                              <div style={{height:'100%',borderRadius:'3px',width:`${s.sci}%`,background:GRADE_C[s.grade]}}/>
-                            </div>
-                            <span style={{fontSize:'11px',fontWeight:700,padding:'2px 7px',borderRadius:'10px',
-                              background:GRADE_BG[s.grade],color:GRADE_C[s.grade]}}>{s.grade}</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <BentoDashboard/>
-            </div>
-          )}
-
-          {tab==='foresight'  && <AdvancedAnalytics/>}
-          {tab==='scenario'   && <InvestmentHeatmap/>}
-          {tab==='benchmark'  && <AdvancedAnalytics/>}
-          {tab==='bilateral'  && <BentoDashboard/>}
-          {tab==='reports'    && (
-            <div style={{background:'white',borderRadius:'12px',padding:'24px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-              <div style={{fontSize:'14px',fontWeight:700,color:'#0A3D62',marginBottom:'12px'}}>Generate Intelligence Report</div>
-              <div style={{display:'flex',gap:'12px',flexWrap:'wrap'}}>
-                <select style={{padding:'8px 12px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'13px',color:'#0A3D62'}}>
-                  <option>Country Profile</option><option>Sector Deep Dive</option><option>Investment Report</option><option>Mission Dossier</option>
-                </select>
-                <select style={{padding:'8px 12px',borderRadius:'8px',border:'1px solid rgba(10,61,98,0.15)',fontSize:'13px',color:'#0A3D62'}}>
-                  <option>🇦🇪 UAE</option><option>🇸🇦 Saudi Arabia</option><option>🇸🇬 Singapore</option>
-                </select>
-                <button className="gfm-btn-primary" style={{padding:'8px 20px',fontSize:'13px'}}>Generate Report →</button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── RIGHT: INSIGHTS PANEL ── */}
-        <div style={{display:'flex',flexDirection:'column',gap:'12px',position:'sticky',top:'120px',maxHeight:'calc(100vh - 140px)',overflowY:'auto'}}>
-          {/* Live ticker */}
-          <div style={{background:'white',borderRadius:'12px',padding:'14px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>
-              ⚡ Live Signal Ticker <span style={{color:'#74BB65',animation:'pulse 2s infinite'}}>●</span>
-            </div>
-            {SIGNALS.slice(0,4).map((s,i)=>(
-              <div key={i} style={{padding:'7px 0',borderBottom:'1px solid rgba(10,61,98,0.04)',fontSize:'11px'}}>
-                <div style={{fontWeight:700,color:'#0A3D62'}}>{s.amount} · {s.company}</div>
-                <div style={{color:'#696969',marginTop:'1px'}}>{s.iso} {s.country} · {s.sector}</div>
-                <span style={{fontSize:'10px',fontWeight:700,padding:'1px 6px',borderRadius:'8px',
-                  background:GRADE_BG[s.grade],color:GRADE_C[s.grade]}}>{s.grade} {s.sci}%</span>
+        {/* Globe */}
+        <div className="gfm-card" style={{padding:'20px',gridColumn:'1',display:'flex',flexDirection:'column',alignItems:'center'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px',width:'100%',display:'flex',alignItems:'center',gap:'6px'}}>
+            <Globe size={13} color="#74BB65"/> Global Opportunity Map
+          </div>
+          <GlobeMap/>
+          <div style={{display:'flex',gap:'12px',marginTop:'12px'}}>
+            {[{c:'#74BB65',l:'Top Tier (80+)'},{c:'#1B6CA8',l:'High (60-79)'},{c:'#9A6D00',l:'Developing (<60)'}].map(t=>(
+              <div key={t.l} style={{display:'flex',alignItems:'center',gap:'4px'}}>
+                <div style={{width:'8px',height:'8px',borderRadius:'50%',background:t.c}}/>
+                <span style={{fontSize:'9px',color:'#696969'}}>{t.l}</span>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* GFR movers */}
-          <div style={{background:'white',borderRadius:'12px',padding:'14px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>
-              Top Performance (GFR Changes)
-            </div>
-            {GFR_MOVERS.map(m=>(
-              <div key={m.name} style={{display:'flex',alignItems:'center',gap:'7px',padding:'5px 0',borderBottom:'1px solid rgba(10,61,98,0.04)'}}>
-                <span style={{fontSize:'16px'}}>{m.flag}</span>
-                <span style={{fontSize:'12px',flex:1,color:'#0A3D62',fontWeight:600}}>{m.name}</span>
-                <span style={{fontSize:'11px',fontWeight:700,color:m.chg>0?'#74BB65':'#E57373',fontFamily:'monospace'}}>
-                  {m.chg>0?`▲+${m.chg}`:`▼${m.chg}`}
-                </span>
-                <span style={{fontSize:'11px',color:'#696969',fontFamily:'monospace'}}>{m.score}</span>
+        {/* Regional Scores */}
+        <div className="gfm-card" style={{padding:'20px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <TrendingUp size={13} color="#74BB65"/> Regional Investment Scores
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
+            {REGIONS.map(r => (
+              <div key={r.name}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'4px'}}>
+                  <span style={{fontSize:'12px',fontWeight:600,color:'#0A3D62'}}>{r.name}</span>
+                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                    <span style={{fontSize:'11px',fontWeight:700,color:r.change.startsWith('+')?'#74BB65':'#E57373'}}>{r.change}</span>
+                    <span style={{fontSize:'14px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{r.score}</span>
+                  </div>
+                </div>
+                <div style={{height:'8px',borderRadius:'4px',background:'rgba(10,61,98,0.08)'}}>
+                  <div style={{height:'100%',borderRadius:'4px',width:`${r.score}%`,background:r.color,opacity:0.8}}/>
+                </div>
+                <div style={{fontSize:'10px',color:'#696969',marginTop:'2px'}}>{r.countries} economies</div>
               </div>
             ))}
           </div>
+        </div>
 
-          {/* AI Insights */}
-          <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'12px',padding:'14px',color:'white'}}>
-            <div style={{fontSize:'11px',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.06em',color:'#74BB65',marginBottom:'10px'}}>AI Insights</div>
-            <p style={{fontSize:'11px',lineHeight:'1.6',color:'rgba(226,242,223,0.85)',marginBottom:'8px'}}>
-              Technology FDI surged 45% in Q1 2026, driven by cloud and AI infrastructure projects in UAE and Saudi Arabia.
-            </p>
-            <p style={{fontSize:'11px',lineHeight:'1.6',color:'rgba(226,242,223,0.7)'}}>
-              USA-China corridor shows decoupling signals with tech investments down 12% while ASEAN corridor grows 34%.
-            </p>
-          </div>
-
-          {/* IA widget */}
-              <div style={{background:'linear-gradient(135deg,#0A3D62 0%,#1B6CA8 100%)',borderRadius:'10px',
-                padding:'14px',marginTop:'8px'}}>
-                <div style={{fontSize:'11px',fontWeight:700,color:'#74BB65',textTransform:'uppercase',
-                  letterSpacing:'0.06em',marginBottom:'6px'}}>Investment Analysis</div>
-                <p style={{fontSize:'11px',color:'rgba(226,242,223,0.8)',lineHeight:'1.5',marginBottom:'8px'}}>
-                  Global Opportunity Score Analysis for 215 economies — 4 layers, benchmarking, impact.
-                </p>
-                <a href="/investment-analysis" style={{display:'flex',alignItems:'center',gap:'4px',
-                  fontSize:'11px',fontWeight:700,color:'#74BB65',textDecoration:'none'}}>
-                  Open Investment Analysis →
-                </a>
-              </div>
-
-          {/* Quick actions */}
-          <div style={{background:'white',borderRadius:'12px',padding:'14px',boxShadow:'0 2px 8px rgba(10,61,98,0.06)'}}>
-            <div style={{fontSize:'11px',fontWeight:700,color:'#0A3D62',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>Quick Actions</div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px'}}>
-              {['📄 Generate Report','📊 Export Dashboard','🔔 Create Alert','📧 Share Insights','🗺 Bilateral View','📉 Scenario Planner'].map(a=>(
-                <button key={a} style={{padding:'7px 8px',border:'1px solid rgba(10,61,98,0.12)',borderRadius:'7px',
-                  background:'rgba(10,61,98,0.02)',cursor:'pointer',fontSize:'10px',color:'#0A3D62',fontWeight:600,textAlign:'left'}}>
-                  {a}
+        {/* Live Signals */}
+        <div className="gfm-card" style={{padding:'20px',overflow:'hidden'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'12px'}}>
+            <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',display:'flex',alignItems:'center',gap:'6px'}}>
+              <Zap size={13} color="#74BB65"/> Live Signal Feed
+            </div>
+            <div style={{display:'flex',gap:'4px'}}>
+              {['ALL','POLICY CHANGE','NEW INCENTIVE'].map(f=>(
+                <button key={f} onClick={()=>setFilter(f)}
+                  style={{padding:'3px 8px',border:'none',borderRadius:'6px',cursor:'pointer',fontSize:'10px',fontWeight:700,
+                    background:filter===f?'#0A3D62':'rgba(10,61,98,0.06)',
+                    color:filter===f?'white':'#696969'}}>
+                  {f==='ALL'?'All':f==='POLICY CHANGE'?'Policy':'Incentive'}
                 </button>
               ))}
             </div>
           </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'6px',maxHeight:'360px',overflowY:'auto'}}>
+            {filteredSignals.map(s => (
+              <div key={s.id} style={{padding:'10px',borderRadius:'8px',background:'rgba(10,61,98,0.02)',border:'1px solid rgba(10,61,98,0.07)',borderLeft:`3px solid ${s.color}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:'3px'}}>
+                  <span style={{fontSize:'10px',fontWeight:700,color:s.color}}>{s.type}</span>
+                  <span style={{fontSize:'10px',color:'#696969'}}>{s.time}</span>
+                </div>
+                <div style={{fontSize:'12px',fontWeight:600,color:'#0A3D62',marginBottom:'2px'}}>{s.eco} — {s.text}</div>
+                <span style={{fontSize:'10px',padding:'1px 6px',borderRadius:'4px',background:`${s.color}15`,color:s.color,fontWeight:700}}>{s.grade}</span>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* ROW 2: Investment Analysis + Doing Business + Sector Matrix */}
+
+        {/* Top Economies */}
+        <div className="gfm-card" style={{padding:'20px',gridColumn:'1'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+            <span style={{display:'flex',alignItems:'center',gap:'6px'}}><BarChart3 size={13} color="#74BB65"/> Investment Analysis</span>
+            <Link href="/investment-analysis" style={{fontSize:'11px',color:'#74BB65',fontWeight:700,textDecoration:'none',display:'flex',alignItems:'center',gap:'2px'}}>
+              Full Analysis <ChevronRight size={11}/>
+            </Link>
+          </div>
+          {TOP_ECON.map((e,i) => (
+            <div key={e.iso3} style={{display:'flex',alignItems:'center',gap:'10px',padding:'8px 0',borderBottom:'1px solid rgba(10,61,98,0.05)'}}>
+              <span style={{fontSize:'12px',fontWeight:700,color:'#696969',minWidth:'16px'}}>{i+1}</span>
+              <span style={{fontSize:'16px'}}>{e.flag}</span>
+              <div style={{flex:1}}>
+                <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62'}}>{e.name}</div>
+                <div style={{fontSize:'10px',color:'#696969'}}>{e.region}</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:'14px',fontWeight:900,color:'#0A3D62',fontFamily:'monospace'}}>{e.score}</div>
+                <div style={{fontSize:'10px',fontWeight:700,color:e.trend.startsWith('+')?'#74BB65':'#E57373'}}>{e.trend}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Doing Business */}
+        <div className="gfm-card" style={{padding:'20px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <Filter size={13} color="#74BB65"/> Doing Business Indicators
+          </div>
+          <DoingBusinessChart/>
+        </div>
+
+        {/* Sector Matrix */}
+        <div className="gfm-card" style={{padding:'20px'}}>
+          <div style={{fontSize:'13px',fontWeight:700,color:'#0A3D62',marginBottom:'12px',display:'flex',alignItems:'center',gap:'6px'}}>
+            <TrendingUp size={13} color="#74BB65"/> Sector Opportunity Matrix
+          </div>
+          <SectorMatrix/>
+          <div style={{marginTop:'10px',display:'flex',flexWrap:'wrap',gap:'6px'}}>
+            {SECTORS_DATA.slice(0,4).map(s=>(
+              <div key={s.name} style={{display:'flex',alignItems:'center',gap:'4px',fontSize:'10px'}}>
+                <div style={{width:'8px',height:'8px',borderRadius:'50%',background:s.color}}/>
+                <span style={{color:'#696969'}}>{s.name}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:'12px',padding:'10px',background:'rgba(116,187,101,0.06)',borderRadius:'8px',border:'1px solid rgba(116,187,101,0.15)'}}>
+            <div style={{fontSize:'10px',fontWeight:700,color:'#74BB65',marginBottom:'3px'}}>Top Opportunity</div>
+            <div style={{fontSize:'12px',fontWeight:700,color:'#0A3D62'}}>EV Battery Manufacturing · Momentum 92/100</div>
+          </div>
+        </div>
+
       </div>
       <Footer/>
     </div>

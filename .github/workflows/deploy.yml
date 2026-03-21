@@ -1,9 +1,7 @@
 name: GFM Deploy
-
 on:
   push:
     branches: [main]
-
 jobs:
   deploy-web:
     name: Build & Deploy to GitHub Pages
@@ -14,11 +12,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20', cache: 'npm', cache-dependency-path: apps/web/package-lock.json }
-      - name: Install deps
-        run: npm ci
+      - run: npm ci
         working-directory: apps/web
-      - name: Build static export
-        run: npm run build
+      - run: npm run build
         working-directory: apps/web
         env:
           NEXT_PUBLIC_API_URL: https://api.fdimonitor.org
