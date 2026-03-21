@@ -154,7 +154,7 @@ export default function CorridorsPage() {
                     </div>
                     <div style={{display:'flex',gap:'8px'}}>
                       <Link href="/signals" style={{flex:1,padding:'7px',background:'rgba(46,204,113,0.08)',border:'1px solid rgba(0,255,200,0.15)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'var(--accent-green)',textAlign:'center'}}>View Signals</Link>
-                      <Link href="/reports" style={{flex:1,padding:'7px',background:'rgba(255,215,0,0.06)',border:'1px solid rgba(255,215,0,0.15)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#ffd700',textAlign:'center'}}>Generate Report</Link>
+                      <Link href="/reports" style={{flex:1,padding:'7px',background:'rgba(255,215,0,0.06)',border:'1px solid rgba(255,215,0,0.15)',borderRadius:'7px',textDecoration:'none',fontSize:'11px',fontWeight:700,color:'#ffd700',textAlign:'center'}}>Export Report</Link>
                     </div>
                   </div>
                 )}

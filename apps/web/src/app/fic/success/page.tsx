@@ -42,7 +42,7 @@ export default function FicSuccessPage() {
           <Link href="/reports" style={{display:'inline-flex',alignItems:'center',gap:'6px',
             padding:'11px 22px',background:'#74BB65',color:'white',borderRadius:'8px',
             textDecoration:'none',fontWeight:800,fontSize:'14px'}}>
-            Generate Reports <ArrowRight size={13}/>
+            Export Reports <ArrowRight size={13}/>
           </Link>
           <Link href="/dashboard" style={{padding:'11px 16px',border:'1px solid rgba(10,61,98,0.15)',
             color:'#0A3D62',borderRadius:'8px',textDecoration:'none',fontWeight:600,fontSize:'14px'}}>

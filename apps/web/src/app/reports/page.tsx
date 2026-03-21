@@ -170,7 +170,7 @@ export default function ReportsPage() {
 
       <div style={{background:'var(--bg-page)',borderBottom:'1px solid rgba(0,255,200,0.06)',backdropFilter:'blur(20px)'}}>
         <div style={{maxWidth:'1540px',margin:'0 auto',padding:'0 24px',display:'flex'}}>
-          {[['generate','Generate Report'],['recent','Recent Reports'],['templates','Templates']].map(([t,l]) => (
+          {[['generate','Export Report'],['recent','Recent Reports'],['templates','Templates']].map(([t,l]) => (
             <button key={t} onClick={() => setTab(t)}
               style={{padding:'13px 20px',border:'none',borderBottom:`2px solid ${tab===t?'#2ECC71':'transparent'}`,background:'transparent',fontSize:'12px',fontWeight:tab===t?700:400,color:tab===t?'#2ECC71':'rgba(232,244,248,0.45)',cursor:'pointer',fontFamily:'var(--font-ui)',marginBottom:'-1px'}}>
               {l}
@@ -216,7 +216,7 @@ export default function ReportsPage() {
               {!generated ? (
                 <button onClick={generate} disabled={generating}
                   style={{width:'100%',padding:'12px',background:generating?'rgba(46,204,113,0.08)':'linear-gradient(135deg,#00ffc8,#00c49a)',color:generating?'rgba(232,244,248,0.4)':'var(--primary)',border:'none',borderRadius:'10px',cursor:generating?'not-allowed':'pointer',fontSize:'13px',fontWeight:800,fontFamily:'var(--font-ui)',display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',transition:'all 200ms',boxShadow:generating?'none':'0 4px 16px rgba(0,255,200,0.25)'}}>
-                  <Zap size={14}/> {generating ? 'Generating Report...' : 'Generate Report'}
+                  <Zap size={14}/> {generating ? 'Exporting Report...' : 'Export Report'}
                 </button>
               ) : (
                 <div>
