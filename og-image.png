@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A2540"/>
+      <stop offset="60%" style="stop-color:#0A3A6E"/>
+      <stop offset="100%" style="stop-color:#0A66C2"/>
+    </linearGradient>
+    <linearGradient id="grid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:0.12"/>
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:0.02"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Grid lines -->
+  <g opacity="0.15">
+    <line x1="0" y1="126" x2="1200" y2="126" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="0" y1="252" x2="1200" y2="252" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="0" y1="378" x2="1200" y2="378" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="0" y1="504" x2="1200" y2="504" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="200" y1="0" x2="200" y2="630" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="400" y1="0" x2="400" y2="630" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="800" y1="0" x2="800" y2="630" stroke="#60A5FA" stroke-width="1"/>
+    <line x1="1000" y1="0" x2="1000" y2="630" stroke="#60A5FA" stroke-width="1"/>
+  </g>
+  <!-- Globe circle -->
+  <circle cx="950" cy="315" r="220" fill="none" stroke="#0A66C2" stroke-width="1.5" opacity="0.3"/>
+  <circle cx="950" cy="315" r="180" fill="none" stroke="#60A5FA" stroke-width="1" opacity="0.2"/>
+  <circle cx="950" cy="315" r="140" fill="none" stroke="#60A5FA" stroke-width="0.5" opacity="0.15"/>
+  <ellipse cx="950" cy="315" rx="220" ry="60" fill="none" stroke="#60A5FA" stroke-width="0.8" opacity="0.2"/>
+  <ellipse cx="950" cy="315" rx="220" ry="110" fill="none" stroke="#60A5FA" stroke-width="0.8" opacity="0.15"/>
+  <!-- Data points -->
+  <circle cx="850" cy="200" r="5" fill="#60A5FA" opacity="0.8"/>
+  <circle cx="1020" cy="250" r="4" fill="#D97706" opacity="0.9"/>
+  <circle cx="950" cy="420" r="6" fill="#059669" opacity="0.8"/>
+  <circle cx="880" cy="380" r="3" fill="#60A5FA" opacity="0.7"/>
+  <circle cx="1060" cy="340" r="5" fill="#60A5FA" opacity="0.6"/>
+  <!-- Connection lines -->
+  <line x1="850" y1="200" x2="1020" y2="250" stroke="#60A5FA" stroke-width="1" opacity="0.3"/>
+  <line x1="1020" y1="250" x2="950" y2="420" stroke="#60A5FA" stroke-width="1" opacity="0.25"/>
+  <line x1="950" y1="420" x2="880" y2="380" stroke="#D97706" stroke-width="1.5" opacity="0.4"/>
+  <!-- Left accent bar -->
+  <rect x="80" y="80" width="4" height="180" fill="#0A66C2"/>
+  <!-- Brand label -->
+  <text x="104" y="115" font-family="Arial" font-size="13" font-weight="700" fill="#60A5FA" letter-spacing="4" opacity="0.9">GLOBAL FDI MONITOR</text>
+  <!-- Main headline -->
+  <text x="104" y="195" font-family="Arial Black" font-size="58" font-weight="900" fill="white">Real-Time</text>
+  <text x="104" y="268" font-family="Arial Black" font-size="58" font-weight="900" fill="white">FDI Intelligence</text>
+  <!-- Subheadline -->
+  <text x="106" y="325" font-family="Arial" font-size="22" fill="#93C5FD" opacity="0.85">215 economies · Live signals · GFR rankings · AI reports</text>
+  <!-- Stats row -->
+  <rect x="80" y="380" width="680" height="1" fill="#60A5FA" opacity="0.3"/>
+  <g transform="translate(104, 415)">
+    <text font-family="Arial Black" font-size="32" font-weight="900" fill="#D97706" x="0">215</text>
+    <text font-family="Arial" font-size="11" fill="#93C5FD" x="0" y="28">ECONOMIES</text>
+    <text font-family="Arial Black" font-size="32" font-weight="900" fill="#059669" x="130">218+</text>
+    <text font-family="Arial" font-size="11" fill="#93C5FD" x="130" y="28">LIVE SIGNALS</text>
+    <text font-family="Arial Black" font-size="32" font-weight="900" fill="#60A5FA" x="280">1,400+</text>
+    <text font-family="Arial" font-size="11" fill="#93C5FD" x="280" y="28">FREE ZONES</text>
+    <text font-family="Arial Black" font-size="32" font-weight="900" fill="#F59E0B" x="450">10</text>
+    <text font-family="Arial" font-size="11" fill="#93C5FD" x="450" y="28">REPORT TYPES</text>
+  </g>
+  <!-- CTA badge -->
+  <rect x="104" y="495" width="220" height="44" rx="22" fill="#0A66C2"/>
+  <text x="214" y="523" font-family="Arial" font-size="15" font-weight="700" fill="white" text-anchor="middle">Start Free Trial — 5 FIC</text>
+  <!-- Bottom domain -->
+  <text x="104" y="590" font-family="Arial" font-size="13" fill="#475569">fdimonitor.org</text>
+</svg>
