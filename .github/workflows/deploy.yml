@@ -2,9 +2,12 @@ name: GFM Deploy
 on:
   push:
     branches: [main]
+    paths:
+      - 'docs/**'
+      - '.github/workflows/deploy.yml'
 jobs:
   verify:
-    name: Verify docs exist
+    name: Verify GitHub Pages docs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,4 +15,3 @@ jobs:
         run: |
           echo "docs/ pages: $(find docs -name 'index.html' | wc -l)"
           echo "docs/ size: $(du -sh docs/ | cut -f1)"
-          ls docs/ | head -5

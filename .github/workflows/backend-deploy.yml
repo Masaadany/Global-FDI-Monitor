@@ -1,0 +1,17 @@
+# Backend API deployment — manual trigger only
+# Auto-deploy disabled: requires Docker + Azure credentials configured first
+name: Backend API Deploy
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type YES to deploy backend'
+        required: true
+jobs:
+  deploy:
+    if: github.event.inputs.confirm == 'YES'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backend deploy placeholder
+        run: echo "Backend deployment requires Azure credentials to be configured in GitHub Secrets"
