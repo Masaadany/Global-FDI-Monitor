@@ -59,9 +59,9 @@ export function Globe3D({ onSelect }:{ onSelect?:(l:string)=>void }) {
   useEffect(() => {
     const el = mountRef.current; if(!el) return
     const W=el.clientWidth, H=el.clientHeight
-    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true })
+    const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio,2))
-    renderer.setSize(W,H); renderer.setClearColor(0,0)
+    renderer.setSize(W,H); renderer.setClearColor(0x080f1c, 1)
     el.appendChild(renderer.domElement)
 
     const scene=new THREE.Scene()
