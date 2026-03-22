@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 
 interface RadarData { scores:number[]; color:string; label?:string }
 
-export function RadarChart({ datasets, labels, size=200 }: { datasets:RadarData[]; labels:string[]; size?:number }) {
+export function RadarChart({ datasets, labels, size=200 }: { datasets:RadarData[]; labels:string[]; size?: number }) {
   const n=labels.length, cx=size/2, cy=size/2, r=size*0.36
 
   function pt(i:number, v:number) {
