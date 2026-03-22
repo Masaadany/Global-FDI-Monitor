@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useMemo } from 'react'
 import { BackgroundVideo } from '@/components/shared/BackgroundVideo'
+import { Footer } from '@/components/shared/Footer'
 import { FilterPanel } from '@/components/dashboard/FilterPanel'
 import { AnalysisPanel } from '@/components/dashboard/AnalysisPanel'
 import { useDashboardStore } from '@/lib/store/dashboardStore'
@@ -163,6 +164,7 @@ export default function Dashboard(){
   const TYPE_C:  Record<string,string> = {POLICY:'#E74C3C',DEAL:'#E67E22',INCENTIVE:'#2ECC71',ZONE:'#3498DB',GROWTH:'#1A2C3E',REGULATORY:'#F1C40F'}
 
   return (
+    <>
     <div style={{minHeight:'100vh',background:'#F0F2F5',fontFamily:"'Inter','Helvetica Neue',sans-serif",paddingTop:64}}>
       <BackgroundVideo/>
       <style>{`
@@ -268,7 +270,7 @@ export default function Dashboard(){
           {/* ── CENTER MIDDLE: Lollipop Chart (click bar → update all) ── */}
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
             <Card>
-              <CardHead icon={<BarChart3 size={13}/>} title="Investment Analysis — GOSA Ranking" badge="CLICK BAR TO DRILL"/>
+              <CardHead icon={<BarChart3 size={13}/>} title="Global Future Readiness Score" badge="GFR · CLICK TO DRILL"/>
               <div style={{padding:'6px 10px',maxHeight:340,overflowY:'auto'}}>
                 {filtered.slice(0,13).map((eco,i)=>{
                   const pct=Math.max(4,((eco.gosa-58)/(96-58))*100)
@@ -325,7 +327,7 @@ export default function Dashboard(){
 
           {/* ── CENTER BOTTOM: Radar Chart (updates with sector filter/selected economy) ── */}
           <Card>
-            <CardHead icon={<Target size={13}/>} title="Sector Attractiveness Matrix" badge={filters.sector!=='All'?filters.sector.toUpperCase():'ALL SECTORS · 5 DIMENSIONS'}/>
+            <CardHead icon={<Target size={13}/>} title="Sector Assessment" badge={filters.sector!=='All'?filters.sector.toUpperCase():'ALL SECTORS · 5 DIMENSIONS'}/>
             <div style={{padding:'10px 12px',display:'flex',gap:14,alignItems:'center'}}>
               {/* Inline SVG radar */}
               <div style={{flexShrink:0}}>
@@ -590,21 +592,12 @@ export default function Dashboard(){
             </div>
           </Card>
 
-          {/* ── Quick Nav ── */}
-          <Card>
-            <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:4}}>
-              {[{h:'/gfr',i:'🏆',l:'GFR Ranking',d:'25 economies'},{h:'/investment-analysis',i:'📊',l:'Benchmark & Impact',d:'4 tabs'},{h:'/scenario-planner',i:'🔬',l:'Foresight & Scenario',d:'IRR/NPV'},{h:'/pmp',i:'🌍',l:'Mission Planning',d:'Site visits'},{h:'/signals',i:'⚡',l:'All Signals',d:'Live feed'},{h:'/reports',i:'📄',l:'Custom Reports',d:'PDF export'}].map(({h,i,l,d})=>(
-                <Link key={h} href={h} style={{display:'flex',alignItems:'center',gap:7,padding:'6px 8px',background:'#FAFBFC',border:'1px solid #F0F2F4',borderRadius:9,textDecoration:'none',transition:'all 0.14s'}}
-                  onMouseEnter={e=>{(e.currentTarget as any).style.borderColor='#2ECC71';(e.currentTarget as any).style.background='#F6FEF9'}}
-                  onMouseLeave={e=>{(e.currentTarget as any).style.borderColor='#F0F2F4';(e.currentTarget as any).style.background='#FAFBFC'}}>
-                  <span style={{fontSize:14}}>{i}</span>
-                  <div><div style={{fontSize:11,fontWeight:700,color:'#1A2C3E'}}>{l}</div><div style={{fontSize:8,color:'#C8D0D6'}}>{d}</div></div>
-                </Link>
-              ))}
-            </div>
-          </Card>
+
         </div>
       </div>
     </div>
+
+    <Footer/>
+    </>
   )
 }
