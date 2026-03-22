@@ -10,72 +10,35 @@ const Globe3D = dynamic(
     ssr: false,
     loading: () => (
       <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center'}}>
-        <div style={{textAlign:'center'}}>
-          <div style={{width:52,height:52,border:'1.5px solid rgba(46,204,113,0.4)',borderRadius:'50%',borderTopColor:'transparent',animation:'spin 0.85s linear infinite',margin:'0 auto 14px'}}/>
-          <span style={{fontSize:11,color:'rgba(255,255,255,0.25)',fontFamily:'Inter,sans-serif',letterSpacing:'0.1em',textTransform:'uppercase'}}>Initialising Globe</span>
-        </div>
+        <div style={{width:56,height:56,border:'1.5px solid rgba(46,204,113,0.35)',borderRadius:'50%',
+          borderTopColor:'transparent',animation:'spin 0.9s linear infinite',margin:'0 auto'}}/>
       </div>
     ),
   }
 )
 
-// ── 6 strategic messages with position + animation config ──────────────────
-const MESSAGES = [
-  {
-    text: 'Transforming global investment live data into strategic foresight and direction',
-    color: '#2ECC71',
-    delay: 0.0,
-    x: '2%',   y: '14%',
-    floatAmp: 8, floatDur: 6.2,
-  },
-  {
-    text: 'Where global investment flows meet intelligence to shape future-ready decisions',
-    color: '#3498DB',
-    delay: 0.22,
-    x: '2%',   y: '28%',
-    floatAmp: 6, floatDur: 7.1,
-  },
-  {
-    text: 'Decoding global investment movements to unlock sustainable competitive advantage',
-    color: '#9B59B6',
-    delay: 0.44,
-    x: '2%',   y: '42%',
-    floatAmp: 9, floatDur: 5.8,
-  },
-  {
-    text: 'Empowering organizations with actionable insights to advance the global investment landscape',
-    color: '#E8C84A',
-    delay: 0.66,
-    x: '2%',   y: '56%',
-    floatAmp: 7, floatDur: 6.6,
-  },
-  {
-    text: 'Enabling data-driven investment strategies to strengthen global competitiveness and resilience',
-    color: '#E74C3C',
-    delay: 0.88,
-    x: '2%',   y: '70%',
-    floatAmp: 8, floatDur: 7.4,
-  },
-  {
-    text: 'Harnessing real-time global investment data to drive timely and informed strategic action',
-    color: '#27ae60',
-    delay: 1.10,
-    x: '2%',   y: '84%',
-    floatAmp: 6, floatDur: 6.0,
-  },
+// ── Rotating quotes ──────────────────────────────────────────────
+const QUOTES = [
+  { text: 'Transforming global investment live data into strategic foresight and direction.',        accent: '#2ECC71' },
+  { text: 'Where global investment flows meet intelligence\nto shape future-ready decisions.',       accent: '#3498DB' },
+  { text: 'Decoding global investment movements\nto unlock sustainable competitive advantage.',      accent: '#9B59B6' },
+  { text: 'Empowering organizations with actionable insights\nto advance the global investment landscape.', accent: '#E8C84A' },
+  { text: 'Enabling data-driven investment strategies\nto strengthen global competitiveness.',       accent: '#E74C3C' },
+  { text: 'Harnessing real-time global investment data\nto drive timely and informed strategic action.', accent: '#27ae60' },
 ]
 
 export default function HomePage() {
-  const [visible, setVisible] = useState(false)
+  const [activeIdx, setActiveIdx]   = useState(0)
+  const [phase,     setPhase]       = useState<'in'|'hold'|'out'>('in')
+  const [globeReady, setGlobeReady] = useState(false)
 
+  // Hide layout chrome
   useEffect(() => {
-    // Hide global header/footer
     const h = document.getElementById('site-header')
     const f = document.getElementById('site-footer')
     if (h) h.style.display = 'none'
     if (f) f.style.display = 'none'
-    // Trigger entrance animations after mount
-    const t = setTimeout(() => setVisible(true), 120)
+    const t = setTimeout(() => setGlobeReady(true), 80)
     return () => {
       clearTimeout(t)
       if (h) h.style.display = ''
@@ -83,275 +46,264 @@ export default function HomePage() {
     }
   }, [])
 
+  // Cycle quotes: in(900ms) → hold(2200ms) → out(700ms) → next
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    if (phase === 'in') {
+      timer = setTimeout(() => setPhase('hold'), 900)
+    } else if (phase === 'hold') {
+      timer = setTimeout(() => setPhase('out'), 2200)
+    } else {
+      timer = setTimeout(() => {
+        setActiveIdx(i => (i + 1) % QUOTES.length)
+        setPhase('in')
+      }, 700)
+    }
+    return () => clearTimeout(timer)
+  }, [phase])
+
+  const q     = QUOTES[activeIdx]
+  const lines = q.text.split('\n')
+
+  // Phase → CSS values
+  const ty   = phase === 'in' ? '0px'   : phase === 'hold' ? '0px'   : '-22px'
+  const op   = phase === 'in' ? 1       : phase === 'hold' ? 1       : 0
+  const blur = phase === 'in' ? '0px'   : phase === 'hold' ? '0px'   : '6px'
+  const sc   = phase === 'in' ? '1'     : phase === 'hold' ? '1'     : '0.97'
+  const dur  = phase === 'in' ? '0.9s'  : phase === 'out'  ? '0.65s' : '0s'
+  const ease = phase === 'in' ? 'cubic-bezier(0.16,1,0.3,1)' : 'cubic-bezier(0.4,0,1,1)'
+
   return (
-    <div style={{
-      position:'fixed', inset:0,
-      fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif",
-      overflow:'hidden',
-    }}>
+    <div style={{position:'fixed',inset:0,overflow:'hidden',fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif"}}>
 
-      {/* ════════════════════════════════════════════════════════
-          CINEMATIC BACKGROUND LAYERS
-          ════════════════════════════════════════════════════════ */}
-
-      {/* L0 — deep space base */}
+      {/* ── Deep cinematic background ────────────────────────── */}
       <div style={{position:'absolute',inset:0,zIndex:0,
-        background:'radial-gradient(ellipse 160% 130% at 65% 60%, #0b1a2f 0%, #06101c 45%, #020810 100%)'}}/>
-
-      {/* L1 — nebula cloud behind globe */}
-      <div style={{position:'absolute',zIndex:1,pointerEvents:'none',
-        right:'-8%', top:'-15%', width:'85%', height:'130%',
-        background:'radial-gradient(ellipse 70% 65% at 55% 52%, rgba(18,58,148,0.22) 0%, rgba(8,24,60,0.10) 50%, transparent 72%)'}}/>
-
-      {/* L2 — brand green glow from globe */}
-      <div style={{position:'absolute',zIndex:1,pointerEvents:'none',
-        right:'8%', top:'25%', width:'55%', height:'55%',
-        background:'radial-gradient(ellipse at 60% 50%, rgba(46,204,113,0.05) 0%, transparent 65%)'}}/>
-
-      {/* L3 — precision grid */}
+        background:'radial-gradient(ellipse 170% 140% at 60% 55%, #0b1a30 0%, #060f1c 45%, #020810 100%)'}}/>
       <div style={{position:'absolute',inset:0,zIndex:1,pointerEvents:'none',
-        backgroundImage:'linear-gradient(rgba(46,204,113,0.016) 1px,transparent 1px),linear-gradient(90deg,rgba(46,204,113,0.016) 1px,transparent 1px)',
+        backgroundImage:'linear-gradient(rgba(46,204,113,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(46,204,113,0.015) 1px,transparent 1px)',
         backgroundSize:'72px 72px'}}/>
-
-      {/* L4 — corner vignette for depth */}
+      {/* Nebula glow */}
+      <div style={{position:'absolute',right:'-5%',top:'-10%',width:'80%',height:'120%',zIndex:1,pointerEvents:'none',
+        background:'radial-gradient(ellipse 65% 60% at 58% 52%, rgba(16,52,136,0.22) 0%, transparent 70%)'}}/>
+      {/* Brand glow */}
+      <div style={{position:'absolute',right:'10%',top:'20%',width:'50%',height:'60%',zIndex:1,pointerEvents:'none',
+        background:`radial-gradient(ellipse at 55% 50%, ${q.accent}08 0%, transparent 65%)`,
+        transition:`background 1.5s ease`}}/>
+      {/* Vignette */}
       <div style={{position:'absolute',inset:0,zIndex:2,pointerEvents:'none',
-        background:'radial-gradient(ellipse 110% 110% at 50% 50%, transparent 38%, rgba(2,8,16,0.62) 100%)'}}/>
+        background:'radial-gradient(ellipse 115% 115% at 50% 50%, transparent 35%, rgba(2,8,16,0.65) 100%)'}}/>
+      {/* Top fade */}
+      <div style={{position:'absolute',left:0,right:0,top:0,height:'28%',zIndex:4,pointerEvents:'none',
+        background:'linear-gradient(180deg,rgba(2,8,16,0.82) 0%,rgba(2,8,16,0.3) 55%,transparent 100%)'}}/>
+      {/* Bottom fade */}
+      <div style={{position:'absolute',left:0,right:0,bottom:0,height:'22%',zIndex:4,pointerEvents:'none',
+        background:'linear-gradient(0deg,rgba(2,8,16,0.82) 0%,transparent 100%)'}}/>
 
-      {/* L5 — top fade (navbar depth) */}
-      <div style={{position:'absolute',left:0,right:0,top:0,height:'22%',zIndex:5,pointerEvents:'none',
-        background:'linear-gradient(180deg,rgba(2,8,16,0.72) 0%,rgba(2,8,16,0.22) 60%,transparent 100%)'}}/>
+      {/* ── FULL-SCREEN GLOBE ────────────────────────────────── */}
+      <div style={{position:'absolute',inset:0,top:'6%',zIndex:3}}>
+        {globeReady && <Globe3D/>}
+      </div>
 
-      {/* L6 — bottom fade */}
-      <div style={{position:'absolute',left:0,right:0,bottom:0,height:'18%',zIndex:5,pointerEvents:'none',
-        background:'linear-gradient(0deg,rgba(2,8,16,0.75) 0%,transparent 100%)'}}/>
+      {/* ── NAVBAR ───────────────────────────────────────────── */}
+      <nav style={{position:'absolute',top:0,left:0,right:0,height:64,
+        display:'flex',alignItems:'center',padding:'0 36px',zIndex:60}}>
 
-      {/* L7 — left vignette (blends messages → globe) */}
-      <div style={{position:'absolute',left:'36%',top:0,bottom:0,width:'140px',zIndex:15,pointerEvents:'none',
-        background:'linear-gradient(90deg,rgba(2,8,16,0.92) 0%,transparent 100%)'}}/>
-
-
-      {/* ════════════════════════════════════════════════════════
-          TRANSPARENT DARK NAVBAR
-          ════════════════════════════════════════════════════════ */}
-      <nav style={{
-        position:'absolute',top:0,left:0,right:0,height:66,
-        display:'flex',alignItems:'center',padding:'0 40px',
-        zIndex:60,
-      }}>
-        {/* FDI MONITOR — left */}
-        <Link href="/" style={{textDecoration:'none',display:'flex',flexDirection:'column',lineHeight:1,flexShrink:0}}>
-          <span style={{fontSize:21,fontWeight:900,color:'#FFFFFF',letterSpacing:'-0.03em',lineHeight:1,
-            textShadow:'0 0 30px rgba(255,255,255,0.08)'}}>FDI</span>
-          <span style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.38)',letterSpacing:'0.28em',
-            textTransform:'uppercase',lineHeight:1,marginTop:2}}>MONITOR</span>
+        {/* Logo — left */}
+        <Link href="/" style={{textDecoration:'none',flexShrink:0}}>
+          <div style={{display:'flex',flexDirection:'column',lineHeight:1}}>
+            <span style={{fontSize:20,fontWeight:900,color:'#fff',letterSpacing:'-0.03em'}}>FDI</span>
+            <span style={{fontSize:8.5,fontWeight:700,color:'rgba(255,255,255,0.36)',letterSpacing:'0.28em',textTransform:'uppercase',marginTop:2}}>MONITOR</span>
+          </div>
         </Link>
 
-        {/* Nav links — ABSOLUTE CENTER */}
-        <div style={{
-          position:'absolute',left:'50%',transform:'translateX(-50%)',
-          display:'flex',alignItems:'center',gap:4,
-        }}>
+        {/* Nav — absolute center */}
+        <div style={{position:'absolute',left:'50%',transform:'translateX(-50%)',display:'flex',gap:2}}>
           {[['About Us','/about'],['Features','/dashboard'],['Contact Us','/contact']].map(([l,h])=>(
-            <Link key={l} href={h} style={{
-              padding:'7px 18px',borderRadius:8,fontSize:13,fontWeight:500,
-              color:'rgba(255,255,255,0.5)',textDecoration:'none',
-              letterSpacing:'0.02em',transition:'color 0.18s',
-            }}
-            onMouseEnter={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.92)'}}
-            onMouseLeave={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.5)'}}>
+            <Link key={l} href={h} style={{padding:'7px 17px',fontSize:13,fontWeight:500,
+              color:'rgba(255,255,255,0.48)',textDecoration:'none',borderRadius:7,
+              letterSpacing:'0.015em',transition:'color 0.18s'}}
+              onMouseEnter={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.9)'}}
+              onMouseLeave={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.48)'}}>
               {l}
             </Link>
           ))}
         </div>
 
-        {/* Right auth */}
-        <div style={{marginLeft:'auto',display:'flex',gap:6,alignItems:'center'}}>
-          <Link href="/auth/login" style={{padding:'7px 15px',fontSize:13,fontWeight:500,color:'rgba(255,255,255,0.45)',textDecoration:'none',transition:'color 0.15s',borderRadius:8}}
+        {/* Auth — right */}
+        <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+          <Link href="/auth/login" style={{padding:'7px 14px',fontSize:13,fontWeight:500,
+            color:'rgba(255,255,255,0.42)',textDecoration:'none',borderRadius:7,transition:'color 0.15s'}}
             onMouseEnter={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.88)'}}
-            onMouseLeave={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.45)'}}>
+            onMouseLeave={e=>{(e.currentTarget as any).style.color='rgba(255,255,255,0.42)'}}>
             Sign In
           </Link>
-          <Link href="/register" style={{
-            padding:'7px 18px',fontSize:13,fontWeight:600,
-            color:'rgba(255,255,255,0.82)',textDecoration:'none',
-            background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.11)',
-            borderRadius:8,transition:'all 0.15s',
-          }}
-          onMouseEnter={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.11)'}}
-          onMouseLeave={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.06)'}}>
+          <Link href="/register" style={{padding:'7px 17px',fontSize:13,fontWeight:600,
+            color:'rgba(255,255,255,0.8)',textDecoration:'none',
+            background:'rgba(255,255,255,0.07)',border:'1px solid rgba(255,255,255,0.11)',
+            borderRadius:7,transition:'background 0.15s'}}
+            onMouseEnter={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.13)'}}
+            onMouseLeave={e=>{(e.currentTarget as any).style.background='rgba(255,255,255,0.07)'}}>
             Sign Up
           </Link>
         </div>
       </nav>
 
-
       {/* ════════════════════════════════════════════════════════
-          3D GLOBE — right side, shifted DOWN for visual balance
+          CENTRAL HERO CONTENT — logo + rotating quote + CTAs
+          All layered OVER the globe
           ════════════════════════════════════════════════════════ */}
       <div style={{
-        position:'absolute',
-        right:'-4%',
-        top:'8%',          /* ← shifted DOWN from top for breathing room */
-        bottom:'-4%',      /* allow slight overflow at bottom */
-        width:'68%',
-        zIndex:10,
+        position:'absolute',inset:0,zIndex:50,
+        display:'flex',flexDirection:'column',
+        alignItems:'center',justifyContent:'center',
+        pointerEvents:'none',
+        textAlign:'center',
+        padding:'72px 24px 40px',
+        gap:0,
       }}>
-        <Globe3D/>
-      </div>
 
-
-      {/* ════════════════════════════════════════════════════════
-          6 FLOATING ANIMATED MESSAGES — left panel
-          ════════════════════════════════════════════════════════ */}
-      <div style={{
-        position:'absolute',
-        left:0, top:66, bottom:0,
-        width:'40%',
-        zIndex:30,
-        pointerEvents:'none',  /* allow globe interaction through */
-        padding:'0 16px 0 36px',
-        display:'flex',
-        flexDirection:'column',
-        justifyContent:'center',
-        gap:10,
-      }}>
-        {MESSAGES.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              pointerEvents:'auto',
-              /* Staggered entrance: fadeSlideIn with delay */
-              opacity: visible ? 1 : 0,
-              transform: visible ? 'translateX(0) translateY(0)' : 'translateX(-28px) translateY(8px)',
-              transition: `opacity 0.75s cubic-bezier(0.2,0.9,0.4,1) ${msg.delay + 0.3}s, transform 0.75s cubic-bezier(0.2,0.9,0.4,1) ${msg.delay + 0.3}s`,
-              /* Continuous float animation after entering */
-              animation: visible ? `float${i} ${msg.floatDur}s ease-in-out ${msg.delay + 1.2}s infinite` : 'none',
-              /* Card style */
-              position:'relative',
-              padding:'13px 18px 13px 22px',
-              borderRadius:13,
-              background:'rgba(2,8,16,0.58)',
-              backdropFilter:'blur(22px)',
-              WebkitBackdropFilter:'blur(22px)',
-              border:`1px solid ${msg.color}20`,
-              boxShadow:`0 4px 22px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.024)`,
-              cursor:'default',
-              overflow:'hidden',
-            }}
-            onMouseEnter={e=>{
-              const el=e.currentTarget
-              el.style.background='rgba(4,12,24,0.82)'
-              el.style.border=`1px solid ${msg.color}48`
-              el.style.boxShadow=`0 10px 36px rgba(0,0,0,0.52), 0 0 22px ${msg.color}14, inset 0 1px 0 rgba(255,255,255,0.04)`
-              el.style.transform='translateX(6px)'
-            }}
-            onMouseLeave={e=>{
-              const el=e.currentTarget
-              el.style.background='rgba(2,8,16,0.58)'
-              el.style.border=`1px solid ${msg.color}20`
-              el.style.boxShadow='0 4px 22px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.024)'
-              el.style.transform='translateX(0)'
-            }}
-          >
-            {/* Accent bar */}
-            <div style={{position:'absolute',left:0,top:'18%',bottom:'18%',width:'2.5px',borderRadius:'0 2px 2px 0',background:msg.color,opacity:0.7}}/>
-
-            {/* Content row */}
-            <div style={{display:'flex',alignItems:'flex-start',gap:11}}>
-              {/* Glowing dot */}
-              <div style={{
-                width:8,height:8,borderRadius:'50%',background:msg.color,
-                flexShrink:0,marginTop:5,
-                boxShadow:`0 0 12px ${msg.color}70, 0 0 4px ${msg.color}`,
-                animation:`dotPulse${i} ${msg.floatDur * 0.7}s ease-in-out ${msg.delay}s infinite`,
-              }}/>
-
-              {/* HIGH-IMPACT TYPOGRAPHY */}
-              <p style={{
-                margin:0,
-                fontSize:13,
-                fontWeight:500,
-                color:'rgba(255,255,255,0.68)',
-                lineHeight:1.58,
-                fontFamily:"'Inter',sans-serif",
-                letterSpacing:'0.01em',
-              }}>
-                {msg.text}
-              </p>
-            </div>
-
-            {/* Subtle shimmer line at top */}
-            <div style={{
-              position:'absolute',top:0,left:'10%',right:'10%',height:'1px',
-              background:`linear-gradient(90deg, transparent, ${msg.color}30, transparent)`,
-              opacity: visible ? 1 : 0,
-              transition:`opacity 0.8s ease ${msg.delay + 1}s`,
-            }}/>
-          </div>
-        ))}
-
-        {/* CTAs — below messages */}
+        {/* ── BIG CENTRAL LOGO — FDI / MONITOR ── */}
         <div style={{
-          display:'flex',gap:10,marginTop:10,
-          flexWrap:'wrap',
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(16px)',
-          transition:'opacity 0.8s ease 1.6s, transform 0.8s ease 1.6s',
+          marginBottom:32,
           pointerEvents:'auto',
+          opacity: globeReady ? 1 : 0,
+          transform: globeReady ? 'translateY(0)' : 'translateY(-16px)',
+          transition:'opacity 1s ease 0.2s, transform 1s ease 0.2s',
+        }}>
+          {/* FDI — massive */}
+          <div style={{
+            fontSize:'clamp(64px, 12vw, 130px)',
+            fontWeight:900,
+            color:'#FFFFFF',
+            letterSpacing:'-0.05em',
+            lineHeight:0.9,
+            textShadow:'0 0 80px rgba(255,255,255,0.08), 0 2px 40px rgba(0,0,0,0.6)',
+            fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif",
+          }}>FDI</div>
+          {/* MONITOR — spaced caps below */}
+          <div style={{
+            fontSize:'clamp(12px, 2.2vw, 26px)',
+            fontWeight:700,
+            color:'rgba(255,255,255,0.42)',
+            letterSpacing:'0.38em',
+            textTransform:'uppercase',
+            marginTop:4,
+            fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif",
+            textShadow:'none',
+          }}>MONITOR</div>
+        </div>
+
+        {/* ── ROTATING QUOTE ── */}
+        <div style={{
+          position:'relative',
+          minHeight:'clamp(90px,14vw,180px)',
+          display:'flex',alignItems:'center',justifyContent:'center',
+          width:'100%',maxWidth:860,
+          marginBottom:36,
+        }}>
+          {/* Accent color underline that changes with each quote */}
+          <div style={{
+            position:'absolute',
+            top:'-12px',left:'50%',transform:'translateX(-50%)',
+            width:48,height:2,borderRadius:2,
+            background:q.accent,
+            boxShadow:`0 0 16px ${q.accent}80`,
+            transition:`background 0.8s ease, box-shadow 0.8s ease`,
+          }}/>
+
+          <div style={{
+            opacity: op,
+            transform: `translateY(${ty}) scale(${sc})`,
+            filter: `blur(${blur})`,
+            transition: `opacity ${dur} ${ease}, transform ${dur} ${ease}, filter ${dur} ${ease}`,
+            willChange: 'transform, opacity',
+            width:'100%',
+          }}>
+            {lines.map((line, li) => (
+              <div key={li} style={{
+                fontSize: 'clamp(20px, 3.2vw, 46px)',
+                fontWeight: 800,
+                color: li === 0 ? '#FFFFFF' : 'rgba(255,255,255,0.82)',
+                letterSpacing: '-0.025em',
+                lineHeight: 1.18,
+                fontFamily:"'Inter','Helvetica Neue',Arial,sans-serif",
+                textShadow:'0 4px 40px rgba(0,0,0,0.7), 0 1px 0 rgba(0,0,0,0.4)',
+                marginTop: li > 0 ? '0.12em' : 0,
+              }}>
+                {line}
+                {/* Accent word — last word of first line gets color */}
+                {li === 0 && (
+                  <span style={{
+                    color: q.accent,
+                    textShadow:`0 0 40px ${q.accent}50`,
+                    transition:'color 0.8s ease, text-shadow 0.8s ease',
+                  }}>{''}</span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Quote progress dots */}
+          <div style={{
+            position:'absolute',bottom:'-28px',left:'50%',transform:'translateX(-50%)',
+            display:'flex',gap:8,
+          }}>
+            {QUOTES.map((qq, i) => (
+              <div key={i} style={{
+                width: i === activeIdx ? 22 : 6,
+                height:6,borderRadius:3,
+                background: i === activeIdx ? qq.accent : 'rgba(255,255,255,0.18)',
+                boxShadow: i === activeIdx ? `0 0 10px ${qq.accent}80` : 'none',
+                transition:'all 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+                cursor:'pointer',
+              }}
+              onClick={() => { setActiveIdx(i); setPhase('in') }}/>
+            ))}
+          </div>
+        </div>
+
+        {/* ── CTAs ── */}
+        <div style={{
+          display:'flex',gap:12,flexWrap:'wrap',justifyContent:'center',
+          pointerEvents:'auto',
+          marginTop:20,
+          opacity: globeReady ? 1 : 0,
+          transform: globeReady ? 'translateY(0)' : 'translateY(20px)',
+          transition:'opacity 1s ease 0.8s, transform 1s ease 0.8s',
         }}>
           <Link href="/dashboard" style={{
-            display:'flex',alignItems:'center',gap:7,
-            padding:'12px 28px',borderRadius:50,
+            display:'flex',alignItems:'center',gap:8,
+            padding:'14px 34px',borderRadius:50,
             background:'#2ECC71',color:'white',
-            textDecoration:'none',fontSize:14,fontWeight:800,
-            boxShadow:'0 6px 28px rgba(46,204,113,0.34)',
-            letterSpacing:'0.01em',transition:'all 0.22s',
+            textDecoration:'none',fontSize:15,fontWeight:800,
+            letterSpacing:'0.005em',
+            boxShadow:'0 8px 32px rgba(46,204,113,0.38)',
+            transition:'all 0.22s',
           }}
-          onMouseEnter={e=>{const t=e.currentTarget;t.style.transform='translateY(-3px)';t.style.boxShadow='0 14px 38px rgba(46,204,113,0.5)'}}
-          onMouseLeave={e=>{const t=e.currentTarget;t.style.transform='none';t.style.boxShadow='0 6px 28px rgba(46,204,113,0.34)'}}>
-            Explore Dashboard <ChevronRight size={15}/>
+          onMouseEnter={e=>{const t=e.currentTarget;t.style.transform='translateY(-3px)';t.style.boxShadow='0 16px 44px rgba(46,204,113,0.52)'}}
+          onMouseLeave={e=>{const t=e.currentTarget;t.style.transform='none';t.style.boxShadow='0 8px 32px rgba(46,204,113,0.38)'}}>
+            Explore Dashboard <ChevronRight size={16}/>
           </Link>
           <Link href="/register" style={{
-            display:'flex',alignItems:'center',gap:7,
-            padding:'12px 28px',borderRadius:50,
-            background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.84)',
-            textDecoration:'none',fontSize:14,fontWeight:600,
-            border:'1.5px solid rgba(255,255,255,0.13)',
-            backdropFilter:'blur(8px)',transition:'all 0.2s',
+            display:'flex',alignItems:'center',gap:8,
+            padding:'14px 34px',borderRadius:50,
+            background:'rgba(255,255,255,0.07)',color:'rgba(255,255,255,0.86)',
+            textDecoration:'none',fontSize:15,fontWeight:600,
+            border:'1.5px solid rgba(255,255,255,0.14)',
+            backdropFilter:'blur(10px)',
+            transition:'all 0.2s',
           }}
-          onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.12)'}}
-          onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.06)'}}>
-            Sign Up <ArrowRight size={14}/>
+          onMouseEnter={e=>{e.currentTarget.style.background='rgba(255,255,255,0.13)'}}
+          onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,0.07)'}}>
+            Sign Up <ArrowRight size={15}/>
           </Link>
         </div>
       </div>
 
-
-      {/* ════════════════════════════════════════════════════════
-          KEYFRAMES — per-card float + dot pulse animations
-          ════════════════════════════════════════════════════════ */}
       <style>{`
-        @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-        /* Staggered float for each of the 6 cards */
-        @keyframes float0 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-8px) translateX(2px)} }
-        @keyframes float1 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-6px) translateX(-2px)} }
-        @keyframes float2 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-9px) translateX(2px)} }
-        @keyframes float3 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-7px) translateX(-1px)} }
-        @keyframes float4 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-8px) translateX(3px)} }
-        @keyframes float5 { 0%,100%{transform:translateY(0px) translateX(0)} 50%{transform:translateY(-6px) translateX(-2px)} }
-
-        /* Dot pulse per card */
-        @keyframes dotPulse0 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-        @keyframes dotPulse1 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-        @keyframes dotPulse2 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-        @keyframes dotPulse3 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-        @keyframes dotPulse4 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-        @keyframes dotPulse5 { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.55;transform:scale(1.35)} }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-          /* On mobile: messages stacked on top, globe below */
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        @media(max-width:640px){
+          /* Mobile: ensure text remains readable over globe */
         }
       `}</style>
     </div>
