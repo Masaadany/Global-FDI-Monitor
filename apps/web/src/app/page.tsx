@@ -61,10 +61,10 @@ export default function HomePage() {
       {/* ══ CINEMATIC BACKGROUND ════════════════════════════════════ */}
       {/* Deep space — richer on right where globe lives */}
       <div style={{position:'absolute',inset:0,zIndex:0,
-        background:'radial-gradient(ellipse 180% 150% at 68% 55%, #0b1a30 0%, #060f1c 48%, #020810 100%)'}}/>
+        background:'radial-gradient(ellipse 200% 180% at 52% 52%, #0d1e34 0%, #070f1e 45%, #020810 100%)'}}/>
       {/* Nebula — right side behind globe */}
       <div style={{position:'absolute',right:'-8%',top:'-10%',width:'75%',height:'120%',zIndex:1,pointerEvents:'none',
-        background:'radial-gradient(ellipse 65% 60% at 58% 52%, rgba(16,52,136,0.22) 0%, transparent 70%)'}}/>
+        background:'radial-gradient(ellipse 80% 70% at 52% 52%, rgba(14,46,120,0.18) 0%, transparent 72%)'}}/>
       {/* Accent glow — shifts with quote color, on LEFT behind text */}
       <div style={{position:'absolute',left:'2%',top:'20%',width:'48%',height:'65%',zIndex:1,pointerEvents:'none',
         background:`radial-gradient(ellipse at 40% 50%, ${q.accent}06 0%, transparent 65%)`,
@@ -75,16 +75,16 @@ export default function HomePage() {
         backgroundSize:'72px 72px'}}/>
       {/* Corner vignette */}
       <div style={{position:'absolute',inset:0,zIndex:2,pointerEvents:'none',
-        background:'radial-gradient(ellipse 115% 115% at 50% 50%, transparent 38%, rgba(2,8,16,0.65) 100%)'}}/>
+        background:'radial-gradient(ellipse 120% 120% at 50% 50%, transparent 42%, rgba(2,8,16,0.58) 100%)'}}/>
       {/* Top fade */}
       <div style={{position:'absolute',left:0,right:0,top:0,height:'26%',zIndex:4,pointerEvents:'none',
         background:'linear-gradient(180deg,rgba(2,8,16,0.85) 0%,rgba(2,8,16,0.25) 60%,transparent 100%)'}}/>
       {/* Bottom fade */}
       <div style={{position:'absolute',left:0,right:0,bottom:0,height:'20%',zIndex:4,pointerEvents:'none',
         background:'linear-gradient(0deg,rgba(2,8,16,0.82) 0%,transparent 100%)'}}/>
-      {/* LEFT-TO-CENTER blend — quotes panel fades into globe */}
-      <div style={{position:'absolute',left:'48%',top:0,bottom:0,width:'160px',zIndex:15,pointerEvents:'none',
-        background:'linear-gradient(90deg,rgba(2,8,16,0.88) 0%,transparent 100%)'}}/>
+      {/* Seamless blend — very soft, no visible line */}
+      <div style={{position:'absolute',left:'44%',top:0,bottom:0,width:'220px',zIndex:15,pointerEvents:'none',
+        background:'linear-gradient(90deg,rgba(2,8,16,0.55) 0%,rgba(2,8,16,0.22) 40%,transparent 100%)'}}/>
 
       {/* ══ GLOBE — RIGHT SIDE ════════════════════════════════════ */}
       <div style={{
@@ -197,12 +197,7 @@ export default function HomePage() {
               textShadow:'0 4px 40px rgba(0,0,0,0.7)',
               textAlign:'left',
             }}>
-              {q.text.split(' ').map((word,wi,arr) =>
-                wi===arr.length-1
-                  ? <span key={wi} style={{color:q.accent,textShadow:`0 0 40px ${q.accent}50`,
-                      transition:'color 0.8s ease,text-shadow 0.8s ease'}}>{word}</span>
-                  : <span key={wi}>{word} </span>
-              )}
+              {q.text}
             </p>
           </div>
         </div>
